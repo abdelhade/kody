@@ -23,7 +23,7 @@
             <?php } ?>
         </ul>
     </div>
-    <div style="overflow: scroll;height:400px" class="row" id="items">
+    <div class="row" id="items">
     <?php
         $resitem = $conn->query("SELECT * FROM myitems where isdeleted = 0");
         while ($rowitem = $resitem->fetch_assoc()) {

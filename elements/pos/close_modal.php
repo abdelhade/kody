@@ -102,27 +102,24 @@
 
 <script>
 $(document).ready(function () {
-    // لما يضغط على زر "اقفال"
-    $('#confirmClose').click(function (e) {
-        e.preventDefault(); // نمنع الإرسال التلقائي
-
-        // رسالة تأكيد
-        if (confirm('هل أنت متأكد أنك تريد إغلاق الشيفت؟')) {
-            $(this).closest('form').submit(); // إرسال الفورم بعد الموافقة
-        }
-    });
-
     // لحساب الباقي في الدرج تلقائيًا
     function calculateFundAfter() {
+        let fundBefore = parseFloat($('#fund_before').val()) || 0;
         let total = parseFloat($('#total_sales').val()) || 0;
         let expenses = parseFloat($('#expenses').val()) || 0;
         let cash = parseFloat($('#cash').val()) || 0;
 
-        let remaining = total - expenses - cash;
+        let remaining = fundBefore + total - expenses - cash;
         $('#fund_after').val(remaining.toFixed(2));
     }
 
+    // حساب تلقائي عند التغيير
     $('#expenses, #cash').on('input', calculateFundAfter);
+    
+    // حساب أولي عند فتح المودال
+    $('#closed').on('shown.bs.modal', function () {
+        calculateFundAfter();
+    });
 });
 </script>
 

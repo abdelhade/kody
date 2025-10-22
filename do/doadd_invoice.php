@@ -57,6 +57,10 @@ $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
 
+// بيانات الطاولات - Tables data
+$table_id = isset($_POST['table_id']) && !empty($_POST['table_id']) ? intval($_POST['table_id']) : null;
+$order_status = 'active'; // الطلبات الجديدة تكون نشطة
+
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
 if($pro_tybe == INVOICE_TYPES['POS']){
     $paid = $headnet;
@@ -200,10 +204,10 @@ try {
             accural_date, pro_pattren, pro_serial, price_list, store_id, emp_id, 
             emp2_id, acc1, acc2, pro_value, fat_cost, cost_center, profit, 
             fat_total, fat_disc, fat_disc_per, fat_plus, fat_plus_per, 
-            fat_tax, fat_tax_per, fat_net, user
+            fat_tax, fat_tax_per, fat_net, user, table_id, order_status
         ) VALUES (
             ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?, ?, ?, 0, 1, 0, 
-            ?, ?, ?, ?, ?, 0, 0, ?, ?
+            ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?
         )"
     );
     
@@ -212,11 +216,11 @@ try {
     }
     
     $stmt->bind_param(
-        "ssssssssssssssssssss",
+        "ssssssssssssssssssssss",
         $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date, 
         $pro_serial, $store_id, $emp_id, $emp_id, $accounts['acc1'], 
         $accounts['acc2'], $headtotal, $headtotal, $headdisc, 
-        $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid
+        $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid, $table_id, $order_status
     );
     
     if (!$stmt->execute()) {
@@ -467,6 +471,33 @@ try {
         $stmt->bind_param("ss", $ot_profit, $last_op);
         $stmt->execute();
         $stmt->close();
+    }
+    
+    // تحديث حالة الطاولة بناءً على حالة الدفع
+    if ($table_id) {
+        // حساب المتبقي
+        $remaining = $headnet - $paid;
+        
+        if ($remaining <= 0) {
+            // دفع كامل - تفريغ الطاولة وإغلاق الطلب
+            $stmt = $conn->prepare("UPDATE tables SET table_case = 0 WHERE id = ?");
+            $stmt->bind_param("i", $table_id);
+            $stmt->execute();
+            $stmt->close();
+            
+            // تحديث حالة الطلب إلى مكتمل
+            $completed_status = 'completed';
+            $stmt = $conn->prepare("UPDATE ot_head SET order_status = ? WHERE id = ?");
+            $stmt->bind_param("si", $completed_status, $last_op);
+            $stmt->execute();
+            $stmt->close();
+        } else {
+            // دفع جزئي أو بدون دفع - الطاولة لا تزال مشغولة
+            $stmt = $conn->prepare("UPDATE tables SET table_case = 1 WHERE id = ?");
+            $stmt->bind_param("i", $table_id);
+            $stmt->execute();
+            $stmt->close();
+        }
     }
     
     // إتمام المعاملة

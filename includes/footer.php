@@ -1,4 +1,3 @@
-<script>console.log('fooer start')</script>
 <script>
   document.addEventListener("DOMContentLoaded", function() {
       // Hide the loader when the document is ready

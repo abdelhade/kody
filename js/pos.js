@@ -163,6 +163,9 @@ $(document).ready(() => {
 
     updateTotal();
     updateNetValue();
+    
+    // إدارة الطاولات
+    initTableSystem();
 });
 
 // دالة تصفية الفئات
@@ -173,3 +176,142 @@ function filterItemsByCategory(categoryId) {
         item.style.display = (categoryId === null || itemCatId == categoryId) ? 'block' : 'none';
     });
 }
+
+// ========================================
+// نظام الطاولات
+// ========================================
+
+function initTableSystem() {
+    // عند تغيير نوع الطلب
+    $('input[name="age"]').on('change', function() {
+        if ($('#age2').is(':checked')) {
+            // نوع الطلب = طاولة
+            $('#tablesModal').modal('show');
+            loadTables();
+        } else {
+            // إخفاء معلومات الطاولة
+            clearTableSelection();
+        }
+    });
+    
+    // إذا كان هناك طاولة محددة من URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableName = urlParams.get('table');
+    if (tableName) {
+        $('#age2').prop('checked', true);
+        $('#table_name').val(decodeURIComponent(tableName)).show();
+        loadTableOrder(tableName);
+    }
+}
+
+function loadTables() {
+    $.ajax({
+        url: 'ajax/get_tables.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                displayTablesInModal(response.tables);
+            } else {
+                alert('خطأ في تحميل الطاولات');
+            }
+        },
+        error: function() {
+            $('#tables-grid').html('<p class="text-danger">خطأ في الاتصال بالخادم</p>');
+        }
+    });
+}
+
+function displayTablesInModal(tables) {
+    let html = '';
+    tables.forEach(function(table) {
+        const statusClass = table.table_case == 0 ? 'table-available' : 'table-occupied';
+        const statusIcon = table.table_case == 0 ? '✓' : '⚠';
+        html += `
+            <button class="btn table-modal-btn ${statusClass}" 
+                    onclick="selectTable(${table.id}, '${table.tname}', ${table.table_case})">
+                ${table.tname}<br>
+                <small>${statusIcon}</small>
+            </button>
+        `;
+    });
+    $('#tables-grid').html(html);
+}
+
+function selectTable(tableId, tableName, tableCase) {
+    // حفظ معلومات الطاولة
+    $('#selected_table_id').val(tableId);
+    $('#table_name').val(tableName).show();
+    
+    // إضافة مؤشر بصري
+    if ($('.table-selected-indicator').length == 0) {
+        $('#upRight0').prepend(`<span class="table-selected-indicator">📍 ${tableName}</span>`);
+    } else {
+        $('.table-selected-indicator').text(`📍 ${tableName}`);
+    }
+    
+    // إغلاق Modal
+    $('#tablesModal').modal('hide');
+    
+    // التحقق من وجود طلب نشط
+    if (tableCase == 1) {
+        if (confirm('هذه الطاولة مشغولة. هل تريد تحميل الطلب الموجود؟')) {
+            loadTableOrder(tableName, tableId);
+        }
+    }
+}
+
+function loadTableOrder(tableName, tableId) {
+    $.ajax({
+        url: 'ajax/get_table_order.php',
+        method: 'GET',
+        data: { 
+            table_name: tableName,
+            table_id: tableId 
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success && response.order) {
+                // تحميل بيانات الطلب
+                $('#current_order_id').val(response.order.id);
+                
+                // تحميل الأصناف
+                $(SELECTORS.ITEM_DATA).empty();
+                if (response.items && response.items.length > 0) {
+                    response.items.forEach(function(item, index) {
+                        const rownum = index + 1;
+                        const newRow = `
+                            <tr data-itemid="${item.barcode || item.id}">
+                                <td>${rownum}</td>
+                                <td class="barcode" hidden>${item.barcode || item.id}</td>
+                                <td class="iname"><input hidden value='${item.id}' name="itmname[]">${item.name}</td>
+                                <td class="qty"><input type="number" class="cashInput quantityInput select-all nozero bg-slate-100" value="${item.qty}" name="itmqty[]"><input type="text" name="u_val[]" value="1" hidden></td>
+                                <td class="price"><input type="number" class="cashInput priceInput select-all nozero bg-slate-100" value="${item.price.toFixed(2)}" name="itmprice[]"> ج</td>
+                                <td><input hidden name="itmdisc[]"><input type="text" class="subtotal cashInput" readonly value="${item.subtotal.toFixed(2)}" name="itmval[]"></td>
+                                <td class="delRow"><button class="btn btn-danger">X</button></td>
+                            </tr>
+                        `;
+                        $(SELECTORS.ITEM_DATA).append(newRow);
+                    });
+                }
+                
+                // تحديث الإجماليات
+                updateTotal();
+                updateNetValue();
+                
+                alert('تم تحميل الطلب بنجاح!');
+            }
+        },
+        error: function() {
+            console.error('خطأ في تحميل طلب الطاولة');
+        }
+    });
+}
+
+function clearTableSelection() {
+    $('#selected_table_id').val('');
+    $('#table_name').val('').hide();
+    $('#current_order_id').val('');
+    $('.table-selected-indicator').remove();
+}
+
