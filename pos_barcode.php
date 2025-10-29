@@ -22,6 +22,13 @@ if(isset($_GET['edit'])){
     $id = $_GET['edit'];
     $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
 }
+
+// التحقق من رسالة النجاح
+$success_message = '';
+if(isset($_SESSION['success_message'])){
+    $success_message = $_SESSION['success_message'];
+    unset($_SESSION['success_message']);
+}
 ?>
 
 <!DOCTYPE html>
@@ -179,7 +186,24 @@ if(isset($_GET['edit'])){
         
         .modal-title {
             font-size: 1rem;
-    }
+        }
+        
+        /* جعل قسم الأصناف يأخذ ارتفاع الشاشة */
+        .items-section-card {
+            height: calc(100vh - 120px) !important;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .items-section-card .card-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        #itemsGrid {
+            max-height: none !important;
+        }
 </style>
 </head>
 <body class="bg-light">
@@ -229,8 +253,29 @@ if(isset($_GET['edit'])){
         </div>
 </nav>
 
+    <!-- رسالة النجاح -->
+    <?php if(!empty($success_message)): ?>
+    <div class="container-fluid mt-2">
+        <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong><?= htmlspecialchars($success_message) ?></strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+    <script>
+        // إخفاء الرسالة تلقائياً بعد 5 ثواني
+        setTimeout(function() {
+            var alert = document.getElementById('successAlert');
+            if(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    </script>
+    <?php endif; ?>
+
     <!-- Main Content -->
-    <form action="do/doadd_invoice.php" method="post" id="posForm">
+    <form action="do/doadd_invoice.php" method="post" id="posForm" onsubmit="return handleFormSubmit(this);">
     <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
         <div class="row h-100 g-1">
             <!-- القسم الأيمن - معلومات الطلب -->
@@ -246,8 +291,6 @@ if(isset($_GET['edit'])){
                             <input type="hidden" name="pro_tybe" value="9">
                             <input type="hidden" name="pro_serial" value="0">
                             <input type="hidden" name="pro_id" value="1">
-                            <input type="hidden" id="selected_table_id" name="table_id">
-                            <input type="hidden" id="current_order_id" name="order_id">
 
                             <!-- نوع الطلب -->
                             <div class="mb-2">
@@ -312,9 +355,9 @@ if(isset($_GET['edit'])){
                                         <i class="fas fa-chair me-1"></i>
                                         <span id="selected_table_display">اختر طاولة</span>
                                     </button>
-                                    <input type="hidden" id="selected_table_id" name="table_id" value="">
+                                    <input type="hidden" id="selected_table_id" name="table_id" value="0">
                                     <input type="hidden" id="selected_table_name" name="table_name" value="">
-                                    <input type="hidden" id="selected_order_id" name="edit" value="">
+                                    <input type="hidden" id="selected_order_id" name="edit" value="0">
                                 </div>
                             </div>
 
@@ -322,53 +365,88 @@ if(isset($_GET['edit'])){
                             <div class="row g-1 mb-2">
                                 <!-- المخزن -->
                                 <div class="col-3">
-                                    <select name="store_id" class="form-select form-select-sm" title="المخزن" style="font-size: 0.75rem;">
+                                    <select name="store_id" class="form-select form-select-sm" title="المخزن" style="font-size: 0.75rem;" required>
                                         <?php
                                         $resstore = $conn->query("SELECT * FROM `acc_head` WHERE is_stock =1 AND isdeleted = 0;");
-                                        while ($rowstore = $resstore->fetch_assoc()) { ?>
-                                            <option <?php if($rowstg['def_pos_store'] == $rowstore['id']){echo "selected";} ?> 
-                                                    value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
+                                        $first = true;
+                                        while ($rowstore = $resstore->fetch_assoc()) { 
+                                            $selected = '';
+                                            if($rowstg['def_pos_store'] == $rowstore['id']){
+                                                $selected = "selected";
+                                            } elseif ($first && empty($rowstg['def_pos_store'])) {
+                                                $selected = "selected";
+                                            }
+                                            $first = false;
+                                        ?>
+                                            <option <?= $selected ?> value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>
 
                                 <!-- الموظف -->
                                 <div class="col-3">
-                                    <select name="emp_id" class="form-select form-select-sm" title="الموظف" style="font-size: 0.75rem;">
+                                    <select name="emp_id" class="form-select form-select-sm" title="الموظف" style="font-size: 0.75rem;" required>
                                         <?php
                                         $resemp = $conn->query("SELECT * FROM `acc_head` WHERE parent_id = 35 AND is_basic = 0 AND isdeleted = 0;");
-                                        while ($rowemp = $resemp->fetch_assoc()) { ?>
-                                            <option <?php if($rowstg['def_pos_employee'] == $rowemp['id']){echo " selected ";} ?> 
-                                                    <?php if(isset($_GET['edit']) && $rowed['emp_id'] == $rowemp['id']){echo " selected ";} ?>  
-                                                    value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
+                                        $first_emp = true;
+                                        while ($rowemp = $resemp->fetch_assoc()) { 
+                                            $selected = '';
+                                            if($rowstg['def_pos_employee'] == $rowemp['id']){
+                                                $selected = "selected";
+                                            } elseif(isset($_GET['edit']) && $rowed['emp_id'] == $rowemp['id']){
+                                                $selected = "selected";
+                                            } elseif ($first_emp && empty($rowstg['def_pos_employee']) && !isset($_GET['edit'])) {
+                                                $selected = "selected";
+                                            }
+                                            $first_emp = false;
+                                        ?>
+                                            <option <?= $selected ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>
 
                                 <!-- العميل -->
                                 <div class="col-3">
-                                    <select name="acc2_id" class="form-select form-select-sm" title="العميل" style="font-size: 0.75rem;">
+                                    <select name="acc2_id" class="form-select form-select-sm" title="العميل" style="font-size: 0.75rem;" required>
                                         <?php
                                         $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0;");
                                         if(isset($_GET['edit'])){$rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();};
-                                        while ($rowclient = $resclient->fetch_assoc()) { ?>
-                                            <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo " selected ";} ?>
-                                                    <?php if(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){echo " selected ";} ?>
-                                                    value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                                        $first_client = true;
+                                        while ($rowclient = $resclient->fetch_assoc()) { 
+                                            $selected = '';
+                                            if($rowstg['def_pos_client'] == $rowclient['id']){
+                                                $selected = "selected";
+                                            } elseif(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){
+                                                $selected = "selected";
+                                            } elseif ($first_client && empty($rowstg['def_pos_client']) && !isset($_GET['edit'])) {
+                                                $selected = "selected";
+                                            }
+                                            $first_client = false;
+                                        ?>
+                                            <option <?= $selected ?> value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>
 
                                 <!-- الصندوق -->
                                 <div class="col-3">
-                                    <select name="fund_id" class="form-select form-select-sm" title="الصندوق" style="font-size: 0.75rem;">
+                                    <select name="fund_id" class="form-select form-select-sm" title="الصندوق" style="font-size: 0.75rem;" required>
                                         <?php
                                         if(isset($_GET['edit'])){$rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();};
                                         $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
-                                        while ($rowfund = $resfund->fetch_assoc()) { ?>
-                                            <option <?php if($rowstg['def_pos_fund'] == $rowfund['id']){echo " selected ";} ?>
-                                                    <?php if((isset($_GET['edit'])) && $rowed['acc_fund'] == $rowfund['id']){echo " selected ";} ?>
-                                                    value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
+                                        $first_fund = true;
+                                        while ($rowfund = $resfund->fetch_assoc()) { 
+                                            $selected = '';
+                                            if($rowstg['def_pos_fund'] == $rowfund['id']){
+                                                $selected = "selected";
+                                            } elseif((isset($_GET['edit'])) && $rowed['acc_fund'] == $rowfund['id']){
+                                                $selected = "selected";
+                                            } elseif ($first_fund && empty($rowstg['def_pos_fund']) && !isset($_GET['edit'])) {
+                                                $selected = "selected";
+                                            }
+                                            $first_fund = false;
+                                        ?>
+                                            <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>
@@ -454,13 +532,13 @@ if(isset($_GET['edit'])){
 
             <!-- القسم الأوسط - الأصناف -->
             <div class="col-lg-8">
-                <div class="card shadow-sm h-100 d-flex flex-column">
+                <div class="card shadow-sm items-section-card">
                     <div class="card-header bg-primary text-white py-2">
                         <h6 class="mb-0">
                             <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
                         </h6>
                     </div>
-                    <div class="card-body flex-grow-1 overflow-auto">
+                    <div class="card-body">
                         <!-- التصنيفات -->
                         <div class="mb-2">
                             <div class="d-flex flex-wrap gap-1" id="categoriesContainer">
@@ -723,15 +801,16 @@ if(isset($_GET['edit'])){
                                 $statusIcon = ($tableCase == 0) ? 'fa-check-circle' : 'fa-clock';
                                 $statusText = ($tableCase == 0) ? 'متاحة' : 'مشغولة';
                                 
-                                // البحث عن الطلب النشط للطاولة
+                                // البحث عن الطلب النشط للطاولة (باستخدام حقل info)
                                 $orderTotal = 0;
                                 $orderId = null;
                                 if ($tableCase != 0) {
-                                    $orderQuery = $conn->query("SELECT id, net FROM ot_head WHERE table_id = $tableId AND order_status = 'active' ORDER BY id DESC LIMIT 1");
+                                    // البحث عن آخر طلب يحتوي على اسم الطاولة في حقل info
+                                    $orderQuery = $conn->query("SELECT id, fat_net FROM ot_head WHERE info LIKE '%$tableName%' AND pro_tybe = 9 ORDER BY id DESC LIMIT 1");
                                     if ($orderQuery && $orderQuery->num_rows > 0) {
                                         $orderData = $orderQuery->fetch_assoc();
                                         $orderId = $orderData['id'];
-                                        $orderTotal = floatval($orderData['net']);
+                                        $orderTotal = floatval($orderData['fat_net']);
                                     }
                                 }
                         ?>
@@ -867,6 +946,15 @@ if(isset($_GET['edit'])){
 <script>
 console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
 
+// Global error handler
+window.addEventListener('error', function(e) {
+    console.error('Global JavaScript Error:', e.error);
+    console.error('Error in file:', e.filename, 'at line:', e.lineno);
+});
+
+// Cache-busting version
+const CACHE_BUSTER = '<?php echo time(); ?>';
+
     // Load POS Configuration
     let posConfig = null;
     
@@ -898,17 +986,23 @@ console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
     });
 
     $(document).ready(function() {
-        document.getElementById('fullscreenBtn').addEventListener('click', function() {
-        if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-                this.innerHTML = '<i class="fas fa-compress"></i>';
-        } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
+        // Fullscreen button functionality
+        // Check if fullscreenBtn exists before adding event listener
+        if ($('#fullscreenBtn').length > 0) {
+            $('#fullscreenBtn').on('click', function() {
+                if (!document.fullscreenElement) {
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                        $(this).html('<i class="fas fa-compress"></i>');
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        $(this).html('<i class="fas fa-expand"></i>');
+                    }
+                }
+            });
         }
-                this.innerHTML = '<i class="fas fa-expand"></i>';
-            }
-        });
 
         $('input[name="age"]').change(function() {
             if ($('#age2').is(':checked')) {
@@ -925,9 +1019,15 @@ console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
                 url: 'ajax/get_tables.php',
                 type: 'GET',
                 dataType: 'json',
-                success: function(tables) {
+                success: function(response) {
+                    // Check if response is successful and has tables data
+                    if (!response.success || !response.tables) {
+                        console.error('Failed to load tables:', response);
+                        return;
+                    }
+                    
                     let html = '';
-                    tables.forEach(function(table) {
+                    response.tables.forEach(function(table) {
                         let btnClass = table.table_case == 0 ? 'btn-success' : 'btn-danger';
                         let status = table.table_case == 0 ? 'متاحة' : 'محجوزة';
                         html += `
@@ -944,6 +1044,9 @@ console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
                         `;
                     });
                     $('#tables-grid').html(html);
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error loading tables:', error);
                 }
             });
         }
@@ -1194,7 +1297,7 @@ console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
                             <!-- القيمة -->
                             <div style="width: 60px;">
                                 <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">قيمة</small>
-                                <input type="hidden" name="itmdisc[]">
+                                <input type="hidden" name="itmdisc[]" value="0">
                                 <input type="text" 
                                        class="form-control form-control-sm text-center subtotal fw-bold" 
                                        readonly 
@@ -1404,88 +1507,177 @@ console.log('🚀 POS System JS Loading - Timestamp: <?php echo time(); ?>');
 
         // Submit POS form
         window.submitPOS = function(action) {
-            console.log('submitPOS called with action:', action);
+            console.log('✅ submitPOS called with action:', action);
+            
+            // Check if form exists
+            const form = document.getElementById('posForm');
+            if (!form) {
+                console.error('❌ Form with id "posForm" not found!');
+                alert('حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.');
+                return false;
+            }
+            
+            // Call validation function first
+            console.log('🔍 Validating form...');
+            if (!validatePOSForm()) {
+                console.log('❌ Validation failed, form not submitted');
+                return false;
+            }
+            console.log('✅ Validation passed');
             
             // نسخ قيمة المدفوع من modal للحقل المخفي
             let paidValue = parseFloat($('#modal_paid').val()) || 0;
-            console.log('Paid value:', paidValue);
+            console.log('💰 Paid value:', paidValue);
             
             // البحث عن حقل paid المخفي أو إنشاءه
-            let paidInput = $('input[name="paid"]');
-            if (paidInput.length === 0) {
-                paidInput = $('<input>').attr({
-                    type: 'hidden',
-                    name: 'paid'
-                });
-                $('#posForm').append(paidInput);
-                console.log('Created paid input');
+            let paidInput = form.querySelector('input[name="paid"]');
+            if (!paidInput) {
+                paidInput = document.createElement('input');
+                paidInput.type = 'hidden';
+                paidInput.name = 'paid';
+                form.appendChild(paidInput);
+                console.log('➕ Created paid input');
             }
-            paidInput.val(paidValue);
+            paidInput.value = paidValue;
+            
+            // Remove any existing submit inputs to avoid duplicates
+            const existingSubmits = form.querySelectorAll('input[name="submit"]');
+            existingSubmits.forEach(input => input.remove());
             
             // Create hidden input for submit value
-            let submitInput = $('<input>').attr({
-                type: 'hidden',
-                name: 'submit',
-                value: action
-            });
+            const submitInput = document.createElement('input');
+            submitInput.type = 'hidden';
+            submitInput.name = 'submit';
+            submitInput.value = action;
+            form.appendChild(submitInput);
+            console.log('➕ Added submit input with value:', action);
             
-            // Add to form and submit
-            $('#posForm').append(submitInput);
-            console.log('Added submit input');
+            // Show loading indicator
+            let saveBtn = $("button:contains('حفظ الطلب')");
+            let printBtn = $("button:contains('حفظ وطباعة')");
             
-            // Call validation function
-            console.log('About to validate form...');
-            if (validatePOSForm()) {
-                console.log('Validation passed, submitting form...');
-                console.log('Form action:', $('#posForm').attr('action'));
-                console.log('Form method:', $('#posForm').attr('method'));
-                console.log('Submitting now...');
-                $('#posForm').submit();
-                console.log('Form submitted!');
-            } else {
-                console.log('Validation failed, form not submitted');
+            if (saveBtn.length > 0) {
+                saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
             }
+            if (printBtn.length > 0) {
+                printBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
+            }
+            
+            // Close the payment modal
+            $('#paymentModal').modal('hide');
+            
+            console.log('📤 Submitting form to:', form.action);
+            console.log('📊 Form method:', form.method);
+            
+            // Log form data for debugging
+            const formData = new FormData(form);
+            console.log('📋 Form data:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
+            // Submit the form using native submit
+            // Use HTMLFormElement.prototype.submit to avoid conflicts with form elements named "submit"
+            setTimeout(function() {
+                try {
+                    HTMLFormElement.prototype.submit.call(form);
+                    console.log('✅ Form submitted successfully!');
+                } catch (error) {
+                    console.error('❌ Error submitting form:', error);
+                    alert('حدث خطأ أثناء إرسال البيانات: ' + error.message);
+                    
+                    // Reset buttons
+                    if (saveBtn.length > 0) {
+                        saveBtn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>حفظ الطلب');
+                    }
+                    if (printBtn.length > 0) {
+                        printBtn.prop('disabled', false).html('<i class="fas fa-print me-1"></i>حفظ وطباعة');
+                    }
+                }
+            }, 100);
+            
+            return true;
         };
         
         // Focus on barcode input on load
         $('#barcodeInput').focus();
+        
+        // Form submit handler
+        window.handleFormSubmit = function(form) {
+            console.log('Form submit handler called');
+            // The form submission is handled by submitPOS function
+            // This is just a fallback
+            return true;
+        };
     }); // End of document.ready
     
     // Form validation function
     function validatePOSForm() {
         console.log('=== validatePOSForm() called ===');
         
-        // Debug: Check if #itemData exists
-        let itemDataElement = $('#itemData');
-        console.log('Step 1: #itemData exists?', itemDataElement.length > 0);
-        
-        if (itemDataElement.length > 0) {
-            let htmlContent = itemDataElement.html();
-            console.log('Step 2: #itemData HTML length:', htmlContent.length);
-            console.log('Step 3: #itemData HTML preview:', htmlContent.substring(0, 300));
-        }
-        
-        // Check if there are items
+        // Check if there are items in the order
         let items = $('#itemData .item-card-order');
-        console.log('Step 4: Items with selector "#itemData .item-card-order":', items.length);
+        console.log('📊 Items in order:', items.length);
         
         if (items.length === 0) {
-            console.log('Step 5: No items in #itemData, trying alternative...');
-            // Try alternative selector
-            let alternativeItems = $('.item-card-order');
-            console.log('Step 6: Alternative search (all .item-card-order):', alternativeItems.length);
-            
-            if (alternativeItems.length > 0) {
-                console.log('Step 7: Found items with alternative selector! Returning TRUE');
-                return true;
-            }
-            
-            console.log('Step 8: No items found anywhere, showing alert');
-            alert('الرجاء إضافة أصناف للفاتورة');
+            console.log('⚠️ No items found in order');
+            alert('يجب إضافة صنف واحد على الأقل للطلب');
             return false;
         }
         
-        console.log('Step 9: Items found in #itemData! Returning TRUE');
+        // Verify all required fields
+        let itmnames = $('input[name="itmname[]"]');
+        let itmqtys = $('input[name="itmqty[]"]');
+        let itmprices = $('input[name="itmprice[]"]');
+        
+        console.log('📋 Form fields check:');
+        console.log('  - Items names:', itmnames.length);
+        console.log('  - Items quantities:', itmqtys.length);
+        console.log('  - Items prices:', itmprices.length);
+        
+        if (itmnames.length === 0) {
+            console.error('❌ No item names found!');
+            alert('خطأ: لا توجد أصناف في النموذج');
+            return false;
+        }
+        
+        // التحقق من الحقول المطلوبة
+        let pro_tybe = $('input[name="pro_tybe"]').val();
+        let store_id = $('select[name="store_id"]').val();
+        let acc2_id = $('select[name="acc2_id"]').val();
+        let emp_id = $('select[name="emp_id"]').val();
+        
+        console.log('🔍 Required fields check:');
+        console.log('  - pro_tybe:', pro_tybe);
+        console.log('  - store_id:', store_id);
+        console.log('  - acc2_id:', acc2_id);
+        console.log('  - emp_id:', emp_id);
+        
+        if (!pro_tybe || pro_tybe == '0') {
+            console.error('❌ pro_tybe is missing or zero');
+            alert('خطأ: نوع الفاتورة غير محدد');
+            return false;
+        }
+        
+        if (!store_id || store_id == '0') {
+            console.error('❌ store_id is missing or zero');
+            alert('خطأ: يجب اختيار المخزن');
+            return false;
+        }
+        
+        if (!acc2_id || acc2_id == '0') {
+            console.error('❌ acc2_id is missing or zero');
+            alert('خطأ: يجب اختيار العميل');
+            return false;
+        }
+        
+        if (!emp_id || emp_id == '0') {
+            console.error('❌ emp_id is missing or zero');
+            alert('خطأ: يجب اختيار الموظف');
+            return false;
+        }
+        
+        console.log('✅ Validation passed - Items found:', items.length);
         return true;
     }
     
