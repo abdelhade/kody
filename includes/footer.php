@@ -2,11 +2,12 @@
   document.addEventListener("DOMContentLoaded", function() {
       // Hide the loader when the document is ready
       var loader = document.querySelector('.loader');
-      loader.style.display = 'none';
-      setTimeout(function() {
+      if (loader) {
         loader.style.display = 'none';
-      }, 1000); 
-   
+        setTimeout(function() {
+          if (loader) loader.style.display = 'none';
+        }, 1000); 
+      }
     });
   $('#draw').keyup(function() {
     $measure = $('#measure').val();
@@ -215,29 +216,37 @@ $(document).keydown(function(event) {
     }
 });
 
-document.getElementById("myTextarea").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-  }
-});
+// Check if myTextarea exists before adding event listener
+if (document.getElementById("myTextarea")) {
+  document.getElementById("myTextarea").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+    }
+  });
+}
 
 
 </script>
 
 <script>
-document.getElementById('searchSide').addEventListener('input', function() {
-  var searchQuery = this.value.toLowerCase();
-  var listItems = document.querySelectorAll('.nav-item');
+// Check if searchSide exists before adding event listener
+if (document.getElementById('searchSide')) {
+  document.getElementById('searchSide').addEventListener('input', function() {
+    var searchQuery = this.value.toLowerCase();
+    var listItems = document.querySelectorAll('.nav-item');
 
-  listItems.forEach(function(item) {
-    var text = item.textContent.toLowerCase();
-    if (text.includes(searchQuery)) {
-      item.style.display = 'block';
-    } else {
-      item.style.display = 'none';
-    }
+    listItems.forEach(function(item) {
+      if (item) {
+        var text = item.textContent.toLowerCase();
+        if (text.includes(searchQuery)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      }
+    });
   });
-});
+}
 
 document.addEventListener('DOMContentLoaded', function() {
             document.addEventListener('keyup', function(event) {
@@ -254,20 +263,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script>
-document.getElementById("passwordForm").addEventListener("submit", function(event) {
-    event.preventDefault(); // Prevent the form from submitting
+// Check if passwordForm exists before adding event listener
+if (document.getElementById("passwordForm")) {
+    document.getElementById("passwordForm").addEventListener("submit", function(event) {
+        event.preventDefault(); // Prevent the form from submitting
 
-    var enteredPassword = document.getElementById("password").value;
+        var enteredPassword = document.getElementById("password").value;
 
-    var storedPassword = "<?= $rowstg['edit_pass'] ?>"; // Make sure it's properly escaped
+        var storedPassword = "<?= $rowstg['edit_pass'] ?>"; // Make sure it's properly escaped
 
-    if (enteredPassword === storedPassword) {
-        alert("Passwords match!");
-    
-      } else {
-        alert("Passwords do not match!");
-    }
-});
+        if (enteredPassword === storedPassword) {
+            alert("Passwords match!");
+        
+          } else {
+            alert("Passwords do not match!");
+        }
+    });
+}
 
 
 

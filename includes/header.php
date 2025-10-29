@@ -34,6 +34,7 @@ if ($lang == null) {
   <!-- Tell the browser to be responsive to screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
   <link rel="icon" href="assets/favicon/favicon.png" type="image/ico">
 
@@ -60,6 +61,9 @@ if ($lang == null) {
   <!-- summernote -->
   <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
   <link href="plugins/hadi/google.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Arabic:wght@100..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css">
 
   <link rel="stylesheet" href="dist/css/custom.css">
@@ -67,6 +71,7 @@ if ($lang == null) {
   <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
   <link href="dist/css/hadianime.css" rel="stylesheet">
   <link href="dist/css/horstec.css" rel="stylesheet">
+  <link href="assets/styles/dashboard.css" rel="stylesheet">
  
 
 
@@ -90,6 +95,55 @@ background-color:<?= $rowstg['bodycolor']?>;
   background-color: <?= $rowstg['bodycolor'] ?> ;
 }
 
+/* Font Awesome Font Faces */
+@font-face {
+  font-family: "Font Awesome 5 Free";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Font Awesome 5 Free";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Font Awesome 5 Brands";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff2") format("woff2");
+}
+
+/* CRITICAL FIX: Force Font Awesome to work */
+i.fa, i.fas, i.far, i.fab, i.fal, i.fad,
+span.fa, span.fas, span.far, span.fab, span.fal, span.fad,
+.fa, .fas, .far, .fab, .fal, .fad {
+  font-family: "Font Awesome 5 Free" !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  display: inline-block !important;
+  direction: ltr !important;
+}
+
+.far {
+  font-weight: 400 !important;
+}
+
+.fab {
+  font-family: "Font Awesome 5 Brands" !important;
+  font-weight: 400 !important;
+}
+
 </style>
 
   <script src="dist/js/js.js"></script>
@@ -108,5 +162,5 @@ background-color:<?= $rowstg['bodycolor']?>;
 </center>
 </div> -->
 
-<body class="hold-transition sidebar-mini sidebar-collapse layout-fixed font-semibold" style="font-family: 'Roboto', tahoma;">
+<body class="hold-transition sidebar-mini sidebar-collapse layout-fixed font-semibold" style="font-family: 'Playpen Sans Arabic', cursive;">
   <div class="wrapper">

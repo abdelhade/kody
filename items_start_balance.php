@@ -51,7 +51,8 @@
                             $count = 0;
                             while ($row = $result->fetch_assoc()) {
                                 $itmid = $row['id'];
-                                // $unit_name = $conn->query("SELECT uname FROM myunits WHERE id = (SELECT unit_id FROM item_units WHERE item_id = $itmid)")->fetch_asso()['uname'];
+                                $unit_result = $conn->query("SELECT uname FROM myunits WHERE id = (SELECT unit_id FROM item_units WHERE item_id = $itmid)")->fetch_assoc();
+                                $unit_name = ($unit_result && isset($unit_result['uname'])) ? $unit_result['uname'] : '';
                                $count++;
                                ?>
                             <tr>

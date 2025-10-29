@@ -21,13 +21,14 @@ $rowstg = $resstg->fetch_assoc();
 $restwn = $conn->query("SELECT * from towns ");
 
 
-
 // user powers
+$role = []; // Initialize as empty array to prevent undefined key warnings
 if (isset($_SESSION['usrole'])) {
 $user_role_id = $_SESSION['usrole'];
 $sqlrole = "SELECT * FROM `usr_pwrs` WHERE id = $user_role_id ";
 $resrole = $conn->query($sqlrole);
-$role = $resrole->fetch_assoc();}
+$role = $resrole->fetch_assoc();
+}
 
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set('Africa/Cairo'); // ضبط التوقيت المحلي (توقيت مصر)

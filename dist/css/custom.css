@@ -1,5 +1,12 @@
-*{
+*:not(.fa):not(.fas):not(.far):not(.fab):not(.fal):not(.fad){
     direction: rtl !important;
+    font-family: "Playpen Sans Arabic", cursive !important;
+}
+
+/* Keep Font Awesome icons working */
+.fa, .fas, .far, .fab, .fal, .fad {
+    font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands" !important;
+    direction: ltr !important;
 }
 .layout-fixed .main-sidebar {
     right: 0;

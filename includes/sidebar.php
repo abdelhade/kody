@@ -4,20 +4,24 @@
   <?php include('includes/userprev.php') ?>
 
   <!--                                             Sidebar                                                                        -->
-  <div  class="sidebar" style="height:100%;  overflow: scroll; background-color:white">
+  <div  class="sidebar" style="height:100%; overflow-y: auto;">
 
-    <div class="user-panel  d-flex" >
-      <div class="image-user">
-      <img 
-  src="assets/logo/hors.png" 
-  alt="User Image" 
-  style="height: 50px; width: auto; border-radius: 10px;"
-  onerror="this.onerror=null; this.src='assets/logo/hors.png';">
-
+    <div class="user-panel d-flex flex-column">
+      <div class="d-flex align-items-center mb-2">
+        <div class="image-user me-2">
+          <img 
+            src="assets/logo/hors.png" 
+            alt="User Image" 
+            style="height: 45px; width: 45px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
+            onerror="this.onerror=null; this.src='assets/logo/hors.png';">
+        </div>
+        <div class="info flex-grow-1">
+          <a href="" class="d-block" style="margin-bottom: 0;"><?php echo "اهلا يا " . $_SESSION['login'] ?></a>
+        </div>
       </div>
-      <div class="info">
-        <a href="" class="d-block"><?php echo "اهلا يا " . $_SESSION['login'] ?></a>
-        <input class="form-control form-control-sm" type="text" placeholder="بحث" id="searchSide">
+      <div class="search-wrapper" style="position: relative;">
+        <i class="fas fa-search" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.85rem; pointer-events: none; z-index: 1;"></i>
+        <input class="form-control form-control-sm" type="text" placeholder="ابحث في القائمة..." id="searchSide" style="padding-right: 35px;">
       </div>
     </div>
     <nav class="mt-2">
@@ -36,7 +40,7 @@
         
 
         <!--                                             البيانات الاساسيه                                                                        -->
-<?php if($role['sid_entry'] == 1){?>
+<?php if(($role['sid_entry'] ?? 0) == 1){?>
         <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-pen"></i>
@@ -161,7 +165,7 @@
 
 
                 <!--                                                                        -->
-                <?php if($role['sid_stock'] == 1){?>
+                <?php if(($role['sid_stock'] ?? 0) == 1){?>
 
                 <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
@@ -263,7 +267,7 @@
 
 
 
-                                <?php if($role['sid_sales'] == 1){?>
+                                <?php if(($role['sid_sales'] ?? 0) == 1){?>
 
                 <li class="nav-item has-treeview">
                 <a href="#" class="nav-link nav-link-basic">
@@ -299,7 +303,7 @@
 
 
                 
-                <?php if($role['sid_cards'] == 1){?>
+                <?php if(($role['sid_cards'] ?? 0) == 1){?>
 
                 <li class="nav-item has-treeview">
                 <a href="#" class="nav-link nav-link-basic">
@@ -353,7 +357,7 @@
 
 
                 
-        <?php if($role['sid_purchases'] == 1){?>
+        <?php if(($role['sid_purchases'] ?? 0) == 1){?>
 
 
                 <li class="nav-item has-treeview">
@@ -417,7 +421,7 @@
 
 
           <?php if ($rowstg['showpay'] == 1) { ?>
-            <?php if($role['sid_sales'] == 1){?>
+            <?php if(($role['sid_sales'] ?? 0) == 1){?>
             <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl" ></i>
@@ -469,7 +473,7 @@
 
 
 
-        <?php if($role['sid_vouchers'] == 1){?>
+        <?php if(($role['sid_vouchers'] ?? 0) == 1){?>
                 <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -530,7 +534,7 @@
 
 
         <?php if ($rowstg['showhr'] == 1 ) {?>
-          <?php if($role['sid_hr'] == 1){?>
+          <?php if(($role['sid_hr'] ?? 0) == 1){?>
 
         <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
@@ -590,7 +594,7 @@
 
         
         <?php if ($rowstg['showrent'] == 1) {?>
-          <?php if($role['sid_rents'] == 1){?>
+          <?php if(($role['sid_rents'] ?? 0) == 1){?>
         <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -659,7 +663,7 @@
 
                 <!-- clinck -->
                 <?php if ($rowstg['showclinc'] == 1) {?>
-                  <?php if($role['sid_clinics'] == 1){?>
+                  <?php if(($role['sid_clinics'] ?? 0) == 1){?>
           <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
@@ -711,7 +715,7 @@
 
         <!-------------------------------الحضور---------------------------------------->
         <?php if ($rowstg['showatt'] == 1 ) {?>
-          <?php if($role['sid_payroll'] == 1){?>
+          <?php if(($role['sid_payroll'] ?? 0) == 1){?>
 
 
         <li class="nav-item has-treeview">
@@ -759,7 +763,7 @@
           <!--                                            المرتبات                               -->
 
           <?php if ($rowstg['showatt'] == 1 ) {?>
-            <?php if($role['sid_payroll'] == 1){?>
+            <?php if(($role['sid_payroll'] ?? 0) == 1){?>
 
 
 
@@ -966,7 +970,7 @@ KPIs      <i class="fas fa-angle-left right"></i>
 
 
 
-  <?php if($role['sid_crm'] == 1){?>
+  <?php if(($role['sid_crm'] ?? 0) == 1){?>
 
 <li class="nav-item has-treeview">
   <a href="#" class="nav-link nav-link-basic">
@@ -1055,7 +1059,7 @@ KPIs      <i class="fas fa-angle-left right"></i>
           </a>
         </li>
 
-        <?php if($role['sid_accounts'] == 1){ ?>
+        <?php if(($role['sid_accounts'] ?? 0) == 1){ ?>
           <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-book"></i>
@@ -1124,7 +1128,7 @@ KPIs      <i class="fas fa-angle-left right"></i>
 
         
 
-        <?php if($role['sid_accounts'] == 1){ ?>
+        <?php if(($role['sid_accounts'] ?? 0) == 1){ ?>
           <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-book"></i>
@@ -1165,7 +1169,7 @@ KPIs      <i class="fas fa-angle-left right"></i>
 
 
 
-        <?php if($role['sid_assets'] == 1){ ?>
+        <?php if(($role['sid_assets'] ?? 0) == 1){ ?>
 
 <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
@@ -1213,7 +1217,7 @@ KPIs      <i class="fas fa-angle-left right"></i>
 
 
 
-        <?php if($role['sid_reports'] == 1){ ?>
+        <?php if(($role['sid_reports'] ?? 0) == 1){ ?>
         <li class="nav-item has-treeview">
           <a href="#" class="nav-link nav-link-basic">
             <i class="nav-icon fas fa-chart-line"></i>

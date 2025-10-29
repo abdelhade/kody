@@ -2,6 +2,16 @@
 session_start();
 include('../includes/connect.php');
 
+// Debug: Log all POST data
+error_log('POST data received: ' . print_r($_POST, true));
+
+// Debug: Log individual key values
+error_log('pro_tybe: ' . (isset($_POST['pro_tybe']) ? $_POST['pro_tybe'] : 'NOT SET'));
+error_log('store_id: ' . (isset($_POST['store_id']) ? $_POST['store_id'] : 'NOT SET'));
+error_log('acc2_id: ' . (isset($_POST['acc2_id']) ? $_POST['acc2_id'] : 'NOT SET'));
+error_log('emp_id: ' . (isset($_POST['emp_id']) ? $_POST['emp_id'] : 'NOT SET'));
+error_log('itmname: ' . (isset($_POST['itmname']) ? 'SET' : 'NOT SET'));
+
 // التحقق من المصادقة والصلاحيات
 if (!isset($_SESSION['userid'])) {
     header('Location: ../login.php');
@@ -57,9 +67,11 @@ $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
 
-// بيانات الطاولات - Tables data
-$table_id = isset($_POST['table_id']) && !empty($_POST['table_id']) ? intval($_POST['table_id']) : null;
-$order_status = 'active'; // الطلبات الجديدة تكون نشطة
+// إضافة اسم الطاولة إلى حقل info إذا كانت موجودة
+$table_name = isset($_POST['table_name']) ? htmlspecialchars(trim($_POST['table_name']), ENT_QUOTES, 'UTF-8') : '';
+if (!empty($table_name)) {
+    $info = empty($info) ? "طاولة: $table_name" : "$info - طاولة: $table_name";
+}
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
 if($pro_tybe == INVOICE_TYPES['POS']){
@@ -69,12 +81,27 @@ if($pro_tybe == INVOICE_TYPES['POS']){
 }
 
 // التحقق من صحة البيانات الأساسية
+error_log('Validation check - pro_tybe: ' . $pro_tybe . ', store_id: ' . $store_id . ', acc2_id: ' . $acc2_id . ', emp_id: ' . $emp_id);
 if ($pro_tybe == 0 || $store_id == 0 || $acc2_id == 0 || $emp_id == 0) {
-    die('خطأ: بيانات مطلوبة مفقودة');
+    error_log('VALIDATION FAILED: Required data missing');
+    $missing = [];
+    if ($pro_tybe == 0) $missing[] = 'نوع الفاتورة';
+    if ($store_id == 0) $missing[] = 'المخزن';
+    if ($acc2_id == 0) $missing[] = 'العميل';
+    if ($emp_id == 0) $missing[] = 'الموظف';
+    die('خطأ: بيانات مطلوبة مفقودة - ' . implode(', ', $missing));
 }
 
 // التحقق من وجود أصناف
+error_log('Item validation check - itmname set: ' . (isset($_POST['itmname']) ? 'YES' : 'NO'));
+if (isset($_POST['itmname'])) {
+    error_log('itmname is array: ' . (is_array($_POST['itmname']) ? 'YES' : 'NO'));
+    if (is_array($_POST['itmname'])) {
+        error_log('itmname array filter count: ' . count(array_filter($_POST['itmname'])));
+    }
+}
 if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_filter($_POST['itmname']))) {
+    error_log('VALIDATION FAILED: No items in order');
     die('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
@@ -144,12 +171,15 @@ function getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id) {
 
 // الحصول على إعدادات الفاتورة
 $config = getInvoiceConfig($pro_tybe);
+error_log('Invoice config for pro_tybe ' . $pro_tybe . ': ' . print_r($config, true));
 if (!$config) {
+    error_log('VALIDATION FAILED: Invalid invoice type');
     die('خطأ: نوع فاتورة غير صحيح');
 }
 
 // تحديد الحسابات المحاسبية
 $accounts = getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+error_log('Accounting accounts: ' . print_r($accounts, true));
 /**
  * دالة الحصول على رقم الفاتورة التالي باستخدام Prepared Statement
  * Get next invoice number using prepared statement
@@ -194,8 +224,11 @@ $fat_plus_per = ($headtotal > 0 && $headplus > 0) ? number_format($headplus/$hea
 $table = isset($_POST['table']) ? intval($_POST['table']) : 0;
 
 // بدء المعاملة لضمان تماسك البيانات
+error_log('Starting database transaction');
 try {
+    error_log('Starting database transaction');
     $conn->begin_transaction();
+    error_log('Database transaction started successfully');
     
     // إدخال رأس الفاتورة باستخدام Prepared Statement
     $stmt = $conn->prepare(
@@ -204,10 +237,10 @@ try {
             accural_date, pro_pattren, pro_serial, price_list, store_id, emp_id, 
             emp2_id, acc1, acc2, pro_value, fat_cost, cost_center, profit, 
             fat_total, fat_disc, fat_disc_per, fat_plus, fat_plus_per, 
-            fat_tax, fat_tax_per, fat_net, user, table_id, order_status
+            fat_tax, fat_tax_per, fat_net, user
         ) VALUES (
             ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?, ?, ?, 0, 1, 0, 
-            ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, 0, 0, ?, ?
         )"
     );
     
@@ -216,18 +249,21 @@ try {
     }
     
     $stmt->bind_param(
-        "ssssssssssssssssssssss",
+        "ssssssssssssssssssss",
         $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date, 
         $pro_serial, $store_id, $emp_id, $emp_id, $accounts['acc1'], 
         $accounts['acc2'], $headtotal, $headtotal, $headdisc, 
-        $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid, $table_id, $order_status
+        $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid
     );
     
+    error_log('Executing order header insert');
     if (!$stmt->execute()) {
+        error_log('FAILED to insert order header: ' . $stmt->error);
         throw new Exception('فشل في إدخال الفاتورة: ' . $stmt->error);
     }
     
     $last_op = $conn->insert_id;
+    error_log('Order header inserted successfully with ID: ' . $last_op);
     $stmt->close();
     // إدخال قيود اليومية للفواتير المدعومة
     if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
@@ -349,7 +385,9 @@ try {
 
 
     // معالجة تفاصيل الفواتير باستخدام Prepared Statements
+    error_log('Processing order items');
     if (isset($_POST['itmname'], $_POST['itmqty'], $_POST['itmprice'], $_POST['itmdisc'])) {
+        error_log('All item arrays are set');
         // تحضير استعلام إدخال تفاصيل الفاتورة
         $stmt_details = $conn->prepare(
             "INSERT INTO fat_details (
@@ -473,35 +511,10 @@ try {
         $stmt->close();
     }
     
-    // تحديث حالة الطاولة بناءً على حالة الدفع
-    if ($table_id) {
-        // حساب المتبقي
-        $remaining = $headnet - $paid;
-        
-        if ($remaining <= 0) {
-            // دفع كامل - تفريغ الطاولة وإغلاق الطلب
-            $stmt = $conn->prepare("UPDATE tables SET table_case = 0 WHERE id = ?");
-            $stmt->bind_param("i", $table_id);
-            $stmt->execute();
-            $stmt->close();
-            
-            // تحديث حالة الطلب إلى مكتمل
-            $completed_status = 'completed';
-            $stmt = $conn->prepare("UPDATE ot_head SET order_status = ? WHERE id = ?");
-            $stmt->bind_param("si", $completed_status, $last_op);
-            $stmt->execute();
-            $stmt->close();
-        } else {
-            // دفع جزئي أو بدون دفع - الطاولة لا تزال مشغولة
-            $stmt = $conn->prepare("UPDATE tables SET table_case = 1 WHERE id = ?");
-            $stmt->bind_param("i", $table_id);
-            $stmt->execute();
-            $stmt->close();
-        }
-    }
-    
     // إتمام المعاملة
+    error_log('Committing transaction');
     $conn->commit();
+    error_log('Transaction committed successfully');
     
     // تسجيل العملية
     $process_types = [
@@ -516,19 +529,48 @@ try {
     $stmt->execute();
     $stmt->close();
     
+    // تعيين رسالة نجاح
+    $_SESSION['success_message'] = 'تم حفظ الطلب بنجاح - رقم الفاتورة: ' . $pro_id;
+    
 } catch (Exception $e) {
     // إلغاء المعاملة في حالة الخطأ
+    error_log('ERROR in transaction: ' . $e->getMessage());
+    error_log('ERROR trace: ' . $e->getTraceAsString());
     $conn->rollback();
     error_log('خطأ في معالجة الفاتورة: ' . $e->getMessage());
     die('حدث خطأ أثناء معالجة الفاتورة: ' . $e->getMessage());
 }
 
 // إعادة التوجيه حسب نوع العملية
+error_log('Redirecting with submit value: ' . $submit . ' and invoice type: ' . $pro_tybe);
+error_log('Last operation ID: ' . $last_op);
 if ($submit == 'print') {
+    error_log('Redirecting to print sales page');
+    error_log('Header: Location: ../print/print_sales.php?id=$last_op');
     header("Location: ../print/print_sales.php?id=$last_op");
 } elseif ($submit == 'cash') {
+    error_log('Redirecting to receipt page');
+    error_log('Header: Location: ../print/receipt.php?id=$last_op');
     header("Location: ../print/receipt.php?id=$last_op");
+} elseif ($submit == 'save') {
+    error_log('Redirecting with save action');
+    // For save action, redirect back to POS for POS invoices, or to sales page for others
+    if ($pro_tybe == INVOICE_TYPES['POS']) {
+        error_log('Redirecting to POS barcode page');
+        error_log('Header: Location: ../pos_barcode.php');
+        header("Location: ../pos_barcode.php");
+    } else {
+        $redirects = [
+            INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
+            INVOICE_TYPES['SALES'] => '../sales.php?q=buy'
+        ];
+        $redirect = $redirects[$pro_tybe] ?? '../sales.php';
+        error_log('Redirecting to: ' . $redirect);
+        error_log('Header: Location: ' . $redirect);
+        header("Location: $redirect");
+    }
 } else {
+    error_log('Redirecting with default action');
     // إعادة توجيه افتراضية حسب نوع الفاتورة
     $redirects = [
         INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
@@ -537,7 +579,10 @@ if ($submit == 'print') {
     ];
     
     $redirect = $redirects[$pro_tybe] ?? '../sales.php';
+    error_log('Redirecting to default: ' . $redirect);
+    error_log('Header: Location: ' . $redirect);
     header("Location: $redirect");
 }
+error_log('Exiting script');
 exit;
 ?>

@@ -1,100 +1,162 @@
-<div class="row">
-    <div class="p-1 pt-20 col-md-3">
-        <div class="row p-0 ">
-            <div class="p-1 pt-20 col-sm-12">
-                <a class="btn btn-block p-7 rounded-0  btn-block p-7 hover:bg-orange-600 hover:text-orange-50 bg-lime-700  text-slate-50 text-center p-t-2" href="add_item.php">
-                <i class="fa fa-box text-xl"></i>
-                <br>
-                اضافة صنف</a>
+<div class="quick-actions-section">
+    <div class="row g-3">
+        <!-- العمود الأول -->
+        <div class="col-lg-3 col-md-6">
+            <div class="action-card-group">
+                <!-- إضافة صنف -->
+                <div class="action-card-main">
+                    <a href="add_item.php" class="action-btn btn-lime">
+                        <div class="btn-icon">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <div class="btn-text">
+                            <span class="btn-title">إضافة صنف</span>
+                        </div>
+                        <div class="btn-hover-effect">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="action-card-row">
+                    <!-- إضافة عميل -->
+                    <div class="action-card-half">
+                        <a href="add_account.php?parent_id=122" class="action-btn btn-purple">
+                            <div class="btn-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">إضافة عميل</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- إضافة مورد -->
+                    <div class="action-card-half">
+                        <a href="add_account.php?parent_id=211" class="action-btn btn-dark">
+                            <div class="btn-icon">
+                                <i class="fas fa-truck-loading"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">إضافة مورد</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
             </div>
-         </div>
-        <div class="row p-0">
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-purple-700 text-slate-50 text-center btn" href="add_account.php?parent_id=122">
-                <i class="fa fa-users text-md"></i>
-                <br>
-                    اضافة عميل</a>
+        </div>
+
+        <!-- العمود الثاني -->
+        <div class="col-lg-3 col-md-6">
+            <div class="action-card-group">
+                <!-- فاتورة مبيعات -->
+                <div class="action-card-main">
+                    <a href="sales.php?q=buy" class="action-btn btn-orange">
+                        <div class="btn-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="btn-text">
+                            <span class="btn-title">فاتورة مبيعات</span>
+                        </div>
+                        <div class="btn-hover-effect">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="action-card-row">
+                    <!-- سند قبض -->
+                    <div class="action-card-half">
+                        <a href="add_voucher.php?t=recive" class="action-btn btn-info">
+                            <div class="btn-icon">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">سند قبض</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- مرتجع مبيعات -->
+                    <div class="action-card-half">
+                        <a href="sales.php?q=rebuy" class="action-btn btn-primary">
+                            <div class="btn-icon">
+                                <i class="fas fa-undo-alt"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">مرتجع مبيعات</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-zinc-700 text-slate-50 text-center btn" href="add_account.php?parent_id=211">
-                <i class="fa fa-users text-md"></i>
-                <br>
-                    اضافة مورد</a>
+        </div>
+
+        <!-- العمود الثالث -->
+        <div class="col-lg-3 col-md-6">
+            <div class="action-card-group">
+                <!-- فاتورة مشتريات -->
+                <div class="action-card-main">
+                    <a href="sales.php?q=sale" class="action-btn btn-info">
+                        <div class="btn-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="btn-text">
+                            <span class="btn-title">فاتورة مشتريات</span>
+                        </div>
+                        <div class="btn-hover-effect">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="action-card-row">
+                    <!-- سند دفع -->
+                    <div class="action-card-half">
+                        <a href="add_voucher.php?t=payment" class="action-btn btn-purple">
+                            <div class="btn-icon">
+                                <i class="fas fa-money-check-alt"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">سند دفع</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- مرتجع مشتريات -->
+                    <div class="action-card-half">
+                        <a href="sales.php?q=resale" class="action-btn btn-secondary">
+                            <div class="btn-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">مرتجع مشتريات</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- العمود الرابع -->
+        <div class="col-lg-3 col-md-6">
+            <div class="action-card-group">
+                <!-- قائمة الاصناف مع الارصدة -->
+                <div class="action-card-full">
+                    <a href="myitems.php" class="action-btn btn-dark-full">
+                        <div class="btn-icon">
+                            <i class="fas fa-warehouse"></i>
+                        </div>
+                        <div class="btn-text">
+                            <span class="btn-title">قائمة الاصناف مع الارصدة</span>
+                            <span class="btn-subtitle">عرض جميع المنتجات والمخزون</span>
+                        </div>
+                        <div class="btn-hover-effect">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-
-
-    <div class="p-1 pt-20 col-md-3">
-        <div class="row p-0 ">
-            <div class="p-1 pt-20 col-sm-12">
-                <a class="btn btn-block p-7 rounded-0  btn-block p-7 hover:bg-orange-600 hover:text-orange-50 bg-orange-700  text-slate-50 text-center btn" href="sales.php?q=buy">
-                <i class="fa fa-file-invoice text-xl"></i>
-                <br>
-                فاتورة مبيعات</a>
-            </div>
-         </div>
-        <div class="row p-0">
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-sky-700 text-slate-50 text-center btn" href="add_voucher.php?t=recive">
-                <i class="fa fa-dollar-sign text-md"></i>
-                <br>
-                    سند قبض</a>
-            </div>
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-blue-400 text-slate-50 text-center btn" href="sales.php?q=rebuy">
-                <i class="fa fa-file-invoice text-md"></i>
-                <br>
-                    مرتجع مبيعات</a>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="p-1 pt-20 col-md-3">
-        <div class="row p-0 ">
-            <div class="p-1 pt-20 col-sm-12">
-                <a class="btn btn-block p-7 rounded-0  btn-block p-7 hover:bg-orange-600 hover:text-orange-50 bg-sky-700  text-slate-50 text-center btn" href="sales.php?q=sale">
-                <i class="fa fa-file-invoice text-xl"></i>
-                <br>
-                 فاتورة مشتريات</a>
-            </div>
-         </div>
-        <div class="row p-0">
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-purple-700 text-slate-50 text-center btn" href="add_voucher.php?t=payment">
-                <i class="fa fa-dollar-sign text-md"></i>
-                <br>
-                     سند دفع</a>
-            </div>
-            <div class="p-1 pt-20 col-sm-6">
-                <a class="btn btn-block p-7 rounded-0  hover:bg-orange-600 hover:text-orange-50 bg-zinc-500 text-slate-50 text-center btn" href="sales.php?q=resale">
-                <i class="fa fa-file-invoice text-md"></i>
-                <br>
-                     مرتجع مشتريات</a>
-            </div>
-        </div>
-    </div>
-
-
-
-
-
-    <div class="p-1 pt-20 col-md-3 ">
-    <div class="row p-0 ">
-            <div class="p-1 pt-20 col-sm-12" >
-                <a class="btn btn-block p-24 rounded-0  btn-block hover:bg-orange-600 hover:text-orange-50 bg-slate-900 text-slate-50 text-center btn"  href="myitems.php">
-                <i class="fa fa-store text-xl"></i>
-                <br>قائمة الاصناف مع الارصدة
-                </a>
-            </div>
-         </div>
-    </div>
-
-
-
-
-
-
-
 </div>
