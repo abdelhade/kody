@@ -1,88 +1,81 @@
-
-<div class="row  d-flex flex-column" id="upRight">
-            <div class="row  " id="upRight1">
-                <div class="table font-lg">    
-                    <table class="table bg-light shadow">
-                        <thead>
-                            <tr>
-                                <td>م</td>
-                                <td>الاسم</td>
-                                <td>عدد</td>
-                                <td>سعر</td>
-                                <td>قيمه</td>
-                            </tr>
-                        </thead> 
-                        <tbody class="overflow-y-scroll" style="max-height:150px" id="itemData">
-                            <?php
-                            if (isset($_GET['edit'])){
-                                $id = $_GET['edit'];
-                                $sqldet = "SELECT * FROM fat_details where pro_id = $id AND isdeleted  = 0";
-                                $resdet = $conn->query($sqldet);
-                                $x = 0;
-                                while ($rowdet = $resdet->fetch_assoc()) {
-                               $x++;
-                               ?>
-                                <tr data-itemid="${itemData.barcode}">
-                                    <td><?= $x?></td>
-                                    <td class="barcode" hidden>${itemData.barcode}</td>
-                                    <td class="iname"><input hidden value='${itemData.id}' name="itmname[]">${itemData.iname}</td>
-                                    <td class="qty"><input type="number" class="cashInput quantityInput select-all nozero bg-slate-100" value="${qty}" name="itmqty[]"><input type="text" name="u_val[]" value="1" hidden></td>
-                                    <td class="price"><input type="number" class="cashInput priceInput select-all nozero bg-slate-100" value="${price.toFixed(2)}" name="itmprice[]"> ج</td>
-                                    <td><input hidden name="itmdisc[]"><input type="text" class="subtotal cashInput" readonly value="${subtotal.toFixed(2)}" name="itmval[]"></td>
-                                    <td class="delRow"><button class="btn btn-danger">X</button></td>
-                                </tr>
-                                <?php    }}; ?>
-                        </tbody>
-                    </table>
-                </div>
+<!-- جدول الأصناف -->
+<div class="row mb-3" id="upRight1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-shopping-cart"></i> الأصناف المُضافة
+                </h6>
             </div>
-
-            <div class="row bg-orange-50 mt-auto text-lg" id="upRight2" style="bottom:0px;">
-                <div class="row" style="width:100%;">
-                    <div class="col-12">
-                        <input type="text" class="form-control bg-light border-3" name="info" id="info" placeholder="اكتب ملاحظة">
-                    </div>
-                    <div class="col-md-2"><p for="" class="font-bold ">اجمالي</p></div>
-                    <div class="col-md-3">
-                        <input class="nozero form-control form-control-sm" type="text" readonly name="headtotal" id="total" value="0.00">
-                        <input name="headplus" hidden>
-                    </div>
-                    <div class="col-md-2">
-                        <p class="font-bold" for="">(F6)خصم</p>
-                    </div>
-                    <div class="col-md-2">
-                        <input class="nozero form-control form-control-sm" type="text" name="" id="discperc" value="0">
-                    </div>%
-                    <div class="col-md-2">
-                    <script>
-                    $('#discperc').keyup(() => {
-                        let total = parseFloat($('#total').val()) || 0;
-                        let discount = (total * (parseFloat($('#discperc').val()) || 0) / 100).toFixed(2);
-                        $('#discount').val(discount);
-                        $('#net_val').val((total - discount).toFixed(0));
-                    });
-
-                </script>
-                        <input class="nozero form-control form-control-sm" type="text" name="headdisc" id="discount" value="0">
-                    </div>
-                </div>
-                
-                <div class="row" style="width:100%;">
-                    <div class="col-md-4"><p class="font-bold" for="">صافي</p></div>
-                    <div class="col-md-8 p-0 m-0">    
-                        <input class="form-control form-control-sm text-lg font-normal" type="text" name="headnet" id="net_val" value="0">
-                    </div>
-                </div>
-
-                <div class="row" style="width:100%;">
-                    <div class="col-md-2">المدفوع</div>
-                    <div class="col-md-4">
-                        <input class="nozero form-control form-control-sm" type="text" id="paid" value="0.00">
-                    </div>
-                    <div class="col-md-2">الباقي</div>
-                    <div class="col-md-4">
-                        <input class="nozero form-control form-control-sm" type="text" id="change" value="0.00">
-                    </div>
-                </div>
+            <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-dark sticky-top">
+                        <tr class="text-center">
+                            <th style="width: 50px;">م</th>
+                            <th>الصنف</th>
+                            <th style="width: 100px;">الكمية</th>
+                            <th style="width: 100px;">السعر</th>
+                            <th style="width: 100px;">القيمة</th>
+                            <th style="width: 60px;">حذف</th>
+                        </tr>
+                    </thead> 
+                    <tbody id="itemData">
+                        <?php
+                        if (isset($_GET['edit'])){
+                            $id = $_GET['edit'];
+                            $sqldet = "SELECT * FROM fat_details where pro_id = $id AND isdeleted  = 0";
+                            $resdet = $conn->query($sqldet);
+                            $x = 0;
+                            while ($rowdet = $resdet->fetch_assoc()) {
+                                $x++;
+                        ?>
+                            <tr data-itemid="${itemData.barcode}" class="align-middle">
+                                <td class="text-center fw-bold"><?= $x?></td>
+                                <td class="barcode" hidden>${itemData.barcode}</td>
+                                <td class="iname">
+                                    <input type="hidden" value='${itemData.id}' name="itmname[]">
+                                    <span class="text-primary fw-bold">${itemData.iname}</span>
+                                </td>
+                                <td class="qty">
+                                    <input type="number" 
+                                           class="form-control form-control-sm text-center cashInput quantityInput select-all nozero" 
+                                           value="${qty}" 
+                                           name="itmqty[]"
+                                           min="1"
+                                           step="0.1">
+                                    <input type="hidden" name="u_val[]" value="1">
+                                </td>
+                                <td class="price">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" 
+                                               class="form-control text-center cashInput priceInput select-all nozero" 
+                                               value="${price.toFixed(2)}" 
+                                               name="itmprice[]"
+                                               step="0.01">
+                                        <span class="input-group-text">ج</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="hidden" name="itmdisc[]">
+                                    <input type="text" 
+                                           class="form-control form-control-sm text-center subtotal cashInput bg-light" 
+                                           readonly 
+                                           value="${subtotal.toFixed(2)}" 
+                                           name="itmval[]">
+                                </td>
+                                <td class="delRow text-center">
+                                    <button type="button" class="btn btn-danger btn-sm" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php    }}; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                <i class="fas fa-info-circle"></i> انقر على الأصناف أو امسح الباركود للإضافة
             </div>
         </div>
+    </div>
+</div>

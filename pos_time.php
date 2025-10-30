@@ -8,18 +8,7 @@
         flex-direction: column;
 
     }
-    #upRight2 {
-        position: absolute;
-        bottom: 200px;
-        width:100%;
-    }
-    #upRight1{
-        height: 500px;
-        position: absolute;
-        width:100%;
-        overflow:scroll;
-
-    }
+   
     #downRight{
         height: 400px;
     }

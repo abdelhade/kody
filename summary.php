@@ -106,20 +106,20 @@
                             <td><?= $x ?></td>
                             <td><?= $rowacc['pro_date']?></td>
                      
-                            <td><?php $pro_tybe =  $rowacc['pro_tybe'];$row_tybe = $conn->query("SELECT pname FROM pro_tybes where id = $pro_tybe")->fetch_assoc();echo $row_tybe['pname']?></td>
+                            <td><?php $pro_tybe =  $rowacc['pro_tybe'];$row_tybe = $conn->query("SELECT pname FROM pro_tybes where id = $pro_tybe")->fetch_assoc();echo ($row_tybe && isset($row_tybe['pname'])) ? $row_tybe['pname'] : '';?></td>
 
                      
                             <td class="td4">
                             <?php if($rowacc['acc1'] == $acc){
                             $op_id = $rowacc['id'];
-                            $rowdb = $conn->query("SELECT debit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND debit > 0 ")->fetch_assoc();echo $rowdb['debit'];}else{echo 0;}?>
+                            $rowdb = $conn->query("SELECT debit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND debit > 0 ")->fetch_assoc();echo ($rowdb && isset($rowdb['debit'])) ? $rowdb['debit'] : 0;}else{echo 0;}?>
                             </td>
                      
                             <td class="td5">
                             <?php if($rowacc['acc2'] == $acc){
                             $op_id = $rowacc['id'];
         
-                            $rowcr = $conn->query("SELECT credit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND credit > 0 ")->fetch_assoc();echo $rowcr['credit'];}else{echo 0;}?>
+                            $rowcr = $conn->query("SELECT credit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND credit > 0 ")->fetch_assoc();echo ($rowcr && isset($rowcr['credit'])) ? $rowcr['credit'] : 0;}else{echo 0;}?>
                             
                             </td>
                      
@@ -131,7 +131,7 @@
                             }elseif($rowacc['acc1'] == $acc){
                             $acc_name = $rowacc['acc2'];}
                             $rowaccname = $conn->query("SELECT * FROM acc_head where id = $acc_name")->fetch_assoc();
-                            echo $rowaccname['aname'];
+                            echo ($rowaccname && isset($rowaccname['aname'])) ? $rowaccname['aname'] : '';
                             ?></td>
                             
                             <td><?= $rowacc['info']?></td>
