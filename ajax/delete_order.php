@@ -1,36 +1,67 @@
 <?php
+// Start session and include database connection
 session_start();
-include('../includes/connect.php');
+include('../includes/db_connection.php');
 
+// Set content type to JSON
 header('Content-Type: application/json');
 
+// Check if user is logged in and has permission
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'غير مصرح بالوصول']);
+    exit;
+}
+
+// Check if order ID is provided
+if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
+    echo json_encode(['success' => false, 'message' => 'معرف الطلب غير صالح']);
+    exit;
+}
+
+$orderId = intval($_POST['id']);
+
 try {
-    $orderId = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
-    $tableId = isset($_POST['table_id']) ? intval($_POST['table_id']) : 0;
-    
-    if (!$orderId) {
-        throw new Exception('معرف الطلب غير صحيح');
-    }
-    
+    // Start transaction
     $conn->begin_transaction();
     
-    // حذف الأصناف
-    $deleteItems = "UPDATE fat_details SET isdeleted = 1 WHERE pro_id = ?";
-    $stmt = $conn->prepare($deleteItems);
-    $stmt->bind_param("i", $orderId);
+    // 1. Get order details first (for logging or verification)
+    $query = "SELECT * FROM ot_head WHERE id = ? AND isdeleted = 0";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $orderId);
     $stmt->execute();
+    $result = $stmt->get_result();
     
-    // حذف الطلب (soft delete)
-    // يمكن أيضاً استخدام حقل خاص لتمييز الطلبات المحذوفة
-    
-    // تحديث حالة الطاولة (تفريغها)
-    if ($tableId > 0) {
-        $updateTable = "UPDATE tables SET table_case = 0 WHERE id = ?";
-        $stmt = $conn->prepare($updateTable);
-        $stmt->bind_param("i", $tableId);
-        $stmt->execute();
+    if ($result->num_rows === 0) {
+        throw new Exception('الطلب غير موجود أو تم حذفه مسبقاً');
     }
     
+    $order = $result->fetch_assoc();
+    
+    // 2. Mark order as deleted (soft delete)
+    $updateQuery = "UPDATE ot_head SET isdeleted = 1 WHERE id = ?";
+    $updateStmt = $conn->prepare($updateQuery);
+    $updateStmt->bind_param('i', $orderId);
+    
+    if (!$updateStmt->execute()) {
+        throw new Exception('فشل في حذف الطلب');
+    }
+    
+    // 3. If there's a table associated with this order, mark it as available
+    if (!empty($order['table_id'])) {
+        $tableUpdate = "UPDATE tables SET is_occupied = 0 WHERE id = ?";
+        $tableStmt = $conn->prepare($tableUpdate);
+        $tableStmt->bind_param('i', $order['table_id']);
+        $tableStmt->execute();
+    }
+    
+    // 4. Log the deletion (optional)
+    $logQuery = "INSERT INTO activity_log (user_id, action, details) VALUES (?, 'delete_order', ?)";
+    $logStmt = $conn->prepare($logQuery);
+    $details = "تم حذف الطلب رقم: " . $order['invoice_number'];
+    $logStmt->bind_param('is', $_SESSION['user_id'], $details);
+    $logStmt->execute();
+    
+    // Commit transaction
     $conn->commit();
     
     echo json_encode([
@@ -39,10 +70,19 @@ try {
     ]);
     
 } catch (Exception $e) {
-    $conn->rollback();
+    // Rollback transaction on error
+    if (isset($conn)) {
+        $conn->rollback();
+    }
+    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ]);
+}
+
+// Close the database connection
+if (isset($conn)) {
+    $conn->close();
 }
 
