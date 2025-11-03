@@ -1,16 +1,9 @@
 <?php
-// Start session and include database connection
-session_start();
-include('../includes/db_connection.php');
+// Use AJAX header (no HTML output)
+include(__DIR__ . '/../includes/ajax_header.php');
 
 // Set content type to JSON
-header('Content-Type: application/json');
-
-// Check if user is logged in and has permission
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'غير مصرح بالوصول']);
-    exit;
-}
+header('Content-Type: application/json; charset=utf-8');
 
 // Check if order ID is provided
 if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
@@ -54,12 +47,15 @@ try {
         $tableStmt->execute();
     }
     
-    // 4. Log the deletion (optional)
-    $logQuery = "INSERT INTO activity_log (user_id, action, details) VALUES (?, 'delete_order', ?)";
-    $logStmt = $conn->prepare($logQuery);
-    $details = "تم حذف الطلب رقم: " . $order['invoice_number'];
-    $logStmt->bind_param('is', $_SESSION['user_id'], $details);
-    $logStmt->execute();
+    // 4. Log the deletion (optional - skip if activity_log table doesn't exist)
+    $checkTable = $conn->query("SHOW TABLES LIKE 'activity_log'");
+    if ($checkTable && $checkTable->num_rows > 0) {
+        $logQuery = "INSERT INTO activity_log (user_id, action, details) VALUES (?, 'delete_order', ?)";
+        $logStmt = $conn->prepare($logQuery);
+        $details = "تم حذف الطلب رقم: " . ($order['pro_id'] ?: $order['id']);
+        $logStmt->bind_param('is', $userid, $details);
+        $logStmt->execute();
+    }
     
     // Commit transaction
     $conn->commit();

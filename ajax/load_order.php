@@ -46,9 +46,11 @@ try {
                 'item_id' => $item['item_id'],
                 'item_name' => $item['item_name'] ?: 'صنف غير معروف',
                 'item_desc' => $item['item_desc'] ?: '',
-                'qty' => floatval($item['qty']),
+                // Fix: Use correct column names from database schema
+                'qty' => floatval($item['qty_out']) - floatval($item['qty_in']),
                 'price' => floatval($item['price']),
-                'subtotal' => floatval($item['val'])
+                // Fix: Use det_value instead of subtotal
+                'subtotal' => floatval($item['det_value'])
             ];
         }
     }
@@ -76,4 +78,3 @@ try {
 
 $conn->close();
 ?>
-

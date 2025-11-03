@@ -7,6 +7,15 @@ $(document).ready(function() {
     console.log('POS Barcode System Initialized');
     
     // ========================================
+    // Initialize on page load - Update totals if items exist (edit mode)
+    // ========================================
+    if ($('#itemData .item-card-order').length > 0) {
+        console.log('Edit mode detected - updating totals and item count');
+        updateItemCount();
+        updateTotal();
+    }
+    
+    // ========================================
     // Category Filter
     // ========================================
     $('.category-btn').on('click', function() {
@@ -597,63 +606,73 @@ function loadRecentOrders() {
         </tr>
     `);
 
-    const timestamp = new Date().getTime();
-    
     $.ajax({
-        url: 'ajax/get_recent_orders.php?_=' + timestamp,
+        url: 'ajax/get_recent_orders.php',
         type: 'GET',
         dataType: 'json',
         success: function(response) {
             console.log('AJAX Response:', response);
-            console.log('Response success:', response.success);
-            console.log('Response orders:', response.orders);
-            console.log('Orders length:', response.orders ? response.orders.length : 0);
+            
             if (response.success && response.orders && response.orders.length > 0) {
                 let html = '';
                 response.orders.forEach((order, index) => {
                     html += `
                         <tr>
                             <td>${index + 1}</td>
-                            <td>${order.invoice_number || 'N/A'}</td>
-                            <td>${order.date || ''}</td>
-                            <td>${order.customer_name || 'عميل نقدي'}</td>
-                            <td>${order.type || 'تيك أواي'}</td>
-                            <td class="text-nowrap">${parseFloat(order.total || 0).toFixed(2)} ج.م</td>
+                            <td><strong>${order.invoice_number}</strong></td>
+                            <td>${order.date}</td>
+                            <td>${order.customer_name}</td>
+                            <td>
+                                <span class="badge bg-info">${order.type}</span>
+                            </td>
+                            <td class="text-nowrap fw-bold text-success">
+                                ${order.total.toFixed(2)} ج.م
+                            </td>
                             <td>
                                 <span class="badge ${order.status === 'مكتمل' ? 'bg-success' : 'bg-warning'}">
-                                    ${order.status || 'غير معروف'}
+                                    ${order.status}
                                 </span>
                             </td>
                             <td class="text-nowrap">
-                                <button class="btn btn-sm btn-warning edit-order" data-id="${order.id}" title="تعديل">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger delete-order" data-id="${order.id}" title="حذف">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-warning edit-order" data-id="${order.id}" title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-danger delete-order" data-id="${order.id}" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                ${order.notes ? `<span class="text-muted ms-2" title="${order.notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
                             </td>
                         </tr>
                     `;
                 });
                 $('#recentOrdersList').html(html);
+                console.log('Orders loaded successfully:', response.orders.length);
             } else {
                 $('#recentOrdersList').html(`
                     <tr>
                         <td colspan="8" class="text-center py-5">
                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                             <p class="text-muted">لا توجد طلبات سابقة</p>
+                            <small class="text-muted">سيظهر هنا آخر 10 طلبات بعد إنشاء أول طلب</small>
                         </td>
                     </tr>
                 `);
+                console.log('No orders found');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error loading recent orders:', error);
+            console.error('XHR status:', xhr.status);
+            console.error('Response text:', xhr.responseText);
+            
             $('#recentOrdersList').html(`
                 <tr>
                     <td colspan="8" class="text-center py-5 text-danger">
                         <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                         <p>حدث خطأ أثناء تحميل الطلبات</p>
+                        <small class="d-block">${error}</small>
                         <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadRecentOrders()">
                             <i class="fas fa-sync-alt me-1"></i> إعادة المحاولة
                         </button>
@@ -702,14 +721,20 @@ $(document).ready(function() {
     });
 
     // Handle edit order button
-    $(document).on('click', '.edit-order', function() {
+    $(document).on('click', '.edit-order', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         const orderId = $(this).data('id');
+        console.log('Edit button clicked for order:', orderId);
         editOrder(orderId);
     });
 
     // Handle delete order button
-    $(document).on('click', '.delete-order', function() {
+    $(document).on('click', '.delete-order', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         const orderId = $(this).data('id');
+        console.log('Delete button clicked for order:', orderId);
         deleteOrder(orderId);
     });
 

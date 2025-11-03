@@ -490,3 +490,55 @@
 (
 )
 
+[02-Nov-2025 15:48:02 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:48:02 ===
+[02-Nov-2025 15:48:02 Europe/Berlin] GET: Array
+(
+    [_] => 1762094882165
+)
+
+[02-Nov-2025 15:48:02 Europe/Berlin] POST: Array
+(
+)
+
+[02-Nov-2025 15:48:02 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:48:02 ===
+[02-Nov-2025 15:48:02 Europe/Berlin] GET: Array
+(
+    [_] => 1762094882473
+)
+
+[02-Nov-2025 15:48:02 Europe/Berlin] POST: Array
+(
+)
+
+[02-Nov-2025 15:54:07 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:54:07 ===
+[02-Nov-2025 15:54:07 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:54:07 Europe/Berlin] Executing query
+[02-Nov-2025 15:54:07 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[02-Nov-2025 15:54:07 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:54:07 ===
+[02-Nov-2025 15:54:07 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:54:07 Europe/Berlin] Executing query
+[02-Nov-2025 15:54:07 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[02-Nov-2025 15:54:15 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:54:15 ===
+[02-Nov-2025 15:54:15 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:54:15 Europe/Berlin] Executing query
+[02-Nov-2025 15:54:15 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[02-Nov-2025 15:54:15 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:54:15 ===
+[02-Nov-2025 15:54:15 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:54:15 Europe/Berlin] Executing query
+[02-Nov-2025 15:54:15 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[02-Nov-2025 15:55:33 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:55:33 ===
+[02-Nov-2025 15:55:33 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:55:33 Europe/Berlin] Executing query
+[02-Nov-2025 15:55:33 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[02-Nov-2025 15:55:33 Europe/Berlin] === get_recent_orders.php started at 2025-11-02 15:55:33 ===
+[02-Nov-2025 15:55:33 Europe/Berlin] Database connected successfully
+[02-Nov-2025 15:55:33 Europe/Berlin] Executing query
+[02-Nov-2025 15:55:33 Europe/Berlin] Error: Unknown column 'o.age' in 'field list' in C:\xampp\htdocs\kody\ajax\get_recent_orders.php on line 73
+[03-Nov-2025 10:26:45 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:26:45 ===
+[03-Nov-2025 10:26:45 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:26:45 ===
+[03-Nov-2025 10:27:10 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:27:10 ===
+[03-Nov-2025 10:27:10 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:27:10 ===
+[03-Nov-2025 10:27:13 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:27:13 ===
+[03-Nov-2025 10:27:13 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:27:13 ===
+[03-Nov-2025 10:31:09 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:31:09 ===
+[03-Nov-2025 10:31:09 Europe/Berlin] === get_recent_orders.php started at 2025-11-03 10:31:09 ===

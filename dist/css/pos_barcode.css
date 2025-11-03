@@ -421,3 +421,41 @@ h6 {
         max-width: 95% !important;
     }
 }
+
+/* Recent Orders Table - Action Buttons */
+#recentOrdersList .btn-group {
+    display: inline-flex;
+    gap: 2px;
+}
+
+#recentOrdersList .edit-order,
+#recentOrdersList .delete-order {
+    min-width: 32px;
+    height: 32px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#recentOrdersList .edit-order i,
+#recentOrdersList .delete-order i {
+    font-size: 0.9rem;
+}
+
+#recentOrdersList .edit-order:hover,
+#recentOrdersList .delete-order:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Make table more readable */
+#recentOrdersList td {
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+
+#recentOrdersList .text-nowrap {
+    white-space: nowrap;
+}

@@ -65,13 +65,9 @@ if(isset($_SESSION['success_message'])){
                     <li class="nav-item">
                         <a href="tables.php" class="nav-link">
                             <i class="fas fa-th-large me-1"></i>الطاولات
-                        </a>
+                       </a>
     </li>
-                    <li class="nav-item">
-                        <a href="pos_tables.php" class="nav-link">
-                            <i class="fas fa-desktop me-1"></i>POS متكامل
-                        </a>
-    </li>   
+
   </ul>
 
                 <ul class="navbar-nav">
@@ -309,13 +305,78 @@ if(isset($_SESSION['success_message'])){
                                     <div class="card-body p-1 flex-grow-1" style="min-height: 40vh; max-height: 40vh; overflow-y: auto; overflow-x: auto; background: #f8f9fa;" id="itemData">
                                         <?php
                                         if (isset($_GET['edit'])){
-    $id = $_GET['edit'];
-                                            $sqldet = "SELECT * FROM fat_details where pro_id = $id AND isdeleted  = 0";
+                                            $id = $_GET['edit'];
+                                            $sqldet = "SELECT fd.*, m.iname as item_name, m.barcode 
+                                                      FROM fat_details fd 
+                                                      LEFT JOIN myitems m ON m.id = fd.item_id 
+                                                      WHERE fd.pro_id = $id AND fd.isdeleted = 0";
                                             $resdet = $conn->query($sqldet);
                                             $x = 0;
                                             while ($rowdet = $resdet->fetch_assoc()) {
                                                 $x++;
-                                                // Display edit mode items here
+                                                $item_name = $rowdet['item_name'] ?: 'صنف غير معروف';
+                                                // Fix: Use correct column names from database schema
+                                                // qty should be qty_out (for sales) or qty_in - qty_out
+                                                $qty = floatval($rowdet['qty_out']) - floatval($rowdet['qty_in']);
+                                                $price = floatval($rowdet['price']);
+                                                // Fix: Use det_value instead of val
+                                                $subtotal = floatval($rowdet['det_value']);
+                                                $barcode = $rowdet['barcode'] ?: $rowdet['item_id'];
+                                                ?>
+                                                <div class="card mb-1 item-card-order shadow-sm border-start border-3" data-itemid="<?= $barcode ?>" style="border-color: #0a7ea4 !important; max-width: 100%;">
+                                                    <div class="card-body p-1">
+                                                        <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+                                                            <span class="badge bg-primary" style="font-size: 0.7rem; min-width: 25px;">#<?= $x ?></span>
+                                                            
+                                                            <div style="flex: 1; min-width: 0;">
+                                                                <input type="hidden" value='<?= $rowdet['item_id'] ?>' name="itmname[]">
+                                                                <input type="hidden" class="barcode" value="<?= $barcode ?>">
+                                                                <div class="text-truncate fw-bold" style="font-size: 0.75rem;" title="<?= $item_name ?>"><?= $item_name ?></div>
+                                                            </div>
+                                                            
+                                                            <div style="width: 65px;">
+                                                                <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">كمية</small>
+                                                                <input type="number" 
+                                                                       class="form-control form-control-sm text-center quantityInput nozero fw-bold" 
+                                                                       value="<?= $qty ?>" 
+                                                                       name="itmqty[]"
+                                                                       min="1" 
+                                                                       step="0.1"
+                                                                       style="width: 100%; font-size: 0.75rem; padding: 3px; border: 2px solid #ff6347; height: 26px;"
+                                                                       title="الكمية">
+                                                                <input type="hidden" name="u_val[]" value="1">
+                                                            </div>
+                                                            
+                                                            <div style="width: 55px;">
+                                                                <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">سعر</small>
+                                                                <input type="number" 
+                                                                       class="form-control form-control-sm text-center priceInput nozero" 
+                                                                       value="<?= number_format($price, 2, '.', '') ?>" 
+                                                                       name="itmprice[]" 
+                                                                       step="0.01"
+                                                                       style="width: 100%; font-size: 0.7rem; padding: 3px; height: 26px;"
+                                                                       title="السعر">
+                                                            </div>
+                                                            
+                                                            <div style="width: 60px;">
+                                                                <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">قيمة</small>
+                                                                <input type="hidden" name="itmdisc[]" value="0">
+                                                                <input type="text" 
+                                                                       class="form-control form-control-sm text-center subtotal fw-bold" 
+                                                                       readonly 
+                                                                       value="<?= number_format($subtotal, 2, '.', '') ?>" 
+                                                                       name="itmval[]"
+                                                                       style="width: 100%; font-size: 0.7rem; padding: 3px; background: #fff3cd; height: 26px;"
+                                                                       title="القيمة">
+                                                            </div>
+                                                            
+                                                            <button type="button" class="btn btn-danger btn-sm delRow" style="padding: 2px 6px; font-size: 0.7rem;" title="حذف">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <?php
                                             }
                                         }
                                         ?>
@@ -350,7 +411,7 @@ if(isset($_SESSION['success_message'])){
                                     <!-- ملاحظات -->
                                     <div class="mb-1">
                                         <textarea class="form-control form-control-sm" name="info" id="info" rows="1" 
-                                                  placeholder="ملاحظات..." style="font-size: 0.7rem; padding: 0.2rem;"></textarea>
+                                                  placeholder="ملاحظات..." style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
                                     </div>
                                     
                                     <!-- أزرار الإجراءات -->
