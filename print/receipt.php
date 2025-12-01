@@ -1,9 +1,16 @@
-<?php include('includes/header.php') ?>
-<?php
+<?php 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+include('includes/header.php'); 
+
 if (!isset($_GET['id'])) {
-    echo "لا يوجد فاتورة بهذا الرقم";die;
-}else
-$id=$_GET['id'];
+    echo "لا يوجد فاتورة بهذا الرقم";
+    die;
+}
+
+$id = intval($_GET['id']); // حماية من SQL injection
 $rowfat = $conn->query("SELECT * FROM `ot_head` where id = $id")->fetch_assoc();
 if ($rowfat == null) {
     echo "لا يوجد فاتورة بهذا الرقم";die;
@@ -16,7 +23,14 @@ if ($rowfat == null) {
 <div class="card" id="printed" style="width: 72mm;">
 <div class="card-body">
 
-<img src="../assets/logo/logo.jpg" alt="" class="img-fluid">
+<?php 
+$logo_path = '../assets/logo/logo.jpg';
+if (file_exists($logo_path)) {
+    echo '<img src="' . $logo_path . '" alt="" class="img-fluid">';
+} else {
+    echo '<div class="text-center p-2">لوجو الشركة</div>';
+}
+?>
 <h1 class="text-center p-3 p-0 font-bold text-xl">
 <?= $rowstg['company_name'] ?></h1>
 

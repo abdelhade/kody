@@ -1,84 +1,92 @@
 <?php
-// Use AJAX header (no HTML output)
-include(__DIR__ . '/../includes/ajax_header.php');
+include('../includes/connect.php');
 
-// Set content type to JSON
-header('Content-Type: application/json; charset=utf-8');
-
-// Check if order ID is provided
-if (!isset($_POST['id']) || !is_numeric($_POST['id'])) {
-    echo json_encode(['success' => false, 'message' => 'معرف الطلب غير صالح']);
-    exit;
-}
-
-$orderId = intval($_POST['id']);
+header('Content-Type: application/json');
 
 try {
-    // Start transaction
+    if (!isset($_POST['order_id']) || !$_POST['order_id']) {
+        throw new Exception('معرف الطلب مطلوب');
+    }
+    
+    if (!isset($_POST['table_id']) || !$_POST['table_id']) {
+        throw new Exception('معرف الطاولة مطلوب');
+    }
+    
+    $order_id = intval($_POST['order_id']);
+    $table_id = intval($_POST['table_id']);
+    
+    // التحقق من وجود الطلب
+    $check_query = "SELECT id, pro_tybe FROM ot_head WHERE id = ?";
+    $check_stmt = $conn->prepare($check_query);
+    $check_stmt->bind_param("i", $order_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+    
+    if ($check_result->num_rows == 0) {
+        throw new Exception('الطلب غير موجود');
+    }
+    
+    $order = $check_result->fetch_assoc();
+    
+    // التحقق من أن الطلب لم يتم سداده بعد
+    if ($order['pro_tybe'] == 1) {
+        throw new Exception('لا يمكن إلغاء طلب تم سداده');
+    }
+    
+    // بدء المعاملة
     $conn->begin_transaction();
     
-    // 1. Get order details first (for logging or verification)
-    $query = "SELECT * FROM ot_head WHERE id = ? AND isdeleted = 0";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param('i', $orderId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 0) {
-        throw new Exception('الطلب غير موجود أو تم حذفه مسبقاً');
+    try {
+        // حذف تفاصيل الطلب
+        $delete_details = "UPDATE fat_details SET isdeleted = 1 WHERE pro_id = ?";
+        $details_stmt = $conn->prepare($delete_details);
+        $details_stmt->bind_param("i", $order_id);
+        
+        if (!$details_stmt->execute()) {
+            throw new Exception('خطأ في حذف تفاصيل الطلب');
+        }
+        
+        // حذف رأس الطلب
+        $delete_order = "UPDATE ot_head SET isdeleted = 1 WHERE id = ?";
+        $order_stmt = $conn->prepare($delete_order);
+        $order_stmt->bind_param("i", $order_id);
+        
+        if (!$order_stmt->execute()) {
+            throw new Exception('خطأ في حذف الطلب');
+        }
+        
+        // تفريغ الطاولة
+        $update_table = "UPDATE tables SET table_case = 0 WHERE id = ?";
+        $table_stmt = $conn->prepare($update_table);
+        $table_stmt->bind_param("i", $table_id);
+        
+        if (!$table_stmt->execute()) {
+            throw new Exception('خطأ في تحديث حالة الطاولة');
+        }
+        
+        // إضافة سجل في جدول السجلات إذا كان موجوداً
+        $log_query = "INSERT INTO order_logs (order_id, action, notes, created_at) 
+                     VALUES (?, 'cancelled', 'تم إلغاء الطلب من نظام الطاولات', NOW())";
+        $log_stmt = $conn->prepare($log_query);
+        $log_stmt->bind_param("i", $order_id);
+        $log_stmt->execute(); // لا نتوقف إذا فشل هذا
+        
+        $conn->commit();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'تم إلغاء الطلب بنجاح'
+        ]);
+        
+    } catch (Exception $e) {
+        $conn->rollback();
+        throw $e;
     }
-    
-    $order = $result->fetch_assoc();
-    
-    // 2. Mark order as deleted (soft delete)
-    $updateQuery = "UPDATE ot_head SET isdeleted = 1 WHERE id = ?";
-    $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param('i', $orderId);
-    
-    if (!$updateStmt->execute()) {
-        throw new Exception('فشل في حذف الطلب');
-    }
-    
-    // 3. If there's a table associated with this order, mark it as available
-    if (!empty($order['table_id'])) {
-        $tableUpdate = "UPDATE tables SET is_occupied = 0 WHERE id = ?";
-        $tableStmt = $conn->prepare($tableUpdate);
-        $tableStmt->bind_param('i', $order['table_id']);
-        $tableStmt->execute();
-    }
-    
-    // 4. Log the deletion (optional - skip if activity_log table doesn't exist)
-    $checkTable = $conn->query("SHOW TABLES LIKE 'activity_log'");
-    if ($checkTable && $checkTable->num_rows > 0) {
-        $logQuery = "INSERT INTO activity_log (user_id, action, details) VALUES (?, 'delete_order', ?)";
-        $logStmt = $conn->prepare($logQuery);
-        $details = "تم حذف الطلب رقم: " . ($order['pro_id'] ?: $order['id']);
-        $logStmt->bind_param('is', $userid, $details);
-        $logStmt->execute();
-    }
-    
-    // Commit transaction
-    $conn->commit();
-    
-    echo json_encode([
-        'success' => true,
-        'message' => 'تم حذف الطلب بنجاح'
-    ]);
     
 } catch (Exception $e) {
-    // Rollback transaction on error
-    if (isset($conn)) {
-        $conn->rollback();
-    }
-    
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
     ]);
 }
-
-// Close the database connection
-if (isset($conn)) {
-    $conn->close();
-}
-
+?>
