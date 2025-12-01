@@ -263,11 +263,14 @@ if ($tables_count == 0) {
                             <button class="btn btn-success btn-block mt-3" id="save-order">
                                 <i class="fas fa-save"></i> حفظ الطلب
                             </button>
-                            <button class="btn btn-primary btn-block" id="save-and-print">
-                                <i class="fas fa-print"></i> حفظ وطباعة
+                            <button class="btn btn-primary btn-block" id="payment-btn">
+                                <i class="fas fa-credit-card"></i> سداد الطلب
                             </button>
-                            <button class="btn btn-danger btn-block" id="clear-order">
-                                <i class="fas fa-trash"></i> مسح الطلب
+                            <button class="btn btn-warning btn-block" id="print-order">
+                                <i class="fas fa-print"></i> طباعة الطلب
+                            </button>
+                            <button class="btn btn-danger btn-block" id="cancel-order">
+                                <i class="fas fa-times"></i> إلغاء الطلب
                             </button>
                         </div>
                     </div>
@@ -308,6 +311,9 @@ if ($tables_count == 0) {
 <a href="pos_barcode.php" class="floating-pos-btn" title="POS الكاشير">
     <i class="fas fa-cash-register"></i>
 </a>
+
+<!-- تضمين مودال السداد -->
+<?php include('elements/pos/payment_modal.php'); ?>
 
 <script src="js/pos_tables.js"></script>
 

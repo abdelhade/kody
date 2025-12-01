@@ -8,6 +8,9 @@ let currentOrder = {
 
 // تحميل الطاولات عند بدء الصفحة
 $(document).ready(function() {
+    // تعطيل الأزرار في البداية
+    $('#save-order, #payment-btn, #print-order, #cancel-order').prop('disabled', true);
+    
     loadTables();
     loadItems();
     
@@ -15,8 +18,9 @@ $(document).ready(function() {
     $('#disc_percent').on('input', calculateDiscount);
     $('#discount').on('input', calculateNet);
     $('#save-order').on('click', saveOrder);
-    $('#save-and-print').on('click', saveAndPrint);
-    $('#clear-order').on('click', clearOrder);
+    $('#payment-btn').on('click', openPayment);
+    $('#print-order').on('click', printOrder);
+    $('#cancel-order').on('click', cancelOrder);
     $('#item-search').on('input', searchItems);
     
     // دعم الباركود
@@ -84,6 +88,9 @@ function selectTable(tableId, tableName) {
     
     // تحميل بيانات الطلب إن وجد
     loadTableOrder(tableId, tableName);
+    
+    // تمكين أزرار العمليات
+    $('#save-order, #payment-btn, #print-order, #cancel-order').prop('disabled', false);
 }
 
 // تحميل طلب الطاولة
@@ -311,19 +318,81 @@ function saveOrder() {
     });
 }
 
-// حفظ وطباعة
-function saveAndPrint() {
-    // يمكن إضافة منطق الطباعة لاحقاً
-    saveOrder();
+// فتح مودال السداد
+function openPayment() {
+    const tableId = $('#selected_table_id').val();
+    const tableName = $('#table_name').val();
+    
+    if (!tableId) {
+        alert('الرجاء اختيار طاولة');
+        return;
+    }
+    
+    // حفظ الطلب أولاً قبل السداد
+    if (currentOrder.items.length > 0) {
+        saveOrder();
+        // انتظار قليل لضمان حفظ الطلب
+        setTimeout(function() {
+            openPaymentModal(tableId, tableName);
+        }, 500);
+    } else {
+        // التحقق من وجود طلب محفوظ للطاولة
+        const orderId = $('#current_order_id').val();
+        if (orderId) {
+            openPaymentModal(tableId, tableName);
+        } else {
+            alert('لا توجد أصناف للسداد');
+        }
+    }
 }
 
-// مسح الطلب
-function clearOrder() {
-    if (confirm('هل تريد مسح الطلب؟')) {
-        currentOrder.items = [];
-        $('#current_order_id').val('');
-        displayOrderItems();
-        calculateTotal();
+// طباعة الطلب
+function printOrder() {
+    const orderId = $('#current_order_id').val();
+    
+    if (!orderId) {
+        alert('لا يوجد طلب للطباعة');
+        return;
+    }
+    
+    window.open('print/table_invoice.php?invoice_id=' + orderId, '_blank');
+}
+
+// إلغاء الطلب
+function cancelOrder() {
+    const tableId = $('#selected_table_id').val();
+    const orderId = $('#current_order_id').val();
+    
+    if (!tableId || !orderId) {
+        alert('لا يوجد طلب للإلغاء');
+        return;
+    }
+    
+    if (confirm('هل تريد إلغاء الطلب نهائياً؟\nسيتم حذف جميع الأصناف ولا يمكن التراجع عن هذا الإجراء.')) {
+        $.ajax({
+            url: 'ajax/delete_order.php',
+            method: 'POST',
+            data: { 
+                order_id: orderId,
+                table_id: tableId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert('تم إلغاء الطلب بنجاح');
+                    currentOrder.items = [];
+                    $('#current_order_id').val('');
+                    displayOrderItems();
+                    calculateTotal();
+                    loadTables(); // تحديث حالة الطاولات
+                } else {
+                    alert('خطأ: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('خطأ في إلغاء الطلب');
+            }
+        });
     }
 }
 
@@ -378,5 +447,13 @@ function addItemByBarcode(barcode) {
             alert('خطأ في البحث عن الصنف');
         }
     });
+}
+
+// مسح الطلب (للاستخدام الداخلي)
+function clearOrder() {
+    currentOrder.items = [];
+    $('#current_order_id').val('');
+    displayOrderItems();
+    calculateTotal();
 }
 

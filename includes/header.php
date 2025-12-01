@@ -72,10 +72,13 @@ if ($lang == null) {
   <link href="dist/css/hadianime.css" rel="stylesheet">
   <link href="dist/css/horstec.css" rel="stylesheet">
   <link href="assets/styles/dashboard.css" rel="stylesheet">
+  <link href="assets/styles/sidebar-fixes.css" rel="stylesheet">
  
 
 
 <script src="dist/modal/modal.js"></script>
+<script src="assets/js/sidebar-enhancements.js"></script>
+<script src="assets/js/sidebar-keep-open.js"></script>
 
 <script>console.log('0000000000000000000000000')</script>
   <script src="dist/css/tailwind.js"></script>

@@ -941,14 +941,20 @@
 }
 
 .main-sidebar .nav-sidebar .nav-link:hover {
-    background: #eff6ff !important;
-    color: #1f2937 !important;
-    transform: translateX(-3px);
-    padding-right: 1.25rem;
+    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+    color: #1e40af !important;
+    transform: translateX(3px) scale(1.02) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
+    border-radius: 12px !important;
 }
 
 .main-sidebar .nav-sidebar .nav-link:hover::before {
     transform: scaleY(1);
+}
+
+.main-sidebar .nav-sidebar .nav-link:hover .nav-icon {
+    color: #2563eb !important;
+    transform: scale(1.1) rotate(5deg);
 }
 
 .main-sidebar .nav-sidebar .nav-link.active,
@@ -971,7 +977,6 @@
     transition: all 0.3s ease;
 }
 
-.main-sidebar .nav-link:hover .nav-icon,
 .main-sidebar .nav-link.active .nav-icon {
     color: #3b82f6 !important;
     transform: scale(1.1);
@@ -994,9 +999,12 @@
 }
 
 .main-sidebar .nav-treeview .nav-link:hover {
-    background: #eff6ff !important;
-    color: #1f2937 !important;
-    transform: translateX(-2px);
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+    color: #0369a1 !important;
+    transform: translateX(5px) scale(1.02) !important;
+    box-shadow: 0 2px 8px rgba(3, 105, 161, 0.3) !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
 }
 
 .main-sidebar .nav-treeview .nav-link .nav-icon {
@@ -1007,11 +1015,17 @@
 /* TreeView Arrow */
 .main-sidebar .nav-link .right {
     color: #9ca3af !important;
-    transition: transform 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .main-sidebar .nav-item.menu-open > .nav-link .right {
     transform: rotate(-90deg);
+    color: #3b82f6 !important;
+}
+
+.main-sidebar .nav-link:hover .right {
+    color: #2563eb !important;
+    transform: scale(1.1);
 }
 
 /* Scrollbar Styling */
@@ -1085,8 +1099,147 @@
 
 /* Additional Enhancements */
 .main-sidebar .nav-item.has-treeview.menu-open > .nav-link {
-    background: #dbeafe !important;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
     color: #1e40af !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* تحسين تأثير الهوفر للعناصر الرئيسية */
+.main-sidebar .nav-sidebar > .nav-item > .nav-link {
+    position: relative;
+    overflow: hidden;
+}
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link:hover::after {
+    left: 100%;
+}
+
+/* تحسين الانتقال بين الحالات */
+.main-sidebar .nav-sidebar .nav-link {
+    will-change: transform, background-color, box-shadow;
+}
+
+/* تأثير نبضة خفيفة للعنصر النشط */
+.main-sidebar .nav-sidebar .nav-link.active {
+    animation: gentlePulse 2s ease-in-out infinite;
+}
+
+@keyframes gentlePulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+    50% {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+}
+
+/* تأثيرات إضافية للتفاعل */
+.main-sidebar .nav-link.hover-effect {
+    transform: translateX(3px) scale(1.02);
+    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+    color: #1e40af !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.main-sidebar .nav-link .icon-bounce {
+    animation: iconBounce 0.6s ease;
+}
+
+@keyframes iconBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15) rotate(5deg); }
+}
+
+.main-sidebar .nav-treeview .nav-link.submenu-hover {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe) !important;
+    color: #0369a1 !important;
+    transform: translateX(5px);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(3, 105, 161, 0.2);
+}
+
+.main-sidebar .nav-link .slide-right {
+    transform: translateX(3px) scale(1.1);
+}
+
+.main-sidebar .nav-link.click-effect {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* تحسين مظهر البحث */
+.search-highlight {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 0.1rem 0.2rem;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* تأثير التمرير */
+.main-sidebar .user-panel.scrolled {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: scale(0.98);
+}
+
+/* تحسين الاستجابة للموبايل */
+.main-sidebar.mobile-sidebar .nav-link {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.main-sidebar.mobile-sidebar .nav-icon {
+    font-size: 1.3rem;
+    margin-left: 1rem;
+}
+
+/* تأثير الصفحة الحالية */
+.main-sidebar .nav-link.current-page {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+    color: #1e40af !important;
+    font-weight: 700;
+    border-right: 4px solid #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* تحسين الانتقالات */
+.main-sidebar .nav-link,
+.main-sidebar .nav-icon,
+.main-sidebar .right {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* تأثير الموجة عند النقر */
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.click-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.3);
+    width: 20px;
+    height: 20px;
+    animation: ripple 0.6s linear;
+    pointer-events: none;
 }
 
 .main-sidebar .nav-sidebar .nav-link p {
@@ -1129,4 +1282,20 @@
 .main-sidebar .user-panel:hover .image-user img {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* تحسين عام للأداء */
+.main-sidebar * {
+    will-change: transform, background-color, box-shadow;
+}
+
+/* تأثيرات متقدمة للهوفر */
+.main-sidebar .nav-sidebar > .nav-item > .nav-link::before {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link:hover::before {
+    width: 6px;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
