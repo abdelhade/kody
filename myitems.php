@@ -5,28 +5,27 @@
     <section class="content-header">
         <div class="container-fluid">
 
-        <div class="card ">
-            <div class="card-header sticky-header">
+        <div class="card">
+            <div class="card-header">
                 <div class="row">
-                <div class="col"><h2>الاصناف</h2></div>
-                <div class="col-md-6"><input type="text" id="search" class="form-control frst focus:bg-orange-300" placeholder="Search"></div>
+                <div class="col"><h3>الاصناف</h3></div>
+                <div class="col-md-6"><input type="text" id="search" class="form-control frst" placeholder="بحث..."></div>
                 <div class="col">
-                    <ul>
-                        <li><a href="add_item.php" id="addNewElement" class="btn btn-flat btn-sm bg-sky-300 p-2 m-1 float-right"> f3 جديد</a></li>
-                        <li><a href="do/recost.php" id="" class="btn btn-flat btn-sm bg-sky-300 p-2 m-1 float-right">اعادة حساب متوسط التكلفة</a></li>
-                        <li><button id="reindex" class="btn btn-flat btn-sm bg-sky-300 p-2 m-1 float-right">اعادة الفهرسة</button></li>
-                    </ul>
-                 
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
+                        <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
+                        <button id="reindex" class="btn btn-secondary btn-sm">اعادة الفهرسة</button>
+                    </div>
                 </div>
                 </div> 
                 <div class="row"><div id="response-message"></div></div>
             </div>
 
-            <div class="card-body" style="height: 550px;overflow:scroll">
+            <div class="card-body">
          
-                <div class="table-responsive" style="text-align:center" >
-                    <table data-page-length='100'  id="horsTable" class="table table-responsive table-stripped table-hoverable table-bordered" > 
-                        <thead class="">
+                <div class="table-responsive">
+                    <table data-page-length='100'  id="horsTable" class="table table-striped"> 
+                        <thead>
                             <tr>
                                 <th>م</th>
                                 <th>رقم الصنف</th>
@@ -35,7 +34,7 @@
                                 <th>الوحدة</th>
                                 <th>الوصف</th>
                                 <th>سعر البيع</th>
-                                <th>سعر الشراء الأخير</th>
+                                <th>سعر الشراء</th>
                                 <th>سعر التكلفة</th>
                                 <th>سعر السوق</th>
                                 <th>عمليات</th>
@@ -53,17 +52,15 @@
                         $x++;
                         ?>
                         
-                            <tr class="">
-                                <td><b><?= $x ?></b></td>
-                                <td><b><?= $rowitm['id'] ?></b></td>
+                            <tr>
+                                <td><?= $x ?></td>
+                                <td><?= $rowitm['id'] ?></td>
                                 <td><b><?= $rowitm['iname'] ?></b></td>
                                 <td class="qty" data-row-id="<?= $rowitm['id'] ?>" data-original-qty="<?= $rowitm['itmqty'] ?>">
-                                <b>
-                                    <a class="btn btn-block btn-light border" id="item_qty_<?= $rowitm['id'] ?>" href="item_summery.php?id=<?= $rowitm['id'] ?>"><?= $rowitm['itmqty'] ?></a>
-                                </b>
+                                    <a class="btn btn-sm btn-light" id="item_qty_<?= $rowitm['id'] ?>" href="item_summery.php?id=<?= $rowitm['id'] ?>"><?= $rowitm['itmqty'] ?></a>
                                 </td>
                                 <td class="unit">
-                                <select name="" id="item_unit_<?= $rowitm['id'] ?>" class="form-control" data-row-id="<?= $rowitm['id'] ?>">
+                                <select name="" id="item_unit_<?= $rowitm['id'] ?>" class="form-control form-control-sm" data-row-id="<?= $rowitm['id'] ?>">
                                     <?php
                                     $itemid = $rowitm['id'];
                                     $resunt = $conn->query("SELECT * from item_units where item_id = $itemid");
@@ -80,18 +77,17 @@
                                     <?php } ?>
                                 </select>
                                 </td>
-                                <td><b><?= $rowitm['info'] ?></b></td>
+                                <td><?= $rowitm['info'] ?></td>
                                 <td><b><?= $rowitm['price1'] ?></b></td>
                                 <td><b><?= $rowitm['last_price'] ?></b></td>
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
                                 <td><b><?= $rowitm['market_price'] ?></b></td>
                                
                                     <td>
-                                    <a class="btn btn-flat btn-sm btn-warning" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>
-                                
-                                    <button type="button" class="btn btn-flat btn-sm btn-danger" data-toggle="modal" data-target="#deleteitm<?= $rowitm['id']?>">
-                                <i class="fa fa-trash"></i>
-                                </button>
+                                        <a class="btn btn-warning btn-sm" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>
+                                        <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteitm<?= $rowitm['id']?>">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
 
                                 
                                   <div class="modal fade" id="deleteitm<?= $rowitm['id']?>">

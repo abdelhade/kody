@@ -58,16 +58,7 @@ if(isset($_SESSION['success_message'])){
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a href="index.php" class="nav-link">
-                            <i class="fas fa-home me-1"></i>الرئيسية
-                        </a>
-    </li>
-                    <li class="nav-item">
-                        <a href="tables.php" class="nav-link">
-                            <i class="fas fa-th-large me-1"></i>الطاولات
-                       </a>
-    </li>
+                    
 
   </ul>
 
@@ -76,9 +67,7 @@ if(isset($_SESSION['success_message'])){
                         <button class="btn btn-outline-light btn-sm me-2" id="fullscreenBtn" title="ملء الشاشة">
                             <i class="fas fa-expand-arrows-alt"></i>
                         </button>
-                        <button type="button" id="recentOrdersBtn1" class="btn btn-outline-light btn-sm me-2 recent-orders-btn" title="الطلبات الأخيرة">
-                            <i class="fas fa-history me-1"></i> الطلبات
-                        </button>
+                    
  
                         <button type="button" class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#closeShiftModal" title="إغلاق الشيفت">
                             <i class="fas fa-power-off me-1"></i> إغلاق الشيفت
@@ -428,12 +417,12 @@ if(isset($_SESSION['success_message'])){
                                             <div style="font-size: 0.7rem; font-weight: bold;" id="total_display_btn">0.00 ج.م</div>
                                         </button>
                                         <div class="d-flex align-items-center gap-1">
-                                            <button type="button" class="btn btn-outline-info btn-sm recent-orders-btn" title="الطلبات الأخيرة">
+                                            <!-- <button type="button" class="btn btn-outline-info btn-sm recent-orders-btn" title="الطلبات الأخيرة">
                                                 <i class="fas fa-history"></i>
                                             </button>
                                             <a href="tables.php" class="btn btn-outline-primary" style="font-size: 0.7rem; padding: 0.4rem 0.6rem;" title="الطاولات">
                                                 <i class="fas fa-th-large"></i>
-                                            </a>
+                                            </a> -->
                                             <div id="selectedTableDisplay" class="badge bg-primary text-white" style="font-size: 0.8rem; display: none;">
                                                 <i class="fas fa-chair me-1"></i><span id="selectedTableName"></span>
                                             </div>
@@ -458,12 +447,12 @@ if(isset($_SESSION['success_message'])){
                                 <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
                             </h6>
                             <div class="d-flex align-items-center gap-2">
-                                <div class="input-group" style="width: 300px;">
+                                <div class="input-group" style="width: 220px;">
                                     <span class="input-group-text bg-white">
                                         <i class="fas fa-filter text-primary"></i>
                                     </span>
                                     <input type="text" 
-                                           class="form-control" 
+                                           class="scnd form-control" 
                                            id="itemFilterInput" 
                                            placeholder="فلترة الأصناف بالاسم أو الباركود" 
                                            autocomplete="off"
@@ -473,9 +462,7 @@ if(isset($_SESSION['success_message'])){
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                                <small class="text-white-50 d-none d-lg-block" style="font-size: 0.7rem;">
-                                    <i class="fas fa-keyboard me-1"></i>Ctrl+F
-                                </small>
+
                             </div>
                         </div>
                     </div>
@@ -915,6 +902,18 @@ if(isset($_SESSION['success_message'])){
     // كود البحث المباشر
     $(document).ready(function() {
         console.log('Search script loaded');
+        
+        // F1 للتركيز على العنصر الذي يحمل كلاس frst
+        // F2 للتركيز على العنصر الذي يحمل كلاس scnd
+        $(document).keydown(function(e) {
+            if (e.key === 'F1') {
+                e.preventDefault();
+                $('.frst').focus();
+            } else if (e.key === 'F2') {
+                e.preventDefault();
+                $('.scnd').focus();
+            }
+        });
         
         $('#itemFilterInput').on('keyup input', function() {
             var searchText = $(this).val().toLowerCase();
