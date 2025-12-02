@@ -22,7 +22,7 @@ switch ($q) {
         break;
     case "buy":
         $report_name = "مبيعات";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = 3 OR pro_tybe = 9) AND isdeleted != 1 $dateFilter ORDER BY id DESC");
+        $resop = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9) AND isdeleted != 1 $dateFilter ORDER BY id DESC");
         break;
     default:
         $report_name = "التقرير الشامل";

@@ -266,6 +266,9 @@ if ($selected_table) {
                                 <button class="btn btn-info action-btn" onclick="printInvoice(<?= $selected_table ?>)">
                                     <i class="fas fa-print me-2"></i>طباعة الفاتورة
                                 </button>
+                                <button class="btn btn-outline-success action-btn" onclick="clearTableNormal(<?= $selected_table ?>)">
+                                    <i class="fas fa-broom me-2"></i>تفريغ عادي
+                                </button>
                                 <button class="btn btn-warning action-btn" onclick="clearTableDirect(<?= $selected_table ?>)">
                                     <i class="fas fa-times me-2"></i>تفريغ مباشر
                                 </button>
@@ -634,6 +637,28 @@ function processTablePayment(tableId) {
             alert('خطأ في الاتصال بالخادم');
         }
     });
+}
+
+function clearTableNormal(tableId) {
+    if(confirm('هل تريد تفريغ الطاولة تفريغ عادي؟\nسيتم حفظ الطلب في النظام وتفريغ الطاولة')) {
+        $.ajax({
+            url: 'ajax/clear_table_normal.php',
+            method: 'POST',
+            data: { table_id: tableId, table_name: 'Table ' + tableId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    alert('تم تفريغ الطاولة بنجاح\nإجمالي المبيعات: ' + response.total + ' ج.م');
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('حدث خطأ في الاتصال بالخادم');
+            }
+        });
+    }
 }
 
 function clearTableDirect(tableId) {

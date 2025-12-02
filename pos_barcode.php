@@ -79,6 +79,10 @@ if(isset($_SESSION['success_message'])){
                         <button type="button" id="recentOrdersBtn1" class="btn btn-outline-light btn-sm me-2 recent-orders-btn" title="الطلبات الأخيرة">
                             <i class="fas fa-history me-1"></i> الطلبات
                         </button>
+ 
+                        <button type="button" class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#closeShiftModal" title="إغلاق الشيفت">
+                            <i class="fas fa-power-off me-1"></i> إغلاق الشيفت
+                        </button>
                     </li>
                     <li class="nav-item">
                         <a href="do/do_logout.php" class="nav-link">
@@ -864,6 +868,36 @@ if(isset($_SESSION['success_message'])){
         </div>
     </div>
 
+
+    <!-- Modal إغلاق الشيفت -->
+    <div class="modal fade" id="closeShiftModal" tabindex="-1" aria-labelledby="closeShiftModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="closeShiftModalLabel">
+                        <i class="fas fa-power-off me-2"></i>إغلاق الشيفت
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5>هل أنت متأكد من إغلاق الشيفت؟</h5>
+                        <p class="text-muted">سيتم إغلاق جميع الطلبات المفتوحة وحفظ تقرير الشيفت</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>إلغاء
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="closeShift()">
+                        <i class="fas fa-power-off me-1"></i>إغلاق الشيفت
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- زر عائم للطاولات -->
     <a href="tables.php" class="btn btn-primary position-fixed" 
        style="bottom: 20px; right: 20px; z-index: 1000; border-radius: 50px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" 
@@ -931,6 +965,13 @@ if(isset($_SESSION['success_message'])){
                 $('.item-wrapper[data-category="' + categoryId + '"]').show();
             }
         });
+        
+        // وظيفة إغلاق الشيفت
+        window.closeShift = function() {
+            if (confirm('هل أنت متأكد من إغلاق الشيفت؟')) {
+                window.location.href = 'close_shift.php';
+            }
+        };
     });
     </script>
 
