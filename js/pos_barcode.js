@@ -5,6 +5,9 @@
 
 $(document).ready(function() {
     console.log('POS Barcode System Initialized');
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Search input exists:', $('#itemFilterInput').length);
+    console.log('Items count:', $('.item-wrapper').length);
     
     // ========================================
     // Initialize on page load - Update totals if items exist (edit mode)
@@ -25,13 +28,14 @@ $(document).ready(function() {
         let categoryId = $(this).data('category');
         console.log('Category selected:', categoryId);
         
+        // Clear search when selecting category
+        $('#itemFilterInput').val('');
+        
         if (categoryId === 'all') {
             $('.item-wrapper').show();
         } else {
             $('.item-wrapper').hide();
-            let itemsToShow = $('.item-wrapper[data-category="' + categoryId + '"]');
-            console.log('Items to show:', itemsToShow.length);
-            itemsToShow.show();
+            $('.item-wrapper[data-category="' + categoryId + '"]').show();
         }
     });
 
@@ -53,12 +57,70 @@ $(document).ready(function() {
         if (e.which === 13) {
             let search = $(this).val().trim();
             if (search) {
+                // Try barcode search first
                 searchItemByBarcode(search);
+                
+                // Also perform advanced search if not found
+                setTimeout(function() {
+                    if (search.length >= 2) {
+                        $('#itemFilterInput').val(search);
+                        performAdvancedSearch(search);
+                    }
+                }, 100);
+                
                 $(this).val('');
             }
         }
     });
+    
+    // البحث البسيط
+    console.log('Setting up search...');
+    $('#itemFilterInput').keyup(function() {
+        console.log('Search triggered!');
+        var searchText = $(this).val().toLowerCase();
+        console.log('البحث عن:', searchText);
+        
+        if (searchText === '') {
+            $('.item-wrapper').show();
+            return;
+        }
+        
+        var found = 0;
+        $('.item-wrapper').each(function() {
+            var $card = $(this).find('.item-card');
+            var itemName = $card.data('item-name');
+            var itemBarcode = $card.data('item-barcode');
+            
+            if (itemName) itemName = itemName.toString().toLowerCase();
+            if (itemBarcode) itemBarcode = itemBarcode.toString().toLowerCase();
+            
+            if ((itemName && itemName.includes(searchText)) || 
+                (itemBarcode && itemBarcode.includes(searchText))) {
+                $(this).show();
+                found++;
+            } else {
+                $(this).hide();
+            }
+        });
+        
+        console.log('تم العثور على', found, 'صنف');
+    }).on('input', function() {
+        $(this).trigger('keyup');
+    });
+    
+    $('#clearFilter').click(function() {
+        $('#itemFilterInput').val('');
+        $('.item-wrapper').show();
+        console.log('تم مسح البحث');
+    });
 
+    // ========================================
+    // Item Filtering Functions
+    // ========================================
+
+    
+
+    
     // ========================================
     // Item Search & Add Functions
     // ========================================
@@ -510,6 +572,34 @@ $(document).ready(function() {
     };
     
     $('#barcodeInput').focus();
+    
+    // Keyboard shortcuts
+    $(document).on('keydown', function(e) {
+        // Ctrl + F or F3 for search focus
+        if ((e.ctrlKey && e.key === 'f') || e.key === 'F3') {
+            e.preventDefault();
+            $('#itemFilterInput').focus().select();
+        }
+        
+        // Escape to clear search
+        if (e.key === 'Escape') {
+            if ($('#itemFilterInput').is(':focus') && $('#itemFilterInput').val() !== '') {
+                $('#clearFilter').click();
+            }
+        }
+        
+        // Alt + B for barcode input focus
+        if (e.altKey && e.key === 'b') {
+            e.preventDefault();
+            $('#barcodeInput').focus().select();
+        }
+        
+        // Alt + S for search input focus  
+        if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            $('#searchInput').focus().select();
+        }
+    });
     
     window.handleFormSubmit = function(form) {
         console.log('Form submit handler called');

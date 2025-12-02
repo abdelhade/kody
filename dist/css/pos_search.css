@@ -1,0 +1,109 @@
+/* POS Search Enhancements */
+
+/* Search input styling */
+#itemFilterInput {
+    border: 2px solid #17a2b8;
+    transition: all 0.3s ease;
+}
+
+#itemFilterInput:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Search results highlighting */
+.search-result {
+    animation: fadeInUp 0.3s ease;
+}
+
+.search-result .item-card {
+    border: 2px solid #28a745 !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+}
+
+/* Filter button styling */
+#clearFilter {
+    border-color: #17a2b8;
+    color: #17a2b8;
+    transition: all 0.3s ease;
+}
+
+#clearFilter:hover {
+    background-color: #17a2b8;
+    color: white;
+}
+
+/* Animation for search results */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Item card hover effects */
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Search loading indicator */
+.search-loading {
+    position: relative;
+}
+
+.search-loading::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #17a2b8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Responsive search bar */
+@media (max-width: 768px) {
+    .card-header .input-group {
+        width: 200px !important;
+        font-size: 0.8rem;
+    }
+    
+    #itemFilterInput {
+        font-size: 0.8rem;
+    }
+}
+
+/* Search highlight */
+.search-highlight {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+/* No results message */
+.no-search-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.no-search-results i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}

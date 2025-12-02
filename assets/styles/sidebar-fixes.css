@@ -1,15 +1,16 @@
 /* إصلاحات السايد بار - Sidebar Fixes */
-
-/* فرض تطبيق تأثيرات الهوفر */
-.main-sidebar .nav-sidebar .nav-link {
+/* فرض أولوية عالية جداً */
+body .wrapper .main-sidebar .nav-sidebar .nav-link {
     position: relative !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     z-index: 1 !important;
+    display: flex !important;
+    align-items: center !important;
 }
 
 /* تأثير الهوفر المحسن */
-.main-sidebar .nav-sidebar .nav-link:hover,
-.main-sidebar .nav-sidebar .nav-link:focus {
+body .wrapper .main-sidebar .nav-sidebar .nav-link:hover,
+body .wrapper .main-sidebar .nav-sidebar .nav-link:focus {
     background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
     color: #1e40af !important;
     transform: translateX(3px) scale(1.02) !important;
@@ -58,12 +59,12 @@
 }
 
 /* إصلاح مشاكل التداخل */
-.main-sidebar .nav-sidebar > .nav-item {
+.main-sidebar .nav-sidebar>.nav-item {
     position: relative !important;
     z-index: 1 !important;
 }
 
-.main-sidebar .nav-sidebar > .nav-item:hover {
+.main-sidebar .nav-sidebar>.nav-item:hover {
     z-index: 10 !important;
 }
 
@@ -89,7 +90,7 @@
         transform: none !important;
         box-shadow: none !important;
     }
-    
+
     .main-sidebar .nav-link:active,
     .main-sidebar .nav-link:focus {
         background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
@@ -123,8 +124,15 @@
 }
 
 @keyframes highlightPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
 }
 
 /* تحسين الأداء */
@@ -137,4 +145,23 @@
 .main-sidebar .nav-link {
     will-change: transform, background-color, box-shadow !important;
     backface-visibility: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* إصلاح تموضع العناصر */
+.main-sidebar .nav-link p {
+    flex: 1 !important;
+    margin: 0 !important;
+}
+
+.main-sidebar .nav-link .nav-icon {
+    margin-left: 0.75rem !important;
+    flex-shrink: 0 !important;
+}
+
+.main-sidebar .nav-link .right {
+    margin-left: 0.5rem !important;
+    flex-shrink: 0 !important;
 }
