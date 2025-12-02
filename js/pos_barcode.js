@@ -371,10 +371,15 @@ $(document).ready(function() {
         $('#tablesModal').modal('hide');
         
         if (tableCase != 0 && orderId) {
+            // طاولة فيها طلب - حمل الطلب واضيف عليه
             $('#selected_order_id').val(orderId);
-            loadOrderData(orderId);
+            loadExistingOrder(orderId, tableName);
         } else {
-            clearAllItems();
+            // طاولة فاضية - طلب جديد
+            $('#selected_order_id').val('');
+            $('#itemData').empty();
+            updateItemCount();
+            updateTotal();
             console.log('طاولة فاضية: ' + tableName + ' - طلب جديد');
         }
     });
@@ -389,8 +394,8 @@ $(document).ready(function() {
         clearAllItems();
     };
     
-    function loadOrderData(orderId) {
-        console.log('تحميل طلب رقم: ' + orderId);
+    function loadExistingOrder(orderId, tableName) {
+        console.log('تحميل طلب موجود رقم: ' + orderId + ' للطاولة: ' + tableName);
         
         $.ajax({
             url: 'ajax/load_order.php',
@@ -399,20 +404,23 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
+                    // مسح الأصناف الحالية
                     $('#itemData').empty();
                     
+                    // تحميل أصناف الطلب الموجود
                     if (response.items && response.items.length > 0) {
                         response.items.forEach(function(item) {
                             addItemToOrder(
                                 item.item_id,
                                 item.item_name,
                                 parseFloat(item.price),
-                                item.item_desc,
+                                item.item_desc || item.item_id,
                                 parseFloat(item.qty)
                             );
                         });
                     }
                     
+                    // تحميل بيانات الطلب
                     if (response.order) {
                         $('#discount').val(response.order.discount || 0);
                         if (response.order.emp_id) {
@@ -425,9 +433,12 @@ $(document).ready(function() {
                     
                     updateItemCount();
                     updateTotal();
-                    console.log('تم تحميل الطلب بنجاح');
+                    
+                    // عرض رسالة نجاح
+                    alert('تم تحميل طلب ' + tableName + ' بنجاح\nيمكنك الآن إضافة أصناف جديدة');
+                    console.log('تم تحميل طلب الطاولة بنجاح');
                 } else {
-                    alert('خطأ في تحميل الطلب: ' + (response.error || 'غير معروف'));
+                    alert('خطأ في تحميل طلب الطاولة: ' + (response.error || 'غير معروف'));
                 }
             },
             error: function(xhr, status, error) {

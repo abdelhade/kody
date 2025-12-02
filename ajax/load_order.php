@@ -17,7 +17,7 @@ try {
     $order_id = intval($_POST['order_id']);
     
     // جلب بيانات رأس الطلب
-    $order_query = "SELECT * FROM ot_head WHERE id = $order_id LIMIT 1";
+    $order_query = "SELECT * FROM ot_head WHERE id = $order_id AND isdeleted = 0 LIMIT 1";
     $order_result = $conn->query($order_query);
     
     if (!$order_result || $order_result->num_rows == 0) {
@@ -31,10 +31,11 @@ try {
     $items_query = "SELECT 
                         fd.*,
                         m.iname as item_name,
+                        m.barcode,
                         m.info as item_desc
                     FROM fat_details fd
                     LEFT JOIN myitems m ON m.id = fd.item_id
-                    WHERE fd.fat_id = $order_id
+                    WHERE fd.pro_id = $order_id AND fd.isdeleted = 0
                     ORDER BY fd.id";
     
     $items_result = $conn->query($items_query);
@@ -42,14 +43,13 @@ try {
     
     if ($items_result && $items_result->num_rows > 0) {
         while ($item = $items_result->fetch_assoc()) {
+            $qty = floatval($item['qty_out']) - floatval($item['qty_in']);
             $items[] = [
                 'item_id' => $item['item_id'],
                 'item_name' => $item['item_name'] ?: 'صنف غير معروف',
-                'item_desc' => $item['item_desc'] ?: '',
-                // Fix: Use correct column names from database schema
-                'qty' => floatval($item['qty_out']) - floatval($item['qty_in']),
+                'item_desc' => $item['barcode'] ?: $item['item_id'],
+                'qty' => $qty,
                 'price' => floatval($item['price']),
-                // Fix: Use det_value instead of subtotal
                 'subtotal' => floatval($item['det_value'])
             ];
         }
@@ -62,12 +62,12 @@ try {
             'emp_id' => $order['emp_id'],
             'acc1' => $order['acc1'],
             'store_id' => $order['store_id'],
-            'fund_id' => $order['fund_id'],
-            'total' => floatval($order['total']),
-            'discount' => floatval($order['disc']),
-            'net' => floatval($order['net']),
+            'fund_id' => $order['acc_fund'],
+            'total' => floatval($order['fat_total']),
+            'discount' => floatval($order['fat_disc']),
+            'net' => floatval($order['fat_net']),
             'paid' => floatval($order['paid']),
-            'order_status' => $order['order_status'] ?? 'active'
+            'order_status' => 'active'
         ],
         'items' => $items
     ]);
