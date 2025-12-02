@@ -41,6 +41,7 @@ if(isset($_SESSION['success_message'])){
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="dist/css/pos.css" rel="stylesheet">
     <link href="dist/css/pos_barcode.css" rel="stylesheet">
+    <link href="dist/css/pos_search.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <!-- Navbar -->
@@ -160,7 +161,8 @@ if(isset($_SESSION['success_message'])){
                                             <i class="fas fa-search"></i>
                                         </span>
                                         <input type="text" class="scnd form-control" id="searchInput" 
-                                               placeholder="ابحث عن الصنف..." title="البحث">
+                                               placeholder="ابحث عن الصنف..." 
+                                               title="ابحث عن الصنف واضغط Enter | Alt+S للتركيز">
                                     </div>
                                 </div>
                                 
@@ -168,7 +170,8 @@ if(isset($_SESSION['success_message'])){
                                 <div class="col-6">
                                     <input type="text" class="form-control form-control-sm frst" 
                                            placeholder="امسح الباركود..." 
-                                           id="barcodeInput" title="قارئ الباركود"
+                                           id="barcodeInput" 
+                                           title="قارئ الباركود | Alt+B للتركيز"
                                            style="border: 2px solid #28a745; background: #f8fff8;">
                                 </div>
                             </div>
@@ -446,9 +449,31 @@ if(isset($_SESSION['success_message'])){
             <div class="col-lg-8">
                 <div class="card shadow-sm items-section-card">
                     <div class="card-header bg-primary text-white py-2">
-                        <h6 class="mb-0">
-                            <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
-                        </h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
+                            </h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="input-group" style="width: 300px;">
+                                    <span class="input-group-text bg-white">
+                                        <i class="fas fa-filter text-primary"></i>
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="itemFilterInput" 
+                                           placeholder="فلترة الأصناف بالاسم أو الباركود" 
+                                           autocomplete="off"
+                                           title="اضغط Ctrl+F للتركيز على البحث | Escape للمسح"
+                                           style="font-size: 0.9rem;">
+                                    <button class="btn btn-outline-light" type="button" id="clearFilter" title="مسح الفلتر">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <small class="text-white-50 d-none d-lg-block" style="font-size: 0.7rem;">
+                                    <i class="fas fa-keyboard me-1"></i>Ctrl+F
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         <!-- التصنيفات -->
@@ -458,19 +483,19 @@ if(isset($_SESSION['success_message'])){
                                 $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
                                 if ($rescategories && $rescategories->num_rows > 0) {
                                     // زر "الكل"
-                                    echo '<button class="btn btn-primary btn-sm category-btn active" data-category="all">
+                                    echo '<button type="button" class="btn btn-primary btn-sm category-btn active" data-category="all">
                                             <i class="fas fa-th me-1"></i>الكل
                                           </button>';
                                     
                                     while ($rowcategory = $rescategories->fetch_assoc()) {
                                         $categoryId = isset($rowcategory['id']) ? $rowcategory['id'] : '';
                                         $categoryName = isset($rowcategory['gname']) ? htmlspecialchars($rowcategory['gname']) : '';
-                                        echo '<button class="btn btn-outline-primary btn-sm category-btn" data-category="'.$categoryId.'">
+                                        echo '<button type="button" class="btn btn-outline-primary btn-sm category-btn" data-category="'.$categoryId.'">
                                                 <i class="fas fa-folder me-1"></i>'.$categoryName.'
                                               </button>';
                                     }
                                 } else {
-                                    echo '<button class="btn btn-primary btn-sm category-btn active" data-category="all">
+                                    echo '<button type="button" class="btn btn-primary btn-sm category-btn active" data-category="all">
                                             <i class="fas fa-th me-1"></i>الكل
                                           </button>';
                                 }
@@ -851,6 +876,63 @@ if(isset($_SESSION['success_message'])){
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/pos_config_loader.js"></script>
     <script src="js/pos_barcode.js"></script>
+    
+    <script>
+    // كود البحث المباشر
+    $(document).ready(function() {
+        console.log('Search script loaded');
+        
+        $('#itemFilterInput').on('keyup input', function() {
+            var searchText = $(this).val().toLowerCase();
+            console.log('البحث:', searchText);
+            
+            if (searchText === '') {
+                $('.item-wrapper').show();
+                return;
+            }
+            
+            $('.item-wrapper').each(function() {
+                var itemName = $(this).find('[data-item-name]').attr('data-item-name');
+                var itemBarcode = $(this).find('[data-item-barcode]').attr('data-item-barcode');
+                
+                if (itemName) itemName = itemName.toLowerCase();
+                if (itemBarcode) itemBarcode = itemBarcode.toLowerCase();
+                
+                if ((itemName && itemName.indexOf(searchText) >= 0) || 
+                    (itemBarcode && itemBarcode.indexOf(searchText) >= 0)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+        
+        $('#clearFilter').click(function() {
+            $('#itemFilterInput').val('');
+            $('.item-wrapper').show();
+        });
+        
+        // فلترة التصنيفات
+        $('.category-btn').click(function(e) {
+            e.preventDefault();
+            
+            $('.category-btn').removeClass('active btn-primary').addClass('btn-outline-primary');
+            $(this).removeClass('btn-outline-primary').addClass('btn-primary active');
+            
+            var categoryId = $(this).data('category');
+            console.log('تصنيف مختار:', categoryId);
+            
+            $('#itemFilterInput').val('');
+            
+            if (categoryId === 'all') {
+                $('.item-wrapper').show();
+            } else {
+                $('.item-wrapper').hide();
+                $('.item-wrapper[data-category="' + categoryId + '"]').show();
+            }
+        });
+    });
+    </script>
 
 
     <!-- Recent Orders Offcanvas -->

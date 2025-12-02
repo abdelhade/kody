@@ -45,14 +45,20 @@ switch ($q) {
                         ?>
 
                         <div class="row">
-                            <div class="col-md-3 p-0 m-0">
-                                من  <input class="" type="date" value="<?= $strtdate ?>" name="strtdate">
-                                <br>
-                                إلى <input class="" type="date" value="<?= $enddate ?>" name="enddate">
-                                <br>
-                                <button class="btn bg-sky-400 " type="submit">
-                                    <i class="fa fa-search"> بحث</i>
-                                </button>
+                            <div class="col-md-12 d-flex align-items-center gap-3">
+                                <div>
+                                    <label>من</label>
+                                    <input class="form-control" type="date" value="<?= $strtdate ?>" name="strtdate">
+                                </div>
+                                <div>
+                                    <label>إلى</label>
+                                    <input class="form-control" type="date" value="<?= $enddate ?>" name="enddate">
+                                </div>
+                                <div>
+                                    <button class="btn bg-sky-400" type="submit">
+                                        <i class="fa fa-search"></i> بحث
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

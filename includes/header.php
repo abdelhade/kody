@@ -73,6 +73,22 @@ if ($lang == null) {
   <link href="dist/css/horstec.css" rel="stylesheet">
   <link href="assets/styles/dashboard.css" rel="stylesheet">
   <link href="assets/styles/sidebar-fixes.css" rel="stylesheet">
+  
+  <!-- إصلاح طوارئ السايد بار -->
+  <style>
+  body .wrapper .main-sidebar .nav-sidebar .nav-link:hover {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+    color: #1e40af !important;
+    transform: translateX(3px) scale(1.02) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+  }
+  body .wrapper .main-sidebar .nav-sidebar .nav-link:hover .nav-icon {
+    color: #2563eb !important;
+    transform: scale(1.15) rotate(5deg) !important;
+  }
+  </style>
  
 
 
