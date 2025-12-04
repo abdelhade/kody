@@ -844,3 +844,72 @@ $(document).ready(function() {
         loadRecentOrders();
     });
 });
+
+// ========================================
+// Daily Sales Report Print Function
+// ========================================
+function printDailySalesReport() {
+    console.log('Opening daily sales report...');
+    window.open('print/daily_sales_receipt.php', '_blank');
+}
+
+
+
+// ========================================
+// Shift Management Functions
+// ========================================
+function loadShiftPreview() {
+    $.ajax({
+        url: 'ajax/get_shift_preview.php',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                let html = `
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h6 class="text-primary mb-1">عدد الفواتير</h6>
+                                <h4 class="mb-0">${response.data.total_invoices || 0}</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h6 class="text-success mb-1">إجمالي المبيعات</h6>
+                                <h4 class="mb-0 text-success">${(response.data.total_sales || 0).toFixed(2)} ج.م</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h6 class="text-warning mb-1">الخصومات</h6>
+                                <h4 class="mb-0 text-warning">${(response.data.total_discounts || 0).toFixed(2)} ج.م</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <h6 class="text-info mb-1">صافي المبيعات</h6>
+                                <h4 class="mb-0 text-info">${(response.data.net_sales || 0).toFixed(2)} ج.م</h4>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#shiftPreview').html(html);
+            } else {
+                $('#shiftPreview').html('<p class="text-center text-muted">لا توجد مبيعات اليوم</p>');
+            }
+        },
+        error: function() {
+            $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
+        }
+    });
+}
+
+$(document).on('show.bs.modal', '#closeShiftModal', function() {
+    loadShiftPreview();
+});
+
+function closeShift() {
+    if (confirm('هل أنت متأكد من إغلاق الشيفت؟')) {
+        window.location.href = 'logout.php';
+    }
+}

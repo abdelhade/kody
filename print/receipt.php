@@ -46,9 +46,31 @@ $prodate = date('md', strtotime($rowfat['pro_date']));
 <div class="col-sm-12 invoice-col">
 <address><b>العميل :</b><?php
     $accid = $rowfat['acc1'];
-$rowacc1= $conn->query("SELECT aname,address,phone,e_mail from acc_head where id = $accid")->fetch_assoc();
- echo  $rowacc1['aname'];?>
- <?= $rowacc1['address']?>
+$rowacc1= $conn->query("SELECT aname,info from acc_head where id = $accid")->fetch_assoc();
+
+// التحقق من نوع الطلب
+$is_delivery = strpos($rowfat['info'], 'دليفري') !== false;
+
+if ($is_delivery) {
+    // استخراج بيانات العميل من حقل info في الفاتورة
+    $info = $rowfat['info'];
+    
+    // استخراج بيانات العميل
+    preg_match('/العميل: ([^-]+)/', $info, $name_match);
+    preg_match('/الهاتف: ([^-]+)/', $info, $phone_match);
+    preg_match('/العنوان: (.+)$/', $info, $address_match);
+    
+    $customer_name = isset($name_match[1]) ? trim($name_match[1]) : $rowacc1['aname'];
+    $customer_phone = isset($phone_match[1]) ? trim($phone_match[1]) : '';
+    $customer_address = isset($address_match[1]) ? trim($address_match[1]) : '';
+    
+    echo $customer_name;
+    if ($customer_address) echo "<br><b>العنوان:</b> " . $customer_address;
+    if ($customer_phone) echo "<br><b>الموبايل:</b> " . $customer_phone;
+} else {
+    echo $rowacc1['aname'];
+}
+?>
  <br>
 <b>البائع    :</b> <?php
 $emp = $rowfat['emp_id'];
