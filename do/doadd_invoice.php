@@ -91,6 +91,17 @@ if (!empty($order_type_text)) {
     $info = empty($info) ? "نوع الطلب: $order_type_text" : "$info - نوع الطلب: $order_type_text";
 }
 
+// إضافة بيانات العميل للدليفري
+if ($order_type == 3) { // دليفري
+    $delivery_name = isset($_POST['delivery_customer_name']) ? htmlspecialchars(trim($_POST['delivery_customer_name']), ENT_QUOTES, 'UTF-8') : '';
+    $delivery_phone = isset($_POST['delivery_customer_phone']) ? htmlspecialchars(trim($_POST['delivery_customer_phone']), ENT_QUOTES, 'UTF-8') : '';
+    $delivery_address = isset($_POST['delivery_customer_address']) ? htmlspecialchars(trim($_POST['delivery_customer_address']), ENT_QUOTES, 'UTF-8') : '';
+    
+    if (!empty($delivery_name) && !empty($delivery_phone) && !empty($delivery_address)) {
+        $info .= " - العميل: $delivery_name - الهاتف: $delivery_phone - العنوان: $delivery_address";
+    }
+}
+
 // إضافة اسم الطاولة إلى حقل info إذا كانت موجودة
 $table_name = isset($_POST['table_name']) ? htmlspecialchars(trim($_POST['table_name']), ENT_QUOTES, 'UTF-8') : '';
 if (!empty($table_name)) {

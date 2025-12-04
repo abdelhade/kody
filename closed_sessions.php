@@ -2,7 +2,37 @@
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
 
+<!-- إضافة CSS التحسينات -->
+<link href="dist/css/shift_notifications.css" rel="stylesheet">
+
 <div class="content-wrapper">
+
+<!-- عرض رسالة إغلاق الشيفت -->
+<?php if (isset($_SESSION['success_message'])): ?>
+<div class="container-fluid mt-3">
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong><?= htmlspecialchars($_SESSION['success_message']) ?></strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+<?php 
+    unset($_SESSION['success_message']);
+endif; 
+?>
+
+<!-- عرض رسائل الخطأ -->
+<?php if (isset($_SESSION['error_message'])): ?>
+<div class="container-fluid mt-3">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> <?= $_SESSION['error_message'] ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+<?php 
+    unset($_SESSION['error_message']);
+endif; 
+?>
   <!-- Content Header (Page header) -->
   <section class="content-header">
         <div class="container-fluid">

@@ -1,10 +1,9 @@
 
 <?php
-$dbhost = 'localhost'; // أو عنوان الخادم
-$dbuser = 'اسم_المستخدم_للهوست'; // اسم المستخدم من الهوست
-$dbpass = 'كلمة_المرور_للهوست'; // كلمة المرور من الهوست
-$dbname = 'اسم_قاعدة_البيانات'; // اسم قاعدة البيانات على الهوست
-
+$dbhost = 'localhost';
+$dbuser = 'root';
+$dbpass = '';
+$dbname = 'focus';
 
 $conn = new mysqli($dbhost, $dbuser, $dbpass, $dbname);
 if ($conn->connect_error) {
