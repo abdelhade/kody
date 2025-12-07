@@ -73,6 +73,7 @@ if ($lang == null) {
   <link href="dist/css/horstec.css" rel="stylesheet">
   <link href="assets/styles/dashboard.css" rel="stylesheet">
   <link href="assets/styles/sidebar-fixes.css" rel="stylesheet">
+  <link href="css/operations_responsive.css" rel="stylesheet">
   
   <!-- إصلاح طوارئ السايد بار -->
   <style>
