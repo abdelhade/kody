@@ -51,7 +51,27 @@ $price2 = $_POST['price2'][0];
 
 
 
-$sql = "UPDATE  myitems  SET   iname ='$iname', name2 ='$name2', code ='$code',info ='$info', cost_price ='$cost_price', group1 ='$group1', group2 ='$group2',price1 = '$price1'  WHERE id = '$item_id'";
+// Handle image upload
+if (isset($_FILES['imgs']) && !empty($_FILES['imgs']['name'][0])) {
+    $imgs_name = $_FILES['imgs']['name'][0];
+    $tmp_name = $_FILES['imgs']['tmp_name'][0];
+    
+    $arrkvr = explode(".", $imgs_name);
+    $kvr_ext = end($arrkvr);
+    
+    $allow_ext = ["jpg", "png", "gif", "jpeg", "webp"];
+    if (in_array($kvr_ext, $allow_ext)) {
+        $new_kvr_name = $arrkvr[0] . rand(1, 1000000) . "." . $kvr_ext;
+        if (move_uploaded_file($tmp_name, "../uploads/$new_kvr_name")) {
+            // حذف الصور القديمة للصنف
+            $conn->query("DELETE FROM imgs WHERE itemid = '$item_id'");
+            // إضافة الصورة الجديدة
+            $conn->query("INSERT INTO imgs (iname, itemid) VALUES ('$new_kvr_name', '$item_id')");
+        }
+    }
+}
+
+$sql = "UPDATE myitems SET iname='$iname', name2='$name2', code='$code', info='$info', cost_price='$cost_price', group1='$group1', group2='$group2', price1='$price1' WHERE id='$item_id'";
 $conn->query($sql);
 
     foreach ($_POST['unit_id'] as $index => $unit_id) {

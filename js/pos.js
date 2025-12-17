@@ -315,3 +315,29 @@ function clearTableSelection() {
     $('.table-selected-indicator').remove();
 }
 
+// دالة إغلاق الشيفت
+function closeShift() {
+    const expenses = $('#shift_expenses').val() || 0;
+    const expNotes = $('#shift_exp_notes').val() || '';
+    const cash = $('#shift_cash').val() || 0;
+    const fundAfter = $('#shift_fund_after').val() || 0;
+    const notes = $('#shift_notes').val() || '';
+    
+    console.log('Shift data:', { expenses, expNotes, cash, fundAfter, notes });
+    
+    // إنشاء form وإرسال البيانات
+    const form = $('<form>', {
+        method: 'POST',
+        action: 'close_shift.php'
+    });
+    
+    form.append($('<input>', { type: 'hidden', name: 'expenses', value: expenses }));
+    form.append($('<input>', { type: 'hidden', name: 'exp_notes', value: expNotes }));
+    form.append($('<input>', { type: 'hidden', name: 'cash', value: cash }));
+    form.append($('<input>', { type: 'hidden', name: 'fund_after', value: fundAfter }));
+    form.append($('<input>', { type: 'hidden', name: 'notes', value: notes }));
+    
+    $('body').append(form);
+    form.submit();
+}
+

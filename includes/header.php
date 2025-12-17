@@ -34,7 +34,7 @@ if ($lang == null) {
   <!-- Tell the browser to be responsive to screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="assets/libs/fontawesome.min.css">
   <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
   <link rel="icon" href="assets/favicon/favicon.png" type="image/ico">
 
@@ -63,7 +63,7 @@ if ($lang == null) {
   <link href="plugins/hadi/google.css" rel="stylesheet">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans+Arabic:wght@100..800&display=swap" rel="stylesheet">
+  <link href="assets/libs/playpen-sans-arabic-local.css" rel="stylesheet">
   <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css">
 
   <link rel="stylesheet" href="dist/css/custom.css">
@@ -121,7 +121,7 @@ background-color:<?= $rowstg['bodycolor']?>;
   font-style: normal;
   font-weight: 900;
   font-display: block;
-  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2") format("woff2");
+  src: url("assets/libs/webfonts/fa-solid-900.woff2") format("woff2");
 }
 
 @font-face {
@@ -129,7 +129,7 @@ background-color:<?= $rowstg['bodycolor']?>;
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff2") format("woff2");
+  src: url("assets/libs/webfonts/fa-regular-400.woff2") format("woff2");
 }
 
 @font-face {
@@ -137,7 +137,7 @@ background-color:<?= $rowstg['bodycolor']?>;
   font-style: normal;
   font-weight: 400;
   font-display: block;
-  src: url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff2") format("woff2");
+  src: url("assets/libs/webfonts/fa-brands-400.woff2") format("woff2");
 }
 
 /* CRITICAL FIX: Force Font Awesome to work */

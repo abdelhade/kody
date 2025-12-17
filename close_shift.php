@@ -40,12 +40,23 @@ try {
     $user_result = $conn->query($user_query);
     $username = $user_result ? $user_result->fetch_assoc()['aname'] : 'Unknown';
     
+    // جلب بيانات إغلاق الشيفت من POST
+    $expenses = floatval($_POST['expenses'] ?? 0);
+    $exp_notes = $conn->real_escape_string($_POST['exp_notes'] ?? '');
+    $cash = floatval($_POST['cash'] ?? $total_sales);
+    $fund_after = floatval($_POST['fund_after'] ?? $total_sales);
+    $notes = $conn->real_escape_string($_POST['notes'] ?? '');
+    
+    // Debug: لوج البيانات المستلمة
+    error_log('POST data: ' . print_r($_POST, true));
+    error_log('Processed data: expenses=' . $expenses . ', exp_notes=' . $exp_notes . ', cash=' . $cash . ', fund_after=' . $fund_after . ', notes=' . $notes);
+    
     // إدراج سجل إغلاق الشيفت
     $shift_number = date('Ymd') . '_' . $user_id;
     $insert_query = "INSERT INTO closed_orders 
                      (shift, date, user, endtime, total_sales, expenses, exp_notes, cash, fund_after, info) 
                      VALUES 
-                     ('$shift_number', '$shift_date', '$username', '$shift_time', '$total_sales', '0', 'إغلاق تلقائي', '$total_sales', '$total_sales', 'إغلاق شيفت تلقائي - عدد الطلبات: $total_orders')";
+                     ('$shift_number', '$shift_date', '$username', '$shift_time', '$total_sales', '$expenses', '$exp_notes', '$cash', '$fund_after', '$notes')";
     
     if ($conn->query($insert_query)) {
         // رسالة بسيطة

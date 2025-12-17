@@ -1,15 +1,28 @@
 <?php
-$dbhost = 'localhost';
-$dbuser = 'root';
-$dbpass = '';
-$dbname = 'focus';
-$conn = new mysqli($dbhost, $dbuser, $dbpass, $dbname);
-if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
+// إعدادات قاعدة البيانات
+if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false) {
+    // إعدادات localhost
+    $dbhost = 'localhost';
+    $dbuser = 'root';
+    $dbpass = '';
+    $dbname = 'focus';
+} else {
+    // إعدادات الهوست
+    $dbhost = '127.0.0.1';
+    $dbuser = 'u173148011_focua';
+    $dbpass = 'AbAbAb@1234';
+    $dbname = 'u173148011_focus';
 }
 
-// تحميل نظام Logging المبسط
-require_once 'simple_logger.php';
+$conn = new mysqli($dbhost, $dbuser, $dbpass, $dbname);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// تحميل نظام Logging المبسط (إذا كان موجود)
+if (file_exists('simple_logger.php')) {
+    require_once 'simple_logger.php';
+}
 
 // settings
 

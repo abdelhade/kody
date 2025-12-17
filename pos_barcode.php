@@ -38,11 +38,12 @@ if(isset($_SESSION['success_message'])){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام نقاط البيع - POS System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
     <link href="dist/css/pos.css" rel="stylesheet">
     <link href="dist/css/pos_barcode.css" rel="stylesheet">
     <link href="dist/css/pos_search.css" rel="stylesheet">
+    <script src="plugins/jquery/jquery.min.js"></script>
 </head>
 
 <body class="bg-light">
@@ -136,7 +137,7 @@ if(isset($_SESSION['success_message'])){
                                         <i class="fas fa-shopping-bag me-1"></i>تيك أواي
                                     </label>
 
-                                    <input type="radio" class="btn-check" id="age2" name="age" value="2"
+                                                                                                                                                        <input type="radio" class="btn-check" id="age2" name="age" value="2"
                                         <?php if (isset($_GET['table'])) {echo " checked ";} ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age2">
                                         <i class="fas fa-chair me-1"></i>طاولة
@@ -919,6 +920,37 @@ if(isset($_SESSION['success_message'])){
                         </div>
                     </div>
                     
+                    <!-- بيانات إغلاق الشيفت -->
+                    <div class="card border-secondary mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>بيانات إغلاق الشيفت</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">المصاريف</label>
+                                    <input type="number" class="form-control" id="shift_expenses" placeholder="0.00" step="0.01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">تسليم الكاش</label>
+                                    <input type="number" class="form-control" id="shift_cash" placeholder="0.00" step="0.01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">نهاية الدرج</label>
+                                    <input type="number" class="form-control" id="shift_fund_after" placeholder="0.00" step="0.01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">بيان المصاريف</label>
+                                    <input type="text" class="form-control" id="shift_exp_notes" placeholder="تفاصيل المصاريف">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">ملاحظات</label>
+                                    <textarea class="form-control" id="shift_notes" rows="3" placeholder="ملاحظات إضافية"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
 
                 </div>
                 <div class="modal-footer">
@@ -988,10 +1020,24 @@ if(isset($_SESSION['success_message'])){
     </a>
 
     <!-- Scripts - jQuery must be loaded first -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="js/pos_config_loader.js"></script>
+    <script src="js/pos_offline_adapter.js"></script>
     <script src="js/pos_barcode.js"></script>
+    
+    <script>
+        // تفعيل النظام الأوفلاين فور تحميل الصفحة
+        $(document).ready(function() {
+            console.log('🚀 Starting POS Offline System...');
+            
+            // التحقق من حالة الاتصال
+            if (!navigator.onLine) {
+                console.log('📴 Device is offline - Offline mode activated');
+            } else {
+                console.log('🌐 Device is online - Offline adapter ready');
+            }
+        });
+    </script>
 
     <script>
         // دالة طباعة تقرير المبيعات اليومية
@@ -1075,22 +1121,28 @@ if(isset($_SESSION['success_message'])){
 
             // وظيفة إغلاق الشيفت
             window.closeShift = function () {
-                // إظهار رسالة تحميل
-                $('#closeShiftModal .modal-body').html(`
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary mb-3" role="status">
-                            <span class="visually-hidden">جاري الإغلاق...</span>
-                        </div>
-                        <h5>جاري إغلاق الشيفت...</h5>
-                        <p class="text-muted">يرجى الانتظار، جاري حساب المبيعات وإنشاء التقرير</p>
-                    </div>
-                `);
-                $('#closeShiftModal .modal-footer').hide();
+                const expenses = $('#shift_expenses').val() || 0;
+                const expNotes = $('#shift_exp_notes').val() || '';
+                const cash = $('#shift_cash').val() || 0;
+                const fundAfter = $('#shift_fund_after').val() || 0;
+                const notes = $('#shift_notes').val() || '';
                 
-                // تأخير قصير لإظهار الرسالة ثم التوجه
-                setTimeout(function() {
-                    window.location.href = 'close_shift.php';
-                }, 1500);
+                console.log('Shift data:', { expenses, expNotes, cash, fundAfter, notes });
+                
+                // إنشاء form وإرسال البيانات
+                const form = $('<form>', {
+                    method: 'POST',
+                    action: 'close_shift.php'
+                });
+                
+                form.append($('<input>', { type: 'hidden', name: 'expenses', value: expenses }));
+                form.append($('<input>', { type: 'hidden', name: 'exp_notes', value: expNotes }));
+                form.append($('<input>', { type: 'hidden', name: 'cash', value: cash }));
+                form.append($('<input>', { type: 'hidden', name: 'fund_after', value: fundAfter }));
+                form.append($('<input>', { type: 'hidden', name: 'notes', value: notes }));
+                
+                $('body').append(form);
+                form.submit();
             };
             
             // تحميل معاينة المبيعات عند فتح modal إغلاق الشيفت
