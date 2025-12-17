@@ -1,4 +1,4 @@
-<?php include('includes/header.php') ?>
+<?php include('../includes/header.php') ?>
 <?php
 if (!isset($_GET['id'])) {
     echo "لا يوجد فاتورة بهذا الرقم";die;
@@ -215,4 +215,4 @@ $(function() {
 });
 </script>
 
-<?php include('includes/footer.php') ?>
+<?php include('../includes/footer.php') ?>

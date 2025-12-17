@@ -230,12 +230,20 @@
             </div>
             
             <div class="card-body">   
-                <?php if(!isset($_GET['edit'])){ ?>    
                <div class="form-group ">
                 <label class="btn btn-secondary" for="img">صور للصنف</label>
                 <input type="file" name="imgs[]" id="img" class="" >
+                <?php if(isset($_GET['edit'])){ 
+                    $img_result = $conn->query("SELECT iname FROM imgs WHERE itemid = $id LIMIT 1");
+                    if($img_result && $img_result->num_rows > 0){
+                        $img_row = $img_result->fetch_assoc();
+                ?>
+                    <div class="mt-2">
+                        <img src="uploads/<?= $img_row['iname'] ?>" alt="صورة الصنف" style="width: 100px; height: 100px; object-fit: cover;">
+                        <p class="text-muted">الصورة الحالية</p>
+                    </div>
+                <?php }} ?>
             </div>
-                    <?php }?>
             </div>
             <div class="card-fotter">
                 <div class="row">

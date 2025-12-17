@@ -72,9 +72,12 @@ include('includes/sidebar.php');
       border-radius: 8px;
       box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
       padding: 1rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .table {
       margin-bottom: 0;
+      min-width: 600px;
     }
     .table th {
       background-color: #f8f9fa;
@@ -86,16 +89,52 @@ include('includes/sidebar.php');
     @media (max-width: 991.98px) {
       .content-wrapper {
         margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+    }
+    @media (max-width: 768px) {
+      .content-wrapper {
+        padding: 10px;
+      }
+      .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .d-flex.justify-content-between h3 {
+        font-size: 1.3rem;
+      }
+      .d-flex.justify-content-between .btn {
+        width: 100%;
+      }
+      .table {
+        font-size: 0.85rem;
+      }
+      .table th,
+      .table td {
+        padding: 0.5rem 0.3rem;
+      }
+      .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+      }
+    }
+    @media (max-width: 576px) {
+      .table {
+        font-size: 0.75rem;
+      }
+      .table th,
+      .table td {
+        padding: 0.4rem 0.2rem;
       }
     }
   </style>
 
 <div class="content-wrapper">
   <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
       <h3 class="mb-0">🍽️ إدارة الطاولات</h3>
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-        <i class="fas fa-plus"></i> إضافة طاولة
+        <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">إضافة طاولة</span><span class="d-inline d-sm-none">إضافة</span>
       </button>
     </div>
 
@@ -124,12 +163,12 @@ include('includes/sidebar.php');
         </td> -->
         <td><?= $row['crtime'] ?></td>
         <td><?= $row['mdtime'] ?></td>
-        <td>
+        <td class="text-nowrap">
           <button class="btn btn-sm btn-outline-secondary" 
                   data-bs-toggle="modal" 
-                  data-bs-target="#editModal<?= $row['id'] ?>">Edit</button>
+                  data-bs-target="#editModal<?= $row['id'] ?>"><i class="fas fa-edit"></i></button>
           <a href="?delete=<?= $row['id'] ?>" class="btn btn-sm btn-outline-danger"
-             onclick="return confirm('Delete this table?')">Delete</a>
+             onclick="return confirm('Delete this table?')"><i class="fas fa-trash"></i></a>
         </td>
       </tr>
 

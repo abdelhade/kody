@@ -63,13 +63,13 @@ endif;
             </thead>
             <tbody>
                 <?php 
-                $x = 0;
+                $total_count = $conn->query("SELECT COUNT(*) as count FROM closed_orders")->fetch_assoc()['count'];
+                $x = $total_count;
                 $res_closed = $conn->query("SELECT * FROM closed_orders ORDER BY id DESC");
                 while ($rowcl = $res_closed->fetch_assoc()) {
-                    $x++;
                 ?> 
                 <tr>
-                    <td><?= $rowcl['shift'] ?></td>
+                    <td><?= $x ?></td>
                     <td><?= $rowcl['date'] ?></td>
                     <td class="bg-primary text-white"><?= $rowcl['user'] ?></td>
                     <td><?= $rowcl['endtime'] ?></td>
@@ -80,7 +80,7 @@ endif;
                     <td class="bg-light"><?= $rowcl['fund_after'] ?></td>
                     <td><?= $rowcl['info'] ?></td>
                 </tr>
-                <?php } ?>
+                <?php $x--; } ?>
             </tbody>
         </table>
     </div>

@@ -3,7 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-include('includes/header.php'); 
+include('../includes/header.php'); 
 
 if (!isset($_GET['id'])) {
     echo "لا يوجد فاتورة بهذا الرقم";
@@ -26,12 +26,12 @@ if ($rowfat == null) {
 <?php 
 $logo_path = '../assets/logo/logo.jpg';
 if (file_exists($logo_path)) {
-    echo '<img src="' . $logo_path . '" alt="" class="img-fluid">';
+    echo '<img src="' . $logo_path . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
 } else {
     echo '<div class="text-center p-2">لوجو الشركة</div>';
 }
 ?>
-<h1 class="text-center p-3 p-0 font-bold text-xl">
+<h1 class="text-center p-3 p-0 font-bold" style="font-size: 23px;font-weight:bolder;">
 <?= $rowstg['company_name'] ?></h1>
 
 <?php
@@ -41,21 +41,14 @@ $prodate = date('md', strtotime($rowfat['pro_date']));
     <div class="col-12">
 <p style="font-size:12px;text-align:center">
     <?= $prodate.$rowfat['pro_id'] ?></p>
-<div class="row invoice-info font-thin border-1 border-indigo-300 m-0">
 
-<div class="col-sm-12 invoice-col">
-<address><b>العميل :</b><?php
-    $accid = $rowfat['acc1'];
+<?php
+$accid = $rowfat['acc1'];
 $rowacc1= $conn->query("SELECT aname,info from acc_head where id = $accid")->fetch_assoc();
-
-// التحقق من نوع الطلب
 $is_delivery = strpos($rowfat['info'], 'دليفري') !== false;
 
 if ($is_delivery) {
-    // استخراج بيانات العميل من حقل info في الفاتورة
     $info = $rowfat['info'];
-    
-    // استخراج بيانات العميل
     preg_match('/العميل: ([^-]+)/', $info, $name_match);
     preg_match('/الهاتف: ([^-]+)/', $info, $phone_match);
     preg_match('/العنوان: (.+)$/', $info, $address_match);
@@ -64,40 +57,27 @@ if ($is_delivery) {
     $customer_phone = isset($phone_match[1]) ? trim($phone_match[1]) : '';
     $customer_address = isset($address_match[1]) ? trim($address_match[1]) : '';
     
-    echo $customer_name;
+    echo '<div class="row invoice-info font-thin m-0"><div class="col-sm-12 invoice-col"><address>';
+    if($customer_name) echo "<b>العميل:</b> " . $customer_name;
     if ($customer_address) echo "<br><b>العنوان:</b> " . $customer_address;
     if ($customer_phone) echo "<br><b>الموبايل:</b> " . $customer_phone;
-} else {
-    echo $rowacc1['aname'];
+    echo '</address></div></div>';
 }
 ?>
- <br>
-<b>البائع    :</b> <?php
-$emp = $rowfat['emp_id'];
-$rowemp = $conn->query("SELECT * from acc_head where id = '$emp'")->fetch_assoc();
-echo $rowemp['aname'];
-?>
-<br>
-</address>
-</div>
 
-</div>
-
-<p class="text-center">************</p>
 <div class="row">
 
 
 
 
 
-<table class="table col-md-12 table-bordered table-lg text-center">
+<table class="table col-md-12 table-bordered text-center" style="border: 1px solid #ddd;">
 <thead>
-<tr class="bg-slate-100 border-2 border-slate-900" style="font-size:x-small">
-<th class="border-3 border-slate-900">الصــــنـــف</th>
-<th class="border-3 border-slate-900">الكمية</th>
-<th class="border-3 border-slate-900">السعر</th>
-<th class="border-3 border-slate-900">القيمة</th>
-
+<tr style="font-size:x-small; background-color: #f0f0f0;">
+<th style="border: 1px solid #ddd; padding: 8px;">الصــــنـــف</th>
+<th style="border: 1px solid #ddd; padding: 8px;">الكمية</th>
+<th style="border: 1px solid #ddd; padding: 8px;">السعر</th>
+<th style="border: 1px solid #ddd; padding: 8px;">القيمة</th>
 </tr>
 </thead>
 <tbody>
@@ -110,65 +90,59 @@ echo $rowemp['aname'];
         $rowitm = $conn->query("SELECT * FROM myitems where id = $itmid ")->fetch_assoc();
         $qty = $rowdet['qty_out'];       
     ?>
-<tr class="border-2 border-slate-900">
-<td class="p-1" style="font-size:small"><?= $rowitm['iname']  ?></td>
-<td><?= $qty  ?></td>
-
-<td><?= $rowdet['price']?></td>
-<td><?= $rowdet['det_value']?></td>
-
+<tr>
+<td class="p-1" style="font-size:small; border: 1px solid #ddd;"><?= $rowitm['iname']  ?></td>
+<td style="border: 1px solid #ddd;"><?= $qty  ?></td>
+<td style="border: 1px solid #ddd;"><?= $rowdet['price']?></td>
+<td style="border: 1px solid #ddd;"><?= $rowdet['det_value']?></td>
 </tr>
-
 <?php }?>
 </tbody>
 </table>
 
-</div>
-<p class="text-center">************</p>
-
-<div class="row">
-
-<div class="col-12">
-<div class="table-responsive">
-<table class="table table-bordered table-sm bg-slate-50">
+<table class="table col-md-12 table-bordered text-center" style="border: 1px solid #ddd; margin-top: 0;">
 <tbody>
-    <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
-<th style="width:35%">اجمالي:</th>
-<td class="float-right"><?= $rowfat['fat_total'] ?> LE</td>
-</tr>
-
+<tr style="font-weight: bold;background-color: #f0f0f0;">
+<td style="border: 1px solid #ddd; padding: 8px;">اجمالي</td>
 <?php if ($rowfat['fat_disc'] > 0 ){?>
-<tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
-<th><b>خصم :D</b></th>
-<td class="float-right"><?= $rowfat['fat_disc'] ?></td>
-</tr>
+<td style="border: 1px solid #ddd; padding: 8px;">خصم</td>
 <?php }?>
-
 <?php if ($rowfat['fat_plus'] > 0 ){?>
-<tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
-<th>اضافي:</th>
-<td class="float-right"><?= $rowfat['fat_plus'] ?></td>
-</tr>
+<td style="border: 1px solid #ddd; padding: 8px;">اضافي</td>
 <?php }?>
-
-<tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
-<th>الصافي:</th>
-<td class="float-right"><?= $rowfat['fat_net'] ?> LE</td>
+<td style="border: 1px solid #ddd; padding: 8px;">الصافي</td>
+</tr>
+<tr style="font-weight: bold;">
+<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_total'] ?></td>
+<?php if ($rowfat['fat_disc'] > 0 ){?>
+<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_disc'] ?></td>
+<?php }?>
+<?php if ($rowfat['fat_plus'] > 0 ){?>
+<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_plus'] ?></td>
+<?php }?>
+<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_net'] ?></td>
 </tr>
 </tbody>
 </table>
-</div>
+
 </div>
 
 
-</div>
-<p class="text-center">************</p>
 <div class="row">
 <div class="col">
-        <p style="font-size:12px;text-align:center"><?= $rowfat['crtime'] ?></p>
-    <p class="text-center">زورونا مره اخري .. تسعدنا خدمتكم</p>
-    <p class="text-center">هاوس.com</p>
+    <p style="font-size:12px;text-align:center"><?= $rowfat['crtime'] ?></p>
+    <div style="text-align: center; direction: ltr; font-size: 12px; font-weight: bold;">
+        Thank you for choosing us where good ideas find the  
+        <p>❤ perfect place to grow</p>
+    </div>
     
+    <div style="text-align: center; margin-top: 15px;">
+        <img src="../qrCode.png" alt="QR Code" style="width: 60px; height: 60px; display: block; margin: 0 auto;">
+        <div style="margin-top: 5px;">
+            <i class="fab fa-facebook" style="font-size: 10px; color: #1877f2;"></i>
+            <span style="font-size: 10px;">FOCUS HOUSE</span>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -203,4 +177,4 @@ document.addEventListener('keydown', function(event) {
 });
 </script>
 
-<?php include('includes/footer.php') ?>
+<?php include('../includes/footer.php') ?>

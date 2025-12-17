@@ -45,20 +45,19 @@ switch ($q) {
                         ?>
 
                         <div class="row">
-                            <div class="col-md-12 d-flex align-items-center gap-3">
-                                <div>
-                                    <label>من</label>
-                                    <input class="form-control" type="date" value="<?= $strtdate ?>" name="strtdate">
-                                </div>
-                                <div>
-                                    <label>إلى</label>
-                                    <input class="form-control" type="date" value="<?= $enddate ?>" name="enddate">
-                                </div>
-                                <div>
-                                    <button class="btn bg-sky-400" type="submit">
-                                        <i class="fa fa-search"></i> بحث
-                                    </button>
-                                </div>
+                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                                <label>من</label>
+                                <input class="form-control" type="date" value="<?= $strtdate ?>" name="strtdate">
+                            </div>
+                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                                <label>إلى</label>
+                                <input class="form-control" type="date" value="<?= $enddate ?>" name="enddate">
+                            </div>
+                            <div class="col-md-4 col-12 mb-2">
+                                <label class="d-none d-md-block">&nbsp;</label>
+                                <button class="btn btn-primary btn-block" type="submit">
+                                    <i class="fa fa-search"></i> بحث
+                                </button>
                             </div>
                         </div>
 
@@ -66,7 +65,7 @@ switch ($q) {
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-responsive table-hover table-bordered" id="" data-page-length="10">
+                        <table class="table table-hover table-bordered table-sm" id="" data-page-length="10">
                             <thead>
                                 <tr>
                                     <th>#</th>
