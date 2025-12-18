@@ -9,52 +9,57 @@
 
       <?php if($role['show_users'] == 1){ ?>
       
-        <div class="card">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col-md-10">
-                    <h1>ادوار المستخدمين</h1>
-                    </div>
-                    <div class="col-md-2">
-                        <a href="add_role.php" class="btn btn-outline-primary btn-sm">جديد</a>
-                    </div>
+        <div class="card shadow-sm ">
+            <div class="card-headerr p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-dark"><i class="fas fa-users-cog me-2"></i> ادوار المستخدمين</h4>
+                    <a href="add_role.php" class="btn btn-light btn-sm">
+                        <i class="fas fa-plus me-1"></i> إضافة دور جديد
+                    </a>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="table table-responsive">
-                    <table id="myTable">
-                        <thead>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="thead-light">
                             <tr>
-                                <th>#</th>
-                                <th>الاسم</th>
+                                <th class="text-center" style="width: 80px;">#</th>
+                                <th>اسم الدور</th>
                                 <th>الوصف</th>
-                                <th>عمليات</th>
+                                <th class="text-center" style="width: 150px;">العمليات</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php 
-                            $sqlshowrole = "SELECT id,rollname,info FROM usr_pwrs";
+                            $sqlshowrole = "SELECT id,rollname,info FROM usr_pwrs ORDER BY id";
                             $resshowrole = $conn->query($sqlshowrole);
+                            $counter = 1;
                             while ($rawrole = $resshowrole->fetch_assoc()) { 
                             ?>
                             <tr>
-                                <th><?= $rawrole['id'] ?></th>
-                                <th><?= $rawrole['rollname'] ?></th>
-                                <th><?= $rawrole['info'] ?></th>
-                                <th>
-                                    <a href="edit_role.php?id=<?= md5($rawrole['id']) ?>&no=<?= $rawrole['id'] ?>&name=<?= $rawrole['rollname'] ?>" class="btn btn-warning btn-sm">تعديل</a>
-                                    <a href="do/dodel_role.php?id=<?= $rawrole['id'] ?>" class="btn btn-danger btn-sm" >حذف</a>
-                                </th>
+                                <td class="text-center font-weight-bold text-muted"><?= $counter++ ?></td>
+                                <td class="font-weight-bold"><?= htmlspecialchars($rawrole['rollname']) ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($rawrole['info']) ?></td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="edit_role.php?id=<?= md5($rawrole['id']) ?>&no=<?= $rawrole['id'] ?>&name=<?= urlencode($rawrole['rollname']) ?>" 
+                                           class="btn btn-sm" title="تعديل">
+                                            <i class="fas fa-edit " style="color:rgb(255, 184, 51);"></i>
+                                        </a>
+                                       
+                                        <a href="do/dodel_role.php?id=<?= $rawrole['id'] ?>" 
+                                           class="btn btn-sm" 
+                                           onclick="return confirm('هل أنت متأكد من حذف هذا الدور؟')" 
+                                           title="حذف">
+                                            <i class="fas fa-trash" style="color: rgb(173, 71, 71);"></i>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                             <?php } ?>
                         </tbody>
                     </table>
-
                 </div>
-
-            </div>
-            <div class="card-footer">
-
             </div>
         </div>
 

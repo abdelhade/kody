@@ -13,17 +13,19 @@ define('INVOICE_TYPES', [
     'resale' => 10,
     'rebuy' => 11,
     'po' => 12,
-    'so' => 13
+    'so' => 13,
+    'offer' => 14
 ]);
 
 // تعريف أسماء الفواتير بالعربية
 define('INVOICE_NAMES', [
-    4 => 'فاتورة مشتريات',
     3 => 'فاتورة مبيعات',
+    4 => 'فاتورة مشتريات',
     10 => 'فاتورة مردود مشتريات',
     11 => 'فاتورة مردود مبيعات',
     12 => 'أمر شراء',
-    13 => 'أمر بيع'
+    13 => 'أمر بيع',
+    14 => 'عرض سعر'
 ]);
 
 // تعريف أسماء التعديل
@@ -31,7 +33,8 @@ define('EDIT_NAMES', [
     4 => 'تعديل فاتورة المشتريات',
     3 => 'تعديل فاتورة المبيعات',
     10 => 'تعديل فاتورة مردود المبيعات',
-    11 => 'تعديل فاتورة مردود المشتريات'
+    11 => 'تعديل فاتورة مردود المشتريات',
+    14 => 'تعديل عرض السعر'
 ]);
 
 // معالجة نوع الفاتورة بشكل آمن
@@ -40,9 +43,17 @@ $invoice_title = 'غير محدد';
 $is_edit_mode = false;
 $invoice_data = null;
 
-if (!empty($_GET['q']) && isset(INVOICE_TYPES[$_GET['q']])) {
+if (!empty($_GET['q']) && array_key_exists($_GET['q'], INVOICE_TYPES)) {
     $pro_tybe = INVOICE_TYPES[$_GET['q']];
-    $invoice_title = INVOICE_NAMES[$pro_tybe];
+    if (array_key_exists($pro_tybe, INVOICE_NAMES)) {
+        $invoice_title = INVOICE_NAMES[$pro_tybe];
+    } else {
+        $invoice_title = 'نوع فاتورة غير معروف';
+    }
+} elseif (!empty($_GET['q'])) {
+    // نوع فاتورة غير صحيح
+    $invoice_title = 'نوع فاتورة غير صحيح: ' . htmlspecialchars($_GET['q']);
+    error_log("Invalid invoice type: " . $_GET['q']);
 } elseif (!empty($_GET['e']) && is_numeric($_GET['e'])) {
     $is_edit_mode = true;
     $opid = intval($_GET['e']);
@@ -63,6 +74,11 @@ if (!empty($_GET['q']) && isset(INVOICE_TYPES[$_GET['q']])) {
         }
         $stmt->close();
     }
+} else {
+    // لا يوجد نوع فاتورة محدد
+    if (empty($_GET['q']) && empty($_GET['e'])) {
+        $invoice_title = 'يرجى تحديد نوع الفاتورة';
+    }
 }
 
 // تحديد لون الخلفية بناء على نوع الفاتورة
@@ -79,6 +95,7 @@ function getBackgroundClass($pro_tybe, $is_edit_mode) {
         case 11:
         case 12:
         case 13:
+        case 14:
             return 'bg-red-500';
         default:
             return 'bg-gray-500';
@@ -89,12 +106,16 @@ $background_class = getBackgroundClass($pro_tybe, $is_edit_mode);
 
 // إنشاء عناصر الفاتورة باستخدام Factory Pattern
 try {
-    $invoice_elements = InvoiceElementFactory::createAllElements(
-        $pro_tybe, 
-        $is_edit_mode, 
-        $invoice_data, 
-        $conn
-    );
+    if ($pro_tybe !== null) {
+        $invoice_elements = InvoiceElementFactory::createAllElements(
+            $pro_tybe, 
+            $is_edit_mode, 
+            $invoice_data, 
+            $conn
+        );
+    } else {
+        $invoice_elements = [];
+    }
 } catch (Exception $e) {
     error_log("Error creating invoice elements: " . $e->getMessage());
     $invoice_elements = [];

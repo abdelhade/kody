@@ -467,14 +467,7 @@ if ($hash_id !== $hash) {
                                 <td>اظهار قسم التأجير من الجانب الايمن</td>
                                 <td><input type="checkbox" name="sid_rents"  class="user-checkbox" <?php if( $rowrol['sid_rents'] == 1){echo "checked"; }?>></td>
                             </tr>
-                            <tr class="tr1">
-                                <td>اظهار قسم ادارة الكروت من الجانب الايمن</td>
-                                <td><input type="checkbox" name="sid_cards"  class="user-checkbox" <?php if( $rowrol['sid_cards'] == 1){echo "checked"; }?>></td>
-                            </tr>
-                            <tr class="tr1">
-                                <td>تعديل كلمات مرور المستخدمين</td>
-                                <td><input type="checkbox" name="edit_user_passwords"  class="user-checkbox" <?php if( $rowrol['edit_user_passwords'] == 1){echo "checked"; }?>></td>
-                            </tr>
+
                         </tbody>
                     </table>
                 </div>

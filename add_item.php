@@ -3,6 +3,7 @@
     $id = $_GET['edit'];
     $chk = $conn->query("SELECT * FROM fat_details where item_id = $id")->num_rows;
     
+    // إعادة تحميل البيانات المحدثة
     $rowitm = $conn->query("SELECT * FROM myitems where id = $id")->fetch_assoc();
     if ($rowitm == null) {
         header("location:dashboard.php");

@@ -423,8 +423,6 @@ SET
 `sid_hr`= '$sid_hr',
 `sid_payroll`= '$sid_payroll',
 `sid_rents`= '$sid_rents',
-`sid_cards`= '$sid_cards',
-`edit_user_passwords`= '$edit_user_passwords',
 `info`= '$info',
 `show_total_reservation`= '$show_total_reservation',
 `show_ended_reservation`= '$show_ended_reservation',

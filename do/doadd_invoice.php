@@ -40,7 +40,10 @@ define('INVOICE_TYPES', [
     'SALES' => 3,       // مبيعات  
     'POS' => 9,         // كاشير
     'PURCHASE_RETURN' => 10,  // مردود مشتريات
-    'SALES_RETURN' => 11      // مردود مبيعات
+    'SALES_RETURN' => 11,     // مردود مبيعات
+    'PURCHASE_ORDER' => 12,   // أمر شراء
+    'SALES_ORDER' => 13,      // أمر بيع
+    'OFFER' => 14             // عرض سعر
 ]);
 
 // تعريف أنواع العمليات المحاسبية
@@ -166,6 +169,41 @@ function getInvoiceConfig($pro_tybe) {
             'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
             'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
             'cost_account' => 91
+        ],
+        INVOICE_TYPES['PURCHASE_RETURN'] => [
+            'note' => 'مردود مشتريات',
+            'paid_note' => 'سند قبض',
+            'disc_type' => ACCOUNTING_TYPES['PURCHASE_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
+            'cost_account' => 97
+        ],
+        INVOICE_TYPES['SALES_RETURN'] => [
+            'note' => 'مردود مبيعات',
+            'paid_note' => 'سند دفع',
+            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['PAYMENT'],
+            'cost_account' => 91
+        ],
+        INVOICE_TYPES['PURCHASE_ORDER'] => [
+            'note' => 'أمر شراء',
+            'paid_note' => 'سند دفع',
+            'disc_type' => ACCOUNTING_TYPES['PURCHASE_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['PAYMENT'],
+            'cost_account' => 97
+        ],
+        INVOICE_TYPES['SALES_ORDER'] => [
+            'note' => 'أمر بيع',
+            'paid_note' => 'سند قبض',
+            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
+            'cost_account' => 91
+        ],
+        INVOICE_TYPES['OFFER'] => [
+            'note' => 'عرض سعر',
+            'paid_note' => 'سند قبض',
+            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
+            'cost_account' => 91
         ]
     ];
     
@@ -190,6 +228,47 @@ function getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id) {
             
         case INVOICE_TYPES['SALES']:
         case INVOICE_TYPES['POS']:
+            return [
+                'acc1' => $acc2_id,
+                'acc2' => $store_id,
+                'acc3' => 91,
+                'acc4' => $acc2_id,
+                'acc5' => $fund_id,
+                'acc6' => $acc2_id
+            ];
+            
+        case INVOICE_TYPES['PURCHASE_RETURN']:
+            return [
+                'acc1' => $acc2_id,
+                'acc2' => $store_id,
+                'acc3' => $acc2_id,
+                'acc4' => 97,
+                'acc5' => $fund_id,
+                'acc6' => $acc2_id
+            ];
+            
+        case INVOICE_TYPES['SALES_RETURN']:
+            return [
+                'acc1' => $store_id,
+                'acc2' => $acc2_id,
+                'acc3' => 91,
+                'acc4' => $acc2_id,
+                'acc5' => $acc2_id,
+                'acc6' => $fund_id
+            ];
+            
+        case INVOICE_TYPES['PURCHASE_ORDER']:
+            return [
+                'acc1' => $store_id,
+                'acc2' => $acc2_id,
+                'acc3' => $acc2_id,
+                'acc4' => 97,
+                'acc5' => $acc2_id,
+                'acc6' => $fund_id
+            ];
+            
+        case INVOICE_TYPES['SALES_ORDER']:
+        case INVOICE_TYPES['OFFER']:
             return [
                 'acc1' => $acc2_id,
                 'acc2' => $store_id,
@@ -458,12 +537,15 @@ try {
             $u_val = floatval($_POST['u_val'][$index]);
             
             // تحديد الكميات حسب نوع الفاتورة
-            if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER']])) {
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
+            } else {
+                $qty_in = 0;
+                $qty_out = 0;
             }
             
             $det_value = $itmqty * ($itmprice - $itmdisc);
@@ -484,7 +566,7 @@ try {
             $itmprofit = 0;
             
             // حساب التكلفة والربح
-            if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER']])) {
                 // حساب سعر التكلفة المتوسط
                 $unit_price = $itmprice / $u_val;
                 $oldbalance = $oldprice * $oldqty;
@@ -504,7 +586,7 @@ try {
                 
                 $itmprice = $unit_price;
                 
-            } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+            } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
                 // حساب الربح للمبيعات
                 $unit_price = $itmprice / $u_val;
                 $itmprofit = $itmqty * $u_val * ($unit_price - $oldprice);
@@ -530,7 +612,7 @@ try {
         $stmt_update->close();
     }
     // تحديث إجمالي الأرباح للمبيعات
-    if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+    if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
         $stmt = $conn->prepare("SELECT SUM(profit) AS tprofit FROM fat_details WHERE fatid = ?");
         $stmt->bind_param("i", $last_op);
         $stmt->execute();

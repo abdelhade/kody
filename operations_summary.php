@@ -37,6 +37,15 @@ switch ($q) {
             <div class="card">
                 <div class="card-header">
                     <h3> - محلل العمل اليومي <?= $report_name ?></h3>
+                    
+                    <?php if (isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fa fa-check-circle"></i> تم حذف الفاتورة بنجاح
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
               
                     <form action="" method="post">
                     <?php
@@ -142,8 +151,15 @@ switch ($q) {
                                                             <p><strong>رقم الفاتورة:</strong> <?= $rowop['id'] ?></p>
                                                             <p><strong>نوع العملية:</strong> <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?></p>
                                                             <label for="pass">كلمة المرور:</label>
+                                                            <input type="password" name="pass" class="form-control" placeholder="أدخل كلمة مرور الحذف" required>
+                                                            
+                                                            <div class="form-check mt-3">
+                                                                <input type="checkbox" class="form-check-input" id="forceDelete<?= $rowop['id']?>" name="force_delete" value="1">
+                                                                <label class="form-check-label text-warning" for="forceDelete<?= $rowop['id']?>">
+                                                                    <small>حذف قسري (تجاهل العمليات المرتبطة)</small>
+                                                                </label>
+                                                            </div>
                                                         </div>
-                                                        <input type="password" name="pass" class="form-control hover:bg-orange-300" placeholder="أدخل كلمة مرور الحذف" required>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
                                                             <button type="submit" class="btn btn-danger">حذف</button>

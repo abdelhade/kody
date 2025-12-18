@@ -19,9 +19,9 @@ date_default_timezone_set('Africa/Cairo');
 <?php
 $lang = $rowstg['lang'];
 if ($lang == null) {
-  include('language/ar.php');
+  include(__DIR__ . '/../language/ar.php');
 } else {
-  include('language/' . $lang . '.php');
+  include(__DIR__ . '/../language/' . $lang . '.php');
 }
 ?>
 <!DOCTYPE html>

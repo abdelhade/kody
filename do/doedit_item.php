@@ -71,36 +71,39 @@ if (isset($_FILES['imgs']) && !empty($_FILES['imgs']['name'][0])) {
     }
 }
 
+// تحديث الجدول الرئيسي
 $sql = "UPDATE myitems SET iname='$iname', name2='$name2', code='$code', info='$info', cost_price='$cost_price', group1='$group1', group2='$group2', price1='$price1' WHERE id='$item_id'";
+
+// إضافة العمود إذا لم يكن موجوداً
+$checkColumn = $conn->query("SHOW COLUMNS FROM myitems LIKE 'manual_price_edit'");
+if ($checkColumn->num_rows == 0) {
+    $conn->query("ALTER TABLE myitems ADD COLUMN manual_price_edit TINYINT(1) DEFAULT 0");
+}
+
+// تعيين علامة التعديل اليدوي
+$conn->query("UPDATE myitems SET manual_price_edit=1 WHERE id='$item_id'");
 $conn->query($sql);
 
-    foreach ($_POST['unit_id'] as $index => $unit_id) {
-        $u_val = $_POST['u_val'][$index];
-        if (!empty($_POST['unit_barcode'][$index])) {
-            $unit_barcode = $_POST['unit_barcode'][$index];
-        } else {
-            $unit_barcode = "99" . $index . $_POST['unit_barcode'][0]; // توليد باركود تلقائي
-        }
-        $cost_price = $_POST['cost_price'][$index]; // نأخذ القيمة الأولى
-        $price1 = $_POST['price1'][$index]; // نأخذ القيمة الأولى
-        $price2 = $_POST['price2'][$index]; // نأخذ القيمة الأولى
-        $market_price = $_POST['market_price'][$index]; // نأخذ القيمة الأولى
-        $unit_id = $_POST['unit_id'][$index]; // نأخذ القيمة الأولى
-        $u_val = $_POST['u_val'][$index]; // نأخذ القيمة الأولى
-
-
-        if (!empty($_POST['unit_barcode'][$index])) {
-            $unit_barcode = $_POST['unit_barcode'][$index];
-        } else {
-            $unit_barcode = "99" . $index . $_POST['unit_barcode'][0];
-        }
-
-
-        $sqlunit = "UPDATE item_units SET price1='$price1',price2='$price2',price3 = '$market_price', u_val = '$u_val',unit_barcode='$unit_barcode' WHERE id =  $item_id  AND unit_id = '$unit_id'";
-
-        $conn->query($sqlunit);
-
-    }
+// تحديث وحدات الصنف
+foreach ($_POST['unit_id'] as $index => $unit_id) {
+    $u_val = $_POST['u_val'][$index];
+    $unit_barcode = !empty($_POST['unit_barcode'][$index]) ? $_POST['unit_barcode'][$index] : "99" . $index . $_POST['unit_barcode'][0];
+    $cost_price_unit = $_POST['cost_price'][$index];
+    $price1_unit = $_POST['price1'][$index];
+    $price2_unit = $_POST['price2'][$index];
+    $market_price_unit = isset($_POST['price3'][$index]) ? $_POST['price3'][$index] : (isset($_POST['market_price'][$index]) ? $_POST['market_price'][$index] : 0);
+    
+    $sqlunit = "UPDATE item_units SET 
+                cost_price='$cost_price_unit',
+                price1='$price1_unit',
+                price2='$price2_unit',
+                price3='$market_price_unit', 
+                u_val='$u_val',
+                unit_barcode='$unit_barcode' 
+                WHERE item_id='$item_id' AND unit_id='$unit_id'";
+    
+    $conn->query($sqlunit);
+}
 
 
     // Redirect to the items page
