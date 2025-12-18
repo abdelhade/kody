@@ -31,7 +31,8 @@ define('INVOICE_TYPES', [
     'SALES' => 3,       // مبيعات  
     'POS' => 9,         // كاشير
     'PURCHASE_RETURN' => 10,  // مردود مشتريات
-    'SALES_RETURN' => 11      // مردود مبيعات
+    'SALES_RETURN' => 11,     // مردود مبيعات
+    'OFFER' => 14             // عرض سعر
 ]);
 
 // تعريف أنواع العمليات المحاسبية
@@ -123,6 +124,13 @@ function getInvoiceConfig($pro_tybe) {
             'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
             'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
             'cost_account' => 91
+        ],
+        INVOICE_TYPES['OFFER'] => [
+            'note' => 'عرض سعر',
+            'paid_note' => 'سند قبض',
+            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
+            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
+            'cost_account' => 91
         ]
     ];
     
@@ -147,6 +155,7 @@ function getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id) {
             
         case INVOICE_TYPES['SALES']:
         case INVOICE_TYPES['POS']:
+        case INVOICE_TYPES['OFFER']:
             return [
                 'acc1' => $acc2_id,
                 'acc2' => $store_id,
@@ -447,7 +456,7 @@ try {
             if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
             }
@@ -490,7 +499,7 @@ try {
                 
                 $itmprice = $unit_price;
                 
-            } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+            } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
                 // حساب الربح للمبيعات
                 $unit_price = $itmprice / $u_val;
                 $itmprofit = $itmqty * $u_val * ($unit_price - $oldprice);
@@ -517,7 +526,7 @@ try {
     }
     
     // تحديث إجمالي الأرباح للمبيعات
-    if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+    if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
         $stmt = $conn->prepare("SELECT SUM(profit) AS tprofit FROM fat_details WHERE fatid = ?");
         $stmt->bind_param("i", $ot_id);
         $stmt->execute();

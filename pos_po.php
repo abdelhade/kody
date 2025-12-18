@@ -1,4 +1,4 @@
-<?php include('includes/header.php');?>
+<?php include('includes/header.php'); ?>
 <style>
     /* Main POS Layout Styles */
     body {
@@ -354,7 +354,8 @@
             padding: 10px;
         }
 
-        #left, #right {
+        #left,
+        #right {
             height: auto;
             min-height: 400px;
         }
@@ -370,28 +371,27 @@
         }
     }
 </style>
-<nav class="navbar navbar-expand font-xs font-light p-0 bg-slate-200" >
-  <ul class="navbar-nav">   
-    </li>
-    <li class="nav-item d-none d-sm-inline-block" >
-      <a href="index.php" class="nav-link"><?=$lang_sidemain?></a>
-    </li>
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="do/do_logout.php" class="nav-link"><?=$lang_navlogout?></a>
-    </li>   
-  </ul>
+<nav class="navbar navbar-expand font-xs font-light p-0 bg-slate-200">
+    <ul class="navbar-nav">
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="index.php" class="nav-link"><?= $lang_sidemain ?></a>
+        </li>
+        <li class="nav-item d-none d-sm-inline-block">
+            <a href="do/do_logout.php" class="nav-link"><?= $lang_navlogout ?></a>
+        </li>
+    </ul>
 </nav>
-
 
 <div class="container-fluid">
     <div class="row h-100" id="pos">
         <!-- Left Panel - Products -->
-        <div class="col-lg-8">
-<?php include('elements/pos/left1.php') ?>
+        <div class="col-lg-6">
+            <?php include('elements/pos/left1.php') ?>
         </div>
 
         <!-- Right Panel - Cart & Payment -->
-        <div class="col-lg-4">
+        <div class="col-lg-6">
             <div id="right">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="mb-0 text-dark font-weight-bold">
@@ -401,24 +401,24 @@
                         <i class="fas fa-expand"></i>
                     </button>
                 </div>
-                
-    <form action="do/doadd_invoice.php" method="post" id="myForm">
-       <?php include('elements/pos/right0.php') ?> 
-       <input type="text" name="pro_tybe" value="11" hidden>
-                    
+
+                <form action="do/doadd_invoice.php" method="post" id="myForm">
+                    <?php include('elements/pos/right0.php') ?>
+                    <input type="text" name="pro_tybe" value="11" hidden>
+
                     <!-- Cart Section -->
                     <div class="cart-section">
-       <?php include('elements/pos/right1.php') ?> 
+                        <?php include('elements/pos/right1.php') ?>
                     </div>
-                    
+
                     <!-- Action Buttons Section -->
                     <div class="action-section">
-       <?php include('elements/pos/right2.php') ?> 
+                        <?php include('elements/pos/right2.php') ?>
                     </div>
-    </form>
+                </form>
             </div>
         </div>
-</div>
+    </div>
 </div>
 
 <div class="modal fade" id="addclmodal" aria-hidden="true" style="display: none;">
@@ -431,7 +431,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="addClientForm" >
+                <form id="addClientForm">
                     <div class="form-group">
                         <label for="clname">اسم العميل</label>
                         <input type="text" class="form-control" id="clname" name="clname" placeholder="name" required>
@@ -467,21 +467,19 @@
 
 
 
-
-
 <script>
-        document.addEventListener('DOMContentLoaded', function() {
-    var fullscreenButton = document.querySelector('.btn.btn-light.float-left');
-    
-    fullscreenButton.addEventListener('click', function() {
-        if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-        } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        }
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        var fullscreenButton = document.querySelector('.btn.btn-light.float-left');
+
+        fullscreenButton.addEventListener('click', function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
     });
 </script>
 
@@ -490,4 +488,4 @@
 <script src="js/pos.js"></script>
 
 
-<?php include('includes/footer.php');?>
+<?php include('includes/footer.php'); ?>

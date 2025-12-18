@@ -14,6 +14,7 @@
                     <div class="d-flex gap-2 justify-content-end">
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
+                        <button id="reset-manual-prices" class="btn btn-warning btn-sm">إعادة تعيين الحماية</button>
                         <button id="reindex" class="btn btn-secondary btn-sm">اعادة الفهرسة</button>
                     </div>
                 </div>
@@ -158,6 +159,23 @@
 
 <script>
 $(document).ready(function() {
+    // إعادة تعيين حماية الأسعار اليدوية
+    $('#reset-manual-prices').click(function() {
+        if (confirm('هل أنت متأكد من إعادة تعيين حماية الأسعار؟ سيتم إعادة حساب جميع الأسعار عند الضغط على إعادة حساب')) {
+            $.ajax({
+                url: 'do/reset_manual_prices.php',
+                method: 'POST',
+                success: function(response) {
+                    alert('تم إعادة التعيين بنجاح');
+                    location.reload();
+                },
+                error: function() {
+                    alert('حدث خطأ');
+                }
+            });
+        }
+    });
+    
     // استمع لتغيرات في جميع قوائم الوحدة
     $('.unit select').change(function() {
         // الحصول على معرف الصف من السمة data-row-id

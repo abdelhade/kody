@@ -72,7 +72,7 @@ abstract class InvoiceElementBase
         $supplierTypes = [4, 11, 12]; // مشتريات، مردود مبيعات، أمر شراء
         
         // أنواع الفواتير التي تتطلب عملاء
-        $clientTypes = [3, 10, 13];   // مبيعات، مردود مشتريات، أمر بيع
+        $clientTypes = [3, 10, 13, 14];   // مبيعات، مردود مشتريات، أمر بيع، عرض سعر
         
         if (in_array($this->invoiceType, $supplierTypes)) {
             return 'supplier';
@@ -96,7 +96,7 @@ abstract class InvoiceElementBase
             case 'client':
                 return '122'; // كود العملاء
             default:
-                return null;
+                return '122'; // افتراضي للعملاء
         }
     }
 

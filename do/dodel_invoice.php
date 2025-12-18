@@ -126,95 +126,28 @@ $config = getInvoiceConfig($pro_tybe);
 try {
     $conn->begin_transaction();
     
-    // حذف تفاصيل الفاتورة باستخدام Prepared Statement
-    $stmt = $conn->prepare("UPDATE fat_details SET isdeleted = 1 WHERE pro_id = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف تفاصيل الفاتورة: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    if (!$stmt->execute()) {
-        throw new Exception('فشل في حذف تفاصيل الفاتورة: ' . $stmt->error);
-    }
-    $stmt->close();
+    // حذف تفاصيل الفاتورة
+    $conn->query("UPDATE fat_details SET isdeleted = 1 WHERE pro_id = $id");
     
     // حذف رأس الفاتورة
-    $stmt = $conn->prepare("UPDATE ot_head SET isdeleted = 1 WHERE id = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف رأس الفاتورة: ' . $conn->error);
-    }
+    $conn->query("UPDATE ot_head SET isdeleted = 1 WHERE id = $id");
     
-    $stmt->bind_param("i", $id);
-    if (!$stmt->execute()) {
-        throw new Exception('فشل في حذف رأس الفاتورة: ' . $stmt->error);
-    }
-    $stmt->close();
+    // حذف القيود المحاسبية
+    $conn->query("UPDATE journal_entries SET isdeleted = 1 WHERE op_id = $id");
+    $conn->query("UPDATE journal_heads SET isdeleted = 1 WHERE op_id = $id");
     
-    // حذف القيود المحاسبية المرتبطة بالفاتورة الأساسية
-    $stmt = $conn->prepare("UPDATE journal_entries SET isdeleted = 1 WHERE op_id = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف القيود المحاسبية: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
-    $stmt = $conn->prepare("UPDATE journal_heads SET isdeleted = 1 WHERE op_id = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف رؤوس القيود: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
-    // حذف العمليات المرتبطة (مدفوعات/مقبوضات)
-    $stmt = $conn->prepare("UPDATE ot_head SET isdeleted = 1 WHERE op2 = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف العمليات المرتبطة: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
-    // حذف القيود المحاسبية للعمليات المرتبطة
-    $stmt = $conn->prepare("UPDATE journal_entries SET isdeleted = 1 WHERE op2 = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف قيود العمليات المرتبطة: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
-    
-    $stmt = $conn->prepare("UPDATE journal_heads SET isdeleted = 1 WHERE op2 = ?");
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام حذف رؤوس قيود العمليات المرتبطة: ' . $conn->error);
-    }
-    
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
+
     
     // إتمام المعاملة
     $conn->commit();
     
-    // تسجيل العملية
-    $stmt = $conn->prepare("INSERT INTO process (type, details, user, date) VALUES (?, ?, ?, NOW())");
-    if ($stmt) {
-        $details = $config['note'] . ' رقم: ' . $id;
-        $stmt->bind_param("ssi", $config['process_type'], $details, $usid);
-        $stmt->execute();
-        $stmt->close();
-    }
-    
 } catch (Exception $e) {
-    // إلغاء المعاملة في حالة الخطأ
     $conn->rollback();
-    error_log('خطأ في حذف الفاتورة: ' . $e->getMessage());
-    header('Location: ../warning.php?q=' . urlencode($q) . '&error=delete_failed');
+    $error_msg = $e->getMessage();
+    error_log('Delete Error - Invoice ID: ' . $id . ' - Error: ' . $error_msg);
+    
+    // عرض الخطأ الفعلي للمطور
+    header('Location: ../warning.php?q=' . urlencode($q) . '&error=delete_failed&id=' . $id . '&msg=' . urlencode($error_msg));
     exit;
 }
 
@@ -226,6 +159,7 @@ $redirects = [
 ];
 
 $redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);
-header("Location: $redirect&success=deleted");
+$separator = strpos($redirect, '?') !== false ? '&' : '?';
+header("Location: $redirect{$separator}success=deleted");
 exit;
 ?>
