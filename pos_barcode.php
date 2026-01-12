@@ -47,6 +47,8 @@ if(isset($_SESSION['success_message'])){
 </head>
 
 <body class="bg-light">
+    <!-- Hidden input for Edit Mode -->
+    <input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
@@ -707,24 +709,57 @@ if(isset($_SESSION['success_message'])){
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-arrow-left me-2"></i>الباقي
-                            </label>
                             <div class="input-group input-group-lg">
                                 <input class="form-control text-center fw-bold bg-danger text-white" type="text"
                                     id="modal_change" value="0.00" readonly>
                                 <span class="input-group-text bg-danger text-white">ج.م</span>
                             </div>
                         </div>
+
+                        <!-- بيانات الأجل -->
+                         <div class="col-12 mt-2">
+                             <div class="card border-warning">
+                                 <div class="card-header bg-warning bg-opacity-10 py-1">
+                                     <h6 class="mb-0 text-dark" style="font-size: 0.8rem;">
+                                         <i class="fas fa-user-clock me-1"></i>بيانات الأجل
+                                     </h6>
+                                 </div>
+                                 <div class="card-body p-2">
+                                     <div class="row g-2">
+                                         <div class="col-md-4">
+                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">قيمة الأجل</label>
+                                              <div class="input-group input-group-sm">
+                                                 <input type="number" class="form-control form-control-sm fw-bold text-danger" id="jal_amount" value="0.00" step="0.01" min="0">
+                                                 <span class="input-group-text bg-danger text-white">ج.م</span>
+                                             </div>
+                                         </div>
+                                         <div class="col-md-4">
+                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">الاسم (أجل)</label>
+                                             <input type="text" class="form-control form-control-sm" id="jal_name" placeholder="اسم الشخص...">
+                                         </div>
+                                         <div class="col-md-4">
+                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">ملاحظات الأجل</label>
+                                             <input type="text" class="form-control form-control-sm" id="jal_notes" placeholder="ملاحظات...">
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>إلغاء
                     </button>
+                    <?php if(isset($id)): ?>
+                    <button type="button" class="btn btn-warning text-dark fw-bold" onclick="submitPOS('save');">
+                        <i class="fas fa-edit me-1"></i>حفظ التعديل
+                    </button>
+                    <?php else: ?>
                     <button type="button" class="btn btn-success" onclick="submitPOS('save');">
                         <i class="fas fa-save me-1"></i>حفظ الطلب
                     </button>
+                    <?php endif; ?>
                     <button type="button" class="btn btn-primary" onclick="submitPOS('cash');">
                         <i class="fas fa-print me-1"></i>حفظ وطباعة
                     </button>
@@ -1461,6 +1496,107 @@ if(isset($_SESSION['success_message'])){
                 });
             };
         });
+    </script>
+    <script>
+    // override submitPOS to ensure new logic is used immediately (bypassing cache)
+    window.submitPOS = function(action) {
+        console.log('✅ submitPOS (Inline Override) called with action:', action);
+        
+        const form = document.getElementById('posForm');
+        if (!form) {
+            console.error('❌ Form with id "posForm" not found!');
+            alert('حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.');
+            return false;
+        }
+        
+        if (typeof validatePOSForm === 'function' && !validatePOSForm()) {
+            return false;
+        }
+        
+        let paidValue = parseFloat($('#modal_paid').val()) || 0;
+        let paidInput = form.querySelector('input[name="paid"]');
+        if (!paidInput) {
+            paidInput = document.createElement('input');
+            paidInput.type = 'hidden';
+            paidInput.name = 'paid';
+            form.appendChild(paidInput);
+        }
+        paidInput.value = paidValue;
+
+        // إضافة بيانات الأجل
+        let jalName = $('#jal_name').val();
+        let jalNotes = $('#jal_notes').val();
+        let jalAmount = $('#jal_amount').val();
+        
+        // Ensure jal_amount is set if there is a remaining balance
+        let total = parseFloat($('#net_val').val()) || 0;
+        let remaining = total - paidValue;
+        if (remaining > 0.01 && (!jalAmount || jalAmount == 0)) {
+             jalAmount = remaining.toFixed(2);
+        }
+
+        // Check for Edit ID
+        let editId = $('#edit_order_id').val();
+        if (editId) {
+            console.log('✏️ Edit Mode: ID', editId);
+            let editIdInput = form.querySelector('input[name="edit_id"]');
+            if (!editIdInput) {
+                editIdInput = document.createElement('input');
+                editIdInput.type = 'hidden';
+                editIdInput.name = 'edit_id';
+                form.appendChild(editIdInput);
+            }
+            editIdInput.value = editId;
+        }
+
+        console.log('Jal Data (Inline):', {name: jalName, notes: jalNotes, amount: jalAmount, editId: editId});
+
+        let jalNameInput = form.querySelector('input[name="jal_name"]');
+        if (!jalNameInput) {
+            jalNameInput = document.createElement('input');
+            jalNameInput.type = 'hidden';
+            jalNameInput.name = 'jal_name';
+            form.appendChild(jalNameInput);
+        }
+        jalNameInput.value = jalName || '';
+
+        let jalNotesInput = form.querySelector('input[name="jal_notes"]');
+        if (!jalNotesInput) {
+            jalNotesInput = document.createElement('input');
+            jalNotesInput.type = 'hidden';
+            jalNotesInput.name = 'jal_notes';
+            form.appendChild(jalNotesInput);
+        }
+        jalNotesInput.value = jalNotes || '';
+        
+        let jalAmountInput = form.querySelector('input[name="jal_amount"]');
+        if (!jalAmountInput) {
+            jalAmountInput = document.createElement('input');
+            jalAmountInput.type = 'hidden';
+            jalAmountInput.name = 'jal_amount';
+            form.appendChild(jalAmountInput);
+        }
+        jalAmountInput.value = jalAmount || 0;
+
+        const existingSubmits = form.querySelectorAll('input[name="submit"]');
+        existingSubmits.forEach(input => input.remove());
+        
+        const submitInput = document.createElement('input');
+        submitInput.type = 'hidden';
+        submitInput.name = 'submit';
+        submitInput.value = action;
+        form.appendChild(submitInput);
+        
+        let saveBtn = $("button:contains('حفظ الطلب')");
+        let printBtn = $("button:contains('حفظ وطباعة')");
+        
+        if (saveBtn.length > 0) saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
+        if (printBtn.length > 0) printBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
+        
+        $('#paymentModal').modal('hide');
+        form.submit();
+        return true;
+    };
     </script>
 
 

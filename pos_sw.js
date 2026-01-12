@@ -1,5 +1,5 @@
 // Service Worker لنظام POS الحالي
-const CACHE_NAME = 'pos-barcode-offline-v1';
+const CACHE_NAME = 'pos-barcode-offline-v2';
 const urlsToCache = [
     '/kody/pos_barcode.php',
     '/kody/assets/libs/bootstrap.min.css',
