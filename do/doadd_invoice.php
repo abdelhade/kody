@@ -69,6 +69,9 @@ $headnet = isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0;
 $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
+$jal_name = isset($_POST['jal_name']) ? htmlspecialchars(trim($_POST['jal_name']), ENT_QUOTES, 'UTF-8') : NULL;
+$jal_notes = isset($_POST['jal_notes']) ? htmlspecialchars(trim($_POST['jal_notes']), ENT_QUOTES, 'UTF-8') : NULL;
+$jal_amount = isset($_POST['jal_amount']) ? floatval($_POST['jal_amount']) : 0;
 
 // Get order type from age parameter
 $order_type = isset($_POST['age']) ? intval($_POST['age']) : 1; // Default to takeaway (1)
@@ -344,41 +347,111 @@ try {
     $conn->begin_transaction();
     error_log('Database transaction started successfully');
     
-    // إدخال رأس الفاتورة باستخدام Prepared Statement
-    $stmt = $conn->prepare(
-        "INSERT INTO ot_head (
-            pro_id, pro_tybe, is_stock, is_journal, journal_tybe, info, pro_date, 
-            accural_date, pro_pattren, pro_serial, price_list, store_id, emp_id, 
-            emp2_id, acc1, acc2, pro_value, fat_cost, cost_center, profit, 
-            fat_total, fat_disc, fat_disc_per, fat_plus, fat_plus_per, 
-            fat_tax, fat_tax_per, fat_net, user
-        ) VALUES (
-            ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?, ?, ?, 0, 1, 0, 
-            ?, ?, ?, ?, ?, 0, 0, ?, ?
-        )"
-    );
+    $edit_id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
     
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام إدخال الفاتورة: ' . $conn->error);
+    if ($edit_id > 0) {
+        // --- تحديث فاتورة موجودة (UPDATE) ---
+        error_log('Updating existing order ID: ' . $edit_id);
+        
+        // تحديث رأس الفاتورة (مع الحفاظ على تاريخ الإنشاء الأصلي pro_date)
+        $stmt = $conn->prepare(
+            "UPDATE ot_head SET 
+                pro_tybe = ?, info = ?, accural_date = ?, 
+                pro_serial = ?, store_id = ?, emp_id = ?, emp2_id = ?, 
+                acc1 = ?, acc2 = ?, pro_value = ?, fat_total = ?, 
+                fat_disc = ?, fat_disc_per = ?, fat_plus = ?, fat_plus_per = ?, 
+                fat_net = ?, user = ?, jal_name = ?, jal_notes = ?, jal_amount = ? 
+            WHERE id = ?"
+        );
+        
+        if (!$stmt) {
+            throw new Exception('فشل في تحضير استعلام تحديث الفاتورة: ' . $conn->error);
+        }
+        
+        $stmt->bind_param(
+            "ssssssssssssssssssssi",
+            $pro_tybe, $info, $accural_date, 
+            $pro_serial, $store_id, $emp_id, $emp_id, 
+            $accounts['acc1'], $accounts['acc2'], $headtotal, $headtotal, 
+            $headdisc, $fat_disc_per, $headplus, $fat_plus_per, 
+            $headnet, $usid, $jal_name, $jal_notes, $jal_amount, $edit_id
+        );
+        
+        if (!$stmt->execute()) {
+            throw new Exception('فشل في تحديث الفاتورة: ' . $stmt->error);
+        }
+        $stmt->close();
+        
+        // حذف التفاصيل القديمة
+        // Note: Assuming fat_details.pro_id links to ot_head.pro_id (invoice number), not ot_head.id (primary key)
+        // If fat_details.pro_id links to ot_head.id, then use $edit_id directly.
+        // For now, we need to fetch the pro_id (invoice number) from ot_head using $edit_id (primary key).
+        $stmt_fetch_pro_id = $conn->prepare("SELECT pro_id FROM ot_head WHERE id = ?");
+        $stmt_fetch_pro_id->bind_param("i", $edit_id);
+        $stmt_fetch_pro_id->execute();
+        $result_pro_id = $stmt_fetch_pro_id->get_result();
+        $row_pro_id = $result_pro_id->fetch_assoc();
+        $stmt_fetch_pro_id->close();
+
+        if ($row_pro_id) {
+            $original_pro_id = $row_pro_id['pro_id'];
+            $conn->query("DELETE FROM fat_details WHERE pro_id = '$original_pro_id' AND pro_tybe = '$pro_tybe'");
+            // Also delete related journal entries and payment operations if they exist and are linked by op_id/op2
+            // Fix: Delete journal entries first (linked by journal_id which is the FK referencing journal_heads.id)
+            $journal_query = $conn->query("SELECT id FROM journal_heads WHERE op_id = '$edit_id'");
+            if ($journal_query) {
+                while ($journal_row = $journal_query->fetch_assoc()) {
+                    $jid = $journal_row['id'];
+                    $conn->query("DELETE FROM journal_entries WHERE journal_id = '$jid'");
+                }
+            }
+            $conn->query("DELETE FROM journal_heads WHERE op_id = '$edit_id'");
+            // $conn->query("DELETE FROM journal_entries WHERE op_id = '$edit_id' OR op2 = '$edit_id'"); // Removed as we delete by journal_id now
+            $conn->query("DELETE FROM ot_head WHERE op2 = '$edit_id'"); // Delete payment/discount operations linked to this invoice
+        } else {
+            throw new Exception('فشل في العثور على رقم الفاتورة الأصلي للتحديث.');
+        }
+        
+        $last_op = $edit_id; // last_op now refers to the primary key of the updated ot_head record
+        error_log('Order header updated successfully for ID: ' . $last_op);
+        
+    } else {
+        // --- إدخال فاتورة جديدة (INSERT) ---
+        $stmt = $conn->prepare(
+            "INSERT INTO ot_head (
+                pro_id, pro_tybe, is_stock, is_journal, journal_tybe, info, pro_date, 
+                accural_date, pro_pattren, pro_serial, price_list, store_id, emp_id, 
+                emp2_id, acc1, acc2, pro_value, fat_cost, cost_center, profit, 
+                fat_total, fat_disc, fat_disc_per, fat_plus, fat_plus_per, 
+                fat_tax, fat_tax_per, fat_net, user, jal_name, jal_notes, jal_amount
+            ) VALUES (
+                ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?, ?, ?, 0, 1, 0, 
+                ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?
+            )"
+        );
+        
+        if (!$stmt) {
+            throw new Exception('فشل في تحضير استعلام إدخال الفاتورة: ' . $conn->error);
+        }
+        
+        $stmt->bind_param(
+            "sssssssssssssssssssssss",
+            $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date, 
+            $pro_serial, $store_id, $emp_id, $emp_id, $accounts['acc1'], 
+            $accounts['acc2'], $headtotal, $headtotal, $headdisc, 
+            $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid, $jal_name, $jal_notes, $jal_amount
+        );
+        
+        error_log('Executing order header insert');
+        if (!$stmt->execute()) {
+            error_log('FAILED to insert order header: ' . $stmt->error);
+            throw new Exception('فشل في إدخال الفاتورة: ' . $stmt->error);
+        }
+        
+        $last_op = $conn->insert_id; // last_op now refers to the primary key of the new ot_head record
+        error_log('Order header inserted successfully with ID: ' . $last_op);
+        $stmt->close();
     }
-    
-    $stmt->bind_param(
-        "ssssssssssssssssssss",
-        $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date, 
-        $pro_serial, $store_id, $emp_id, $emp_id, $accounts['acc1'], 
-        $accounts['acc2'], $headtotal, $headtotal, $headdisc, 
-        $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid
-    );
-    
-    error_log('Executing order header insert');
-    if (!$stmt->execute()) {
-        error_log('FAILED to insert order header: ' . $stmt->error);
-        throw new Exception('فشل في إدخال الفاتورة: ' . $stmt->error);
-    }
-    
-    $last_op = $conn->insert_id;
-    error_log('Order header inserted successfully with ID: ' . $last_op);
-    $stmt->close();
     // إدخال قيود اليومية للفواتير المدعومة
     if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
         // الحصول على رقم القيد التالي

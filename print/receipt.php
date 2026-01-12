@@ -42,6 +42,23 @@ $prodate = date('md', strtotime($rowfat['pro_date']));
 <p style="font-size:12px;text-align:center">
     <?= $prodate.$rowfat['pro_id'] ?></p>
 
+    <?php
+    // Check for Table information
+    $info = $rowfat['info'];
+    $table_name = '';
+    
+    if (strpos($info, 'طاولة') !== false || strpos($info, 'Table') !== false) {
+        // Try to extract full table name if it's formatted in a specific way, otherwise just use info if it's short
+        // Assuming info might contain just "طاولة 1" or mixed text.
+        // If it comes from tables.php, info is usually just the table name.
+        $table_name = $info;
+    }
+    
+    if (!empty($table_name)) {
+        echo '<div style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:5px; border:1px dashed #000; padding:2px;">' . $table_name . '</div>';
+    }
+    ?>
+
 <?php
 $accid = $rowfat['acc1'];
 $rowacc1= $conn->query("SELECT aname,info from acc_head where id = $accid")->fetch_assoc();

@@ -477,7 +477,33 @@ $(document).ready(function() {
     $('#modal_paid').on('input', function() {
         let net = parseFloat($('#net_val').val()) || 0;
         let paid = parseFloat($(this).val()) || 0;
-        $('#modal_change').val((paid - net).toFixed(2));
+        
+        let change = paid - net;
+        
+        if (change < 0) {
+            // Less than net => Credit
+            $('#jal_amount').val(Math.abs(change).toFixed(2));
+            $('#modal_change').val('0.00'); 
+        } else {
+            // More than net => Change
+            $('#jal_amount').val('0.00'); 
+            $('#modal_change').val(change.toFixed(2));
+        }
+    });
+
+    $(document).on('input', '#jal_amount', function() {
+        let net = parseFloat($('#net_val').val()) || 0;
+        let credit = parseFloat($(this).val()) || 0;
+        
+        if (credit > net) {
+             credit = net;
+             $(this).val(net.toFixed(2));
+        }
+        
+        // Paid = Net - Credit
+        let paid = net - credit;
+        $('#modal_paid').val(paid.toFixed(2));
+        $('#modal_change').val('0.00');
     });
 
     // ========================================
@@ -530,6 +556,40 @@ $(document).ready(function() {
             console.log('➕ Created paid input');
         }
         paidInput.value = paidValue;
+
+        // إضافة بيانات الأجل
+        let jalName = $('#jal_name').val();
+        let jalNotes = $('#jal_notes').val();
+        let jalAmount = $('#jal_amount').val();
+        
+        console.log('Jal Data:', {name: jalName, notes: jalNotes, amount: jalAmount});
+
+        let jalNameInput = form.querySelector('input[name="jal_name"]');
+        if (!jalNameInput) {
+            jalNameInput = document.createElement('input');
+            jalNameInput.type = 'hidden';
+            jalNameInput.name = 'jal_name';
+            form.appendChild(jalNameInput);
+        }
+        jalNameInput.value = jalName || '';
+
+        let jalNotesInput = form.querySelector('input[name="jal_notes"]');
+        if (!jalNotesInput) {
+            jalNotesInput = document.createElement('input');
+            jalNotesInput.type = 'hidden';
+            jalNotesInput.name = 'jal_notes';
+            form.appendChild(jalNotesInput);
+        }
+        jalNotesInput.value = jalNotes || '';
+        
+        let jalAmountInput = form.querySelector('input[name="jal_amount"]');
+        if (!jalAmountInput) {
+            jalAmountInput = document.createElement('input');
+            jalAmountInput.type = 'hidden';
+            jalAmountInput.name = 'jal_amount';
+            form.appendChild(jalAmountInput);
+        }
+        jalAmountInput.value = jalAmount || 0;
         
         const existingSubmits = form.querySelectorAll('input[name="submit"]');
         existingSubmits.forEach(input => input.remove());
@@ -539,6 +599,21 @@ $(document).ready(function() {
         submitInput.name = 'submit';
         submitInput.value = action;
         form.appendChild(submitInput);
+
+        // Check for Edit ID
+        let editId = $('#edit_order_id').val();
+        if (editId) {
+            console.log('✏️ Edit Mode: ID', editId);
+            let editIdInput = form.querySelector('input[name="edit_id"]');
+            if (!editIdInput) {
+                editIdInput = document.createElement('input');
+                editIdInput.type = 'hidden';
+                editIdInput.name = 'edit_id';
+                form.appendChild(editIdInput);
+            }
+            editIdInput.value = editId;
+        }
+        
         console.log('➕ Added submit input with value:', action);
         
         let saveBtn = $("button:contains('حفظ الطلب')");

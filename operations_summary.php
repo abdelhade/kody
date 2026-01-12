@@ -108,7 +108,12 @@ switch ($q) {
                                             </a>
                                         </td>
                                          <td class="value"><?= $rowop['pro_value'] ?></td>
-                                        <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>"><?= $rowop['fat_net'] ?></td>
+                                        <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>">
+                                            <?= $rowop['fat_net'] - ($rowop['jal_amount'] ?? 0) ?>
+                                            <?php if(($rowop['jal_amount'] ?? 0) > 0): ?>
+                                                <small class="d-block text-muted" style="font-size: 0.65rem;">(أجل: <?= $rowop['jal_amount'] ?>)</small>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc1']}")->fetch_assoc()['aname'] ?></td>
                                         <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc2']}")->fetch_assoc()['aname'] ?></td>
                                         <td><?= $rowop['store_id'] > 0 ? $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['store_id']}")->fetch_assoc()['aname'] : '' ?></td>
@@ -128,6 +133,52 @@ switch ($q) {
                                                 <i class="fa fa-edit"></i>
                                             </a>
                                             <?php } ?>
+
+                                            <!-- زر تفاصيل الأجل -->
+                                            <?php if (!empty($rowop['jal_amount']) && $rowop['jal_amount'] > 0): ?>
+                                            <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#jalModal<?= $rowop['id']?>" title="تفاصيل الأجل">
+                                                <i class="fa fa-clock"></i>
+                                            </button>
+
+                                            <div class="modal fade" id="jalModal<?= $rowop['id']?>" tabindex="-1" role="dialog" aria-labelledby="jalModalLabel<?= $rowop['id']?>" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-info text-white">
+                                                            <h5 class="modal-title" id="jalModalLabel<?= $rowop['id']?>">
+                                                                <i class="fa fa-clock"></i> تفاصيل الأجل - فاتورة #<?= $rowop['id'] ?>
+                                                            </h5>
+                                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body text-right">
+                                                            <div class="form-group border-bottom pb-2">
+                                                                <label class="font-weight-bold text-muted">اسم العميل (أجل):</label>
+                                                                <p class="h5"><?= !empty($rowop['jal_name']) ? htmlspecialchars($rowop['jal_name']) : '<span class="text-muted">غير محدد</span>' ?></p>
+                                                            </div>
+                                                            <div class="form-group border-bottom pb-2">
+                                                                <label class="font-weight-bold text-muted">قيمة الأجل:</label>
+                                                                <p class="h4 text-danger"><?= number_format($rowop['jal_amount'], 2) ?> ج.م</p>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label class="font-weight-bold text-muted">ملاحظات:</label>
+                                                                <p class="mb-0 bg-light p-2 rounded border"><?= !empty($rowop['jal_notes']) ? nl2br(htmlspecialchars($rowop['jal_notes'])) : 'لا توجد ملاحظات' ?></p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+                                                            
+                                                            <form action="do/settle_credit.php" method="POST" onsubmit="return confirm('هل أنت متأكد من تسوية هذا المبلغ؟ سيتم تصفير الأجل واعتباره مدفوعاً.');">
+                                                                <input type="hidden" name="id" value="<?= $rowop['id'] ?>">
+                                                                <button type="submit" class="btn btn-success">
+                                                                    <i class="fa fa-check me-1"></i> تم الدفع (تسوية)
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endif; ?>
 
                                             <!-- زر الحذف -->
                                             <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal<?= $rowop['id']?>" data-id="<?= $id; ?>">

@@ -263,9 +263,7 @@ if ($selected_table) {
                                 <button class="btn btn-success action-btn" onclick="processTablePayment(<?= $selected_table ?>)">
                                     <i class="fas fa-money-bill-wave me-2"></i>سداد نقدي
                                 </button>
-                                <button class="btn btn-info action-btn" onclick="printInvoice(<?= $selected_table ?>)">
-                                    <i class="fas fa-print me-2"></i>طباعة الفاتورة
-                                </button>
+              
                                 <button class="btn btn-outline-success action-btn" onclick="clearTableNormal(<?= $selected_table ?>)">
                                     <i class="fas fa-broom me-2"></i>تفريغ عادي
                                 </button>
