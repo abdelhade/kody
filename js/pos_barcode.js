@@ -739,6 +739,9 @@ function loadRecentOrders() {
                                     <button class="btn btn-warning edit-order" data-id="${order.id}" title="تعديل">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button class="btn btn-secondary print-order" data-id="${order.id}" title="طباعة الفاتورة">
+                                        <i class="fas fa-print"></i>
+                                    </button>
                                     <button class="btn btn-danger delete-order" data-id="${order.id}" title="حذف">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -837,6 +840,15 @@ $(document).ready(function() {
         const orderId = $(this).data('id');
         console.log('Delete button clicked for order:', orderId);
         deleteOrder(orderId);
+    });
+
+    // Handle print order button
+    $(document).on('click', '.print-order', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const orderId = $(this).data('id');
+        console.log('Print button clicked for order:', orderId);
+        window.open('print/receipt.php?id=' + orderId, '_blank');
     });
 
     // Load orders when offcanvas is shown
