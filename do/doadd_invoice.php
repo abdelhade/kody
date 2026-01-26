@@ -116,7 +116,13 @@ if (!empty($table_name)) {
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
 if($pro_tybe == INVOICE_TYPES['POS']){
-    $paid = $headnet;
+    // If paid amount is sent (which is true for our new POS), use it. 
+    // Otherwise calculate it (fallback for old behavior)
+    if(isset($_POST['paid'])) {
+        $paid = floatval($_POST['paid']);
+    } else {
+        $paid = $headnet;
+    }
 } else {
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 }
