@@ -36,11 +36,11 @@
                   <th>id</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
-                  <th>التليفون</th>
+                  <th><?= $lang_pbholder_phone ?></th>
                   <th>KBI</th>
-                  <th>القسم</th>
-                  <th>الشيفت</th>
-                  <th>الراتب</th>
+                  <th><?= $lang_addemployee_jobdepart ?></th>
+                  <th><?= $lang_addemployee_shift ?></th>
+                  <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
@@ -126,11 +126,11 @@
                   <th>id</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
-                  <th>التليفون</th>
+                  <th><?= $lang_pbholder_phone ?></th>
                   <th>KBI</th>
-                  <th>القسم</th>
-                  <th>الشيفت</th>
-                  <th>الراتب</th>
+                  <th><?= $lang_addemployee_jobdepart ?></th>
+                  <th><?= $lang_addemployee_shift ?></th>
+                  <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>

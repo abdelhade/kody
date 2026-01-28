@@ -39,7 +39,7 @@
                 </tr>
               </thead>
               <?php
-              $sql = "SELECT * FROM `joplevels`  WHERE isdeleted is NULL order by id desc";
+              $sql = "SELECT * FROM `joplevels`  WHERE isdeleted != 1 order by id desc";
               $res = $conn->query($sql);
 
               $x = 0;
@@ -55,28 +55,28 @@
                     <th><a class="btn btn-warning" href="edit_joplevel.php?id=<?= $row['id'] ?>">
                         <?= $lang_edit ?></a>
 
-                      <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger">
-                        حذف
+                      <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
+                        <?= $lang_delete ?>
                       </a>
 
-                      <div class="modal fade" id="modal-danger">
+                      <div class="modal fade" id="modal-danger<?= $row['id'] ?>">
                         <div class="modal-dialog">
                           <div class="modal-content bg-danger">
                             <div class="modal-header">
-                              <h4 class="modal-title">تحذير</h4>
-                              <a href="#">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                  <span aria-hidden="true">&times;</span>
-                                </button>
-                              </a>
+                              <h4 class="modal-title"><?= $lang_warning ?></h4>
+                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                              </button>
                             </div>
+                            <form action="DO/dodel_joplevel.php?id=<?= $row['id'] ?>" method="POST">
                             <div class="modal-body">
-                                   <p>هل تريد بالتأكيد حذف هذه المهمة</p>
+                                   <p><?= $lang_job_delete_confirm ?></p>
                                   </div>
                                   <div class="modal-footer justify-content-between">
-                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal">الغاء</button>
-                                     <a href="DO/dodel_joplevel.php?id=<?= $row['id'] ?>"class="btn btn-outline-light">حذف</a>
+                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal"><?= $lang_cancel ?></button>
+                                     <button type="submit" class="btn btn-outline-light"><?= $lang_delete ?></button>
                                </div>
+                            </form>
                           </div>
                           <!-- /.modal-content -->
                         </div>

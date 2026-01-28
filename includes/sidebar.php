@@ -20,7 +20,7 @@
       <div class="search-wrapper" style="position: relative;">
         <i class="fas fa-search"
           style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.85rem; pointer-events: none; z-index: 1;"></i>
-        <input class="form-control form-control-sm" type="text" placeholder="ابحث في القائمة..." id="searchSide"
+        <input class="form-control form-control-sm" type="text" placeholder="<?= $lang_search_placeholder ?>" id="searchSide"
           style="padding-right: 35px;">
       </div>
     </div>
@@ -34,7 +34,7 @@
         <li class="nav-item has-treeview">
           <a href="index.php" class="nav-link">
             <i class="nav-icon fas fa-tachometer-alt"></i>
-            <p> الرئيسيه</p>
+            <p> <?= $lang_dashboard ?></p>
           </a>
         </li>
 
@@ -45,7 +45,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-pen"></i>
               <p>
-               البيانات الاساسيه 
+               <?= $lang_basic_data ?> 
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -56,14 +56,14 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=clients" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>العملاء</p>
+                  <p><?= $lang_clients ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="acc_report.php?acc=suppliers" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الموردين</p>
+                  <p><?= $lang_suppliers ?></p>
                 </a>
               </li>
 
@@ -71,7 +71,7 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=funds" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الصناديق</p>
+                  <p><?= $lang_funds ?></p>
                 </a>
               </li>
 
@@ -79,7 +79,7 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=banks" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>البنوك</p>
+                  <p><?= $lang_banks ?></p>
                 </a>
               </li>
 
@@ -87,21 +87,21 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=stores" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>المخازن</p>
+                  <p><?= $lang_stores ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="acc_report.php?acc=expenses" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>المصروفات</p>
+                  <p><?= $lang_expenses ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="acc_report.php?acc=revenous" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الايرادات</p>
+                  <p><?= $lang_revenues ?></p>
                 </a>
               </li>
 
@@ -109,7 +109,7 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=creditors" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>دائنين متوعين</p>
+                  <p><?= $lang_creditors ?></p>
                 </a>
               </li>
 
@@ -117,7 +117,7 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=depitors" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>مدينين متنوعين</p>
+                  <p><?= $lang_debtors ?></p>
                 </a>
               </li>
 
@@ -125,28 +125,28 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=partners" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الشركاء</p>
+                  <p><?= $lang_partners ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="acc_report.php?acc=assets" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الاصول</p>
+                  <p><?= $lang_assets ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="acc_report.php?acc=rentable" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>الاصول القابلة للتأجير</p>
+                  <p><?= $lang_rentable_assets ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="mytowns.php?acc=rentable" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>المدن</p>
+                  <p><?= $lang_towns ?></p>
                 </a>
               </li>
 
@@ -172,7 +172,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-store"></i>
               <p>
-                ادارة المخزون
+                <?= $lang_inventory_management ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -183,7 +183,7 @@
                 <a href="add_item.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    صنف جديد
+                    <?= $lang_new_item ?>
                   </p>
                 </a>
               </li>
@@ -195,7 +195,7 @@
                 <a href="acc_report.php?acc=stores" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    المخازن
+                    <?= $lang_stores ?>
                   </p>
                 </a>
               </li>
@@ -205,7 +205,7 @@
                 <a href="myitems.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    الاصناف
+                    <?= $lang_items ?>
                   </p>
                 </a>
               </li>
@@ -215,7 +215,7 @@
                 <a href="myunits.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    الوحدات
+                    <?= $lang_units ?>
                   </p>
                 </a>
               </li>
@@ -225,7 +225,7 @@
                 <a href="mygroups.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    المجموعات
+                    <?= $lang_groups ?>
                   </p>
                 </a>
               </li>
@@ -234,7 +234,7 @@
                 <a href="item_categories.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    التصنيفات
+                    <?= $lang_categories ?>
                   </p>
                 </a>
               </li>
@@ -243,7 +243,7 @@
                 <a href="barcode_search.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    عرض سعر الصنف
+                    <?= $lang_item_price ?>
                   </p>
                 </a>
               </li>
@@ -253,7 +253,7 @@
                 <a href="item_categories.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    ضبط الارصدة الافتتاحية للمخازن
+                    <?= $lang_opening_balances_stores ?>
                   </p>
                 </a>
               </li>
@@ -274,7 +274,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-store"></i>
               <p>
-                نقاط البيع
+                <?= $lang_pos ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -284,7 +284,7 @@
                 <a href="pos_barcode.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    نقطه بيع باركود
+                    <?= $lang_pos_barcode ?>
                   </p>
                 </a>
               </li>
@@ -293,7 +293,7 @@
               <li class="nav-item">
                 <a href="crud_tables.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>ادارة الطاولات </p>
+                  <p><?= $lang_table_management ?> </p>
                 </a>
               </li>
 
@@ -302,7 +302,7 @@
               <li class="nav-item" id="myitems">
                 <a href="closed_sessions.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>الشيفتات المنتهية</p>
+                  <p><?= $lang_closed_sessions ?></p>
                 </a>
               </li>
 
@@ -318,7 +318,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-credit-card"></i>
               <p>
-                ادارة الكروت <i class="fas fa-angle-left right"></i>
+                <?= $lang_card_management_title ?> <i class="fas fa-angle-left right"></i>
               </p>
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="cards" style="display: none;">
@@ -327,7 +327,7 @@
                 <a href="add_booking.php" class="nav-link">
                   <i class="nav-icon fas fa-plus"></i>
                   <p>
-                    اضافة كارت
+                    <?= $lang_add_card ?>
                   </p>
                 </a>
               </li>
@@ -337,21 +337,21 @@
               <li class="nav-item" id="card-pass">
                 <a href="booking.php" class="nav-link">
                   <i class="nav-icon fas fa-arrow-right"></i>
-                  <p>مرور الكارت</p>
+                  <p><?= $lang_card_pass ?></p>
                 </a>
               </li>
 
               <li class="nav-item" id="card-management">
                 <a href="bookings.php" class="nav-link">
                   <i class="nav-icon fas fa-cogs"></i>
-                  <p>ادارة الكروت</p>
+                  <p><?= $lang_card_management ?></p>
                 </a>
               </li>
 
               <li class="nav-item" id="card-clients">
                 <a href="clients.php" class="nav-link">
                   <i class="nav-icon fas fa-users"></i>
-                  <p>ادارة العملاء</p>
+                  <p><?= $lang_client_management ?></p>
                 </a>
               </li>
 
@@ -373,7 +373,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
               <p>
-                المشتريات
+                <?= $lang_purchases ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -387,7 +387,7 @@
                 <a href="sales.php?q=sale" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    فاتورة مشتريات
+                    <?= $lang_purchase_invoice ?>
                   </p>
                 </a>
               </li>
@@ -397,7 +397,7 @@
                 <a href="sales.php?q=resale" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    فاتورة مردود مشتريات
+                    <?= $lang_purchase_return ?>
                   </p>
                 </a>
               </li>
@@ -406,7 +406,7 @@
               <li class="nav-item">
                 <a href="sales.php?q=po" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>أمر شراء
+                  <p><?= $lang_purchase_order ?>
                   </p>
                 </a>
               </li>
@@ -415,7 +415,7 @@
               <li class="nav-item">
                 <a href="pos_po.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p> أمر شراء باركود
+                  <p> <?= $lang_barcode_po ?>
                   </p>
                 </a>
               </li>
@@ -435,7 +435,7 @@
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
                 <p>
-                  المبيعات
+                  <?= $lang_sales ?>
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
@@ -448,7 +448,7 @@
                   <a href="sales.php?q=buy" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      فاتورة مبيعات
+                      <?= $lang_sales_invoice ?>
                     </p>
                   </a>
                 </li>
@@ -460,7 +460,7 @@
                   <a href="sales.php?q=so" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      أمر بيع
+                      <?= $lang_sales_order ?>
                     </p>
                   </a>
                 </li>
@@ -468,7 +468,7 @@
                 <li class="nav-item">
                   <a href="sales.php?q=offer" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
-                    <p>عرض سعر للعميل
+                    <p><?= $lang_price_offer ?>
                     </p>
                   </a>
                 </li>
@@ -488,7 +488,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-money-bill-wave"></i>
               <p>
-                السندات
+                <?= $lang_bonds ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -499,7 +499,7 @@
                 <a href="add_voucher.php?t=recive" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    سند القبض
+                    <?= $lang_receipt_voucher ?>
                   </p>
                 </a>
               </li>
@@ -508,7 +508,7 @@
                 <a href="add_voucher.php?t=payment" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    سند دفع
+                    <?= $lang_payment_voucher ?>
                   </p>
                 </a>
               </li>
@@ -518,7 +518,7 @@
                 <a href="vouchers.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    السندات
+                    <?= $lang_bonds ?>
                   </p>
                 </a>
               </li>
@@ -551,7 +551,7 @@
 
                 <i class="nav-icon fas fa-address-book"></i>
                 <p>
-                  بيانات الوظائف
+                  <?= $lang_job_data ?>
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
@@ -594,6 +594,22 @@
                     <p><?= $lang_sidedepartments ?></p>
                   </a>
                 </li>
+                
+                <li class="nav-item">
+                  <a href="hr_operations.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-cogs"></i> </i>
+                    <p><?= $lang_operations ?></p>
+                  </a>
+                </li>
+                
+                <li class="nav-item">
+                  <a href="employee_operations.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-users-cog"></i> </i>
+                    <p><?= $lang_employee_operations ?></p>
+                  </a>
+                </li>
+
+
 
 
 
@@ -610,7 +626,7 @@
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-money-bill-wave"></i>
                 <p>
-                  قسم التأجير
+                  <?= $lang_rent_section ?>
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
@@ -621,7 +637,7 @@
                   <a href="acc_report.php?acc=rentable" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      الاصول القابلة للتأجير
+                      <?= $lang_rentable_assets ?>
                     </p>
                   </a>
                 </li>
@@ -630,7 +646,7 @@
                   <a href="add_rent.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      عقد ايجار
+                      <?= $lang_lease_contract ?>
                     </p>
                   </a>
                 </li>
@@ -640,7 +656,7 @@
                   <a href="rentables.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      الوحدات الايجارية
+                      <?= $lang_rentable_units ?>
                     </p>
                   </a>
                 </li>
@@ -650,7 +666,7 @@
                   <a href="myrentables.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
-                      المدة الايجارية
+                      <?= $lang_rent_duration ?>
                     </p>
                   </a>
                 </li>
@@ -680,7 +696,7 @@
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
                 <p>
-                  العيادة
+                  <?= $lang_clinic ?>
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
@@ -690,28 +706,28 @@
                 <li class="nav-item">
                   <a href="reservations.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p> الحجوزات </p>
+                    <p> <?= $lang_reservations ?> </p>
                   </a>
                 </li>
 
                 <li class="nav-item">
                   <a href="clients.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p>بيانات المرضي</p>
+                    <p><?= $lang_patient_data ?></p>
                   </a>
                 </li>
 
                 <li class="nav-item">
                   <a href="reservations.php?c=end" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p> الحجوزات المنتهية </p>
+                    <p> <?= $lang_ended_reservations ?> </p>
                   </a>
                 </li>
 
                 <li class="nav-item">
                   <a href="drugs.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p>الادويه </p>
+                    <p><?= $lang_drugs ?> </p>
                   </a>
                 </li>
 
@@ -743,14 +759,14 @@
                 <li class="nav-item">
                   <a href="manualattandance.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p> سجل الحضور و الانصراف </p>
+                    <p> <?= $lang_attendance_log ?> </p>
                   </a>
                 </li>
 
                 <li class="nav-item">
                   <a href="machinelog.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p>استيراد الحضور</p>
+                    <p><?= $lang_import_attendance ?></p>
                   </a>
                 </li>
                 <li class="nav-item">
@@ -799,7 +815,7 @@
                 <a href="#" class="nav-link nav-link-basic">
                   <i class="nav-icon fas fa-tasks"></i>
                   <p>
-                    الموارد البشرية
+                    <?= $lang_hr ?>
                     <i class="fas fa-angle-left right"></i>
                   </p>
                 </a>
@@ -809,7 +825,7 @@
                     <a href="#" class="nav-link nav-link-basic">
                       <i class="nav-icon fas fa-tasks"></i>
                       <p>
-                        المهمات
+                        <?= $lang_tasks ?>
                         <i class="fas fa-angle-left right"></i>
                       </p>
                     </a>
@@ -817,14 +833,14 @@
                       <li class="nav-item">
                         <a href="add_task.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>مهمه جديده</p>
+                          <p><?= $lang_new_task ?></p>
                         </a>
                       </li>
 
                       <li class="nav-item">
                         <a href="tasks.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>كل المهمات</p>
+                          <p><?= $lang_all_tasks ?></p>
                         </a>
                       </li>
 
@@ -832,7 +848,7 @@
                       <li class="nav-item">
                         <a href="followup.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p> المهمات المنتهية</p>
+                          <p> <?= $lang_finished_tasks ?></p>
                         </a>
                       </li>
 
@@ -850,21 +866,21 @@
                     <a href="#" class="nav-link nav-link-basic">
                       <i class="nav-icon fas fa-tasks"></i>
                       <p>
-                        KPIs <i class="fas fa-angle-left right"></i>
+                        <?= $lang_performance_rates ?> <i class="fas fa-angle-left right"></i>
                       </p>
                     </a>
                     <ul class="nav nav-treeview shadow-inner  shadow-slate-500" style="display: none;">
                       <li class="nav-item">
                         <a href="kbis.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>معدلات الآداء</p>
+                          <p><?= $lang_performance_rates ?></p>
                         </a>
                       </li>
 
                       <li class="nav-item">
                         <a href="emp_kbis.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>وزن KPI</p>
+                          <p><?= $lang_kpi_weight ?></p>
                         </a>
                       </li>
 
@@ -916,7 +932,7 @@
                     <a href="#" class="nav-link">
                       <i class="nav-icon fas fa-list"></i>
                       <p>
-                        الانتاجية
+                        <?= $lang_productivity ?>
                         <i class="fas fa-angle-left right"></i>
                       </p>
                     </a>
@@ -926,14 +942,14 @@
                       <li class="nav-item">
                         <a href="production.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>الانتاج اليومي</p>
+                          <p><?= $lang_daily_production ?></p>
                         </a>
                       </li>
 
                       <li class="nav-item">
                         <a href="hiringcontracts.php" class="nav-link">
                           <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p>احتساب الانتاج لمدة</p>
+                          <p><?= $lang_period_production ?></p>
                         </a>
                       </li>
 
@@ -950,7 +966,7 @@
                     <a href="cvs.php" class="nav-link">
                       <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                       <p>
-                        السير الذاتيه
+                        <?= $lang_cvs ?>
 
                       </p>
                     </a>
@@ -991,7 +1007,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-tasks"></i>
               <p>
-                ادارة العملاء
+                <?= $lang_client_management ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -999,14 +1015,14 @@
               <li class="nav-item">
                 <a href="acc_report.php?acc=clients" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>ادخال العملاء من الحسابات</p>
+                  <p><?= $lang_import_clients_acc ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="clients.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>ادخال العملاء متقدم</p>
+                  <p><?= $lang_advanced_client_entry ?></p>
                 </a>
               </li>
 
@@ -1014,7 +1030,7 @@
               <li class="nav-item">
                 <a href="chances.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p> ادارة الفرص</p>
+                  <p> <?= $lang_chances_management ?></p>
                 </a>
               </li>
 
@@ -1023,7 +1039,7 @@
                 <a href="calls.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                   <p>
-                    ادارة المكالمات
+                    <?= $lang_calls_management ?>
                   </p>
                 </a>
               </li>
@@ -1070,7 +1086,7 @@
         <li class="nav-item">
           <a href="change_password.php" class="nav-link">
             <i class="nav-icon fas fa-key"></i>
-            <p>تغيير كلمة المرور</p>
+            <p><?= $lang_change_password ?></p>
           </a>
         </li>
 
@@ -1079,7 +1095,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
               <p>
-                الحسابات العامه
+                <?= $lang_general_accounts ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -1090,7 +1106,7 @@
                 <a href="add_journal.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    انشاء قيد يومية
+                    <?= $lang_journal_entry ?>
                   </p>
                 </a>
               </li>
@@ -1099,7 +1115,7 @@
                 <a href="addmulti_journal.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    انشاء قيد متعدد
+                    <?= $lang_multi_journal ?>
                   </p>
                 </a>
               </li>
@@ -1111,7 +1127,7 @@
                 <a href="daily_journal.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    القيود اليوميه
+                    <?= $lang_daily_journals ?>
                   </p>
                 </a>
               </li>
@@ -1120,7 +1136,7 @@
               <li class="nav-item">
                 <a href="accounts.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>شجرة الحسابات
+                  <p><?= $lang_chart_of_accounts ?>
                   </p>
                 </a>
               </li>
@@ -1129,7 +1145,7 @@
               <li class="nav-item">
                 <a href="acc_report.php" class="nav-link">
                   <i class="nav-icon fas fa-list "></i>
-                  <p>قائمة الحسابات مع الارصدة
+                  <p><?= $lang_accounts_list ?>
                   </p>
                 </a>
               </li>
@@ -1147,7 +1163,7 @@
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
-              <p>النظام
+              <p><?= $lang_system ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -1157,7 +1173,7 @@
               <li class="nav-item">
                 <a href="start_balance.php" class="nav-link">
                   <i class="nav-icon fas fa-list "></i>
-                  <p> الرصيد الافتتاحي للحسابات
+                  <p> <?= $lang_accounts_opening_balance ?>
                   </p>
                 </a>
               </li>
@@ -1166,7 +1182,7 @@
               <li class="nav-item">
                 <a href="items_start_balance.php" class="nav-link">
                   <i class="nav-icon fas fa-list "></i>
-                  <p>الرصيد الافتتاحي للأصناف</p>
+                  <p><?= $lang_items_opening_balance ?></p>
                 </a>
               </li>
 
@@ -1190,7 +1206,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
               <p>
-                عمليات الاصول
+                <?= $lang_assets_operations ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -1201,7 +1217,7 @@
                 <a href="add_journal.php?a=1" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    شراء اصل
+                    <?= $lang_buy_asset ?>
 
                   </p>
                 </a>
@@ -1211,7 +1227,7 @@
               <li class="nav-item">
                 <a href="add_journal.php?a=2" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>بيع اصل
+                  <p><?= $lang_sell_asset ?>
                   </p>
                 </a>
               </li>
@@ -1220,7 +1236,7 @@
               <li class="nav-item">
                 <a href="" class="nav-link">
                   <i class="nav-icon fas fa-list "></i>
-                  <p>اهلاك اصل
+                  <p><?= $lang_depreciate_asset ?>
                   </p>
                 </a>
               </li>
@@ -1245,7 +1261,7 @@
               <li class="nav-item">
                 <a href="summary.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>كشف حساب</p>
+                  <p><?= $lang_account_statement ?></p>
                 </a>
               </li>
 
@@ -1253,21 +1269,21 @@
               <li class="nav-item">
                 <a href="reps_cl.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>تقاير العيادات</p>
+                  <p><?= $lang_clinic_reports ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="reports.php?t=rents" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p>تقارير التأجير</p>
+                  <p><?= $lang_rent_reports ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="sales-reports.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>تقارير المبيعات</p>
+                  <p><?= $lang_sales_reports ?></p>
                 </a>
               </li>
 
@@ -1275,7 +1291,7 @@
                 <a href="operations_summary.php?q=sale" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    فواتير المشتريات
+                    <?= $lang_purchase_invoices_report ?>
                   </p>
                 </a>
               </li>
@@ -1286,7 +1302,7 @@
                 <a href="items_summery.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    المبيعات اصناف
+                    <?= $lang_sales_items_report ?>
                   </p>
                 </a>
               </li>

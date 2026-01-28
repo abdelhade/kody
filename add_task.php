@@ -68,8 +68,8 @@ $rowcha = $conn->query("SELECT * from tasks where id= '$id' ")->fetch_assoc();
     <div class="row">
       <div class="col">
       <div class="form-group">
-          <label> تعليق المندوب</label>
-          <input type="text" id="" class="form-control" name="emp_control">
+          <label><?= $lang_delegate_comment ?></label>
+          <input type="text" id="" class="form-control" name="emp_comment">
         </div>
       </div>
     </div>
@@ -77,8 +77,8 @@ $rowcha = $conn->query("SELECT * from tasks where id= '$id' ")->fetch_assoc();
     <div class="row">
       <div class="col">
       <div class="form-group">
-          <label> تعليق العميل</label>
-          <input type="text" id="" class="form-control" name="cl_control">
+          <label><?= $lang_client_comment ?></label>
+          <input type="text" id="" class="form-control" name="cl_comment">
         </div>
       </div>
     </div>
@@ -112,7 +112,7 @@ $rowcha = $conn->query("SELECT * from tasks where id= '$id' ")->fetch_assoc();
 
     
     <div class="form-group">
-        <textarea placeholder=" اكتب المهمه هنا  " class="form-control" name="info" id="" cols="20" rows="5"></textarea>
+        <textarea placeholder="<?= $lang_task_placeholder ?>" class="form-control" name="info" id="" cols="20" rows="5"></textarea>
       </div>
     <button type="submit" class="form-control btn btn-primary"><?= $lang_publicconfirm ?></button>
 
