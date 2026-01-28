@@ -18,7 +18,8 @@
     document.head.appendChild(style);
 })();
 
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof jQuery === 'undefined') return;
     
     // تحسين تأثير الهوفر للعناصر الرئيسية
     $('.main-sidebar .nav-sidebar > .nav-item > .nav-link').hover(
@@ -49,11 +50,8 @@ $(document).ready(function() {
         const $this = $(this);
         $this.addClass('click-effect');
         
-        // منع إغلاق السايد بار
-        e.stopPropagation();
-        
-        // الحفاظ على حالة السايد بار مفتوح
-        $('body').removeClass('sidebar-collapse');
+        // Removed stopPropagation to allow AdminLTE to handle treeview expansion
+        // e.stopPropagation();
         
         setTimeout(() => {
             $this.removeClass('click-effect');
@@ -144,7 +142,8 @@ $(document).ready(function() {
         
         // إضافة حدث لمنع إغلاق السايد بار
         $('.main-sidebar .nav-link').off('click.keepOpen').on('click.keepOpen', function(e) {
-            e.stopPropagation();
+            // Removed stopPropagation
+            // e.stopPropagation();
             $('body').removeClass('sidebar-collapse');
         });
     }, 500);
@@ -170,7 +169,7 @@ $(document).ready(function() {
                 'font-weight': ''
             });
         }
-        });
+    });
 });
 
 // تشغيل فوري عند تحميل DOM

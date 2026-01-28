@@ -1,14 +1,17 @@
 // منع إغلاق السايد بار
-$(document).ready(function() {
+// منع إغلاق السايد بار
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof jQuery === 'undefined') return;
+
     // منع إغلاق السايد بار عند الضغط على أي عنصر بداخله
     $('.main-sidebar').on('click', function(e) {
-        e.stopPropagation();
+        // e.stopPropagation();
         $('body').removeClass('sidebar-collapse');
     });
     
     // منع إغلاق السايد بار عند الضغط على الروابط
     $('.main-sidebar .nav-link').on('click', function(e) {
-        e.stopPropagation();
+        // e.stopPropagation();
         $('body').removeClass('sidebar-collapse');
     });
     
@@ -23,7 +26,7 @@ $(document).ready(function() {
             $('body').removeClass('sidebar-collapse');
         }
     });
-});
 
-// تشغيل فوري
-$('body').removeClass('sidebar-collapse');
+    // تشغيل فوري
+    $('body').removeClass('sidebar-collapse');
+});

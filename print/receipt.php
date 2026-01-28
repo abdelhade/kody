@@ -100,7 +100,7 @@ if ($is_delivery) {
 <tbody>
     <?php 
     $x =0;
-    $resdet = $conn->query("SELECT * FROM fat_details where pro_id = $id");
+    $resdet = $conn->query("SELECT * FROM fat_details where fatid = $id");
     while ($rowdet =$resdet->fetch_assoc()) {
         $x++;
         $itmid= $rowdet['item_id']; 

@@ -47,7 +47,8 @@ try {
             $items[] = [
                 'item_id' => $item['item_id'],
                 'item_name' => $item['item_name'] ?: 'صنف غير معروف',
-                'item_desc' => $item['barcode'] ?: $item['item_id'],
+                'item_desc' => $item['item_desc'] ?: '',
+                'barcode' => $item['barcode'] ?: $item['item_id'],
                 'qty' => $qty,
                 'price' => floatval($item['price']),
                 'subtotal' => floatval($item['det_value'])
