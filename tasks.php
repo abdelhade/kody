@@ -47,14 +47,16 @@
               $usres = $conn->query("SELECT id from users where uname = '$usname'")->fetch_assoc();
               $usid = $usres['id'];
 
-              $sqltsk = "SELECT * FROM `tasks` where isdeleted != 1 AND user = $usid order by crtime desc;";  
+              $sqltsk = "SELECT * FROM `tasks` where (isdeleted != 1 OR isdeleted IS NULL) AND user = $usid order by crtime desc;";  
             }else{
-            $sqltsk = "SELECT * FROM `tasks` where isdeleted != 1 order by crtime desc;";  
+            $sqltsk = "SELECT * FROM `tasks` where (isdeleted != 1 OR isdeleted IS NULL) order by crtime desc;";  
             }
-          }elseif ($_SESSION['usty'] != 1) {
+          }elseif ($_SESSION['usty'] != 1 && $_SESSION['usty'] != 2) {
             $userid = $_SESSION['userid'];
-            $sqltsk = "SELECT * FROM `tasks` where user = '$userid' AND isdeleted != 1  order by crtime desc;"; 
-          }          
+            $sqltsk = "SELECT * FROM `tasks` where user = '$userid' AND (isdeleted != 1 OR isdeleted IS NULL)  order by crtime desc;"; 
+          } else {
+             $sqltsk = "SELECT * FROM `tasks` where (isdeleted != 1 OR isdeleted IS NULL) order by crtime desc;";  
+          }
           
           $restsk = $conn->query($sqltsk);
           $x = 0;

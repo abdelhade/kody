@@ -32,9 +32,9 @@
             <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
-                  <th>م</th>
+                  <th><?= $lang_seq ?></th>
                   <th><?= $lang_publicname ?></th>
-                  <th><? $lang_publicinfo ?></th>
+                  <th><?= $lang_publicinfo ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
               </thead>
@@ -54,7 +54,7 @@
                     <th><?= $row['info'] ?></th>
                     <th><a class="btn btn-warning" href="edit_jop.php?id=<?= $row['id'] ?>"><?= $lang_edit ?></a>
                       <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
-                        حذف
+                        <?= $lang_delete ?>
                       </a>
                     
                       <form action="do/dodel_jop.php" method="POST">
@@ -62,7 +62,7 @@
                         <div class="modal-dialog">
                           <div class="modal-content bg-danger">
                             <div class="modal-header">
-                              <h4 class="modal-title">تحذير</h4>
+                              <h4 class="modal-title"><?= $lang_warning ?></h4>
                               <a href="#">
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                   <span aria-hidden="true">&times;</span>
@@ -71,15 +71,15 @@
                             </div>
 
                             <div class="modal-body">
-                                   <p>هل تريد بالتأكيد حذف هذه المهمة</p>
+                                   <p><?= $lang_job_delete_confirm ?></p>
                                    <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                   <input type="text" name="password" class="form-control" placeholder="كلمة المرور">
+                                   <input type="text" name="password" class="form-control" placeholder="<?= $lang_password ?>">
                                   </div>
                                   <div class="modal-footer justify-content-between">
-                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal">الغاء</button>
+                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal"><?= $lang_cancel ?></button>
                                  
 
-                                    <button tybe="submit" class="btn btn-outline-light">حذف</button>
+                                    <button tybe="submit" class="btn btn-outline-light"><?= $lang_delete ?></button>
                                </div>
 
 
@@ -94,9 +94,9 @@
                 </tbody>
                 <tfoot>
                   <tr>
-                    <th>م</th>
+                    <th><?= $lang_seq ?></th>
                     <th><?= $lang_publicname ?></th>
-                    <th><? $lang_publicinfo ?></th>
+                    <th><?= $lang_publicinfo ?></th>
                     <th><?= $lang_publicoperations ?></th>
                   </tr>
                 </tfoot>

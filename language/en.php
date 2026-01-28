@@ -284,4 +284,193 @@ $lang_depart_edit = "Edit Department";
 $lang_depart_depname = "Enter Department Name";
 $lang_jopedit = "Edit Job";
 $lang_joplvledit = "Edit Job Level";
+$lang_delegate_comment = "Delegate Comment";
+$lang_client_comment = "Client Comment";
+$lang_task_placeholder = "Write the task here";
+
+// Sidebar
+$lang_search_placeholder = "Search Menu...";
+$lang_basic_data = "Basic Data";
+$lang_clients = "Clients";
+$lang_suppliers = "Suppliers";
+$lang_funds = "Funds";
+$lang_banks = "Banks";
+$lang_stores = "Stores";
+$lang_expenses = "Expenses";
+$lang_revenues = "Revenues";
+$lang_creditors = "Miscellaneous Creditors";
+$lang_debtors = "Miscellaneous Debtors";
+$lang_partners = "Partners";
+$lang_assets = "Assets";
+$lang_rentable_assets = "Rentable Assets";
+$lang_towns = "Cities";
+
+// Inventory
+$lang_inventory_management = "Inventory Management";
+$lang_new_item = "New Item";
+$lang_items = "Items";
+$lang_units = "Units";
+$lang_groups = "Groups";
+$lang_categories = "Categories";
+$lang_item_price = "Item Price";
+$lang_opening_balances_stores = "Opening Store Balances";
+
+// POS
+$lang_pos = "Point of Sale";
+$lang_pos_barcode = "Barcode POS";
+$lang_table_management = "Table Management";
+$lang_closed_sessions = "Closed Shifts";
+
+// Cards
+$lang_card_management_title = "Card Management";
+$lang_add_card = "Add Card";
+$lang_card_pass = "Card Pass";
+$lang_card_management = "Card Management";
+$lang_client_management = "Client Management";
+
+// Purchases
+$lang_purchases = "Purchases";
+$lang_purchase_invoice = "Purchase Invoice";
+$lang_purchase_return = "Purchase Return Invoice";
+$lang_purchase_order = "Purchase Order";
+$lang_barcode_po = "Barcode Purchase Order";
+
+// Sales
+$lang_sales = "Sales";
+$lang_sales_invoice = "Sales Invoice";
+$lang_sales_order = "Sales Order";
+$lang_price_offer = "Price Quotation";
+
+// Vouchers
+$lang_bonds = "Vouchers";
+$lang_receipt_voucher = "Receipt Voucher";
+$lang_payment_voucher = "Payment Voucher";
+
+// HR
+$lang_job_data = "Job Data";
+$lang_hr = "Human Resources";
+
+// Rent
+$lang_rent_section = "Rent Section";
+$lang_lease_contract = "Lease Contract";
+$lang_rentable_units = "Rentable Units";
+$lang_rent_duration = "Rent Duration";
+
+// Clinic
+$lang_clinic = "Clinic";
+$lang_reservations = "Reservations";
+$lang_patient_data = "Patient Data";
+$lang_ended_reservations = "Ended Reservations";
+$lang_drugs = "Drugs";
+
+// Attendance
+$lang_attendance_log = "Attendance Log";
+$lang_import_attendance = "Import Attendance";
+
+// Tasks
+$lang_tasks = "Tasks";
+$lang_new_task = "New Task";
+$lang_all_tasks = "All Tasks";
+$lang_finished_tasks = "Finished Tasks";
+
+// KPIs
+$lang_performance_rates = "Performance Rates";
+$lang_kpi_weight = "KPI Weight";
+
+// Productivity
+$lang_productivity = "Productivity";
+$lang_daily_production = "Daily Production";
+$lang_period_production = "Period Production";
+
+// CVs
+$lang_cvs = "CVs";
+
+// CRM
+$lang_crm = "CRM";
+$lang_import_clients_acc = "Import Clients from Accounts";
+$lang_advanced_client_entry = "Advanced Client Entry";
+$lang_chances_management = "Opportunity Management";
+$lang_calls_management = "Call Management";
+
+// General Accounts
+$lang_change_password = "Change Password";
+$lang_general_accounts = "General Accounts";
+$lang_journal_entry = "Journal Entry";
+$lang_multi_journal = "Multi Journal Entry";
+$lang_daily_journals = "Daily Journals";
+$lang_chart_of_accounts = "Chart of Accounts";
+$lang_accounts_list = "Accounts List with Balances";
+
+// System
+$lang_system = "System";
+$lang_accounts_opening_balance = "Accounts Opening Balance";
+$lang_items_opening_balance = "Items Opening Balance";
+
+// Assets Operations
+$lang_assets_operations = "Assets Operations";
+$lang_buy_asset = "Buy Asset";
+$lang_sell_asset = "Sell Asset";
+$lang_depreciate_asset = "Depreciate Asset";
+
+// Reports
+$lang_account_statement = "Account Statement";
+$lang_clinic_reports = "Clinic Reports";
+$lang_rent_reports = "Rent Reports";
+$lang_sales_reports = "Sales Reports";
+$lang_purchase_invoices_report = "Purchase Invoices";
+$lang_sales_items_report = "Sales by Item";
+$lang_job_delete_confirm = "Are you sure you want to delete this job?";
+$lang_seq = "#";
+$lang_shifts = "Shifts";
+$lang_departlist = "Departments List";
+$lang_levelslist = "Job Levels List";
+$lang_ruleslist = "Job Roles List";
+$lang_employeeslist = "Employees List";
+$lang_publicjob = "Job Title";
+$lang_add_joplevel = "Add Job Level";
+$lang_name_joplevel = "Job Level Name";
+$lang_plholder_joplvl = "Enter Job Level";
+$lang_add_joprule = "Add Job Role";
+$lang_name_rule = "Job Role Name";
+$lang_plholder_joprule = "Enter Job Role";
+$lang_addjop = "Add Job Title";
+$lang_namejop = "Job Title Name";
+$lang_plholder_jop = "Enter Job Title";
+$lang_jopedit = "Edit Job Title";
+$lang_addemployee_personalinfo = "Personal Information";
+$lang_addemployee_name = "Name";
+$lang_pbholder_name = "Enter Name";
+$lang_addemployee_phone = "Phone Number";
+$lang_pbholder_phone = "Enter Phone Number";
+$lang_addemployee_email = "Email";
+$lang_pbholder_email = "Enter Email";
+$lang_addemployee_image = "Employee Image";
+$lang_pbholder_file = "Choose File";
+$lang_addemployee_upload = "Upload";
+$lang_addemployee_dateofbirth = "Date of Birth";
+$lang_addemployee_gender = "Gender";
+$lang_addemployee_male = "Male";
+$lang_addemployee_female = "Female";
+$lang_addemployee_info = "Additional Info";
+$lang_addemployee_active = "Active";
+$lang_addemployee_details = "Address Details";
+$lang_addemployee_address = "Address";
+$lang_addemployee_country = "City/Town";
+$lang_addemployee_jobinfo = "Job Information";
+$lang_addemployee_job = "Job";
+$lang_addemployee_joplevel = "Job Level";
+$lang_addemployee_jobtype = "Job Type";
+$lang_addemployee_jobstart = "Hire Date";
+$lang_addemployee_jobend = "Contract End Date";
+$lang_addemployee_salaries = "Salaries";
+$lang_addemployee_basmaid = "Fingerprint ID";
+$lang_addemployee_basmaname = "Fingerprint Name";
+$lang_addemployee_password = "Phone Password";
+$lang_addemployee_confirm = "Save Data";
+$lang_main = "Home";
+$lang_emprofilemainentry = "Basic Info";
+$lang_emprofilejopentry = "Job Info";
+$lang_emprofilejop = "Job";
+$lang_addemployee_address1 = "Address 1";
+$lang_addemployee_address2 = "Address 2";
 ?>
