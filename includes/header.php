@@ -94,8 +94,8 @@ if ($lang == null) {
 
 
 <script src="dist/modal/modal.js"></script>
-<script src="assets/js/sidebar-enhancements.js"></script>
-<script src="assets/js/sidebar-keep-open.js"></script>
+<!-- <script src="assets/js/sidebar-enhancements.js"></script> -->
+<!-- <script src="assets/js/sidebar-keep-open.js"></script> -->
 
 <script>console.log('0000000000000000000000000')</script>
   <script src="dist/css/tailwind.js"></script>

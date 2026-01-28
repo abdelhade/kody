@@ -395,7 +395,7 @@ $(document).ready(function() {
     };
     
     function loadExistingOrder(orderId, tableName) {
-        console.log('تحميل طلب موجود رقم: ' + orderId + ' للطاولة: ' + tableName);
+        console.log('🔄 Loading existing order:', orderId, 'Table:', tableName);
         
         $.ajax({
             url: 'ajax/load_order.php',
@@ -403,46 +403,51 @@ $(document).ready(function() {
             data: { order_id: orderId },
             dataType: 'json',
             success: function(response) {
+                console.log('📥 Load Order Response:', response);
+                
                 if (response.success) {
-                    // مسح الأصناف الحالية
                     $('#itemData').empty();
                     
-                    // تحميل أصناف الطلب الموجود
                     if (response.items && response.items.length > 0) {
+                        console.log('📦 Found items:', response.items.length);
                         response.items.forEach(function(item) {
+                            console.log('➕ Adding item:', item);
                             addItemToOrder(
                                 item.item_id,
-                                item.item_name,
-                                parseFloat(item.price),
-                                item.item_desc || item.item_id,
-                                parseFloat(item.qty)
+                                item.item_name || 'Unknown Item',
+                                parseFloat(item.price) || 0,
+                                item.barcode || item.item_desc || item.item_id, // Use explicit barcode first
+                                parseFloat(item.qty) || 1
                             );
                         });
+                    } else {
+                        console.warn('⚠️ No items found in order');
                     }
                     
-                    // تحميل بيانات الطلب
                     if (response.order) {
                         $('#discount').val(response.order.discount || 0);
-                        if (response.order.emp_id) {
-                            $('select[name="emp_id"]').val(response.order.emp_id);
-                        }
-                        if (response.order.acc1) {
-                            $('select[name="acc2_id"]').val(response.order.acc1);
-                        }
+                        if (response.order.emp_id) $('select[name="emp_id"]').val(response.order.emp_id);
+                        if (response.order.acc1) $('select[name="acc2_id"]').val(response.order.acc1);
+                         // Set hidden edit_order_id
+                         $('#edit_order_id').val(response.order.id);
                     }
                     
                     updateItemCount();
                     updateTotal();
                     
-                    // عرض رسالة نجاح
-                    alert('تم تحميل طلب ' + tableName + ' بنجاح\nيمكنك الآن إضافة أصناف جديدة');
-                    console.log('تم تحميل طلب الطاولة بنجاح');
+                    // Show success message briefly
+                    const alertDiv = $('<div class="alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;">تم تحميل الطلب بنجاح</div>');
+                    $('body').append(alertDiv);
+                    setTimeout(() => alertDiv.fadeOut(() => alertDiv.remove()), 2000);
+                    
                 } else {
+                    console.error('❌ Load failed:', response.error);
                     alert('خطأ في تحميل طلب الطاولة: ' + (response.error || 'غير معروف'));
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX Error:', error);
+                console.error('❌ AJAX Error:', error);
+                console.error('Response:', xhr.responseText);
                 alert('خطأ في الاتصال بالخادم');
             }
         });
@@ -945,55 +950,7 @@ function printDailySalesReport() {
 // ========================================
 // Shift Management Functions
 // ========================================
-function loadShiftPreview() {
-    $.ajax({
-        url: 'ajax/get_shift_preview.php',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                let html = `
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h6 class="text-primary mb-1">عدد الفواتير</h6>
-                                <h4 class="mb-0">${response.data.total_invoices || 0}</h4>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h6 class="text-success mb-1">إجمالي المبيعات</h6>
-                                <h4 class="mb-0 text-success">${(response.data.total_sales || 0).toFixed(2)} ج.م</h4>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h6 class="text-warning mb-1">الخصومات</h6>
-                                <h4 class="mb-0 text-warning">${(response.data.total_discounts || 0).toFixed(2)} ج.م</h4>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h6 class="text-info mb-1">صافي المبيعات</h6>
-                                <h4 class="mb-0 text-info">${(response.data.net_sales || 0).toFixed(2)} ج.م</h4>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                $('#shiftPreview').html(html);
-            } else {
-                $('#shiftPreview').html('<p class="text-center text-muted">لا توجد مبيعات اليوم</p>');
-            }
-        },
-        error: function() {
-            $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
-        }
-    });
-}
-
-$(document).on('show.bs.modal', '#closeShiftModal', function() {
-    loadShiftPreview();
-});
+// Shift functions moved to pos_barcode.php inline script for better error handling
 
 function closeShift() {
     if (confirm('هل أنت متأكد من إغلاق الشيفت؟')) {

@@ -10,7 +10,7 @@ if (!isset($_SESSION['login'])) {
 }
 
 // Fix the include path - we're already in the includes directory
-include('connect.php');
+include(__DIR__ . '/connect.php');
 
 $userid = $_SESSION['userid'];
 $up = $conn->query("SELECT * FROM users where id = $userid ");

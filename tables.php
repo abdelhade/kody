@@ -1,99 +1,240 @@
 <?php include('includes/header.php') ?>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <style>
-.bg-sky-400 { background-color: #38bdf8 !important; color: white !important; }
-.bg-red-300 { background-color: #fca5a5 !important; color: white !important; }
-.bg-sky-200 { background-color: #bae6fd !important; }
-.bg-zinc-200 { background-color: #e4e4e7 !important; }
-.border-blue-800 { border-color: #1e40af !important; }
-.text-blue-700 { color: #1d4ed8 !important; }
+/* Modern Color Palette */
+:root {
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --surface-color: #ffffff;
+    --bg-color: #f3f4f6;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+}
+
+/* Page Header */
+.page-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="1" cy="1" r="1"/></g></svg>');
+}
+
+/* Table Cards */
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
 
 .table-btn {
-    min-height: 80px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    border-radius: 15px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    margin: 8px;
+    min-height: 140px;
+    border-radius: 24px;
+    border: none;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    text-decoration: none !important;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.table-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    transition: background 0.3s;
+}
+
+/* Empty Table State */
+.table-btn.bg-success {
+    background: white !important;
+    color: var(--text-primary) !important;
+}
+.table-btn.bg-success::before {
+    background: #10b981;
+}
+.table-btn.bg-success .fa-utensils, 
+.table-btn.bg-success .fa-check-circle {
+    color: #10b981;
+    background: #ecfdf5;
+    padding: 15px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+}
+
+/* Occupied Table State */
+.table-btn.bg-danger {
+    background: white !important;
+    color: var(--text-primary) !important;
+}
+.table-btn.bg-danger::before {
+    background: #ef4444;
+}
+.table-btn.bg-danger .fa-clock {
+    color: #ef4444;
+    background: #fef2f2;
+    padding: 15px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    animation: pulse 2s infinite;
 }
 
 .table-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .table-btn.selected {
-    border: 3px solid #1e40af;
-    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.2);
+    ring: 4px solid rgba(99, 102, 241, 0.5);
+    transform: scale(1.05);
 }
 
+/* Summary Card */
 .summary-card {
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: none;
+    overflow: hidden;
+    position: sticky;
+    top: 20px;
+}
+
+.summary-card .card-header {
+    background: white;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 1.5rem;
+}
+
+.summary-card .card-header h5 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.price-box {
+    padding: 1.5rem;
+    border-radius: 16px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+.price-box:hover {
+    transform: scale(1.02);
+}
+.price-box.total {
+    background: #eff6ff;
+    color: #1e40af;
+}
+.price-box.net {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+/* Action Buttons */
+.action-btn {
+    border-radius: 16px;
+    padding: 1rem;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn.btn-warning {
+    background: var(--warning-gradient);
+    color: white;
+}
+.action-btn.btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    border: none;
+}
+.action-btn.btn-success {
+    background: var(--success-gradient);
+    border: none;
+}
+.action-btn.btn-danger {
+    background: var(--danger-gradient);
     border: none;
 }
 
-.action-btn {
-    border-radius: 10px;
-    font-weight: 600;
-    padding: 12px 20px;
-    transition: all 0.3s ease;
-}
-
 .action-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    filter: brightness(110%);
 }
 
-.page-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
-.tables-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
-    padding: 20px;
-}
-</style>
-
-<style>
+/* Floating POS Button */
 .floating-pos-btn {
     position: fixed;
     bottom: 30px;
     left: 30px;
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    width: 64px;
+    height: 64px;
+    background: var(--primary-gradient);
     color: white;
-    border-radius: 50%;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    border-radius: 20px;
+    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
     z-index: 9999;
-    transition: all 0.3s;
-    cursor: pointer;
-    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .floating-pos-btn:hover {
-    transform: scale(1.1) rotate(-10deg);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.4);
-    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
-    color: white;
-    text-decoration: none;
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.6);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 </style>
 <?php
@@ -183,26 +324,25 @@ if ($selected_table) {
 }
 ?>
 
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="page-header">
-        <h2 class="mb-0">
-            <i class="fas fa-utensils me-3"></i>إدارة الطاولات
-        </h2>
-        <p class="mb-0 mt-2 opacity-75">اختر طاولة لبدء الطلب أو إدارة الطلبات الحالية</p>
-    </div>
-
-    <div class="row">
-        <!-- Tables Grid -->
-        <div class="col-lg-8">
-            <div class="card summary-card">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-table me-2 text-primary"></i>الطاولات
-                    </h5>
+<div class="container-fluid h-100 p-0 overflow-hidden">
+    <div class="row h-100 g-0">
+        <!-- Tables Grid (Right Side) -->
+        <div class="col-lg-8 h-100 d-flex flex-column p-4" style="background: #f8f9fa;">
+            <div class="page-header mb-3 flex-shrink-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-0 fw-bold text-white"><i class="fas fa-utensils me-2"></i>إدارة الطاولات</h4>
+                        <small class="text-white-50">اختر طاولة لبدء الطلب</small>
+                    </div>
+                    <div>
+                         <!-- Optional: Add filters or extra buttons here -->
+                    </div>
                 </div>
-                <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
-                    <div class="tables-grid">
+            </div>
+
+            <div class="card border-0 shadow-sm flex-grow-1 overflow-hidden" style="background: transparent;">
+                <div class="card-body p-0 h-100 overflow-auto custom-scrollbar">
+                    <div class="tables-grid pb-5">
                         <?php 
                         if ($tables_result && $tables_result->num_rows > 0) {
                             while ($table = $tables_result->fetch_assoc()) {
@@ -210,23 +350,24 @@ if ($selected_table) {
                                 $table_name = $table['tname'];
                                 $table_case = $table['table_case'];
                                 
-                                $bg_color = ($table_case == 0) ? 'bg-success' : 'bg-danger';
+                                $bg_color = ($table_case == 0) ? 'bg-white border-success text-success' : 'bg-white border-danger text-danger';
                                 $icon = ($table_case == 0) ? 'fas fa-check-circle' : 'fas fa-clock';
                                 $status = ($table_case == 0) ? 'فارغة' : 'محجوزة';
-                                $selected_class = ($selected_table == $table_id) ? 'selected' : '';
+                                $selected_class = ($selected_table == $table_id) ? 'ring-4 ring-primary' : '';
                                 
-                                echo '<a href="tables.php?table_id=' . $table_id . '" class="btn ' . $bg_color . ' table-btn text-white text-decoration-none ' . $selected_class . '">';
+                                // Simplified Button Style
+                                echo '<a href="tables.php?table_id=' . $table_id . '" class="btn table-btn ' . $selected_class . '" style="border: 2px solid ' . ($table_case == 0 ? '#198754' : '#dc3545') . '; color: ' . ($table_case == 0 ? '#198754' : '#dc3545') . '; background: white;">';
                                 echo '<div class="text-center">';
-                                echo '<i class="' . $icon . ' fa-lg mb-2"></i><br>';
-                                echo '<strong>' . htmlspecialchars($table_name) . '</strong><br>';
+                                echo '<i class="' . $icon . ' fa-2x mb-2"></i><br>';
+                                echo '<h6 class="fw-bold mb-1">' . htmlspecialchars($table_name) . '</h6>';
                                 echo '<small>' . $status . '</small>';
                                 echo '</div>';
                                 echo '</a>';
                             }
                         } else {
-                            echo '<div class="col-12 text-center text-muted p-4">';
-                            echo '<i class="fas fa-table fa-3x mb-3"></i><br>';
-                            echo 'لا توجد طاولات متاحة';
+                            echo '<div class="col-12 text-center text-muted p-5">';
+                            echo '<i class="fas fa-table fa-4x mb-4 opacity-25"></i><br>';
+                            echo '<h5>لا توجد طاولات متاحة</h5>';
                             echo '</div>';
                         }
                         ?>
@@ -236,74 +377,99 @@ if ($selected_table) {
         </div>
 
         <!-- Order Summary -->
-        <div class="col-lg-4" style="max-height: 70vh; overflow-y: auto;">
+        <!-- Order Summary (Left Side) -->
+        <div class="col-lg-4 h-100 bg-white border-start shadow-sm d-flex flex-column">
             <?php if ($selected_table): ?>
-                <div class="card summary-card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-receipt me-2"></i><?= htmlspecialchars($selected_table_name) ?>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <div class="border-end">
-                                    <h4 class="text-primary mb-1"><?= number_format($order_totals['total'], 2) ?></h4>
-                                    <small class="text-muted">الإجمالي</small>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <h4 class="text-success mb-1"><?= number_format($order_totals['net'], 2) ?></h4>
-                                <small class="text-muted">الصافي</small>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="d-grid gap-2">
-                            <?php if (!empty($order_data)): ?>
-                                <button class="btn btn-success action-btn" onclick="processTablePayment(<?= $selected_table ?>)">
-                                    <i class="fas fa-money-bill-wave me-2"></i>سداد نقدي
-                                </button>
-              
-                                <button class="btn btn-outline-success action-btn" onclick="clearTableNormal(<?= $selected_table ?>)">
-                                    <i class="fas fa-broom me-2"></i>تفريغ عادي
-                                </button>
-                                <button class="btn btn-warning action-btn" onclick="clearTableDirect(<?= $selected_table ?>)">
-                                    <i class="fas fa-times me-2"></i>تفريغ مباشر
-                                </button>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                <!-- Header -->
+                <div class="p-3 border-bottom flex-shrink-0">
+                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center justify-content-between">
+                        <span><i class="fas fa-receipt me-2 text-primary"></i><?= htmlspecialchars($selected_table_name) ?></span>
+                        <span class="badge bg-light text-primary"><?= date('h:i A') ?></span>
+                    </h5>
                 </div>
-            <?php else: ?>
-                <div class="card summary-card">
-                    <div class="card-body text-center">
-                        <i class="fas fa-hand-pointer fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">اختر طاولة</h5>
-                        <p class="text-muted">اضغط على أي طاولة لبدء العمل</p>
-                    </div>
-                </div>
-            <?php endif; ?>
 
-            <?php if (!empty($order_items)): ?>
-                <div class="card summary-card">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="fas fa-list me-2 text-primary"></i>أصناف الطلب
-                        </h6>
+                <!-- Scrollable Content -->
+                <div class="flex-grow-1 overflow-auto custom-scrollbar p-3">
+                    <!-- Stats Cards -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <small class="text-muted d-block mb-1">الإجمالي</small>
+                                <h4 class="mb-0 fw-bold text-primary"><?= number_format($order_totals['total'], 2) ?></h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <small class="text-muted d-block mb-1">الصافي</small>
+                                <h4 class="mb-0 fw-bold text-success"><?= number_format($order_totals['net'], 2) ?></h4>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                        <?php foreach ($order_items as $item): ?>
-                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                <div>
-                                    <strong><?= htmlspecialchars($item['iname'] ?? 'غير محدد') ?></strong><br>
-                                    <small class="text-muted">الكمية: <?= number_format($item['actual_qty'] ?? 0, 2) ?></small>
-                                </div>
-                                <div class="text-end">
-                                    <strong class="text-primary"><?= number_format(($item['actual_qty'] ?? 0) * ($item['price'] ?? 0), 2) ?> ج.م</strong>
+
+                    <?php if (!empty($order_data)): ?>
+                        <!-- Actions Grid -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <a href="pos_barcode.php?edit_id=<?= $order_data['id'] ?>" class="btn btn-warning w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                    <i class="fas fa-edit mb-1"></i><small class="fw-bold">تعديل</small>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-secondary w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center" onclick="printInvoice(<?= $selected_table ?>)">
+                                    <i class="fas fa-print mb-1"></i><small class="fw-bold">طباعة</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-success w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center" onclick="openSplitPaymentModal(<?= $selected_table ?>, <?= $order_data['id'] ?>)">
+                                    <i class="fas fa-money-bill-wave mb-1"></i><small class="fw-bold">سداد</small>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <div class="btn-group w-100 h-100 dropdown">
+                                    <button type="button" class="btn btn-danger w-100 py-2 dropdown-toggle h-100 d-flex flex-column justify-content-center align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-trash-alt mb-1"></i><small class="fw-bold">إفراغ</small>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-2" style="z-index: 1060; min-width: 200px;">
+                                        <li><a class="dropdown-item text-danger rounded-2 js-clear-table-direct py-2 mb-1" href="#" data-table-id="<?= $selected_table ?>">
+                                            <i class="fas fa-times me-2"></i>إلغاء الطلب (حذف)
+                                        </a></li>
+                                        <li><a class="dropdown-item text-warning rounded-2 js-clear-table-normal py-2" href="#" data-table-id="<?= $selected_table ?>">
+                                            <i class="fas fa-save me-2"></i>حفظ كأجل (تفريغ)
+                                        </a></li>
+                                    </ul>
                                 </div>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($order_items)): ?>
+                        <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+                            <h6 class="fw-bold text-muted mb-0"><i class="fas fa-list me-2"></i>الأصناف</h6>
+                            <span class="badge bg-light text-dark"><?= count($order_items) ?> صنف</span>
+                        </div>
+                        <div class="list-group list-group-flush border rounded-3">
+                            <?php foreach ($order_items as $item): ?>
+                                <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold"><?= htmlspecialchars($item['iname'] ?? 'غير محدد') ?></h6>
+                                        <small class="text-muted">الكمية: <?= number_format($item['actual_qty'] ?? 0, 2) ?></small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold text-primary"><?= number_format(($item['actual_qty'] ?? 0) * ($item['price'] ?? 0), 2) ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            
+            <?php else: ?>
+                <div class="h-100 d-flex flex-column justify-content-center align-items-center text-center p-4">
+                    <div class="mb-4 text-muted opacity-25">
+                        <i class="fas fa-hand-pointer fa-6x"></i>
                     </div>
+                    <h4 class="text-muted fw-bold">لم يتم اختيار طاولة</h4>
+                    <p class="text-muted">اختر طاولة من القائمة لعرض التفاصيل</p>
                 </div>
             <?php endif; ?>
         </div>
@@ -316,77 +482,7 @@ if ($selected_table) {
     <i class="fas fa-cash-register"></i>
 </a>
 
-<script>
-function processTablePayment(tableId) {
-    // جلب بيانات الطاولة والمبلغ المطلوب
-    $.ajax({
-        url: 'ajax/get_table_amount.php',
-        method: 'POST',
-        data: { table_id: tableId },
-        dataType: 'json',
-        success: function(data) {
-            console.log('بيانات الطاولة:', data);
-            if (data.success) {
-                $('#currentTableId').val(tableId);
-                $('#modal_total').text(data.total.toFixed(2) + ' ج.م');
-                $('#modal_discount').val(data.discount || 0);
-                const net = data.total - (data.discount || 0);
-                $('#modal_net').text(net.toFixed(2) + ' ج.م');
-                $('#posPaymentModal').modal('show');
-            } else {
-                alert('خطأ في جلب بيانات الطاولة: ' + (data.message || 'خطأ غير معروف'));
-            }
-        },
-        error: function() {
-            alert('خطأ في الاتصال بالخادم');
-        }
-    });
-}
-
-function clearTable(tableId) {
-    processTablePayment(tableId);
-}
-
-function activateTable(tableId) {
-    $.ajax({
-        url: 'ajax/update_table_status.php',
-        method: 'POST',
-        data: { table_id: tableId, action: 'activate' },
-        success: function(response) {
-            alert('تم تشغيل الطاولة');
-            location.reload();
-        },
-        error: function() {
-            alert('حدث خطأ');
-        }
-    });
-}
-
-function printPreparation(tableId) {
-    window.open('print/preparation.php?table_id=' + tableId, '_blank');
-}
-
-function printInvoice(tableId) {
-    window.open('print/table_invoice.php?table_id=' + tableId, '_blank');
-}
-
-function clearTableDirect(tableId) {
-    if (confirm('هل أنت متأكد من تفريغ الطاولة رقم ' + tableId + '؟')) {
-        $.ajax({
-            url: 'ajax/clear_table.php',
-            method: 'POST',
-            data: { table_id: tableId },
-            success: function(response) {
-                alert('تم تفريغ الطاولة بنجاح');
-                location.reload();
-            },
-            error: function() {
-                alert('حدث خطأ في تفريغ الطاولة');
-            }
-        });
-    }
-}
-</script>
+<!-- Scripts are located at the bottom of the file -->
 
 <!-- مودال الدفع المتقدم -->
 <div class="modal fade" id="posPaymentModal" tabindex="-1">
@@ -504,6 +600,50 @@ function clearTableDirect(tableId) {
     </div>
 </div>
 
+
+
+<!-- Split Payment Modal -->
+<div class="modal fade" id="splitPaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-double me-2"></i>سداد أصناف محددة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="splitItemsList" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllItems"></th>
+                                <th>الصنف</th>
+                                <th>الكمية</th>
+                                <th>السعر</th>
+                                <th>الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody id="splitItemsBody"></tbody>
+                    </table>
+                </div>
+                <div class="row mt-3 border-top pt-3">
+                    <div class="col-6">
+                        <h5>الإجمالي المحدد: <span id="splitTotal" class="text-success">0.00</span> ج.م</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-success" onclick="confirmSplitPayment()">
+                    <i class="fas fa-money-bill-wave me-1"></i> سداد وطباعة
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include('includes/footer.php') ?>
+
+<!-- Scripts are located after footer to ensure jQuery is loaded -->
 <script>
 // حساب الخصم والصافي
 $(document).ready(function() {
@@ -528,6 +668,19 @@ $(document).ready(function() {
 
     // حساب الباقي
     $(document).on('input', '#modal_paid', calculateChange);
+
+    // Event Handlers for Clear Table
+    $(document).on('click', '.js-clear-table-direct', function(e) {
+        e.preventDefault();
+        const tableId = $(this).data('table-id');
+        clearTableDirect(tableId);
+    });
+
+    $(document).on('click', '.js-clear-table-normal', function(e) {
+        e.preventDefault();
+        const tableId = $(this).data('table-id');
+        clearTableNormal(tableId);
+    });
 });
 
 function calculateChange() {
@@ -638,36 +791,58 @@ function processTablePayment(tableId) {
 }
 
 function clearTableNormal(tableId) {
+    if (!tableId) { alert('خطأ: رقم الطاولة غير موجود'); return; }
     if(confirm('هل تريد تفريغ الطاولة تفريغ عادي؟\nسيتم حفظ الطلب في النظام وتفريغ الطاولة')) {
         $.ajax({
             url: 'ajax/clear_table_normal.php',
             method: 'POST',
             data: { table_id: tableId, table_name: 'Table ' + tableId },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    alert('تم تفريغ الطاولة بنجاح\nإجمالي المبيعات: ' + response.total + ' ج.م');
-                    location.reload();
-                } else {
-                    alert('خطأ: ' + response.message);
+            success: function(data) {
+                try {
+                    let response = (typeof data === 'string') ? JSON.parse(data) : data;
+                    if (response.success) {
+                        alert('تم تفريغ الطاولة بنجاح\nإجمالي المبيعات: ' + response.total + ' ج.م');
+                        location.reload();
+                    } else {
+                        alert('خطأ: ' + (response.message || 'خطأ غير محدد'));
+                    }
+                } catch (e) {
+                    console.error('JSON Parse Error:', e);
+                    alert('خطأ في معالجة البيانات من الخادم');
                 }
             },
-            error: function() {
-                alert('حدث خطأ في الاتصال بالخادم');
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+                alert('حدث خطأ في الاتصال بالخادم: ' + error);
             }
         });
     }
 }
 
 function clearTableDirect(tableId) {
+    if (!tableId) { alert('خطأ: رقم الطاولة غير موجود'); return; }
     if(confirm('هل تريد تفريغ الطاولة مباشرة بدون سداد؟')) {
         $.ajax({
             url: 'ajax/update_table_status.php',
             method: 'POST',
             data: { table_id: tableId, action: 'clear' },
-            success: function(response) {
-                alert('تم تفريغ الطاولة بنجاح');
-                location.reload();
+            success: function(data) {
+                try {
+                    let response = (typeof data === 'string') ? JSON.parse(data) : data;
+                    if (response.success) {
+                        alert('تم تفريغ الطاولة بنجاح');
+                        location.reload();
+                    } else {
+                        alert('خطأ: ' + (response.message || 'فشل العملية'));
+                    }
+                } catch(e) {
+                    console.error('JSON Parse Error:', e);
+                    alert('خطأ في معالجة البيانات');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+                alert('حدث خطأ: ' + error);
             }
         });
     }
@@ -700,6 +875,118 @@ function printInvoice(tableId) {
 function closeModal() {
     $('#posPaymentModal').modal('hide');
 }
-</script>
 
-<?php include('includes/footer.php') ?>
+let currentSplitTableId = 0;
+let currentSplitOrderId = 0;
+
+function openSplitPaymentModal(tableId, orderId) {
+    currentSplitTableId = tableId;
+    currentSplitOrderId = orderId;
+    
+    // Load items
+    $.get('ajax/get_table_items.php', { order_id: orderId }, function(data) {
+        let response = (typeof data === 'string') ? JSON.parse(data) : data;
+        if (response.success) {
+            let html = '';
+            response.items.forEach(item => {
+                html += `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="split-item-check" 
+                                   value="${item.id}" 
+                                   data-amount="${item.total}"
+                                   onchange="updateSplitTotal()">
+                        </td>
+                        <td>${item.name}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.price.toFixed(2)}</td>
+                        <td>${item.total.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            $('#splitItemsBody').html(html);
+            $('#splitTotal').text('0.00');
+            $('#splitPaymentModal').modal('show');
+        } else {
+            alert('خطأ في تحميل الأصناف');
+        }
+    });
+}
+
+$('#selectAllItems').change(function() {
+    $('.split-item-check').prop('checked', $(this).prop('checked'));
+    updateSplitTotal();
+});
+
+function updateSplitTotal() {
+    let total = 0;
+    $('.split-item-check:checked').each(function() {
+        total += parseFloat($(this).data('amount'));
+    });
+    $('#splitTotal').text(total.toFixed(2));
+}
+
+function confirmSplitPayment() {
+    let selectedItems = [];
+    $('.split-item-check:checked').each(function() {
+        selectedItems.push($(this).val());
+    });
+    
+    if (selectedItems.length === 0) {
+        alert('يرجى اختيار صنف واحد على الأقل');
+        return;
+    }
+    
+    let amount = parseFloat($('#splitTotal').text());
+    
+    if (confirm('هل أنت متأكد من سداد الأصناف المختارة بقيمة ' + amount + ' ج.م؟')) {
+        $.ajax({
+            url: 'ajax/process_split_payment.php',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                order_id: currentSplitOrderId,
+                table_id: currentSplitTableId,
+                items: selectedItems,
+                paid_amount: amount
+            }),
+            success: function(data) {
+                let response = (typeof data === 'string') ? JSON.parse(data) : data;
+                if (response.success) {
+                    $('#splitPaymentModal').modal('hide');
+                    alert('تم السداد بنجاح');
+                    if (response.new_invoice_id) {
+                         window.open('print/receipt.php?id=' + response.new_invoice_id, '_blank');
+                    }
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('حدث خطأ في الاتصال');
+            }
+        });
+    }
+}
+function activateTable(tableId) {
+    $.ajax({
+        url: 'ajax/update_table_status.php',
+        method: 'POST',
+        data: { table_id: tableId, action: 'activate' },
+        success: function(data) {
+            let response = (typeof data === 'string') ? JSON.parse(data) : data;
+            if (response.success) {
+                alert('تم تشغيل الطاولة');
+                location.reload();
+            } else {
+                alert('خطأ: ' + (response.message || 'فشل العملية'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error(xhr.responseText);
+            alert('حدث خطأ: ' + error);
+        }
+    });
+}
+</script>

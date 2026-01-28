@@ -18,8 +18,11 @@ if ($check_tables) {
 $posdate = date('Y-m-d', strtotime('-4 hours'));
 $rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
 
-if(isset($_GET['edit'])){
-    $id = $_GET['edit'];
+if(isset($_GET['edit_id'])){
+    $id = intval($_GET['edit_id']);
+    $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
+} elseif(isset($_GET['edit'])){
+    $id = intval($_GET['edit']);
     $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
 }
 
@@ -31,22 +34,24 @@ if(isset($_SESSION['success_message'])){
 }
 ?>
 
-    <!-- Duplicate HTML headers removed -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام نقاط البيع - POS System</title>
     <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
     <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
     <link href="dist/css/pos.css" rel="stylesheet">
     <link href="dist/css/pos_barcode.css" rel="stylesheet">
     <link href="dist/css/pos_search.css" rel="stylesheet">
-    <!-- Load jQuery early for plugins -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <div class="bg-warning text-dark fw-bold text-center py-1" id="sys_debug">
-       <i class="fas fa-wrench me-2"></i>تم تحديث النظام: إصلاح مشاكل التحميل (<?= date('H:i') ?>)
-    </div>
+    <script src="plugins/jquery/jquery.min.js"></script>
+</head>
 
-    <body class="bg-light">
+<body class="bg-light">
     <!-- Hidden input for Edit Mode -->
-    <input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
+
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
         <div class="container-fluid">
@@ -109,6 +114,8 @@ if(isset($_SESSION['success_message'])){
 
     <!-- Main Content -->
     <form action="do/doadd_invoice.php" method="post" id="posForm" onsubmit="return handleFormSubmit(this);">
+        <!-- Hidden input for Edit Mode -->
+        <input type="hidden" id="edit_order_id" name="edit_id" value="<?= isset($id) ? $id : '' ?>">
         <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
             <div class="row h-100 g-1">
                 <!-- القسم الأيمن - معلومات الطلب -->
@@ -138,7 +145,13 @@ if(isset($_SESSION['success_message'])){
                                     </label>
 
                                                                                                                                                         <input type="radio" class="btn-check" id="age2" name="age" value="2"
-                                        <?php if (isset($_GET['table'])) {echo " checked ";} ?>>
+                                        <?php 
+                                        if (isset($_GET['table'])) {
+                                            echo " checked ";
+                                        } elseif (isset($rowed) && (strpos($rowed['info'], 'طاولة') !== false || strpos($rowed['info'], 'Table') !== false)) {
+                                            echo " checked ";
+                                        }
+                                        ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age2">
                                         <i class="fas fa-chair me-1"></i>طاولة
                                     </label>
@@ -314,13 +327,16 @@ if(isset($_SESSION['success_message'])){
                                     <div class="card-body p-1 flex-grow-1"
                                         style="min-height: 40vh; max-height: 40vh; overflow-y: auto; overflow-x: auto; background: #f8f9fa;"
                                         id="itemData">
-                                        <?php
-                                        if (isset($_GET['edit'])){
-                                            $id = $_GET['edit'];
+                                    <?php
+                                        if (isset($rowed)){
+                                            // استخدام fatid لأنه يربط برقم الفاتورة التعريفي (PK)
+                                            // doadd_invoice.php يقوم بتخزين id الفاتورة في عمود fatid وكذلك في pro_id
+                                            // لذا الأضمن استخدام fatid أو pro_id (الذي يحتوي على الـ id وليس الرقم التسلسلي في هذا التطبيق)
+                                            // سنستخدم المتغير $id الذي تم جلبه من الرابط مباشرة
                                             $sqldet = "SELECT fd.*, m.iname as item_name, m.barcode 
                                                       FROM fat_details fd 
                                                       LEFT JOIN myitems m ON m.id = fd.item_id 
-                                                      WHERE fd.pro_id = $id AND fd.isdeleted = 0";
+                                                      WHERE fd.fatid = '$id' AND fd.isdeleted = 0";
                                             $resdet = $conn->query($sqldet);
                                             $x = 0;
                                             while ($rowdet = $resdet->fetch_assoc()) {
@@ -331,6 +347,7 @@ if(isset($_SESSION['success_message'])){
                                                 $qty = floatval($rowdet['qty_out']) - floatval($rowdet['qty_in']);
                                                 $price = floatval($rowdet['price']);
                                                 // Fix: Use det_value instead of val
+                        
                                                 $subtotal = floatval($rowdet['det_value']);
                                                 $barcode = $rowdet['barcode'] ?: $rowdet['item_id'];
                                                 ?>
@@ -431,7 +448,7 @@ if(isset($_SESSION['success_message'])){
                                     <div class="mb-1">
                                         <textarea class="form-control form-control-sm" name="info" id="info" rows="1"
                                             placeholder="ملاحظات..."
-                                            style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
+                                            style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($rowed) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
                                     </div>
 
                                     <!-- أزرار الإجراءات -->
@@ -1052,13 +1069,7 @@ if(isset($_SESSION['success_message'])){
         <i class="fas fa-th-large fa-lg"></i>
     </a>
 
-    <!-- Scripts - jQuery (CDN for reliability) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        if (typeof jQuery === 'undefined') { 
-            document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); 
-        }
-    </script>
+    <!-- Scripts - jQuery must be loaded first -->
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
@@ -1191,11 +1202,13 @@ if(isset($_SESSION['success_message'])){
             
             function loadShiftPreview() {
                 $.ajax({
-                    url: 'do/get_shift_preview.php',
+                    url: 'do/get_shift_preview.php?t=' + new Date().getTime(), // Prevent caching
                     method: 'GET',
+                    cache: false,
+                    _bypassOffline: true,
                     success: function(data) {
                         try {
-                            var response = JSON.parse(data);
+                            var response = (typeof data === 'string') ? JSON.parse(data) : data;
                             if (response.success) {
                                 var html = `
                                     <div class="row">
@@ -1217,15 +1230,19 @@ if(isset($_SESSION['success_message'])){
                                 `;
                                 $('#shiftPreview').html(html);
                             } else {
-                                $('#shiftPreview').html('<p class="text-center text-muted">لا توجد مبيعات لك اليوم</p>');
+                                var errorMsg = response.error || 'لا توجد مبيعات لك اليوم';
+                                var errorClass = response.error ? 'text-danger fw-bold' : 'text-muted';
+                                $('#shiftPreview').html('<div class="text-center"><i class="fas fa-exclamation-circle mb-2 ' + errorClass + '"></i><p class="' + errorClass + '">' + errorMsg + '</p></div>');
                             }
                         } catch (e) {
                             console.error('Error parsing shift preview:', e);
-                            $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
+                            console.log('Raw data:', data);
+                            $('#shiftPreview').html('<div class="alert alert-danger">خطأ في قراءة البيانات: ' + e.message + '<br><small>' + String(data).substring(0, 100) + '...</small></div>');
                         }
                     },
-                    error: function() {
-                        $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', xhr.responseText);
+                        $('#shiftPreview').html('<div class="alert alert-danger">خطأ في الاتصال بالسيرفر: ' + status + '<br><small>' + error + '</small></div>');
                     }
                 });
             }
@@ -1604,59 +1621,6 @@ if(isset($_SESSION['success_message'])){
     </script>
 
 
-    <!-- Modal إغلاق الشيفت -->
-    <div class="modal fade" id="shiftPreviewModal" tabindex="-1" aria-labelledby="shiftPreviewModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="shiftPreviewModalLabel">
-                        <i class="fas fa-receipt me-2"></i>ملخص الشيفت الحالي
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="shiftPreview">
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-success" role="status">
-                                <span class="visually-hidden">جاري التحميل...</span>
-                            </div>
-                            <p class="mt-2 text-muted">جاري تحميل بيانات الشيفت...</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <form action="close_shift.php" method="POST" id="closeShiftForm" class="d-inline">
-                        <!-- بيانات المصروفات والعهدة -->
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">مصروفات</span>
-                            <input type="number" class="form-control" name="expenses" value="0" step="0.01">
-                        </div>
-                         <div class="input-group mb-3">
-                            <span class="input-group-text">السبب</span>
-                            <input type="text" class="form-control" name="exp_notes" placeholder="سبب المصروفات...">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">عهدة تالية</span>
-                            <input type="number" class="form-control" name="fund_after" value="0" step="0.01">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">الكاش الفعلي</span>
-                            <input type="number" class="form-control" name="cash" step="0.01" required placeholder="المبلغ الموجود بالدرج">
-                        </div>
-                         <div class="input-group mb-3">
-                            <span class="input-group-text">ملاحظات</span>
-                            <input type="text" class="form-control" name="notes" placeholder="ملاحظات الإغلاق...">
-                        </div>
-                        <button type="submit" class="btn btn-success fw-bold w-100">
-                            <i class="fas fa-check-circle me-1"></i>تأكيد إغلاق الشيفت
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Recent Orders Offcanvas -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="recentOrdersModal" aria-labelledby="recentOrdersModalLabel"
         style="width: 80%; max-width: 1200px;">
@@ -1696,120 +1660,5 @@ if(isset($_SESSION['success_message'])){
             </div>
         </div>
     </div>
-
-    <script>
-        $(document).ready(function() {
-            // Recent Orders Button Handler
-            $('#recentOrdersBtn2').click(function() {
-                var offcanvas = new bootstrap.Offcanvas(document.getElementById('recentOrdersModal'));
-                offcanvas.show();
-                loadRecentOrders();
-            });
-
-            function loadRecentOrders() {
-                $('#recentOrdersList').html('<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">جاري تحميل الطلبات...</p></td></tr>');
-                
-                $.ajax({
-                    url: 'ajax/get_recent_orders.php',
-                    method: 'GET',
-                    success: function(response) {
-                        try {
-                            // If response is a string (due to accidental whitespace/BOM), parse it
-                            if (typeof response === 'string') {
-                                // Try to extract JSON if mixed with HTML
-                                const jsonMatch = response.match(/\{[\s\S]*\}/);
-                                if (jsonMatch) {
-                                    response = JSON.parse(jsonMatch[0]);
-                                } else {
-                                    response = JSON.parse(response);
-                                }
-                            }
-
-                            if (response.success && response.orders) {
-                                var html = '';
-                                if (response.orders.length === 0) {
-                                    html = '<tr><td colspan="8" class="text-center py-4">لا توجد طلبات حديثة</td></tr>';
-                                } else {
-                                    response.orders.forEach(function(order, index) {
-                                        var statusBadge = order.status === 'ملغى' ? 'bg-danger' : 'bg-success';
-                                        var typeBadge = order.type === 'دليفري' ? 'bg-info text-dark' : (order.type === 'طاولة' ? 'bg-warning text-dark' : 'bg-secondary');
-                                        
-                                        html += `
-                                            <tr>
-                                                <td>${index + 1}</td>
-                                                <td class="fw-bold">${order.invoice_number}</td>
-                                                <td>${order.date}</td>
-                                                <td>${order.customer_name}</td>
-                                                <td><span class="badge ${typeBadge}">${order.type}</span></td>
-                                                <td class="fw-bold text-primary">${parseFloat(order.total).toFixed(2)}</td>
-                                                <td><span class="badge ${statusBadge}">${order.status}</span></td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <a href="pos_barcode.php?edit=${order.id}" class="btn btn-warning" title="تعديل">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <button type="button" class="btn btn-secondary" onclick="reprintOrder(${order.id})" title="طباعة">
-                                                            <i class="fas fa-print"></i>
-                                                        </button>
-                                                        ${order.status !== 'ملغى' ? `
-                                                        <button type="button" class="btn btn-danger" onclick="deleteOrder(${order.id})" title="حذف">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>` : ''}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    });
-                                }
-                                $('#recentOrdersList').html(html);
-                            } else {
-                                $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">فشل تحميل البيانات: ' + (response.error || 'خطأ غير معروف') + '</td></tr>');
-                            }
-                        } catch (e) {
-                            console.error('Error parsing recent orders:', e);
-                            $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">خطأ في معالجة البيانات</td></tr>');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX Error:', error);
-                        $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">خطأ في الاتصال بالخادم</td></tr>');
-                    }
-                });
-            }
-
-            // Global functions for actions
-            window.reprintOrder = function(orderId) {
-                // Use existing print function logic or redirect
-                // Usually calling the print endpoint directly
-                 window.open('print/receipt.php?order_id=' + orderId, '_blank');
-            };
-
-            window.deleteOrder = function(orderId) {
-                if (confirm('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) {
-                    $.ajax({
-                        url: 'ajax/delete_order.php',
-                        method: 'POST',
-                        data: { id: orderId },
-                        success: function(response) {
-                            try {
-                                if (typeof response === 'string') response = JSON.parse(response);
-                                if (response.success) {
-                                    alert('تم حذف الطلب بنجاح');
-                                    loadRecentOrders(); // Reload list
-                                } else {
-                                    alert('فشل الحذف: ' + (response.error || 'خطأ غير معروف'));
-                                }
-                            } catch (e) {
-                                alert('خطأ في استجابة الخادم');
-                            }
-                        },
-                        error: function() {
-                            alert('خطأ في الاتصال');
-                        }
-                    });
-                }
-            };
-        });
-    </script>
 
     <?php include('includes/pos_simple_footer.php');?>

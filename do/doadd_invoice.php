@@ -12,6 +12,9 @@ error_log('acc2_id: ' . (isset($_POST['acc2_id']) ? $_POST['acc2_id'] : 'NOT SET
 error_log('emp_id: ' . (isset($_POST['emp_id']) ? $_POST['emp_id'] : 'NOT SET'));
 error_log('itmname: ' . (isset($_POST['itmname']) ? 'SET' : 'NOT SET'));
 
+
+
+
 // التحقق من المصادقة والصلاحيات
 if (!isset($_SESSION['userid'])) {
     header('Location: ../login.php');
@@ -353,7 +356,7 @@ try {
     $conn->begin_transaction();
     error_log('Database transaction started successfully');
     
-    $edit_id = isset($_POST['edit_id']) ? intval($_POST['edit_id']) : 0;
+    $edit_id = isset($_REQUEST['edit_id']) ? intval($_REQUEST['edit_id']) : 0;
     
     if ($edit_id > 0) {
         // --- تحديث فاتورة موجودة (UPDATE) ---
@@ -401,7 +404,7 @@ try {
 
         if ($row_pro_id) {
             $original_pro_id = $row_pro_id['pro_id'];
-            $conn->query("DELETE FROM fat_details WHERE pro_id = '$original_pro_id' AND pro_tybe = '$pro_tybe'");
+            $conn->query("DELETE FROM fat_details WHERE fatid = '$edit_id'");
             // Also delete related journal entries and payment operations if they exist and are linked by op_id/op2
             // Fix: Delete journal entries first (linked by journal_id which is the FK referencing journal_heads.id)
             $journal_query = $conn->query("SELECT id FROM journal_heads WHERE op_id = '$edit_id'");
@@ -754,7 +757,7 @@ if ($submit == 'print') {
     if ($pro_tybe == INVOICE_TYPES['POS']) {
         error_log('Redirecting to POS barcode page');
         error_log('Header: Location: ../pos_barcode.php');
-        header("Location: ../pos_barcode.php");
+        header("Location: ../pos_barcode.php?r=" . time());
     } else {
         $redirects = [
             INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',

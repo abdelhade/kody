@@ -27,7 +27,10 @@ $sales_query = $conn->query("SELECT
     COALESCE(SUM(fat_disc), 0) as total_discounts,
     COALESCE(SUM(fat_net), 0) as net_sales,
     MIN(crtime) as first_sale_time,
-    MAX(crtime) as last_sale_time
+    MAX(crtime) as last_sale_time,
+    SUM(CASE WHEN info LIKE '%نوع الطلب: طاولة%' THEN 1 ELSE 0 END) as table_count,
+    SUM(CASE WHEN info LIKE '%نوع الطلب: دليفري%' THEN 1 ELSE 0 END) as delivery_count,
+    SUM(CASE WHEN info LIKE '%نوع الطلب: تيك أواي%' THEN 1 ELSE 0 END) as takeaway_count
     FROM ot_head 
     WHERE DATE(pro_date) = '$today'
     AND user = '$user_id'
@@ -174,6 +177,18 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
             <tr>
                 <td><strong>عدد الفواتير:</strong></td>
                 <td class="text-end"><?= $sales_data['total_invoices'] ?></td>
+            </tr>
+            <tr>
+                <td><strong>عدد الطاولات:</strong></td>
+                <td class="text-end"><?= $sales_data['table_count'] ?></td>
+            </tr>
+            <tr>
+                <td><strong>عدد الدليفري:</strong></td>
+                <td class="text-end"><?= $sales_data['delivery_count'] ?></td>
+            </tr>
+            <tr>
+                <td><strong>عدد تيك أواي:</strong></td>
+                <td class="text-end"><?= $sales_data['takeaway_count'] ?></td>
             </tr>
             <tr>
                 <td><strong>الإجمالي:</strong></td>
