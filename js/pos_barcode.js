@@ -370,6 +370,14 @@ $(document).ready(function() {
         $('#age2').prop('checked', true);
         $('#tablesModal').modal('hide');
         
+        Swal.fire({
+            icon: 'success',
+            title: 'تم الاختيار',
+            text: 'تم اختيار ' + tableName + ' بنجاح',
+            timer: 1500,
+            showConfirmButton: false
+        });
+        
         if (tableCase != 0 && orderId) {
             // طاولة فيها طلب - حمل الطلب واضيف عليه
             $('#selected_order_id').val(orderId);

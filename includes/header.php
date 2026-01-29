@@ -10,7 +10,8 @@ if (!isset($_SESSION['login'])) {
 include('includes/connect.php');
 
 $userid = $_SESSION['userid'];
-$up = $conn->query("SELECT * FROM users where id = $userid ");
+$res_up = $conn->query("SELECT * FROM users where id = $userid ");
+$up = $res_up->fetch_assoc();
 
 date_default_timezone_set('Africa/Cairo');
 
