@@ -1,8 +1,8 @@
 <div class="dashboard-cards">
-    <div class="row g-4">
+    <div class="row">
         <?php if($role['sid_rents'] == 1){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-primary">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #313647 !important;">
                 <div class="card-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
@@ -26,8 +26,8 @@
         </div>
         <?php } ?>
 
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-info">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #942C21 !important;">
                 <div class="card-icon">
                     <i class="fas fa-users"></i>
                 </div>
@@ -50,8 +50,8 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-success">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #E3651D !important;">
                 <div class="card-icon">
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
@@ -74,8 +74,8 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-warning">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #313647 !important;">
                 <div class="card-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -101,8 +101,8 @@
         </div>
 
         <?php if($role['sid_sales'] == 1){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-secondary">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #942C21 !important;">
                 <div class="card-icon">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
@@ -127,8 +127,8 @@
         <?php } ?>
 
         <?php if($role['sid_hr'] == 1){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-dark">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #E3651D !important;">
                 <div class="card-icon">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -153,8 +153,8 @@
         <?php } ?>
 
         <?php if($role['sid_clinics'] == 1){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="stat-card bg-gradient-danger">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="stat-card" style="background: #313647 !important;">
                 <div class="card-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>

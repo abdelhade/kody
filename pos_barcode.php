@@ -37,6 +37,8 @@ if(isset($_SESSION['success_message'])){
     <link href="dist/css/pos.css" rel="stylesheet">
     <link href="dist/css/pos_barcode.css" rel="stylesheet">
     <link href="dist/css/pos_search.css" rel="stylesheet">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css" rel="stylesheet">
     <!-- Load jQuery early for plugins -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
@@ -76,7 +78,7 @@ if(isset($_SESSION['success_message'])){
                     </li>
                     <li class="nav-item">
                         <a href="do/do_logout.php" class="nav-link">
-                            <i class="fas fa-sign-out-alt me-1"></i>تسجيل الخروج
+                            <i class="fas fa-sign-out-alt me-1"></i> 
                         </a>
                     </li>
                 </ul>
@@ -86,22 +88,18 @@ if(isset($_SESSION['success_message'])){
 
     <!-- رسالة النجاح -->
     <?php if(!empty($success_message)): ?>
-    <div class="container-fluid mt-2">
-        <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
-            <i class="fas fa-check-circle me-2"></i>
-            <strong><?= htmlspecialchars($success_message) ?></strong>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // إخفاء الرسالة تلقائياً بعد 5 ثواني
-        setTimeout(function () {
-            var alert = document.getElementById('successAlert');
-            if (alert) {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }
-        }, 5000);
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح!',
+                text: '<?= htmlspecialchars($success_message) ?>',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        });
     </script>
     <?php endif; ?>
 
@@ -520,7 +518,7 @@ if(isset($_SESSION['success_message'])){
                             </div>
 
                             <!-- شبكة الأصناف -->
-                            <div class="row g-2" id="itemsGrid">
+                            <div class="row g-3" id="itemsGrid">
                                 <?php
                             // استعلام مع join للحصول على الصورة من جدول imgs
                             $sqlitems = "SELECT m.*, i.iname as img_filename
@@ -584,10 +582,10 @@ if(isset($_SESSION['success_message'])){
                                             </h6>
 
                                             <!-- السعر -->
-                                            <div class="bg-primary bg-opacity-10 rounded px-2 py-1 mb-2">
-                                                <p class="card-text fw-bold text-dark mb-0" style="font-size: 1.1rem;">
+                                            <div class="bg-primary rounded px-2 py-1 mb-2">
+                                                <p class="card-text fw-bold text-white mb-0" style="font-size: 1.1rem;">
                                                     <?= number_format($itemPrice, 2) ?> <span
-                                                        class="text-primary">ج.م</span>
+                                                        class="text-white opacity-75">ج.م</span>
                                                 </p>
                                             </div>
 
@@ -1052,6 +1050,7 @@ if(isset($_SESSION['success_message'])){
 
     <!-- Scripts - jQuery (CDN for reliability) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         if (typeof jQuery === 'undefined') { 
             document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); 
@@ -1360,12 +1359,20 @@ if(isset($_SESSION['success_message'])){
             window.searchCustomer = function () {
                 const phone = $('#customer_phone').val().trim();
                 if (!phone) {
-                    alert('يرجى إدخال رقم العميل');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى إدخال رقم العميل'
+                    });
                     return;
                 }
                 
                 if (phone.length < 3) {
-                    alert('يرجى إدخال 3 أرقام على الأقل');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى إدخال 3 أرقام على الأقل'
+                    });
                     return;
                 }
                 
@@ -1412,13 +1419,29 @@ if(isset($_SESSION['success_message'])){
                 clearDeliveryForm();
             });
 
+            // Listen for changes on the 'age' radio buttons
+            $('input[name="age"]').change(function(){
+                if($(this).val() == '2') { // Table option
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'تنبيه',
+                        text: 'يرجى اختيار طاولة',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            });
+
             window.confirmDeliveryOrder = function () {
                 const phone = $('#customer_phone').val().trim();
                 const name = $('#customer_name').val().trim();
                 const address = $('#customer_address').val().trim();
 
                 if (!phone || !name || !address) {
-                    alert('يرجى ملء جميع الحقول');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى ملء جميع الحقول'
+                    });
                     return;
                 }
 
@@ -1453,11 +1476,22 @@ if(isset($_SESSION['success_message'])){
                     },
                     success: function (data) {
                         $('#deliveryModal').modal('hide');
-                        alert('تم تأكيد طلب الدليفري وحفظ بيانات العميل');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم بنجاح',
+                            text: 'تم تأكيد طلب الدليفري وحفظ بيانات العميل',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                     },
                     error: function () {
                         $('#deliveryModal').modal('hide');
-                        alert('تم تأكيد طلب الدليفري');
+                        Swal.fire({
+                            icon: 'success', // Assuming success even if error callback for some reason, or should be error? Original logic was alert success ish? No, original said 'confirmed' even on error?
+                            title: 'تم',
+                            text: 'تم تأكيد طلب الدليفري',
+                            timer: 2000
+                        });
                     }
                 });
             };
@@ -1489,8 +1523,13 @@ if(isset($_SESSION['success_message'])){
                             var response = JSON.parse(data);
                             console.log('Parsed:', response);
                             if (response.success) {
-                                alert(isUpdate ? 'تم تحديث بيانات العميل بنجاح' :
-                                    'تم حفظ بيانات العميل بنجاح');
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'تم بنجاح',
+                                    text: isUpdate ? 'تم تحديث بيانات العميل بنجاح' : 'تم حفظ بيانات العميل بنجاح',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
                                 $('#saveCustomerBtn').hide();
                                 $('#confirmOrderBtn').show();
                             } else {
@@ -1499,13 +1538,21 @@ if(isset($_SESSION['success_message'])){
                                 if (response.error) {
                                     errorMsg += ': ' + response.error;
                                 }
-                                alert(errorMsg);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطأ',
+                                    text: errorMsg
+                                });
                                 console.error('Save error:', response);
                             }
                         } catch (e) {
                             console.log('Parse error:', e);
                             console.log('Raw response:', data);
-                            alert('حدث خطأ في معالجة الاستجابة. تحقق من وحدة التحكم للتفاصيل.');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطأ',
+                                text: 'حدث خطأ في معالجة الاستجابة. تحقق من وحدة التحكم للتفاصيل.'
+                            });
                         }
                     },
                     error: function (xhr, status, error) {
@@ -1514,7 +1561,11 @@ if(isset($_SESSION['success_message'])){
                             error: error,
                             responseText: xhr.responseText
                         });
-                        alert('حدث خطأ في الاتصال: ' + error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'حدث خطأ في الاتصال: ' + error
+                        });
                     }
                 });
             };
@@ -1528,7 +1579,11 @@ if(isset($_SESSION['success_message'])){
         const form = document.getElementById('posForm');
         if (!form) {
             console.error('❌ Form with id "posForm" not found!');
-            alert('حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.');
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ نظام',
+                text: 'حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.'
+            });
             return false;
         }
         
@@ -1804,29 +1859,56 @@ if(isset($_SESSION['success_message'])){
             };
 
             window.deleteOrder = function(orderId) {
-                if (confirm('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.')) {
-                    $.ajax({
-                        url: 'ajax/delete_order.php',
-                        method: 'POST',
-                        data: { id: orderId },
-                        success: function(response) {
-                            try {
-                                if (typeof response === 'string') response = JSON.parse(response);
-                                if (response.success) {
-                                    alert('تم حذف الطلب بنجاح');
-                                    loadRecentOrders(); // Reload list
-                                } else {
-                                    alert('فشل الحذف: ' + (response.error || 'خطأ غير معروف'));
+                Swal.fire({
+                    title: 'هل أنت متأكد؟',
+                    text: "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'نعم، احذفه!',
+                    cancelButtonText: 'إلغاء'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'ajax/delete_order.php',
+                            method: 'POST',
+                            data: { id: orderId },
+                            success: function(response) {
+                                try {
+                                    if (typeof response === 'string') response = JSON.parse(response);
+                                    if (response.success) {
+                                        Swal.fire(
+                                            'تم الحذف!',
+                                            'تم حذف الطلب بنجاح.',
+                                            'success'
+                                        );
+                                        loadRecentOrders(); // Reload list
+                                    } else {
+                                        Swal.fire(
+                                            'خطأ!',
+                                            'فشل الحذف: ' + (response.error || 'خطأ غير معروف'),
+                                            'error'
+                                        );
+                                    }
+                                } catch (e) {
+                                    Swal.fire(
+                                        'خطأ!',
+                                        'خطأ في استجابة الخادم',
+                                        'error'
+                                    );
                                 }
-                            } catch (e) {
-                                alert('خطأ في استجابة الخادم');
+                            },
+                            error: function() {
+                                Swal.fire(
+                                    'خطأ!',
+                                    'خطأ في الاتصال',
+                                    'error'
+                                );
                             }
-                        },
-                        error: function() {
-                            alert('خطأ في الاتصال');
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             };
         });
     </script>

@@ -149,89 +149,312 @@ if ($resuser) {
 // إغلاق الاتصال بعد العرض (اتركه مفتوحًا للعمليات إذا لزم)
 ?>
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>focus.COM | Log in</title>
+  <title>Kody POS | تسجيل الدخول</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="assets/favicon/favicon.png" type="image/png">
 
-  <!-- ملفات CSS (احرص أن المسارات صحيحة) -->
-  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
-  <link rel="stylesheet" href="dist/css/css3.css">
-  <link rel="icon" href="assets/favicon/favicon.png" type="image/ico">
-  <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-  <link rel="stylesheet" href="dist/css/adminlte.min.css">
-  <link href="assets/libs/source-sans-pro-local.css" rel="stylesheet">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Bootstrap 5 (CDN for modern styling) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
-    body { font-family: "Source Sans Pro", sans-serif; }
-    .login-card-body { padding: 1.5rem; }
-    .card { margin-top: 40px; }
+    :root {
+        --primary-gradient: linear-gradient(135deg, #942C21 0%, #be3e31 100%);
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.6);
+        --input-bg: #fff5f5;
+        --theme-color: #942C21;
+    }
+
+    body {
+        font-family: 'Cairo', sans-serif;
+        background-image: url('assets/wallpaper/background.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    /* Dark Overlay */
+    body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: -1;
+        backdrop-filter: blur(5px);
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+        z-index: 10;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .login-card {
+        background: var(--glass-bg);
+        border-radius: 20px;
+        padding: 40px 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: var(--primary-gradient);
+    }
+
+    .brand-logo {
+        width: 120px;
+        height: auto;
+        margin-bottom: 20px;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        transition: transform 0.3s ease;
+    }
+    
+    .brand-logo:hover {
+        transform: scale(1.05) rotate(-5deg);
+    }
+
+    .login-title {
+        color: #333;
+        font-weight: 700;
+        margin-bottom: 5px;
+        font-size: 1.8rem;
+    }
+
+    .login-subtitle {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 30px;
+    }
+
+    .form-control, .form-select {
+        background-color: var(--input-bg);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #fff;
+        border-color: #942C21;
+        box-shadow: 0 0 0 4px rgba(148, 44, 33, 0.15);
+    }
+
+    .input-group-text {
+        background-color: var(--input-bg);
+        border: none;
+        border-radius: 12px;
+        color: #942C21;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #444;
+        margin-bottom: 8px;
+        display: block;
+        text-align: right;
+    }
+
+    .btn-login {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(148, 44, 33, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(148, 44, 33, 0.4);
+    }
+    
+    .btn-login:active {
+        transform: translateY(0);
+    }
+
+    .form-check-input:checked {
+        background-color: #942C21;
+        border-color: #942C21;
+    }
+
+    .alert {
+        border-radius: 12px;
+        font-size: 0.9rem;
+        padding: 10px 15px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .alert-danger {
+        background-color: #ffe5e5;
+        color: #d63031;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Decoration Circles */
+    .circle {
+        position: absolute;
+        border-radius: 50%;
+        z-index: -1;
+        opacity: 0.6;
+    }
+    
+    .circle-1 {
+        top: 10%;
+        left: 20%;
+        width: 150px;
+        height: 150px;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        filter: blur(40px);
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .circle-2 {
+        bottom: 10%;
+        right: 20%;
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        filter: blur(50px);
+        animation: float 8s ease-in-out infinite reverse;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
   </style>
 </head>
-<body style="background-image: url('assets/wallpaper/background.jpg');">
+<body>
 
-<center>
-  <div class="card card-dark col-lg-3 text-center p-9 m-0 shadow-lg" style="padding: 10px; outline:100px;">
-    <div class="card-header" style="background-color: #534292;">
-      <h2 style="color:#fff;margin:0;padding:8px;">تسجيل الدخول</h2>
-    </div>
+<!-- Animated Background Elements -->
+<div class="circle circle-1"></div>
+<div class="circle circle-2"></div>
 
-    <div style="padding:10px;">
-      <img src="assets/favicon/favicon.png" alt="" style="width:200px;height:auto;">
-    </div>
-
-    <div class="card-body login-card-body">
-      <p class="login-box-msg">سجل الدخول بالاسم و الباسورد</p>
-
-      <?php if (!empty($error_message)): ?>
-        <div class="alert alert-danger" role="alert">
-          <?= e($error_message) ?>
-        </div>
-      <?php endif; ?>
-
-      <form action="<?= e($_SERVER['PHP_SELF']) ?>" method="post" autocomplete="off" novalidate>
-        <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
-
-        <div class="form-group">
-          <label for="uname">المستخدم</label>
-          <select name="uname" id="uname" class="form-control" required>
-            <option value="">اختر المستخدم...</option>
-            <?php foreach ($users as $u): ?>
-              <option value="<?= e($u['uname']) ?>"
-                <?= (isset($_POST['uname']) && $_POST['uname'] === $u['uname']) ? 'selected' : '' ?>>
-                <?= e($u['uname']) ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
+<div class="login-container">
+    <div class="login-card">
+        <div class="text-center">
+            <img src="assets/favicon/favicon.png" alt="Logo" class="brand-logo">
+            <h2 class="login-title">مرحباً بك مجدداً</h2>
+            <p class="login-subtitle">سجل الدخول للمتابعة إلى النظام</p>
         </div>
 
-        <div class="input-group mb-3">
-          <input autofocus id="password" name="password" type="password" class="form-control" placeholder="Password" required>
-          <div class="input-group-append">
-            <div class="input-group-text"><span class="fas fa-lock"></span></div>
-          </div>
+        <?php if (!empty($error_message)): ?>
+        <div class="alert alert-danger mb-4 fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <?= e($error_message) ?>
         </div>
+        <?php endif; ?>
 
-        <div class="row" style="margin-top:8px;">
-          <div class="col-8">
-            <div class="icheck-primary">
-              <input type="checkbox" id="remember" name="remember">
-              <label for="remember">تذكرني</label>
+        <form action="<?= e($_SERVER['PHP_SELF']) ?>" method="post" autocomplete="off" novalidate>
+            <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
+
+            <div class="mb-4 text-end">
+                <label for="uname" class="form-label">اسم المستخدم</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-user text-muted"></i></span>
+                    <select name="uname" id="uname" class="form-select border-start-0 ps-0" required style="border-radius: 0 12px 12px 0;">
+                        <option value="" selected disabled>اختر المستخدم...</option>
+                        <?php foreach ($users as $u): ?>
+                            <option value="<?= e($u['uname']) ?>"
+                                <?= (isset($_POST['uname']) && $_POST['uname'] === $u['uname']) ? 'selected' : '' ?>>
+                                <?= e($u['uname']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
-          </div>
-          <div class="col-4">
-            <button type="submit" class="btn btn-primary btn-block btn-flat">تسجيل الدخول</button>
-          </div>
-        </div>
-      </form>
 
+            <div class="mb-4 text-end">
+                <label for="password" class="form-label">كلمة المرور</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-lock text-muted"></i></span>
+                    <input type="password" name="password" id="password" class="form-control border-start-0 ps-0" placeholder="أدخل كلمة المرور" required style="border-radius: 0 12px 12px 0;">
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                    <label class="form-check-label text-muted small" for="remember">
+                        تذكرني
+                    </label>
+                </div>
+                <!-- <a href="#" class="text-decoration-none small text-primary fw-bold">نسيت كلمة المرور؟</a> -->
+            </div>
+
+            <button type="submit" class="btn btn-login">
+                تسجيل الدخول <i class="fas fa-arrow-left ms-2"></i>
+            </button>
+        </form>
     </div>
-  </div>
-</center>
+    
+    <div class="text-center mt-4 text-white-50 small">
+        &copy; <?= date('Y') ?> جميع الحقوق محفوظة
+    </div>
+</div>
 
-<!-- js -->
-<script src="plugins/jquery/jquery.min.js"></script>
-<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Simple script to auto-focus password if user logic is dynamic (optional)
+    document.getElementById('uname').addEventListener('change', function() {
+        if(this.value) {
+            document.getElementById('password').focus();
+        }
+    });
+</script>
+
 </body>
 </html>
