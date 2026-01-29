@@ -410,7 +410,7 @@ if ($selected_table) {
                         <!-- Actions Grid -->
                         <div class="row g-2 mb-3">
                             <div class="col-6">
-                                <a href="pos_barcode.php?edit_id=<?= $order_data['id'] ?>" class="btn btn-warning w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <a href="pos_barcode.php?edit=<?= $order_data['id'] ?>" class="btn btn-warning w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                     <i class="fas fa-edit mb-1"></i><small class="fw-bold">تعديل</small>
                                 </a>
                             </div>

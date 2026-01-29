@@ -40,9 +40,7 @@ if(isset($_SESSION['success_message'])){
     <!-- Load jQuery early for plugins -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <div class="bg-warning text-dark fw-bold text-center py-1" id="sys_debug">
-       <i class="fas fa-wrench me-2"></i>تم تحديث النظام: إصلاح مشاكل التحميل (<?= date('H:i') ?>)
-    </div>
+
 
     <body class="bg-light">
     <!-- Hidden input for Edit Mode -->
@@ -1195,7 +1193,9 @@ if(isset($_SESSION['success_message'])){
                     method: 'GET',
                     success: function(data) {
                         try {
-                            var response = JSON.parse(data);
+                            // If data is object, use it directly, otherwise parse it
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
+                            
                             if (response.success) {
                                 var html = `
                                     <div class="row">
@@ -1217,15 +1217,34 @@ if(isset($_SESSION['success_message'])){
                                 `;
                                 $('#shiftPreview').html(html);
                             } else {
-                                $('#shiftPreview').html('<p class="text-center text-muted">لا توجد مبيعات لك اليوم</p>');
+                                var errorMsg = response.error || 'لا توجد مبيعات لك اليوم';
+                                $('#shiftPreview').html('<div class="alert alert-warning text-center">' + errorMsg + '</div>');
                             }
                         } catch (e) {
                             console.error('Error parsing shift preview:', e);
-                            $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
+                            console.error('Raw response:', data);
+                            
+                            // Show a snippet of the raw response to help debugging
+                            var snippet = (typeof data === 'string') ? data.substring(0, 100) : 'Invalid Data';
+                            $('#shiftPreview').html(`
+                                <div class="alert alert-danger text-center">
+                                    <strong>خطأ في تحميل البيانات</strong><br>
+                                    <small class="text-muted" dir="ltr">${e.message}</small><br>
+                                    <small class="d-block mt-2 text-wrap bg-light border p-1" style="font-family:monospace; font-size:10px;">
+                                        Server: ${snippet}...
+                                    </small>
+                                </div>
+                            `);
                         }
                     },
-                    error: function() {
-                        $('#shiftPreview').html('<p class="text-center text-danger">خطأ في تحميل البيانات</p>');
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#shiftPreview').html(`
+                            <div class="alert alert-danger text-center">
+                                <strong>خطأ في الاتصال</strong><br>
+                                <small>${error}</small>
+                            </div>
+                        `);
                     }
                 });
             }
