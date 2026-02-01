@@ -986,6 +986,9 @@ if(isset($_SESSION['success_message'])){
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>إلغاء
                     </button>
+                     <a href="z_report.php" class="btn btn-danger">
+                        <i class="fas fa-file-invoice me-1"></i> الانتقال لتقرير الإغلاق (Z-Report)
+                     </a>
                     <button type="button" class="btn btn-success" onclick="printShiftSalesReport()">
                         <i class="fas fa-user me-1"></i> طباعة  مبيعاتي
                     </button>

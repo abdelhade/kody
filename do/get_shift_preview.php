@@ -21,16 +21,23 @@ register_shutdown_function(function() {
 });
 
 try {
-    // Include connection - suppress errors for include to avoid buffer pollution
+    // Include connection
     $connectPath = __DIR__ . '/../includes/connect.php';
     if (!file_exists($connectPath)) {
         throw new Exception("ملف الاتصال غير موجود");
     }
     
-    // Use output buffering to trap any output from connect.php
+    // Include ShiftReport Class
+    $classPath = __DIR__ . '/../classes/ShiftReport.php';
+    if (!file_exists($classPath)) {
+        throw new Exception("ملف كلاس التقرير غير موجود");
+    }
+    
+    // Use output buffering to trap any output from includes
     ob_start();
     include($connectPath);
-    ob_end_clean(); // Discard noise from connect.php
+    include($classPath);
+    ob_end_clean(); // Discard noise
 
     if (!isset($_SESSION['userid'])) {
         throw new Exception('الرجاء تسجيل الدخول أولاً');
@@ -45,45 +52,11 @@ try {
 
     $user_id = $_SESSION['userid'];
 
-    // Shift date logic
-    if (!isset($today)) {
-        date_default_timezone_set('Africa/Cairo');
-        $now = new DateTime();
-        if ((int)$now->format('H') < 4) {
-            $now->modify('-1 day');
-        }
-        $today = $now->format('Y-m-d');
-    }
-    $shift_date = $today;
-
-    $sql = "SELECT 
-                COUNT(*) as total_orders,
-                COALESCE(SUM(fat_net), 0) as total_sales
-            FROM ot_head 
-            WHERE DATE(pro_date) = ? 
-            AND pro_tybe = 9 
-            AND isdeleted = 0
-            AND fat_net > 0
-            AND `user` = ?";
-
-    $sales_stmt = $conn->prepare($sql);
+    // Create ShiftReport instance
+    $report = new ShiftReport($conn, $user_id);
     
-    if (!$sales_stmt) {
-        throw new Exception('خطأ في تحضير الاستعلام: ' . $conn->error);
-    }
-    
-    $sales_stmt->bind_param("si", $shift_date, $user_id);
-    
-    if (!$sales_stmt->execute()) {
-        throw new Exception('خطأ في تنفيذ الاستعلام: ' . $sales_stmt->error);
-    }
-
-    $sales_result = $sales_stmt->get_result();
-    $sales_data = $sales_result->fetch_assoc();
-    $sales_stmt->close();
-    
-    $total_orders = intval($sales_data['total_orders'] ?? 0);
-    $total_sales = floatval($sales_data['total_sales'] ?? 0);
+    // Get Totals using the unified logic (respects time boundaries)
+    $totals = $report->getTotals();
     
     // Get cashier name
     $cashier_name = 'الكاشير';
@@ -101,8 +74,8 @@ try {
     $response_data = [
         'success' => true,
         'data' => [
-            'total_orders' => $total_orders,
-            'total_sales' => number_format($total_sales, 2),
+            'total_orders' => intval($totals['total_orders'] ?? 0),
+            'total_sales' => number_format($totals['total_net'] ?? 0, 2), // 使用 total_net (صافي) or total_gross (اجمالي) depending on preference. Using Net usually.
             'cashier_name' => $cashier_name,
             'shift_number' => date('Ymd') . '_' . $user_id
         ]

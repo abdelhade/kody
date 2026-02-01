@@ -74,7 +74,7 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
             .receipt-container { width: 100% !important; max-width: none !important; }
         }
         body { font-family: 'Arial', sans-serif; }
-        .receipt-container { width: 72mm; margin: 0 auto; }
+        .receipt-container { width: 75mm; margin: 0 auto; }
         .company-header { border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
         .section-divider { border-top: 1px dashed #666; margin: 10px 0; padding-top: 10px; }
         .total-section { background: #f8f9fa; padding: 8px; border-radius: 5px; }
@@ -226,6 +226,9 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
         <button id="printButton" class="btn btn-primary me-2">
             <i class="fas fa-print"></i> طباعة
         </button>
+        <a href="../z_report.php" class="btn btn-warning me-2">
+            <i class="fas fa-file-invoice"></i> Z-Report
+        </a>
         <a href="../pos_barcode.php" class="btn btn-secondary" id="back">
             <i class="fas fa-arrow-left"></i> عودة
         </a>
