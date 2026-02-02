@@ -52,30 +52,56 @@ if ($lang == null) {
   <!-- JQVMap -->
   <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
   <!-- Theme style -->
-  <link rel="stylesheet" href="dist/css/adminlte.min.css">
-  <link rel="stylesheet" href="dist/css/animate.css">
-  <link rel="stylesheet" href="dist/css/animate.css">
+  <link rel="stylesheet" href="dist/css/adminlte.min.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="dist/css/animate.css?v=<?= time() ?>">
   <!-- overlayScrollbars -->
-  <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+  <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css?v=<?= time() ?>">
   <!-- Daterange picker -->
-  <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
+  <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css?v=<?= time() ?>">
   <!-- summernote -->
-  <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
-  <link href="plugins/hadi/google.css" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="assets/libs/playpen-sans-arabic-local.css" rel="stylesheet">
-  <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css">
+  <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css?v=<?= time() ?>">
+  <link href="plugins/hadi/google.css?v=<?= time() ?>" rel="stylesheet">
+  <link href="assets/libs/playpen-sans-arabic-local.css?v=<?= time() ?>" rel="stylesheet">
+  <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css?v=<?= time() ?>">
 
-  <link rel="stylesheet" href="dist/css/custom.css">
-  <link rel="stylesheet" href="plugins/select2/css/select2.min.css">
-  <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
-  <link href="dist/css/hadianime.css" rel="stylesheet">
-  <link href="dist/css/horstec.css" rel="stylesheet">
-  <link href="assets/styles/dashboard.css" rel="stylesheet">
-  <link href="assets/styles/sidebar-fixes.css" rel="stylesheet">
-  <link href="css/operations_responsive.css" rel="stylesheet">
+  <link rel="stylesheet" href="dist/css/custom.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="plugins/select2/css/select2.min.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css?v=<?= time() ?>">
+  <link href="dist/css/hadianime.css?v=<?= time() ?>" rel="stylesheet">
+  <link href="dist/css/horstec.css?v=<?= time() ?>" rel="stylesheet">
+  <link href="assets/styles/dashboard.css?v=<?= time() ?>" rel="stylesheet">
+  <link href="assets/styles/sidebar-fixes.css?v=<?= time() ?>" rel="stylesheet">
+  <link href="css/operations_responsive.css?v=<?= time() ?>" rel="stylesheet">
   
+  <!-- Safety Fix for Card Headers -->
+  <style>
+  /* Force standard AdminLTE card header colors to prevent gray/unreadable overrides */
+  .card-primary:not(.modern-card) > .card-header {
+    background-color: #007bff !important;
+    color: #fff !important;
+  }
+  .card-warning:not(.modern-card) > .card-header {
+    background-color: #ffc107 !important;
+    color: #1f2d3d !important;
+  }
+  .card-success:not(.modern-card) > .card-header {
+    background-color: #28a745 !important;
+    color: #fff !important;
+  }
+  .card-info:not(.modern-card) > .card-header {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+  }
+  .card-danger:not(.modern-card) > .card-header {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+  }
+  /* Ensure title text is white where needed */
+  .card-primary .card-title, .card-success .card-title, .card-info .card-title, .card-danger .card-title {
+    color: #fff !important;
+  }
+  </style>
+
   <!-- إصلاح طوارئ السايد بار -->
   <style>
   body .wrapper .main-sidebar .nav-sidebar .nav-link:hover {

@@ -54,7 +54,13 @@
                                     <div class="table-cell">
                                         <?php 
                                         $p = $rowacc['parent_id']; 
-                                        $pname = ($p > 0) ? $conn->query("SELECT aname FROM acc_head WHERE id = $p")->fetch_assoc()['aname'] : "-";
+                                        if ($p > 0) {
+                                            $parent_result = $conn->query("SELECT aname FROM acc_head WHERE id = $p");
+                                            $parent_data = $parent_result ? $parent_result->fetch_assoc() : null;
+                                            $pname = $parent_data ? $parent_data['aname'] : '-';
+                                        } else {
+                                            $pname = '-';
+                                        }
                                         echo '<span class="parent-name">' . $pname . '</span>';
                                         ?>
                                     </div>
@@ -245,8 +251,9 @@
                                 <div class="session-user">
                                     <?php 
                                     $usid = $rowtime['user'];
-                                    $uname = $conn->query("SELECT uname FROM users WHERE id = $usid");
-                                    echo $uname ? $uname->fetch_assoc()['uname'] : '__';
+                                    $uname_result = $conn->query("SELECT uname FROM users WHERE id = $usid");
+                                    $uname_data = $uname_result ? $uname_result->fetch_assoc() : null;
+                                    echo $uname_data ? $uname_data['uname'] : '__';
                                     ?>
                                 </div>
                                 <div class="session-time"><?= $rowtime['crtime'] ?></div>
@@ -358,8 +365,9 @@
                                 <div class="visit-client">
                                     <?php 
                                     $clid = $rowres['client'];
-                                    $rowcl = $conn->query("SELECT name FROM clients WHERE id = $clid");
-                                    echo $rowcl ? $rowcl->fetch_assoc()['name'] : '__';
+                                    $rowcl_result = $conn->query("SELECT name FROM clients WHERE id = $clid");
+                                    $rowcl_data = $rowcl_result ? $rowcl_result->fetch_assoc() : null;
+                                    echo $rowcl_data ? $rowcl_data['name'] : '__';
                                     ?>
                                 </div>
                                 <div class="visit-details">
@@ -419,12 +427,20 @@
                                     </div>
                                     <div class="table-cell">
                                         <span class="unit-name">
-                                            <?= $conn->query("SELECT * FROM acc_head where id = {$rowins['rent_id']}")->fetch_assoc()['aname']; ?>
+                                            <?php 
+                                            $unit_result = $conn->query("SELECT aname FROM acc_head where id = {$rowins['rent_id']}");
+                                            $unit_data = $unit_result ? $unit_result->fetch_assoc() : null;
+                                            echo $unit_data ? $unit_data['aname'] : '__';
+                                            ?>
                                         </span>
                                     </div>
                                     <div class="table-cell">
                                         <span class="client-name">
-                                            <?= $conn->query("SELECT * FROM acc_head where id = {$rowins['cl_id']}")->fetch_assoc()['aname']; ?>
+                                            <?php 
+                                            $client_result = $conn->query("SELECT aname FROM acc_head where id = {$rowins['cl_id']}");
+                                            $client_data = $client_result ? $client_result->fetch_assoc() : null;
+                                            echo $client_data ? $client_data['aname'] : '__';
+                                            ?>
                                         </span>
                                     </div>
                                     <div class="table-cell">

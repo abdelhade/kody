@@ -18,9 +18,9 @@ $rowjop = $conn->query($sqljop)->fetch_assoc();
     <section class="content-header">
         <div class="container-fluid">
 
-            <div class=" card card-warning">
+            <div class="card card-warning">
                 <div class="card-header">
-                    <h3 class="card-title"> <?= $lang_jopedit ?></h3>
+                    <h3 class="card-title text-dark"> <?= $lang_jopedit ?></h3>
                 </div>
                 <!-- /.card-header -->
                 <!-- form start -->

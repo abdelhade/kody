@@ -158,15 +158,13 @@ if ($resuser) {
   <link rel="icon" href="assets/favicon/favicon.png" type="image/png">
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
   
   <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
   
-  <!-- Bootstrap 5 (CDN for modern styling) -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap 5 (Local) -->
+  <link href="assets/libs/bootstrap5/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
     :root {
@@ -446,7 +444,7 @@ if ($resuser) {
 </div>
 
 <!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/libs/bootstrap5/js/bootstrap.bundle.min.js"></script>
 <script>
     // Simple script to auto-focus password if user logic is dynamic (optional)
     document.getElementById('uname').addEventListener('change', function() {

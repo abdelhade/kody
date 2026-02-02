@@ -50,8 +50,8 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
 
         <form id="myForm" action="do/doadd_account.php" method="post">
             <input type="text" name="q"  value="<?= $parent ?>" hidden>
-        <div class="card card-info">
-            <div class="card-header">
+        <div class="card">
+            <div class="card-header bg-blue-400">
                 <h3>اضافه حساب</h3>
             </div>
              <div class="card-body">

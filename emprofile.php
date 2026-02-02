@@ -196,12 +196,17 @@ if (!isset($rowemp['id'])) {
 
                      <li class="list-group-item bg-body-secondary text-light card-title bg-primary"><?=$lang_emprofilejop?></li>
                       <li class="list-group-item"> <?=$lang_addemployee_job?> : <?php $jopid = $rowemp['jop'];
-                      $conn->query("SELECT name from jops where id = '$jopid'");echo $rowjop['name'] ?></li>
+                      $resjop = $conn->query("SELECT name from jops where id = '$jopid'");
+                      $rowjop = $resjop ? $resjop->fetch_assoc() : null;
+                      echo $rowjop ? $rowjop['name'] : 'N/A'; ?></li>
                       <li class="list-group-item"><?=$lang_addemployee_jobdepart?> : <?php $dprtid = $rowemp['department'];
-                      $conn->query("SELECT name from departments where id = '$dprtid'");echo $rowdprt['name'] ?></li>
+                      $resdprt = $conn->query("SELECT name from departments where id = '$dprtid'");
+                      $rowdprt = $resdprt ? $resdprt->fetch_assoc() : null;
+                      echo $rowdprt ? $rowdprt['name'] : 'N/A'; ?></li>
                       <li class="list-group-item"> <?=$lang_addemployee_jobtype?> :<?php $tybid = $rowemp['joptybe'];
-                      $rowtyb = $conn->query("SELECT name from joptybes where id = '$tybid'")->fetch_assoc();
-                      echo $rowtyb['name'] ?> </li>
+                      $restyb = $conn->query("SELECT name from joptybes where id = '$tybid'");
+                      $rowtyb = $restyb ? $restyb->fetch_assoc() : null;
+                      echo $rowtyb ? $rowtyb['name'] : 'N/A'; ?> </li>
                       <li class="list-group-item"> <?=$lang_addemployee_jobstart?> : <?= $rowemp['dateofhire'] ?></li>
                       <li class="list-group-item"> <?=$lang_addemployee_jobend?> : <?= $rowemp['dateofend'] ?></li>
                       <li class="list-group-item"> <?=$lang_addemployee_salary?> : <?= $rowemp['salary'] ?></li>

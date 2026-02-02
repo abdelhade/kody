@@ -15,13 +15,13 @@ $rowdprt = $conn->query($sqldprt)->fetch_assoc();
     <section class="content-header">
         <div class="container-fluid">
 
-            <div class=" card card-warning">
+            <div class="card card-warning">
                 <div class="card-header">
-                    <h3 class="card-title"><?= $lang_depart_edit ?></h3>
+                    <h3 class="card-title text-dark"><?= $lang_depart_edit ?></h3>
                 </div>
                 <!-- /.card-header -->
                 <!-- form start -->
-                <form role="form" action="do/doedit_department.php?id=<?= $id ?>.php" method="post">
+                <form role="form" action="do/doedit_department.php?id=<?= $id ?>" method="post">
                     <div class="card-body">
                         <div class="form-group">
                             <label for="exampleInputEmail1"><?= $lang_publicname ?></label>
