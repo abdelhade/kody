@@ -28,7 +28,7 @@ class InvoiceDetails extends InvoiceElementBase
         if (!$this->conn) return;
 
         try {
-            $query = "SELECT id, iname, name2 FROM myitems WHERE isdeleted = 0 ORDER BY iname";
+            $query = "SELECT id, iname, name2 FROM myitems WHERE isdeleted = 0 ORDER BY iname LIMIT 25";
             $result = $this->executeSecureQuery($query);
             $this->items = $result->fetch_all(MYSQLI_ASSOC);
         } catch (Exception $e) {

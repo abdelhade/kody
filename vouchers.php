@@ -12,7 +12,8 @@ if (isset($_GET['t'])){
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
-    where pro_tybe = 1
+    WHERE pro_tybe = 1
+    ORDER BY h.id DESC LIMIT 200
 ");
 }elseif($_GET['t'] == 'payment'){
     $resvoucher = $conn->query("
@@ -21,7 +22,8 @@ if (isset($_GET['t'])){
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
-    where pro_tybe = 2 
+    WHERE pro_tybe = 2
+    ORDER BY h.id DESC LIMIT 200
 ");
 }}
 
@@ -32,6 +34,7 @@ $resvoucher = $conn->query("
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
+    ORDER BY h.id DESC LIMIT 200
 ");}
 
 if (isset($_POST['tybe'])) {
@@ -67,6 +70,7 @@ if (isset($_POST['tybe'])) {
         JOIN acc_head acc1 ON h.acc1 = acc1.id
         JOIN acc_head acc2 ON h.acc2 = acc2.id
         WHERE h.id > 1 $whereClause
+        ORDER BY h.id DESC LIMIT 200
     ";
 
     // تنفيذ الاستعلام
@@ -84,43 +88,48 @@ if (isset($_POST['tybe'])) {
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header">
-                                <form action="<?= $_SERVER['PHP_SELF'] ?>" method="post">
-                    <div class="row">
-                        <div class="col">
-                            <h1>السندات</h1>
+                    <div class="row align-items-center mb-3">
+                        <div class="col-6">
+                            <h1 class="mb-0">السندات</h1>
                         </div>
-                        <div class="col-lg-2">
-                        </div>
-                        <div class="col-lg-2">
-                            <a href="add_voucher.php?t=recive" class="btn btn-primary">سند قبض</a>
-                            <a href="add_voucher.php?t=payment" class="btn btn-primary">سند دفع</a>
+                        <div class="col-6 d-flex justify-content-end align-items-center">
+                            <a href="add_voucher.php?t=recive" class="btn btn-primary" style="white-space: nowrap;">سند قبض</a>
+                            <a href="add_voucher.php?t=payment" class="btn btn-primary ml-2" style="white-space: nowrap;">سند دفع</a>
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col">
-                            <?php
-                            // استرجاع القيم الافتراضية
-                            $tybe = isset($_POST['tybe']) ? $_POST['tybe'] :'';
-                            $strt = isset($_POST['strt']) ? $_POST['strt'] :'';
-                            $end  = isset($_POST['end'])  ? $_POST['end']  :'';
-                            ?>
-                            <select class="" name="tybe">
-                                <option value="">كل السندات</option>
-                                <option value="1" <?= $tybe == '1' ? 'selected' : '' ?>>سندات قبض</option>
-                                <option value="2" <?= $tybe == '2' ? 'selected' : '' ?>>سندات دفع</option>
-                            </select>
-                            
-                                <label for="">من</label>
-                                <input class="" type="date" name="strt" value="<?= $strt ?>">
-                           
-                            
-                                <label for="">إلى</label>
-                                <input class="" type="date" name="end" value="<?= $end ?>">
-                           
-                            <button class="btn btn-success">بحث</button>
+                    
+                    <form action="<?= $_SERVER['PHP_SELF'] ?>" method="post">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <?php
+                                // استرجاع القيم الافتراضية
+                                $tybe = isset($_POST['tybe']) ? $_POST['tybe'] :'';
+                                $strt = isset($_POST['strt']) ? $_POST['strt'] :'';
+                                $end  = isset($_POST['end'])  ? $_POST['end']  :'';
+                                ?>
+                                <div class="form-row align-items-center">
+                                    <div class="col-auto">
+                                        <select class="form-control" name="tybe">
+                                            <option value="">كل السندات</option>
+                                            <option value="1" <?= $tybe == '1' ? 'selected' : '' ?>>سندات قبض</option>
+                                            <option value="2" <?= $tybe == '2' ? 'selected' : '' ?>>سندات دفع</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <label for="" class="mb-0">من</label>
+                                        <input class="form-control" type="date" name="strt" value="<?= $strt ?>">
+                                    </div>
+                                    <div class="col-auto">
+                                        <label for="" class="mb-0">إلى</label>
+                                        <input class="form-control" type="date" name="end" value="<?= $end ?>">
+                                    </div>
+                                    <div class="col-auto">
+                                        <button class="btn btn-success" type="submit">بحث</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
 
                 </div>
                 <div class="card-body">

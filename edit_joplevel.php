@@ -15,9 +15,9 @@ $rowjoplvl = $conn->query($sqljoplvl)->fetch_assoc();
     <section class="content-header">
         <div class="container-fluid">
 
-            <div class=" card card-warning">
+            <div class="card card-warning">
                 <div class="card-header">
-                    <h3 class="card-title"><?= $lang_joplvledit ?></h3>
+                    <h3 class="card-title text-dark"><?= $lang_joplvledit ?></h3>
                 </div>
                 <!-- /.card-header -->
                 <!-- form start -->

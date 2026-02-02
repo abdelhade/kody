@@ -36,8 +36,8 @@
                         echo 'do/doadd_voucher.php';
                     }
                     ?>" method="post" id="myForm">
-    <div class="card card-primary <?= isset($_GET['edit'])?"card-warning":"" ?>">
-        <div class="card-header">
+    <div class="card">
+        <div class="card-header <?= isset($_GET['edit'])?"bg-yellow-400":"bg-blue-400" ?>">
        <?php
        if (isset($_GET['t'])) {
             if ($_GET['t'] == "recive") {
