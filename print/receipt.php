@@ -174,7 +174,7 @@ if ($is_delivery) {
     <button id="printButton" class="btn btn-secondary frst" >
 <i class="fas fa-print" ></i> طباعه
 </button>
-<a href="../pos_barcode.php" id="back">عودة</a>
+<a href="../pos_clothes.php" id="back">عودة</a>
 
 
 </div>
