@@ -289,6 +289,15 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="pos_clothes.php" class="nav-link">
+                  <i class="nav-icon fas fa-tshirt"></i>
+                  <p>
+                    POS الملابس
+                  </p>
+                </a>
+              </li>
+
 
               <li class="nav-item">
                 <a href="crud_tables.php" class="nav-link">
