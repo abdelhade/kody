@@ -54,11 +54,11 @@
                                     <th><?= $rowcv['skills'] ?></th>
                                     <th><?= $rowcv['expsalary'] ?></th>
                                     <th>
-                                        <?= $rowcv['exp1'] ?> ,
-                                        <?= $rowcv['exp2'] ?> ,
-                                        <?= $rowcv['exp3'] ?> ,
-                                        <?= $rowcv['exp4'] ?> ,
-                                        <?= $rowcv['exp5'] ?> ,
+                                        <?= isset($rowcv['exp1']) ? $rowcv['exp1'] : '' ?> <?= !empty($rowcv['exp1']) ? ',' : '' ?>
+                                        <?= isset($rowcv['exp2']) ? $rowcv['exp2'] : '' ?> <?= !empty($rowcv['exp2']) ? ',' : '' ?>
+                                        <?= isset($rowcv['exp3']) ? $rowcv['exp3'] : '' ?> <?= !empty($rowcv['exp3']) ? ',' : '' ?>
+                                        <?= isset($rowcv['exp4']) ? $rowcv['exp4'] : '' ?> <?= !empty($rowcv['exp4']) ? ',' : '' ?>
+                                        <?= isset($rowcv['exp5']) ? $rowcv['exp5'] : '' ?>
                                     </th>
                                     <th>
                                         <a href="edit_cv.php?id=<?= $rowcv['id'] ?>" class="btn btn-warning"><i class="fas fa-pen"></i></a>

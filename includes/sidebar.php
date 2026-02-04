@@ -250,7 +250,7 @@
 
 
               <li class="nav-item">
-                <a href="item_categories.php" class="nav-link">
+                <a href="items_start_balance.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
                     <?= $lang_opening_balances_stores ?>
