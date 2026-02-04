@@ -120,12 +120,12 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
 
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="name"><?= $lang_addemployee_address . "1" ?></label>
+                            <label for="name"><?= $lang_addemployee_address1 ?></label>
                             <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address'] ?>" class="form-control form-control-sm" id="name" name="address2" placeholder="<?= $lang_pbholder_address ?>">
                         </div>
 
                         <div class="form-group">
-                            <label for="address_1"><?= $lang_addemployee_address . "2" ?></label>
+                            <label for="address_1"><?= $lang_addemployee_address2 ?></label>
                             <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address2'] ?>" class="form-control form-control-sm" id="address" name="address" placeholder="<?= $lang_pbholder_address ?>">
                         </div>
 

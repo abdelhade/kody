@@ -7,6 +7,7 @@ if (!isset($_SESSION['login'])) {
 
   header('location:index.php');
 }
+header('Content-Type: text/html; charset=utf-8');
 include('includes/connect.php');
 
 $userid = $_SESSION['userid'];

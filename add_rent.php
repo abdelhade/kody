@@ -125,23 +125,23 @@ if (isset($_GET['c'])) {
                     </div>
                             
                     <div class="row">
-                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 1 <span><input type="checkbox" name="" id="" data-toggle="collapse" data-target="#bnd1"> </span></label></div>
-                        <div id="bnd1" class="col-md-12 collapse"><input type="text" name="bnd1" id="" class=" form-control "></div>
+                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 1 <span><input type="checkbox" id="chk1"> </span></label></div>
+                        <div id="bnd1" class="col-md-12" style="display:none;"><input type="text" name="bnd1" class="form-control"></div>
                     </div>
                             
                     <div class="row">
-                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 2 <span><input type="checkbox" name="" id="" data-toggle="collapse" data-target="#bnd2"></span></label></div>
-                        <div id="bnd2" class="col-md-12 collapse"><input type="text" name="bnd2" id="" class=" form-control "></div>
+                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 2 <span><input type="checkbox" id="chk2"></span></label></div>
+                        <div id="bnd2" class="col-md-12" style="display:none;"><input type="text" name="bnd2" class="form-control"></div>
                     </div>
                             
                     <div class="row">
-                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 3 <span><input type="checkbox" name="" id="" data-toggle="collapse" data-target="#bnd3"></span></label></div>
-                        <div id="bnd3" class="col-md-12 collapse"><input  type="text" name="bnd3" id="" class=" form-control "></div>
+                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 3 <span><input type="checkbox" id="chk3"></span></label></div>
+                        <div id="bnd3" class="col-md-12" style="display:none;"><input type="text" name="bnd3" class="form-control"></div>
                     </div>
                             
                     <div class="row">
-                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 4 <span><input type="checkbox" name="" id="" data-toggle="collapse" data-target="#bnd4"></span></label></div>
-                        <div id="bnd4" class="col-md-12 collapse"><input type="text" name="bnd4" id="" class=" form-control"></div>
+                        <div class="col-lg-2 " style="font-size:20px;"><label  for="">بند 4 <span><input type="checkbox" id="chk4"></span></label></div>
+                        <div id="bnd4" class="col-md-12" style="display:none;"><input type="text" name="bnd4" class="form-control"></div>
                     </div>
                     
                     </div>
@@ -185,6 +185,23 @@ if (isset($_GET['c'])) {
 </script>
 <script>
     $(document).ready(function() {
+        // Handle checkbox toggle for bnd inputs
+        $('#chk1').change(function() {
+            $('#bnd1').toggle(this.checked);
+        });
+        
+        $('#chk2').change(function() {
+            $('#bnd2').toggle(this.checked);
+        });
+        
+        $('#chk3').change(function() {
+            $('#bnd3').toggle(this.checked);
+        });
+        
+        $('#chk4').change(function() {
+            $('#bnd4').toggle(this.checked);
+        });
+        
         $('#subBtn').on('click', function() {
             $r_value = $("#r_value").val();
             if ($r_value === "0" || $r_value === "0.00") {
