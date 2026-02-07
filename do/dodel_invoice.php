@@ -151,15 +151,9 @@ try {
     exit;
 }
 
-// إعادة التوجيه حسب نوع العملية
-$redirects = [
-    INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=sale',
-    INVOICE_TYPES['SALES'] => '../operations_summary.php?q=buy',
-    INVOICE_TYPES['POS'] => '../pos_barcode.php'
-];
-
-$redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);
-$separator = strpos($redirect, '?') !== false ? '&' : '?';
-header("Location: $redirect{$separator}success=deleted");
+// إعادة التوجيه لنفس الصفحة اللي جاي منها
+$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '../operations_summary.php';
+$separator = strpos($referer, '?') !== false ? '&' : '?';
+header("Location: $referer{$separator}success=deleted");
 exit;
 ?>
