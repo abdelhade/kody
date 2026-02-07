@@ -232,13 +232,14 @@ if(isset($_SESSION['success_message'])){
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary-navy);">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="index.php">
-                <i class="fas fa-tshirt me-2"></i>نظام نقاط البيع - الملابس
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="index.php">
+                <i class="fas fa-tshirt me-2"></i>
+                <span>نظام نقاط البيع - الملابس</span>
             </a>
             
-            <div class="navbar-nav ms-auto">
-                <a href="do/do_logout.php" class="nav-link">
-                    <i class="fas fa-sign-out-alt me-1"></i>تسجيل الخروج
+            <div class="d-flex align-items-center">
+                <a href="do/do_logout.php" class="nav-link text-white d-flex align-items-center">
+                    <i class="fas fa-sign-out-alt me-1"></i>
                 </a>
             </div>
         </div>
