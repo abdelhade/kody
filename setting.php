@@ -132,6 +132,23 @@
 
                         <div class="row">
                             <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>نوع نظام POS</label>
+                                    <select class="form-control" name="pos_type">
+                                        <option value="barcode" <?= ($rowstg['pos_type'] ?? 'barcode') == 'barcode' ? 'selected' : '' ?>>
+                                            POS عادي (باركود)
+                                        </option>
+                                        <option value="clothes" <?= ($rowstg['pos_type'] ?? 'barcode') == 'clothes' ? 'selected' : '' ?>>
+                                            POS ملابس
+                                        </option>
+                                    </select>
+                                    <small class="text-muted">يحدد نوع POS الظاهر في القائمة</small>
+                                </div>
+                            </div>    
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6">
                                 الحساب الافتراضي للايجار المستحق
                                 <input type="text" name="acc_rent" id="" value="<?= $rowstg['acc_rent'] ?>">
                             </div>    

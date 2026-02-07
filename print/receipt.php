@@ -16,6 +16,10 @@ if ($rowfat == null) {
     echo "لا يوجد فاتورة بهذا الرقم";die;
 }else{
     $tybe = $rowfat['pro_tybe'];
+    
+    // تحديد صفحة العودة حسب نوع POS
+    $pos_type = $rowstg['pos_type'] ?? 'barcode';
+    $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
 ?>
 
 
@@ -174,7 +178,7 @@ if ($is_delivery) {
     <button id="printButton" class="btn btn-secondary frst" >
 <i class="fas fa-print" ></i> طباعه
 </button>
-<a href="../pos_barcode.php" id="back">عودة</a>
+<a href="<?= $back_page ?>" id="back">عودة</a>
 
 
 </div>

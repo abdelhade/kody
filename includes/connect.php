@@ -1,4 +1,9 @@
 <?php
+// بدء الجلسة
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // إعدادات قاعدة البيانات
 if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false) {
     // إعدادات localhost
