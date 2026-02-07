@@ -151,9 +151,26 @@ try {
     exit;
 }
 
-// إعادة التوجيه لنفس الصفحة اللي جاي منها
-$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '../operations_summary.php';
-$separator = strpos($referer, '?') !== false ? '&' : '?';
-header("Location: $referer{$separator}success=deleted");
+// إعادة التوجيه حسب نوع نظام POS
+$stmt = $conn->prepare("SELECT pos_type FROM settings LIMIT 1");
+$stmt->execute();
+$settings = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+$pos_type = $settings['pos_type'] ?? 'barcode';
+
+// تحديد صفحة POS حسب النوع
+$pos_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+
+// إعادة التوجيه حسب نوع العملية
+$redirects = [
+    INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=sale',
+    INVOICE_TYPES['SALES'] => '../operations_summary.php?q=buy',
+    INVOICE_TYPES['POS'] => $pos_page
+];
+
+$redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);
+$separator = strpos($redirect, '?') !== false ? '&' : '?';
+header("Location: $redirect{$separator}success=deleted");
 exit;
 ?>

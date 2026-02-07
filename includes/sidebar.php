@@ -280,23 +280,29 @@
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="stock" style="display: none;">
 
-              <li class="nav-item">
-                <a href="pos_barcode.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_pos_barcode ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="pos_clothes.php" class="nav-link">
-                  <i class="nav-icon fas fa-tshirt"></i>
-                  <p>
-                    POS الملابس
-                  </p>
-                </a>
-              </li>
+              <?php 
+              // جلب نوع نظام POS من الإعدادات
+              $pos_type = $rowstg['pos_type'] ?? 'barcode';
+              
+              if ($pos_type === 'clothes') {
+                // عرض POS الملابس فقط
+              ?>
+                <li class="nav-item">
+                  <a href="pos_clothes.php" class="nav-link">
+                    <i class="nav-icon fas fa-tshirt"></i>
+                    <p>POS الملابس</p>
+                  </a>
+                </li>
+              <?php } else { 
+                // عرض POS العادي فقط
+              ?>
+                <li class="nav-item">
+                  <a href="pos_barcode.php" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p><?= $lang_pos_barcode ?></p>
+                  </a>
+                </li>
+              <?php } ?>
 
 
               <li class="nav-item">

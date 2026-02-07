@@ -124,10 +124,19 @@ try {
 }
 
 // إعادة التوجيه
+// إعادة التوجيه لصفحة الطباعة حسب نوع POS
+$stmt = $conn->prepare("SELECT pos_type FROM settings LIMIT 1");
+$stmt->execute();
+$settings = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+$pos_type = $settings['pos_type'] ?? 'barcode';
+$pos_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+
 if ($submit == 'cash') {
-    echo "<script>window.open('../print/receipt.php?id=$last_op', '_blank'); window.location.href='../pos_clothes.php';</script>";
+    echo "<script>window.open('../print/receipt.php?id=$last_op', '_blank'); window.location.href='$pos_page';</script>";
 } else {
-    header("Location: ../pos_clothes.php?r=" . time());
+    header("Location: $pos_page?r=" . time());
 }
 exit;
 ?>
