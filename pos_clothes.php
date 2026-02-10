@@ -39,21 +39,22 @@ if(isset($_SESSION['success_message'])){
         }
 
         .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
         }
 
         .category-card {
             background: white;
             border: 2px solid var(--soft-gray);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 8px;
+            padding: 1rem 0.6rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-height: 140px;
+            min-height: 100px;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -72,31 +73,35 @@ if(isset($_SESSION['success_message'])){
         }
 
         .category-icon {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: var(--primary-navy);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
         }
 
         .category-name {
-            font-size: 1.1rem;
+            font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-dark);
             margin: 0;
+            line-height: 1.2;
         }
 
         .items-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .item-card {
             background: white;
             border: 1px solid var(--soft-gray);
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
             cursor: pointer;
             transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .item-card:hover {
@@ -106,7 +111,7 @@ if(isset($_SESSION['success_message'])){
         }
 
         .item-image {
-            height: 150px;
+            height: 110px;
             background: var(--neutral-gray);
             display: flex;
             align-items: center;
@@ -120,24 +125,36 @@ if(isset($_SESSION['success_message'])){
             object-fit: cover;
         }
 
+        .item-image i {
+            font-size: 2rem !important;
+        }
+
         .item-details {
-            padding: 1rem;
+            padding: 0.7rem 0.6rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.4rem;
         }
 
         .item-name {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0;
             color: var(--text-dark);
+            line-height: 1.2;
         }
 
         .item-price {
             background: var(--primary-violet);
             color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
+            padding: 0.2rem 0.4rem;
+            border-radius: 12px;
             font-weight: bold;
             display: inline-block;
+            font-size: 0.7rem;
+            align-self: center;
         }
 
         .order-section {
@@ -217,15 +234,7 @@ if(isset($_SESSION['success_message'])){
             color: #6c757d;
         }
 
-        @media (max-width: 768px) {
-            .categories-grid {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            }
-            
-            .items-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            }
-        }
+
     </style>
 </head>
 
@@ -233,11 +242,13 @@ if(isset($_SESSION['success_message'])){
     <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary-navy);">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold d-flex align-items-center" href="index.php">
-                <i class="fas fa-tshirt me-2"></i>
-                <span>نظام نقاط البيع - الملابس</span>
+                <span>نظام نقاط البيع </span>
             </a>
             
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-outline-light" id="fullscreenBtn" onclick="toggleFullscreen()">
+                    <i class="fas fa-expand" id="fullscreenIcon"></i>
+                </button>
                 <a href="do/do_logout.php" class="nav-link text-white d-flex align-items-center">
                     <i class="fas fa-sign-out-alt me-1"></i>
                 </a>
@@ -276,8 +287,16 @@ if(isset($_SESSION['success_message'])){
                             <input type="hidden" name="pro_serial" value="0">
                             <input type="hidden" name="pro_id" value="1">
                             
+                            <div class="mb-2">
+                                <label class="form-label fw-bold">بحث بالباركود</label>
+                                <div style="position: relative;">
+                                    <input type="text" class="form-control form-control-sm" id="barcodeSearch" placeholder="امسح أو اكتب الباركود..." autocomplete="off">
+                                    <i class="fas fa-barcode" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
-                                <label class="form-label fw-bold">نوع الطلب</label>
+                              
                                 <div class="btn-group w-100" role="group">
                                     <input type="radio" class="btn-check" id="age1" name="age" value="1" checked>
                                     <label class="btn btn-outline-secondary btn-sm" for="age1">
@@ -296,39 +315,12 @@ if(isset($_SESSION['success_message'])){
                                 </div>
                             </div>
 
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
                                     <label class="form-label">التاريخ</label>
                                     <input type="date" name="pro_date" class="form-control form-control-sm" value="<?= $posdate ?>">
                                 </div>
-                                <div class="col-6">
-                                    <label class="form-label">تاريخ الاستحقاق</label>
-                                    <input type="date" name="accural_date" class="form-control form-control-sm" value="<?= date('Y-m-d') ?>">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <label class="form-label">المخزن</label>
-                                    <select name="store_id" class="form-select form-select-sm" required>
-                                        <?php
-                                        $resstore = $conn->query("SELECT * FROM `acc_head` WHERE is_stock =1 AND isdeleted = 0;");
-                                        $first = true;
-                                        while ($rowstore = $resstore->fetch_assoc()) { 
-                                            $selected = '';
-                                            if($rowstg['def_pos_store'] == $rowstore['id']){
-                                                $selected = "selected";
-                                            } elseif ($first && empty($rowstg['def_pos_store'])) {
-                                                $selected = "selected";
-                                            }
-                                            $first = false;
-                                        ?>
-                                        <option <?= $selected ?> value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-
-                                <div class="col-6">
+                                <div class="col-4">
                                     <label class="form-label">الموظف</label>
                                     <select name="emp_id" class="form-select form-select-sm" required>
                                         <?php
@@ -347,10 +339,7 @@ if(isset($_SESSION['success_message'])){
                                         <?php } ?>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
+                                <div class="col-4">
                                     <label class="form-label">العميل</label>
                                     <select name="acc2_id" class="form-select form-select-sm" required>
                                         <?php
@@ -369,36 +358,34 @@ if(isset($_SESSION['success_message'])){
                                         <?php } ?>
                                     </select>
                                 </div>
-
-                                <div class="col-6">
-                                    <label class="form-label">الصندوق</label>
-                                    <select name="fund_id" class="form-select form-select-sm" required>
-                                        <?php
-                                        $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
-                                        $first_fund = true;
-                                        while ($rowfund = $resfund->fetch_assoc()) { 
-                                            $selected = '';
-                                            if($rowstg['def_pos_fund'] == $rowfund['id']){
-                                                $selected = "selected";
-                                            } elseif ($first_fund && empty($rowstg['def_pos_fund'])) {
-                                                $selected = "selected";
-                                            }
-                                            $first_fund = false;
-                                        ?>
-                                        <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
+                                <input type="hidden" name="accural_date" value="<?= date('Y-m-d') ?>">
                             </div>
 
-                            <div class="mb-3">
+                            <?php
+                            // جلب المخزن الافتراضي
+                            $default_store_id = 1; // قيمة افتراضية
+                            
+                            if (!empty($rowstg['def_pos_store'])) {
+                                $default_store_id = $rowstg['def_pos_store'];
+                            } else {
+                                // جلب أول مخزن متاح
+                                $resstore = $conn->query("SELECT id FROM `acc_head` WHERE is_stock = 1 AND isdeleted = 0 LIMIT 1;");
+                                if ($resstore && $resstore->num_rows > 0) {
+                                    $rowstore = $resstore->fetch_assoc();
+                                    $default_store_id = $rowstore['id'];
+                                }
+                            }
+                            ?>
+                            <input type="hidden" name="store_id" value="<?= $default_store_id ?>">
+
+                            <div class="mb-2">
                                 <h6 class="fw-bold mb-2">الأصناف المُضافة <span class="badge bg-secondary" id="itemCount">0</span></h6>
                                 <div id="itemData" style="max-height: 300px; overflow-y: auto;">
                                     <p class="text-muted text-center">لا توجد أصناف مُضافة</p>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-2">
                                 <label class="form-label">ملاحظات</label>
                                 <textarea class="form-control form-control-sm" name="info" rows="2" placeholder="ملاحظات..."></textarea>
                             </div>
@@ -436,24 +423,32 @@ if(isset($_SESSION['success_message'])){
 
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header" style="background-color: var(--primary-navy); color: white;">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--primary-navy); color: white;">
                         <h6 class="mb-0">
                             <i class="fas fa-boxes me-2"></i>اختيار الأصناف
                         </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 250px; position: relative;">
+                                <input type="text" class="form-control form-control-sm" id="searchItems" placeholder="بحث عن صنف..." style="background: white; padding-left: 35px;">
+                                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="categories-grid" id="categoriesContainer">
+                        <div class="row categories-grid" id="categoriesContainer">
                             <?php
                             $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
                             if ($rescategories && $rescategories->num_rows > 0) {
                                 while ($rowcategory = $rescategories->fetch_assoc()) {
                                     $categoryId = $rowcategory['id'];
                                     $categoryName = htmlspecialchars($rowcategory['gname']);
-                                    echo '<div class="category-card" data-category="'.$categoryId.'" onclick="loadCategoryItems('.$categoryId.')">
-                                            <div class="category-icon">
-                                                <i class="fas fa-folder"></i>
+                                    echo '<div class="col-md-2 col-sm-3 col-4 mb-2">
+                                            <div class="category-card" data-category="'.$categoryId.'" onclick="loadCategoryItems('.$categoryId.')">
+                                                <div class="category-icon">
+                                                    <i class="fas fa-folder"></i>
+                                                </div>
+                                                <div class="category-name">'.$categoryName.'</div>
                                             </div>
-                                            <div class="category-name">'.$categoryName.'</div>
                                           </div>';
                                 }
                             } else {
@@ -466,10 +461,10 @@ if(isset($_SESSION['success_message'])){
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">الأصناف المتاحة</h6>
                                 <button class="btn btn-outline-secondary btn-sm" onclick="hideItems()">
-                                    <i class="fas fa-arrow-right me-1"></i>العودة للمجموعات
+                                    <i class="fas fa-arrow-right me-1"></i>
                                 </button>
                             </div>
-                            <div class="items-grid" id="itemsGrid">
+                            <div class="row items-grid" id="itemsGrid">
                             </div>
                         </div>
 
@@ -523,17 +518,11 @@ if(isset($_SESSION['success_message'])){
                                     <div class="row g-2">
                                         <div class="col-6">
                                             <label class="form-label fw-bold">الخصم %</label>
-                                            <div class="input-group">
-                                                <input class="form-control text-center" type="number" id="modal_discperc" value="0" min="0" max="100" step="0.1">
-                                                <span class="input-group-text">%</span>
-                                            </div>
+                                            <input class="form-control text-center" type="number" id="modal_discperc" value="0" min="0" max="100" step="0.1">
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label fw-bold">قيمة الخصم</label>
-                                            <div class="input-group">
-                                                <input class="form-control text-center" type="number" id="modal_discount" value="0" step="0.01">
-                                                <span class="input-group-text" style="background-color: var(--primary-navy); color: white;">ج.م</span>
-                                            </div>
+                                            <input class="form-control text-center" type="number" id="modal_discount" value="0" step="0.01">
                                         </div>
                                     </div>
                                 </div>
@@ -557,21 +546,37 @@ if(isset($_SESSION['success_message'])){
                             </div>
                         </div>
 
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-wallet me-2"></i>الصندوق
+                            </label>
+                            <select name="fund_id" id="modal_fund_id" class="form-select" required>
+                                <?php
+                                $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
+                                $first_fund = true;
+                                while ($rowfund = $resfund->fetch_assoc()) { 
+                                    $selected = '';
+                                    if($rowstg['def_pos_fund'] == $rowfund['id']){
+                                        $selected = "selected";
+                                    } elseif ($first_fund && empty($rowstg['def_pos_fund'])) {
+                                        $selected = "selected";
+                                    }
+                                    $first_fund = false;
+                                ?>
+                                <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-money-bill-wave me-2"></i>المدفوع
                             </label>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control text-center fw-bold" type="number" id="modal_paid" value="0.00" step="0.01">
-                                <span class="input-group-text">ج.م</span>
-                            </div>
+                            <input class="form-control form-control-lg text-center fw-bold" type="number" id="modal_paid" value="0.00" step="0.01">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">الباقي</label>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control text-center fw-bold bg-danger text-white" type="text" id="modal_change" value="0.00" readonly>
-                                <span class="input-group-text bg-danger text-white">ج.م</span>
-                            </div>
+                            <input class="form-control form-control-lg text-center fw-bold bg-danger text-white" type="text" id="modal_change" value="0.00" readonly>
                         </div>
                     </div>
                 </div>
@@ -596,6 +601,155 @@ if(isset($_SESSION['success_message'])){
     
     <script>
         let selectedItems = [];
+        let allItems = [];
+        let searchTimeout;
+        let barcodeTimeout;
+
+        // بحث بالباركود
+        function searchByBarcode() {
+            const barcode = document.getElementById('barcodeSearch').value.trim();
+            
+            if (barcode === '') {
+                return;
+            }
+            
+            clearTimeout(barcodeTimeout);
+            barcodeTimeout = setTimeout(function() {
+                $.ajax({
+                    url: 'ajax/search_item.php',
+                    type: 'POST',
+                    data: { barcode: barcode },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log('Barcode response:', data);
+                        if (data.success && data.item) {
+                            const item = data.item;
+                            addItemToOrder(item.id, item.name, item.price);
+                            document.getElementById('barcodeSearch').value = '';
+                            document.getElementById('barcodeSearch').focus();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'غير موجود',
+                                text: data.message || 'الصنف غير موجود',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
+                            });
+                            document.getElementById('barcodeSearch').value = '';
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Barcode Search Error:', error);
+                        console.error('Response:', xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'حدث خطأ في البحث',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                        document.getElementById('barcodeSearch').value = '';
+                    }
+                });
+            }, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // بحث بالباركود
+            document.getElementById('barcodeSearch')?.addEventListener('input', function(e) {
+                searchByBarcode();
+            });
+            
+            document.getElementById('barcodeSearch')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchByBarcode();
+                }
+            });
+        });
+
+        function searchItems() {
+            const searchTerm = document.getElementById('searchItems').value.trim().toLowerCase();
+            
+            if (searchTerm === '') {
+                hideItems();
+                return;
+            }
+            
+            if (searchTerm.length < 2) {
+                return;
+            }
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                document.getElementById('itemsGrid').innerHTML = `
+                    <div class="col-12 text-center py-3">
+                        <div class="spinner-border spinner-border-sm" style="color: var(--primary-navy);" role="status">
+                            <span class="visually-hidden">جاري البحث...</span>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('itemsContainer').classList.add('show');
+                document.getElementById('noItemsMessage').style.display = 'none';
+                
+                $.ajax({
+                    url: 'ajax/search_items.php',
+                    type: 'GET',
+                    data: { search: searchTerm },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success && data.items.length > 0) {
+                            allItems = data.items;
+                            displayItems(data.items);
+                        } else {
+                            document.getElementById('itemsGrid').innerHTML = `
+                                <div class="col-12 text-center py-5">
+                                    <i class="fas fa-search fa-3x mb-3" style="color: var(--soft-gray);"></i>
+                                    <h5>لا توجد نتائج للبحث</h5>
+                                    <p class="text-muted">جرب كلمة بحث أخرى</p>
+                                </div>
+                            `;
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Search Error:', error);
+                        console.error('Status:', status);
+                        console.error('Response Text:', xhr.responseText);
+                        console.error('Response Status:', xhr.status);
+                        
+                        let errorMsg = 'حدث خطأ في البحث';
+                        if (xhr.responseText) {
+                            errorMsg += '<br><small class="text-muted">' + xhr.responseText.substring(0, 200) + '</small>';
+                        }
+                        
+                        document.getElementById('itemsGrid').innerHTML = `
+                            <div class="col-12 text-center py-5 text-danger">
+                                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                                <h5>${errorMsg}</h5>
+                            </div>
+                        `;
+                    }
+                });
+            }, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('searchItems')?.addEventListener('input', function(e) {
+                searchItems();
+            });
+            
+            document.getElementById('searchItems')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchItems();
+                }
+            });
+        });
 
         function loadCategoryItems(categoryId) {
             document.querySelectorAll('.category-card').forEach(card => {
@@ -657,13 +811,15 @@ if(isset($_SESSION['success_message'])){
             let html = '';
             items.forEach(item => {
                 html += `
-                    <div class="item-card" onclick="addItemToOrder(${item.id}, '${item.name}', ${item.price})">
-                        <div class="item-image">
-                            <i class="fas fa-tshirt fa-3x" style="color: var(--soft-gray);"></i>
-                        </div>
-                        <div class="item-details">
-                            <div class="item-name">${item.name}</div>
-                            <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
+                    <div class="col-md-2 col-sm-3 col-4 mb-2">
+                        <div class="item-card" onclick="addItemToOrder(${item.id}, '${item.name}', ${item.price})">
+                            <div class="item-image">
+                                <i class="fas fa-tshirt" style="color: var(--soft-gray);"></i>
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -863,6 +1019,17 @@ if(isset($_SESSION['success_message'])){
             }
             paidInput.value = document.getElementById('modal_paid').value;
             
+            // إضافة الصندوق من المودال
+            let fundInput = form.querySelector('input[name="fund_id"]');
+            if (!fundInput) {
+                fundInput = document.createElement('input');
+                fundInput.type = 'hidden';
+                fundInput.name = 'fund_id';
+                form.appendChild(fundInput);
+            }
+            const fundSelect = document.querySelector('#paymentModal select[name="fund_id"]');
+            fundInput.value = fundSelect ? fundSelect.value : '';
+            
             $('#paymentModal').modal('hide');
             
             setTimeout(function() {
@@ -882,7 +1049,53 @@ if(isset($_SESSION['success_message'])){
             $('#paymentModal').on('show.bs.modal', function() {
                 updateTotals();
             });
+            
+            // تحديث أيقونة الشاشة الكاملة عند التغيير
+            document.addEventListener('fullscreenchange', updateFullscreenIcon);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+            document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
+            document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
         });
+        
+        // تبديل وضع الشاشة الكاملة
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && !document.msFullscreenElement) {
+                // الدخول في وضع الشاشة الكاملة
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                // الخروج من وضع الشاشة الكاملة
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+        
+        // تحديث أيقونة الزر
+        function updateFullscreenIcon() {
+            const icon = document.getElementById('fullscreenIcon');
+            if (document.fullscreenElement || document.webkitFullscreenElement || 
+                document.mozFullScreenElement || document.msFullscreenElement) {
+                icon.className = 'fas fa-compress';
+            } else {
+                icon.className = 'fas fa-expand';
+            }
+        }
     </script>
 </body>
 </html>

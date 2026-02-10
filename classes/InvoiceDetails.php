@@ -165,7 +165,7 @@ class InvoiceDetails extends InvoiceElementBase
             
             <td>
                 <input id="itmprofit" name="itmprofit" hidden>
-                <button class="deleteRow btn btn-danger">X</button>
+                <button type="button" class="deleteRow btn btn-danger">X</button>
             </td>
         </tr>
         <?php
@@ -304,7 +304,7 @@ class InvoiceDetails extends InvoiceElementBase
                             
                             <td>
                                 <input id="itmprofit" name="itmprofit" hidden>
-                                <button id="addRow" class="btn btn-light">إضافة</button>
+                                <button type="button" id="addRow" class="btn btn-light">إضافة</button>
                             </td>
                         </tr>
                     </tbody>

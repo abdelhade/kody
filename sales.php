@@ -181,8 +181,6 @@ if (isset($invoice_elements['add_item_modal'])) {
           // عرض تفاصيل الفاتورة
           if (isset($invoice_elements['details'])) {
               echo $invoice_elements['details']->render();
-              // عرض صف إضافة جديد
-              echo $invoice_elements['details']->renderNewRow();
           }
           
           // عرض ذيل الفاتورة
@@ -203,34 +201,7 @@ if (isset($invoice_elements['add_item_modal'])) {
 </section>
 </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<script>
-
-</script>
+<?php include('includes/footer.php') ?>
 
 <script src="js/sales.js"></script>
 <script src="js/sales0.js"></script>
-<?php include('includes/footer.php') ?>
