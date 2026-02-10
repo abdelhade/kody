@@ -1,101 +1,141 @@
-let counter = 1; // تعريف عداد الصفوف
+let counter = 1;
+let isProcessing = false; // منع التنفيذ المتعدد
 
-        $(document).ready(function() {
-            initializeSelect2();
-            handleItemSelectionChange(); // حدث تغيير اختيار العنصر
-            handleRowAddition(); // إضافة صف جديد
-            handleInputChanges(); // التعامل مع تغييرات المدخلات
-            handleRowDeletion(); // حذف الصفوف
-            handleFormSubmission(); // تقديم النموذج
-            handleKeyboardShortcuts(); // اختصارات لوحة المفاتيح
-
-            // نقل التركيز عند الضغط على "Enter"
-            $(document).on('keydown', 'input, select', function(event) {
-                if (event.key === "Enter") {
-                    event.preventDefault(); // منع السلوك الافتراضي
-                    let nextElement = $(this).closest('td').next().find('input, select');
-                    if (nextElement.length) {
-                        nextElement.focus();
-                    } else {
-                        let nextRow = $(this).closest('tr').next();
-                        if (nextRow.length) {
-                            nextRow.find('input, select').first().focus();
-                        }
-                    }
-                }
-            });
-        });
-
-        function initializeSelect2() {
-            $('#mySelectitm').select2({
-                placeholder: "اختر صنف",
-                ajax: {
-                    url: 'js/ajax/sales_myitems.php',
-                    dataType: 'json',
-                    delay: 25,
-                    data: (params) => ({ search: params.term }),
-                    processResults: (data) => ({ results: data }),
-                    cache: true
-                }
-            });
+$(document).ready(function() {
+    initializeSelect2();
+    handleItemSelectionChange();
+    handleRowAddition();
+    handleInputChanges();
+    handleRowDeletion();
+    handleFormSubmission();
+    handleKeyboardShortcuts();
+    
+    // تحديث المدفوع عند تغيير الخصم أو الإضافات أو الإجمالي
+    $(document).on('input change', '#headdisc, #headplus, #headtotal, #headnet', function() {
+        const headnet = parseFloat($('#headnet').val()) || 0;
+        $('#paid').val(headnet.toFixed(2));
+        $('#change').val('0.00');
+        console.log('Event triggered - Updated paid to:', headnet.toFixed(2));
+    });
+    
+    // تحديث المدفوع عند تحميل الصفحة
+    setTimeout(function() {
+        const headnet = parseFloat($('#headnet').val()) || 0;
+        if (headnet > 0) {
+            $('#paid').val(headnet.toFixed(2));
+            $('#change').val('0.00');
+            console.log('Page load - Updated paid to:', headnet.toFixed(2));
         }
+    }, 500);
+    
+    // تحديث فوري عند أي تغيير في الصفوف
+    $(document).on('input', '.itmqty, .itmprice, .itmdisc', function() {
+        setTimeout(function() {
+            const headnet = parseFloat($('#headnet').val()) || 0;
+            $('#paid').val(headnet.toFixed(2));
+            $('#change').val('0.00');
+        }, 200);
+    });
+});
 
-        function handleItemSelectionChange() {
-            $('select.mySelectitm').on('change', function() {
-                const row = $(this).closest('tr');
-                fetchItemInfo($(this).val(), row);
-            });
-        }
+function initializeSelect2() {
+    if ($('#mySelectitm').hasClass('select2-hidden-accessible')) {
+        $('#mySelectitm').select2('destroy');
+    }
+    $('#mySelectitm').select2({
+        placeholder: "اختر صنف",
+        ajax: {
+            url: 'js/ajax/sales_myitems.php',
+            dataType: 'json',
+            delay: 250, // زيادة التأخير لتقليل الطلبات
+            data: (params) => ({ search: params.term }),
+            processResults: (data) => ({ results: data }),
+            cache: true
+        },
+        minimumInputLength: 1 // لا تبحث إلا بعد كتابة حرف واحد
+    });
+}
 
-        function fetchItemInfo(itemId, row) {
-            $.ajax({
-                url: 'get/get_iteminfo.php?id=' + itemId,
-                method: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    const isSale = getParameterByName('q') === 'sale';
-                    row.find("#itmprice").val(isSale ? data.last_price : data.price1);
-                    row.find("#itmval").val(isSale ? data.last_price : data.price1);
-                    row.find("#itmqty").val(1).dblclick();
-                    $('#storeqty').html(data.itmqty.toFixed(2));
-                    $('#price1').html(data.price1);
-                    $('#market_price').html(data.market_price);
-                    $('#storemdtime').html(data.mdtime);
-                    $('#cost_price').html(data.cost_price);
-                    $('#last_price').html(data.last_price);
-                    
-                    const unitSelect = row.find('select[name="u_val[]"]');
-                    unitSelect.empty();
-                    data.units.forEach(unit => {
-                        unitSelect.append(new Option(unit.unit_name, unit.unit_value));
-                    });
+function handleItemSelectionChange() {
+    // استخدام event delegation مرة واحدة فقط
+    $(document).off('change', 'select.mySelectitm').on('change', 'select.mySelectitm', function() {
+        if (isProcessing) return;
+        isProcessing = true;
         
-                    // Unit change event
-                    unitSelect.on('change', function() {
-                        const selectedUnitValue = $(this).val();
-                        const selectedUnit = data.units.find(unit => unit.unit_value === selectedUnitValue);
-                        if (selectedUnit) {
-                            row.find("#itmprice").val(isSale ? data.last_price * selectedUnit.unit_value: selectedUnit.uprice1);
-                            row.find("#itmqty").val(1).dblclick();
-                            $('#storeqty').html((data.itmqty/selectedUnit.unit_value).toFixed(2) + " (" + selectedUnit.unit_value + ")");
-                            $('#price1').html(selectedUnit.uprice1);
-                            $('#market_price').html(selectedUnit.uprice3);
-                            $('#cost_price').html(data.cost_price*selectedUnit.unit_value);
-                            $('#last_price').html(data.last_price*selectedUnit.unit_value);
-                            $('#price1').html(selectedUnit.uprice1);
-                            calculateItemValue(row);
-                            updateTotal();
-                        }
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error("خطأ في استدعاء البيانات:", error);
-                }
+        const row = $(this).closest('tr');
+        fetchItemInfo($(this).val(), row);
+        
+        setTimeout(() => { isProcessing = false; }, 300);
+    });
+}
+
+function fetchItemInfo(itemId, row) {
+    $.ajax({
+        url: 'get/get_iteminfo.php?id=' + itemId,
+        method: 'GET',
+        dataType: 'json',
+        cache: true, // تفعيل الكاش
+        success: function(data) {
+            const isSale = getParameterByName('q') === 'sale';
+            const price = isSale ? data.last_price : data.price1;
+            
+            // تحديث الحقول دفعة واحدة
+            row.find("#itmprice").val(price);
+            row.find("#itmval").val(price);
+            row.find("#itmqty").val(1);
+            
+            // تحديث العناصر بدون استخدام .html() المتكرر
+            const updates = {
+                '#storeqty': data.itmqty?.toFixed(2) || '0',
+                '#price1': data.price1 || '0',
+                '#market_price': data.market_price || '0',
+                '#storemdtime': data.mdtime || '',
+                '#cost_price': data.cost_price || '0',
+                '#last_price': data.last_price || '0'
+            };
+            
+            Object.entries(updates).forEach(([selector, value]) => {
+                $(selector).text(value);
             });
+            
+            const unitSelect = row.find('select[name="u_val[]"]');
+            unitSelect.empty();
+            
+            if (data.units && data.units.length) {
+                const options = data.units.map(unit => 
+                    `<option value="${unit.unit_value}">${unit.unit_name}</option>`
+                ).join('');
+                unitSelect.html(options);
+                
+                // Unit change event - استخدام off قبل on لمنع التكرار
+                unitSelect.off('change').on('change', function() {
+                    const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
+                    if (selectedUnit) {
+                        const newPrice = isSale ? data.last_price * selectedUnit.unit_value : selectedUnit.uprice1;
+                        row.find("#itmprice").val(newPrice);
+                        row.find("#itmqty").val(1);
+                        
+                        $('#storeqty').text((data.itmqty/selectedUnit.unit_value).toFixed(2) + " (" + selectedUnit.unit_value + ")");
+                        $('#price1').text(selectedUnit.uprice1);
+                        $('#market_price').text(selectedUnit.uprice3);
+                        $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
+                        $('#last_price').text(data.last_price * selectedUnit.unit_value);
+                        
+                        calculateItemValue(row);
+                        updateTotal();
+                    }
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("خطأ في استدعاء البيانات:", error);
         }
+    });
+}
         
         function handleRowAddition() {
-            $("#addRow").on("click", function() {
+            $(document).on("click", "#addRow", function(e) {
+                e.preventDefault();
                 const itemId = $("#mySelectitm").val();
                 if (itemId) {
                     addNewRow(itemId);
@@ -117,18 +157,23 @@ let counter = 1; // تعريف عداد الصفوف
             $('#searchTable tbody tr').last().find(".itmdisc").val(0.00);   // تعيين الخصم إلى 0.00
             $('#searchTable tbody tr').last().find(".itmval").val(0.00);    // تعيين القيمة إلى 0.00            
             newRow.appendTo("#itmrow");
-            newRow.find("td:last").html('<button class="deleteRow btn btn-danger">X</button>');
+            newRow.find("td:last").html('<button type="button" class="deleteRow btn btn-danger">X</button>');
             $('#itmTd').focus();
             updateTotal();
         }
 
-        function handleInputChanges() {
-            $(document).on('input', 'input', function() {
-                const row = $(this).closest('tr');
-                calculateItemValue(row);
-                updateTotal();
-            });
-        }
+function handleInputChanges() {
+    // استخدام debounce لتقليل عدد الحسابات
+    let timeout;
+    $(document).off('input', '.itmqty, .itmprice, .itmdisc').on('input', '.itmqty, .itmprice, .itmdisc', function() {
+        clearTimeout(timeout);
+        const row = $(this).closest('tr');
+        timeout = setTimeout(() => {
+            calculateItemValue(row);
+            updateTotal();
+        }, 150);
+    });
+}
 
         function calculateItemValue(row) {
             const itmQty = parseFloat(row.find('.itmqty').val()) || 0;
@@ -178,28 +223,60 @@ let counter = 1; // تعريف عداد الصفوف
             return results ? (results[2] ? decodeURIComponent(results[2].replace(/\+/g, ' ')) : '') : null;
         }
 
-        function updateTotal() {
-            let total = 0;
-            $('#itmrow .itmval').each(function() {
-                const val = parseFloat($(this).val()) || 0;
-                total += val;
-            });
-            $('#headtotal').val(total.toFixed(2));
-            const headtotal = parseFloat($("#headtotal").val()) || 0;
-            const headdisc = parseFloat($("#headdisc").val()) || 0;
-            const headplus = parseFloat($("#headplus").val()) || 0;
-            const headnet = headtotal - headdisc + headplus;
-            $("#headnet").val(headnet);
-            $("#change").val(headnet - parseFloat($("#paid").val()) || 0);
-        }
+function updateTotal() {
+    let total = 0;
+    $('#itmrow .itmval').each(function() {
+        total += parseFloat(this.value) || 0;
+    });
+    
+    const headtotal = total;
+    const headdisc = parseFloat($("#headdisc").val()) || 0;
+    const headplus = parseFloat($("#headplus").val()) || 0;
+    const headnet = headtotal - headdisc + headplus;
+    
+    $('#headtotal').val(headtotal.toFixed(2));
+    $("#headnet").val(headnet.toFixed(2));
+    
+    // نقل الإجمالي إلى المدفوع تلقائياً - استخدام طرق متعددة
+    const paidValue = headnet.toFixed(2);
+    $("#paid").val(paidValue);
+    $("input[name='paid']").val(paidValue);
+    $("input#paid").val(paidValue);
+    
+    // استخدام vanilla JS كمان
+    const paidInput = document.getElementById('paid');
+    if (paidInput) {
+        paidInput.value = paidValue;
+    }
+    
+    console.log('Updated paid to:', paidValue, 'Element found:', !!paidInput);
+    
+    // حساب الباقي
+    $("#change").val("0.00");
+}
 
 
 
-        $(document).on('keydown', 'input, select', function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                let nextElement = $(this).closest('td').next().find('input, select');
-                nextElement.length && nextElement.focus() && nextElement.attr('name') === 'u_val' && nextElement.select2('open');
-            }
-        });
+// تم نقل معالجة Enter إلى handleKeyboardShortcuts
         
+
+function handleKeyboardShortcuts() {
+    $(document).off('keydown').on('keydown', function(event) {
+        if (event.key === 'F11') {
+            event.preventDefault();
+            $('#submit2').click();
+        } else if (event.key === 'F12') {
+            event.preventDefault();
+            $('#submit').click();
+        } else if (event.key === "Enter" && $(event.target).is('input, select')) {
+            event.preventDefault();
+            let nextElement = $(event.target).closest('td').next().find('input, select');
+            if (nextElement.length) {
+                nextElement.focus();
+                if (nextElement.attr('name') === 'u_val[]') {
+                    nextElement.select2('open');
+                }
+            }
+        }
+    });
+}

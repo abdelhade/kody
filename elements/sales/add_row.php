@@ -60,7 +60,7 @@
               </td>
               <input id="itmprofit" name="itmprofit" hidden>
               <td>
-                <button id="addRow" class="btn btn-light">إضافة</button>
+                <button type="button" id="addRow" class="btn btn-light">إضافة</button>
               </td>
             </tr>
           </tbody>

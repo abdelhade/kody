@@ -239,13 +239,11 @@ class InvoiceFooter extends InvoiceElementBase
         $buttonClass = $this->getBackgroundClass();
         $saveText = $this->isEditMode ? 'تحديث' : 'حفظ';
         ?>
-        <button id="submit" onclick="checkTotal(); dis();" 
-                class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
+        <button id="submit" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
                 type="submit" name="submit" value="save">
             <?php echo $saveText; ?> (F12)
         </button>
-        <button id="submit2" onclick="checkTotal(); dis();" 
-                class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
+        <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
                 type="submit" name="submit" value="print">
             <?php echo $saveText; ?> وطباعة (F11)
         </button>

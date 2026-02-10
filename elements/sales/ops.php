@@ -28,9 +28,21 @@
                             <tr>
                                     <th><?= $x ?></th>
                                     <th><a class="btn btn-block btn-light border"  href="print/print_sales.php?id=<?= $rowop['id']?>" target="_blank"><p><?php 
-                                    $tybe = $rowop['pro_tybe'];$rowtybe = $conn->query("SELECT pname from pro_tybes where id = $tybe ")->fetch_assoc();echo $rowtybe['pname']; ?></p></a></th>
+                                    $tybe = $rowop['pro_tybe'];
+                                    if ($tybe) {
+                                        $rowtybe = $conn->query("SELECT pname from pro_tybes where id = $tybe ")->fetch_assoc();
+                                        echo $rowtybe['pname'] ?? 'غير محدد';
+                                    }
+                                    ?></p></a></th>
                                     <th><?php 
-                                    $acc2 = $rowop['acc2'];$rowacc2 = $conn->query("SELECT aname from acc_head where id = $acc2 ")->fetch_assoc();echo $rowacc2['aname']; ?></th>
+                                    $acc2 = $rowop['acc2'] ?? 0;
+                                    if ($acc2 > 0) {
+                                        $rowacc2 = $conn->query("SELECT aname from acc_head where id = $acc2 ")->fetch_assoc();
+                                        echo $rowacc2['aname'] ?? 'غير محدد';
+                                    } else {
+                                        echo 'غير محدد';
+                                    }
+                                    ?></th>
                                     <th><?= $rowop['pro_value'] ?></th>
                                 </tr>
                 <?php }?>

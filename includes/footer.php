@@ -285,17 +285,93 @@ if (document.getElementById("passwordForm")) {
 
 
 function dis() {
-            // Corrected function to hide all elements with class "dis"
-            const elements = document.getElementsByClassName("dis");
-            for (let i = 0; i < elements.length; i++) {
-                elements[i].hidden = true;
-            }
+    // التحقق من الكميات قبل إخفاء الأزرار
+    const qtyInputs = document.querySelectorAll('.itmqty');
+    let hasZeroQty = false;
+    
+    qtyInputs.forEach(function(input) {
+        const qty = parseFloat(input.value) || 0;
+        if (qty <= 0) {
+            hasZeroQty = true;
         }
+    });
+    
+    // لا تخفي الأزرار إذا كانت هناك كمية صفر
+    if (hasZeroQty) {
+        alert("لا يمكن أن تكون الكمية صفر أو أقل");
+        return false;
+    }
+    
+    // التحقق من قيمة الفاتورة
+    const headtotal = parseFloat(document.getElementById('headtotal')?.value) || 0;
+    if (headtotal <= 0) {
+        alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
+        return false;
+    }
+    
+    // إخفاء الأزرار فقط إذا كانت البيانات صحيحة
+    const elements = document.getElementsByClassName("dis");
+    for (let i = 0; i < elements.length; i++) {
+        elements[i].disabled = true;
+        elements[i].style.opacity = '0.5';
+    }
+    
+    // السماح بالـ submit
+    return true;
+}
 
-        $('.dis').click(function(event) {
-            // Call dis function on click
-            dis();
+function checkTotal() {
+    // دالة مساعدة - ترجع true دائماً
+    return true;
+}
+
+// التحقق عند تحميل الصفحة إذا كان تم الإرسال
+$(document).ready(function() {
+    // تحديث المدفوع عند تغيير الإجمالي
+    $('#headnet, #headdisc, #headplus').on('input change', function() {
+        const headnet = parseFloat($('#headnet').val()) || 0;
+        $('#paid').val(headnet.toFixed(2));
+    });
+    
+    // معالجة submit للـ form
+    $('#myForm2').on('submit', function(e) {
+        // التحقق من الكميات
+        const qtyInputs = document.querySelectorAll('.itmqty');
+        let hasZeroQty = false;
+        
+        qtyInputs.forEach(function(input) {
+            const qty = parseFloat(input.value) || 0;
+            if (qty <= 0) {
+                hasZeroQty = true;
+            }
         });
+        
+        if (hasZeroQty) {
+            e.preventDefault();
+            alert("لا يمكن أن تكون الكمية صفر أو أقل");
+            return false;
+        }
+        
+        // التحقق من قيمة الفاتورة
+        const headtotal = parseFloat($('#headtotal').val()) || 0;
+        if (headtotal <= 0) {
+            e.preventDefault();
+            alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
+            return false;
+        }
+        
+        // إخفاء الأزرار
+        $('.dis').prop('disabled', true).css('opacity', '0.5');
+        
+        // السماح بالـ submit
+        return true;
+    });
+});
+
+// إزالة event listener المكرر
+// $('.dis').click(function(event) {
+//     dis();
+// });
 </script>
 
 <div class="footer">

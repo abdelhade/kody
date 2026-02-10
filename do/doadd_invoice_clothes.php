@@ -37,7 +37,15 @@ $order_type_text = $order_types[$order_type] ?? 'بيع مباشر';
 $info = empty($info) ? "نوع الطلب: $order_type_text" : "$info - نوع الطلب: $order_type_text";
 
 // التحقق من البيانات
-if (!$store_id || !$acc2_id || !$emp_id) {
+if (!$store_id || !$acc2_id || !$emp_id || !$fund_id) {
+    echo '<pre>';
+    echo "store_id: " . ($store_id ?: 'MISSING') . "\n";
+    echo "acc2_id: " . ($acc2_id ?: 'MISSING') . "\n";
+    echo "emp_id: " . ($emp_id ?: 'MISSING') . "\n";
+    echo "fund_id: " . ($fund_id ?: 'MISSING') . "\n";
+    echo "\nPOST Data:\n";
+    print_r($_POST);
+    echo '</pre>';
     die('خطأ: بيانات مطلوبة مفقودة');
 }
 
