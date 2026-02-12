@@ -65,21 +65,24 @@ try {
     $pro_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
     $stmt->close();
     
-    // إدخال رأس الفاتورة كحجز (is_journal = 0)
+    // تحديد حساب المبيعات (91 هو حساب المبيعات في النظام)
+    $sales_account = 91;
+    
+    // إدخال رأس الفاتورة مع قيد محاسبي (is_journal = 1)
     $stmt = $conn->prepare("
         INSERT INTO ot_head (
             pro_id, pro_tybe, is_stock, is_journal, journal_tybe, info, pro_date, 
             accural_date, pro_serial, store_id, emp_id, emp2_id, acc1, acc2, 
             pro_value, fat_total, fat_disc, fat_plus, fat_net, user
         ) VALUES (
-            ?, ?, 1, 0, ?, ?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?
+            ?, ?, 1, 1, ?, ?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?
         )
     ");
     
     $stmt->bind_param(
         "iiissssiiiiidddi",
         $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date,
-        $store_id, $emp_id, $emp_id, $acc2_id, $acc2_id, $headtotal,
+        $store_id, $emp_id, $emp_id, $acc2_id, $sales_account, $headtotal,
         $headtotal, $headdisc, $headnet, $usid
     );
     
@@ -90,7 +93,7 @@ try {
     $last_op = $conn->insert_id;
     $stmt->close();
     
-    // إدخال تفاصيل الفاتورة كحجز
+    // إدخال تفاصيل الفاتورة
     $stmt_details = $conn->prepare("
         INSERT INTO fat_details (
             pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
@@ -122,9 +125,123 @@ try {
     
     $stmt_details->close();
     
+    // إنشاء القيد المحاسبي للفاتورة
+    // الحصول على رقم القيد التالي
+    $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
+    $stmt->close();
+    
+    // إدخال رأس القيد
+    $stmt = $conn->prepare("
+        INSERT INTO journal_heads (journal_id, total, jdate, details, user, op_id) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    
+    $journal_details = "فاتورة مبيعات POS رقم " . $pro_id;
+    $stmt->bind_param("idssii", $journal_id, $headnet, $pro_date, $journal_details, $usid, $last_op);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('فشل في إدخال رأس القيد: ' . $stmt->error);
+    }
+    
+    $journal_lastid = $conn->insert_id;
+    $stmt->close();
+    
+    // إدخال تفاصيل القيد (المدين - العميل)
+    $stmt = $conn->prepare("
+        INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+        VALUES (?, ?, ?, 0, 0, ?)
+    ");
+    $stmt->bind_param("iidi", $journal_lastid, $acc2_id, $headnet, $last_op);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('فشل في إدخال القيد المدين: ' . $stmt->error);
+    }
+    $stmt->close();
+    
+    // إدخال تفاصيل القيد (الدائن - المبيعات)
+    $stmt = $conn->prepare("
+        INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+        VALUES (?, ?, 0, ?, 1, ?)
+    ");
+    $stmt->bind_param("iidi", $journal_lastid, $sales_account, $headnet, $last_op);
+    
+    if (!$stmt->execute()) {
+        throw new Exception('فشل في إدخال القيد الدائن: ' . $stmt->error);
+    }
+    $stmt->close();
+    
+    // إنشاء قيد الدفع إذا كان هناك مبلغ مدفوع
+    if ($paid > 0) {
+        // إدخال عملية الدفع
+        $stmt = $conn->prepare("
+            INSERT INTO ot_head (
+                pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
+                emp_id, acc1, acc2, pro_value, user, op2
+            ) VALUES (?, 7, 1, 7, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        $paid_info = "سند قبض من فاتورة POS رقم " . $pro_id;
+        $paid_pro_id = $pro_id . '-P';
+        
+        $stmt->bind_param(
+            "sssiiidii",
+            $paid_pro_id, $paid_info, $pro_date, $emp_id, 
+            $fund_id, $acc2_id, $paid, $usid, $last_op
+        );
+        
+        if (!$stmt->execute()) {
+            throw new Exception('فشل في إدخال عملية الدفع: ' . $stmt->error);
+        }
+        
+        $last_paid = $conn->insert_id;
+        $stmt->close();
+        
+        // الحصول على رقم قيد الدفع
+        $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
+        $stmt->close();
+        
+        // رأس قيد الدفع
+        $stmt = $conn->prepare("
+            INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        
+        $paid_details = "سند قبض من فاتورة POS رقم " . $pro_id;
+        $stmt->bind_param("iidssii", $journal_id, $last_paid, $paid, $pro_date, $paid_details, $usid, $last_op);
+        $stmt->execute();
+        $journal_lastid = $conn->insert_id;
+        $stmt->close();
+        
+        // تفاصيل قيد الدفع (مدين - الصندوق)
+        $stmt = $conn->prepare("
+            INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+            VALUES (?, ?, ?, 0, 0, ?)
+        ");
+        $stmt->bind_param("iidi", $journal_lastid, $fund_id, $paid, $last_op);
+        $stmt->execute();
+        $stmt->close();
+        
+        // تفاصيل قيد الدفع (دائن - العميل)
+        $stmt = $conn->prepare("
+            INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+            VALUES (?, ?, 0, ?, 1, ?)
+        ");
+        $stmt->bind_param("iidi", $journal_lastid, $acc2_id, $paid, $last_op);
+        $stmt->execute();
+        $stmt->close();
+    }
+    
     $conn->commit();
     
-    $_SESSION['success_message'] = 'تم حفظ الطلب كحجز بنجاح - رقم الفاتورة: ' . $pro_id;
+    $_SESSION['success_message'] = 'تم حفظ الفاتورة وإنشاء القيد المحاسبي بنجاح - رقم الفاتورة: ' . $pro_id;
     
 } catch (Exception $e) {
     $conn->rollback();
