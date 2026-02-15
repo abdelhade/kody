@@ -1,4 +1,26 @@
-<?php include('includes/header.php') ?>
+<?php 
+include('includes/header.php');
+
+// معالجة تسجيل الخروج
+if (isset($_GET['logout'])) {
+    unset($_SESSION['pos_authenticated']);
+    unset($_SESSION['pos_user_id']);
+    unset($_SESSION['pos_user_name']);
+    header('Location: pos_barcode.php');
+    exit();
+}
+
+// جلب الإعدادات
+$rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
+
+// نظام الحماية البسيط
+if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
+    if (!isset($_SESSION['pos_authenticated']) || $_SESSION['pos_authenticated'] !== true) {
+        header('Location: pos_barcode.php');
+        exit();
+    }
+}
+?>
 
 <style>
 /* Modern Color Palette */
@@ -990,3 +1012,37 @@ function activateTable(tableId) {
     });
 }
 </script>
+
+
+<?php if(isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1): ?>
+<!-- نظام القفل البسيط -->
+<script>
+    // القفل عند تبديل التاب
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && sessionStorage.getItem('pos_hidden')) {
+            window.location.href = 'pos_barcode.php?logout=1';
+        }
+        if (document.hidden) {
+            sessionStorage.setItem('pos_hidden', '1');
+        }
+    });
+    
+    // القفل عند الضغط على أي رابط غير tables.php و pos_barcode.php
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href && 
+            !link.href.includes('tables.php') && 
+            !link.href.includes('pos_barcode.php') && 
+            link.target !== '_blank') {
+            // قفل الجلسة قبل المغادرة
+            sessionStorage.setItem('pos_locked', '1');
+        }
+    });
+    
+    // فحص عند تحميل الصفحة: لو راجع من صفحة تانية، اقفل
+    if (sessionStorage.getItem('pos_locked') === '1') {
+        sessionStorage.removeItem('pos_locked');
+        window.location.href = 'pos_barcode.php?logout=1';
+    }
+</script>
+<?php endif; ?>

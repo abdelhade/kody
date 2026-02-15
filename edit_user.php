@@ -224,11 +224,11 @@ $row = $res->fetch_assoc();
                     <div class="form-group-clean">
                         <label class="form-label-clean" for="password">
                             <i class="fas fa-lock mr-2"></i>
-                            كلمة المرور الجديدة
+                            كلمة المرور الجديدة / الباركود
                         </label>
                         <input name="password" type="password" class="form-control-clean" id="password"
                                placeholder="اترك فارغاً إذا كنت لا تريد تغيير كلمة المرور">
-                        <span class="form-text-clean">اترك هذا الحقل فارغاً إذا كنت لا تريد تغيير كلمة المرور</span>
+                        <span class="form-text-clean">اترك هذا الحقل فارغاً إذا كنت لا تريد تغيير كلمة المرور. للويترز: استخدم هذا الحقل كباركود</span>
                     </div>
 
                     <!-- تأكيد كلمة المرور -->
@@ -245,6 +245,20 @@ $row = $res->fetch_assoc();
                         </div>
                     </div>
                     <?php endif; ?>
+                    
+                    <!-- خيار الويتر -->
+                    <div class="form-group-clean" style="grid-column: 1 / -1;">
+                        <div class="custom-control custom-switch" style="padding-top: 10px;">
+                            <input type="checkbox" class="custom-control-input" id="is_waiter" name="is_waiter" value="1"
+                                   <?= (isset($row['is_waiter']) && $row['is_waiter'] == 1) ? 'checked' : '' ?>>
+                            <label class="custom-control-label" for="is_waiter" style="font-size: 1.1rem; font-weight: 600;">
+                                <i class="fas fa-user-tie"></i> هذا المستخدم ويتر
+                            </label>
+                        </div>
+                        <small class="form-text text-muted" style="margin-top: 8px; display: block;">
+                            <i class="fas fa-info-circle"></i> الويترز يمكنهم تسجيل الدخول بالباركود في صفحة POS الخاصة بهم
+                        </small>
+                    </div>
 
                     <!-- رفع الصورة -->
                     <div class="form-group-clean">

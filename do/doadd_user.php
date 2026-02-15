@@ -6,6 +6,7 @@ $password = $_POST['password'];
 $hashpass = md5($password);
 $usertype = $_POST['usertype'];
 $usertype = $_POST['userrole'];
+$is_waiter = isset($_POST['is_waiter']) ? 1 : 0;
 
 if ($_FILES['img']['size'] > 100 )  {
 $filekvr = $_FILES['img']['name'];
@@ -26,9 +27,9 @@ $new_kvr_name = $arrkvr['0'].rand(1, 1000000).".".$arrkvr['1'];
 move_uploaded_file($kvr_name, "../uploads/$new_kvr_name");
 
 
-$sql ="INSERT INTO users (uname , password , userrole , img ) VALUES ('$uname','$hashpass','$usertype' , '$new_kvr_name')";
+$sql ="INSERT INTO users (uname , password , userrole , img , is_waiter) VALUES ('$uname','$hashpass','$usertype' , '$new_kvr_name', $is_waiter)";
 }else{
-	$sql ="INSERT INTO users (uname , password , userrole ) VALUES ('$uname','$hashpass','$usertype' )";
+	$sql ="INSERT INTO users (uname , password , userrole , is_waiter) VALUES ('$uname','$hashpass','$usertype', $is_waiter)";
 }
 $conn->query($sql);
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add user')");
