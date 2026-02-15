@@ -30,6 +30,7 @@ $def_pos_store = (int)($_POST['def_pos_store'] ?? 0);
 $def_pos_employee = (int)($_POST['def_pos_employee'] ?? 0);
 $def_pos_fund = (int)($_POST['def_pos_fund'] ?? 0);
 $pos_type = trim($_POST['pos_type'] ?? 'barcode');
+$pos_has_password = isset($_POST['pos_has_password']) ? 1 : 0;
 
 // التحقق من صحة البيانات المطلوبة
 if (empty($companyname)) {
@@ -54,15 +55,16 @@ SET company_name = ?,
     def_pos_store = ?, 
     def_pos_employee = ?, 
     def_pos_fund = ?,
-    pos_type = ? 
+    pos_type = ?,
+    pos_has_password = ? 
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssiiiisissiiis", 
+$stmt->bind_param("sssssiiiisissiiisi", 
     $companyname, $companyadd, $companytel, $edit_pass, $lang,
     $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
     $showrent, $showclinc, $def_pos_client, $def_pos_store, 
-    $def_pos_employee, $def_pos_fund, $pos_type
+    $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password
 );
 
 if ($stmt->execute()) {

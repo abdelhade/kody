@@ -186,15 +186,26 @@ if ($is_delivery) {
 
 <?php }?>
 <script>
-$(function() {
-  $('#printButton').click(function() {
-    window.print();
-  });
-});
-document.addEventListener('keydown', function(event) {
-    if (event.key === "Escape") {
-        document.getElementById('back').click();
+// استخدام JavaScript عادي بدلاً من jQuery
+document.addEventListener('DOMContentLoaded', function() {
+    var printButton = document.getElementById('printButton');
+    
+    if (printButton) {
+        printButton.addEventListener('click', function() {
+            console.log('Print button clicked');
+            window.print();
+        });
     }
+    
+    // زر Escape للعودة
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            var backButton = document.getElementById('back');
+            if (backButton) {
+                backButton.click();
+            }
+        }
+    });
 });
 </script>
 

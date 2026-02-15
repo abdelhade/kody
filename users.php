@@ -217,6 +217,13 @@
         font-size: 1.1rem;
     }
     
+    /* Waiter Badge Hover Effect */
+    .badge.badge-success:hover {
+        background: #38a169 !important;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+    }
+    
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -319,7 +326,7 @@
                     <tr>
                         <th width="80">#</th>
                         <th><?=$lang_username?></th>
-                   
+                        <th width="120">نوع الحساب</th>
                         <th><?=$lang_userimage?></th>
                         <th width="250"><?=$lang_useroperations?></th>
                     </tr>
@@ -341,7 +348,21 @@
                         <td>
                             <div class="user-name"><?= $row['uname'] ?></div>
                         </td>
-                  
+                        <td>
+                            <?php if(isset($row['is_waiter']) && $row['is_waiter'] == 1): ?>
+                                <a href="waiter_barcode.php?id=<?= $row['id'] ?>" 
+                                   class="badge badge-success" 
+                                   style="font-size: 0.95rem; padding: 8px 12px; text-decoration: none; cursor: pointer;"
+                                   title="اضغط لعرض وطباعة الباركود">
+                                    <i class="fas fa-user-tie"></i> ويتر
+                                    <i class="fas fa-barcode ml-1"></i>
+                                </a>
+                            <?php else: ?>
+                                <span class="badge badge-secondary" style="font-size: 0.95rem; padding: 8px 12px;">
+                                    <i class="fas fa-user"></i> مستخدم
+                                </span>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <img class="user-avatar" src="uploads/<?= $row['img'] ?>" alt="<?= $row['uname'] ?>" 
                                  onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiByeD0iMTIiIGZpbGw9IiNGM0Y0RjYiLz4KPHBhdGggZD0iTTMwIDM0QzM0LjQxODMgMzQgMzggMzAuNDE4MyAzOCAyNkMzOCAyMS41ODE3IDM0LjQxODMgMTggMzAgMThDMjUuNTgxNyAxOCAyMiAyMS41ODE3IDIyIDI2QzIyIDMwLjQxODMgMjUuNTgxNyAzNCAzMCAzNFoiIGZpbGw9IiNDQkNEQ0YiLz4KPHBhdGggZD0iTTQyIDQwQzQyIDQ0LjQxODMgMzguNDE4MyA0OCAzNCA0OEgyNkMyMS41ODE3IDQ4IDE4IDQ0LjQxODMgMTggNDBDMzYgNDAgNDIgNDAgNDIgNDBaIiBmaWxsPSIjQ0JDRENGIi8+Cjwvc3ZnPgo='">
@@ -365,7 +386,7 @@
                     } else { 
                     ?>
                     <tr>
-                        <td colspan="5">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <i class="fas fa-users-slash"></i>

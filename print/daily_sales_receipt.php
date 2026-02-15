@@ -211,13 +211,23 @@ if (file_exists($logo_path)) {
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(function() {
-  $('#printButton').click(function() {
-    window.print();
-  });
-  
-  // طباعة تلقائية عند التحميل (اختياري)
-  // window.print();
+// علّم أن صفحة الطباعة تم فتحها
+sessionStorage.setItem('pos_print_page_opened', 'true');
+console.log('Print page opened, flag set');
+
+// استخدام JavaScript عادي بدلاً من jQuery
+document.addEventListener('DOMContentLoaded', function() {
+    var printButton = document.getElementById('printButton');
+    
+    if (printButton) {
+        printButton.addEventListener('click', function() {
+            console.log('Print button clicked');
+            window.print();
+        });
+    }
+    
+    // طباعة تلقائية عند التحميل (اختياري)
+    // window.print();
 });
 
 document.addEventListener('keydown', function(event) {

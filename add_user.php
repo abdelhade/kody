@@ -42,6 +42,18 @@
         </select>
 
         </div>
+        
+        <div class="form-group">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="is_waiter" name="is_waiter" value="1">
+            <label class="custom-control-label" for="is_waiter">
+              <i class="fas fa-user-tie"></i> هذا المستخدم ويتر
+            </label>
+          </div>
+          <small class="form-text text-muted">
+            الويترز يمكنهم تسجيل الدخول بالباركود في صفحة POS الخاصة بهم
+          </small>
+        </div>
           <br>
           <label for="img" class="btn btn-outline-secondary btn-lg"><?= $lang_image_upload ?></label>
           <input hidden type="file" name="img" id="img">

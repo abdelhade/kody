@@ -1,121 +1,10 @@
-<?php 
-
-include('includes/pos_simple_header.php');
-
-// إضافة طاولات تجريبية إذا لم تكن موجودة
-$check_tables = $conn->query("SELECT COUNT(*) as count FROM tables WHERE isdeleted = 0");
-if ($check_tables) {
-    $tables_count = $check_tables->fetch_assoc()['count'];
-    if ($tables_count == 0) {
-        for ($i = 1; $i <= 12; $i++) {
-            $table_name = "طاولة " . $i;
-            $conn->query("INSERT INTO tables (tname, table_case) VALUES ('$table_name', 0)");
-        }
-    }
-}
-
-// جلب البيانات الأساسية
-$posdate = date('Y-m-d', strtotime('-4 hours'));
-$rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
-
-if(isset($_GET['edit_id'])){
-    $id = intval($_GET['edit_id']);
-    $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
-} elseif(isset($_GET['edit'])){
-    $id = intval($_GET['edit']);
-    $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
-}
-
-// التحقق من رسالة النجاح
-$success_message = '';
-if(isset($_SESSION['success_message'])){
-    $success_message = $_SESSION['success_message'];
-    unset($_SESSION['success_message']);
+<?php
+if (!isset($action_url)) {
+    $action_url = "do/doadd_invoice.php";
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام نقاط البيع - POS System</title>
-    <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
-    <link href="dist/css/pos.css" rel="stylesheet">
-    <link href="dist/css/pos_barcode.css" rel="stylesheet">
-    <link href="dist/css/pos_search.css" rel="stylesheet">
-    <script src="plugins/jquery/jquery.min.js"></script>
-</head>
-
-<body class="bg-light">
-    <!-- Hidden input for Edit Mode -->
-
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="index.php">
-                <i class="fas fa-home me-2"></i>
-                <i class="fas fa-cash-register me-2"></i>نظام نقاط البيع
-            </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-
-                </ul>
-
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <button class="btn btn-outline-light btn-sm me-2" id="fullscreenBtn" title="ملء الشاشة">
-                            <i class="fas fa-expand-arrows-alt"></i>
-                        </button>
-
-
-                        <button type="button" class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal"
-                            data-bs-target="#closeShiftModal" title="إغلاق الشيفت">
-                            <i class="fas fa-power-off me-1"></i> إغلاق الشيفت
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <a href="do/do_logout.php" class="nav-link">
-                            <i class="fas fa-sign-out-alt me-1"></i>تسجيل الخروج
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <!-- رسالة النجاح -->
-    <?php if(!empty($success_message)): ?>
-    <div class="container-fluid mt-2">
-        <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
-            <i class="fas fa-check-circle me-2"></i>
-            <strong><?= htmlspecialchars($success_message) ?></strong>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </div>
-    <script>
-        // إخفاء الرسالة تلقائياً بعد 5 ثواني
-        setTimeout(function () {
-            var alert = document.getElementById('successAlert');
-            if (alert) {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }
-        }, 5000);
-    </script>
-    <?php endif; ?>
-
-    <!-- Main Content -->
-    <form action="do/doadd_invoice.php" method="post" id="posForm" onsubmit="return handleFormSubmit(this);">
-        <!-- Hidden input for Edit Mode -->
-        <input type="hidden" id="edit_order_id" name="edit_id" value="<?= isset($id) ? $id : '' ?>">
+<!-- Main Content -->
+<form action="<?= $action_url ?>" method="post" id="posForm" onsubmit="return handleFormSubmit(this);">
         <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
             <div class="row h-100 g-1">
                 <!-- القسم الأيمن - معلومات الطلب -->
@@ -145,13 +34,7 @@ if(isset($_SESSION['success_message'])){
                                     </label>
 
                                                                                                                                                         <input type="radio" class="btn-check" id="age2" name="age" value="2"
-                                        <?php 
-                                        if (isset($_GET['table'])) {
-                                            echo " checked ";
-                                        } elseif (isset($rowed) && (strpos($rowed['info'], 'طاولة') !== false || strpos($rowed['info'], 'Table') !== false)) {
-                                            echo " checked ";
-                                        }
-                                        ?>>
+                                        <?php if (isset($_GET['table'])) {echo " checked ";} ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age2">
                                         <i class="fas fa-chair me-1"></i>طاولة
                                     </label>
@@ -327,16 +210,13 @@ if(isset($_SESSION['success_message'])){
                                     <div class="card-body p-1 flex-grow-1"
                                         style="min-height: 40vh; max-height: 40vh; overflow-y: auto; overflow-x: auto; background: #f8f9fa;"
                                         id="itemData">
-                                    <?php
-                                        if (isset($rowed)){
-                                            // استخدام fatid لأنه يربط برقم الفاتورة التعريفي (PK)
-                                            // doadd_invoice.php يقوم بتخزين id الفاتورة في عمود fatid وكذلك في pro_id
-                                            // لذا الأضمن استخدام fatid أو pro_id (الذي يحتوي على الـ id وليس الرقم التسلسلي في هذا التطبيق)
-                                            // سنستخدم المتغير $id الذي تم جلبه من الرابط مباشرة
+                                        <?php
+                                        if (isset($_GET['edit'])){
+                                            $id = $_GET['edit'];
                                             $sqldet = "SELECT fd.*, m.iname as item_name, m.barcode 
                                                       FROM fat_details fd 
                                                       LEFT JOIN myitems m ON m.id = fd.item_id 
-                                                      WHERE fd.fatid = '$id' AND fd.isdeleted = 0";
+                                                      WHERE fd.pro_id = $id AND fd.isdeleted = 0";
                                             $resdet = $conn->query($sqldet);
                                             $x = 0;
                                             while ($rowdet = $resdet->fetch_assoc()) {
@@ -347,7 +227,6 @@ if(isset($_SESSION['success_message'])){
                                                 $qty = floatval($rowdet['qty_out']) - floatval($rowdet['qty_in']);
                                                 $price = floatval($rowdet['price']);
                                                 // Fix: Use det_value instead of val
-                        
                                                 $subtotal = floatval($rowdet['det_value']);
                                                 $barcode = $rowdet['barcode'] ?: $rowdet['item_id'];
                                                 ?>
@@ -448,7 +327,7 @@ if(isset($_SESSION['success_message'])){
                                     <div class="mb-1">
                                         <textarea class="form-control form-control-sm" name="info" id="info" rows="1"
                                             placeholder="ملاحظات..."
-                                            style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($rowed) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
+                                            style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
                                     </div>
 
                                     <!-- أزرار الإجراءات -->
@@ -539,7 +418,7 @@ if(isset($_SESSION['success_message'])){
                             </div>
 
                             <!-- شبكة الأصناف -->
-                            <div class="row g-2" id="itemsGrid">
+                            <div class="row g-3" id="itemsGrid">
                                 <?php
                             // استعلام مع join للحصول على الصورة من جدول imgs
                             $sqlitems = "SELECT m.*, i.iname as img_filename
@@ -603,10 +482,10 @@ if(isset($_SESSION['success_message'])){
                                             </h6>
 
                                             <!-- السعر -->
-                                            <div class="bg-primary bg-opacity-10 rounded px-2 py-1 mb-2">
-                                                <p class="card-text fw-bold text-dark mb-0" style="font-size: 1.1rem;">
+                                            <div class="bg-primary rounded px-2 py-1 mb-2">
+                                                <p class="card-text fw-bold text-white mb-0" style="font-size: 1.1rem;">
                                                     <?= number_format($itemPrice, 2) ?> <span
-                                                        class="text-primary">ج.م</span>
+                                                        class="text-white opacity-75">ج.م</span>
                                                 </p>
                                             </div>
 
@@ -1007,6 +886,9 @@ if(isset($_SESSION['success_message'])){
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>إلغاء
                     </button>
+                     <a href="z_report.php" class="btn btn-danger">
+                        <i class="fas fa-file-invoice me-1"></i> الانتقال لتقرير الإغلاق (Z-Report)
+                     </a>
                     <button type="button" class="btn btn-success" onclick="printShiftSalesReport()">
                         <i class="fas fa-user me-1"></i> طباعة  مبيعاتي
                     </button>
@@ -1069,7 +951,14 @@ if(isset($_SESSION['success_message'])){
         <i class="fas fa-th-large fa-lg"></i>
     </a>
 
-    <!-- Scripts - jQuery must be loaded first -->
+    <!-- Scripts - jQuery (CDN for reliability) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        if (typeof jQuery === 'undefined') { 
+            document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); 
+        }
+    </script>
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
@@ -1202,13 +1091,13 @@ if(isset($_SESSION['success_message'])){
             
             function loadShiftPreview() {
                 $.ajax({
-                    url: 'do/get_shift_preview.php?t=' + new Date().getTime(), // Prevent caching
+                    url: 'do/get_shift_preview.php',
                     method: 'GET',
-                    cache: false,
-                    _bypassOffline: true,
                     success: function(data) {
                         try {
-                            var response = (typeof data === 'string') ? JSON.parse(data) : data;
+                            // If data is object, use it directly, otherwise parse it
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
+                            
                             if (response.success) {
                                 var html = `
                                     <div class="row">
@@ -1231,18 +1120,33 @@ if(isset($_SESSION['success_message'])){
                                 $('#shiftPreview').html(html);
                             } else {
                                 var errorMsg = response.error || 'لا توجد مبيعات لك اليوم';
-                                var errorClass = response.error ? 'text-danger fw-bold' : 'text-muted';
-                                $('#shiftPreview').html('<div class="text-center"><i class="fas fa-exclamation-circle mb-2 ' + errorClass + '"></i><p class="' + errorClass + '">' + errorMsg + '</p></div>');
+                                $('#shiftPreview').html('<div class="alert alert-warning text-center">' + errorMsg + '</div>');
                             }
                         } catch (e) {
                             console.error('Error parsing shift preview:', e);
-                            console.log('Raw data:', data);
-                            $('#shiftPreview').html('<div class="alert alert-danger">خطأ في قراءة البيانات: ' + e.message + '<br><small>' + String(data).substring(0, 100) + '...</small></div>');
+                            console.error('Raw response:', data);
+                            
+                            // Show a snippet of the raw response to help debugging
+                            var snippet = (typeof data === 'string') ? data.substring(0, 100) : 'Invalid Data';
+                            $('#shiftPreview').html(`
+                                <div class="alert alert-danger text-center">
+                                    <strong>خطأ في تحميل البيانات</strong><br>
+                                    <small class="text-muted" dir="ltr">${e.message}</small><br>
+                                    <small class="d-block mt-2 text-wrap bg-light border p-1" style="font-family:monospace; font-size:10px;">
+                                        Server: ${snippet}...
+                                    </small>
+                                </div>
+                            `);
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('AJAX Error:', xhr.responseText);
-                        $('#shiftPreview').html('<div class="alert alert-danger">خطأ في الاتصال بالسيرفر: ' + status + '<br><small>' + error + '</small></div>');
+                        console.error('AJAX Error:', error);
+                        $('#shiftPreview').html(`
+                            <div class="alert alert-danger text-center">
+                                <strong>خطأ في الاتصال</strong><br>
+                                <small>${error}</small>
+                            </div>
+                        `);
                     }
                 });
             }
@@ -1358,12 +1262,20 @@ if(isset($_SESSION['success_message'])){
             window.searchCustomer = function () {
                 const phone = $('#customer_phone').val().trim();
                 if (!phone) {
-                    alert('يرجى إدخال رقم العميل');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى إدخال رقم العميل'
+                    });
                     return;
                 }
                 
                 if (phone.length < 3) {
-                    alert('يرجى إدخال 3 أرقام على الأقل');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى إدخال 3 أرقام على الأقل'
+                    });
                     return;
                 }
                 
@@ -1410,13 +1322,29 @@ if(isset($_SESSION['success_message'])){
                 clearDeliveryForm();
             });
 
+            // Listen for changes on the 'age' radio buttons
+            $('input[name="age"]').change(function(){
+                if($(this).val() == '2') { // Table option
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'تنبيه',
+                        text: 'يرجى اختيار طاولة',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            });
+
             window.confirmDeliveryOrder = function () {
                 const phone = $('#customer_phone').val().trim();
                 const name = $('#customer_name').val().trim();
                 const address = $('#customer_address').val().trim();
 
                 if (!phone || !name || !address) {
-                    alert('يرجى ملء جميع الحقول');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى ملء جميع الحقول'
+                    });
                     return;
                 }
 
@@ -1451,11 +1379,22 @@ if(isset($_SESSION['success_message'])){
                     },
                     success: function (data) {
                         $('#deliveryModal').modal('hide');
-                        alert('تم تأكيد طلب الدليفري وحفظ بيانات العميل');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم بنجاح',
+                            text: 'تم تأكيد طلب الدليفري وحفظ بيانات العميل',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                     },
                     error: function () {
                         $('#deliveryModal').modal('hide');
-                        alert('تم تأكيد طلب الدليفري');
+                        Swal.fire({
+                            icon: 'success', // Assuming success even if error callback for some reason, or should be error? Original logic was alert success ish? No, original said 'confirmed' even on error?
+                            title: 'تم',
+                            text: 'تم تأكيد طلب الدليفري',
+                            timer: 2000
+                        });
                     }
                 });
             };
@@ -1487,8 +1426,13 @@ if(isset($_SESSION['success_message'])){
                             var response = JSON.parse(data);
                             console.log('Parsed:', response);
                             if (response.success) {
-                                alert(isUpdate ? 'تم تحديث بيانات العميل بنجاح' :
-                                    'تم حفظ بيانات العميل بنجاح');
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'تم بنجاح',
+                                    text: isUpdate ? 'تم تحديث بيانات العميل بنجاح' : 'تم حفظ بيانات العميل بنجاح',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
                                 $('#saveCustomerBtn').hide();
                                 $('#confirmOrderBtn').show();
                             } else {
@@ -1497,13 +1441,21 @@ if(isset($_SESSION['success_message'])){
                                 if (response.error) {
                                     errorMsg += ': ' + response.error;
                                 }
-                                alert(errorMsg);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطأ',
+                                    text: errorMsg
+                                });
                                 console.error('Save error:', response);
                             }
                         } catch (e) {
                             console.log('Parse error:', e);
                             console.log('Raw response:', data);
-                            alert('حدث خطأ في معالجة الاستجابة. تحقق من وحدة التحكم للتفاصيل.');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطأ',
+                                text: 'حدث خطأ في معالجة الاستجابة. تحقق من وحدة التحكم للتفاصيل.'
+                            });
                         }
                     },
                     error: function (xhr, status, error) {
@@ -1512,7 +1464,11 @@ if(isset($_SESSION['success_message'])){
                             error: error,
                             responseText: xhr.responseText
                         });
-                        alert('حدث خطأ في الاتصال: ' + error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: 'حدث خطأ في الاتصال: ' + error
+                        });
                     }
                 });
             };
@@ -1526,7 +1482,11 @@ if(isset($_SESSION['success_message'])){
         const form = document.getElementById('posForm');
         if (!form) {
             console.error('❌ Form with id "posForm" not found!');
-            alert('حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.');
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ نظام',
+                text: 'حدث خطأ في النظام. يرجى إعادة تحميل الصفحة.'
+            });
             return false;
         }
         
@@ -1621,6 +1581,59 @@ if(isset($_SESSION['success_message'])){
     </script>
 
 
+    <!-- Modal إغلاق الشيفت -->
+    <div class="modal fade" id="shiftPreviewModal" tabindex="-1" aria-labelledby="shiftPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="shiftPreviewModalLabel">
+                        <i class="fas fa-receipt me-2"></i>ملخص الشيفت الحالي
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="shiftPreview">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">جاري التحميل...</span>
+                            </div>
+                            <p class="mt-2 text-muted">جاري تحميل بيانات الشيفت...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <form action="close_shift.php" method="POST" id="closeShiftForm" class="d-inline">
+                        <!-- بيانات المصروفات والعهدة -->
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">مصروفات</span>
+                            <input type="number" class="form-control" name="expenses" value="0" step="0.01">
+                        </div>
+                         <div class="input-group mb-3">
+                            <span class="input-group-text">السبب</span>
+                            <input type="text" class="form-control" name="exp_notes" placeholder="سبب المصروفات...">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">عهدة تالية</span>
+                            <input type="number" class="form-control" name="fund_after" value="0" step="0.01">
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">الكاش الفعلي</span>
+                            <input type="number" class="form-control" name="cash" step="0.01" required placeholder="المبلغ الموجود بالدرج">
+                        </div>
+                         <div class="input-group mb-3">
+                            <span class="input-group-text">ملاحظات</span>
+                            <input type="text" class="form-control" name="notes" placeholder="ملاحظات الإغلاق...">
+                        </div>
+                        <button type="submit" class="btn btn-success fw-bold w-100">
+                            <i class="fas fa-check-circle me-1"></i>تأكيد إغلاق الشيفت
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Orders Offcanvas -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="recentOrdersModal" aria-labelledby="recentOrdersModalLabel"
         style="width: 80%; max-width: 1200px;">
@@ -1661,4 +1674,145 @@ if(isset($_SESSION['success_message'])){
         </div>
     </div>
 
-    <?php include('includes/pos_simple_footer.php');?>
+    <script>
+        $(document).ready(function() {
+            // Recent Orders Button Handler
+            $('#recentOrdersBtn2').click(function() {
+                var offcanvas = new bootstrap.Offcanvas(document.getElementById('recentOrdersModal'));
+                offcanvas.show();
+                loadRecentOrders();
+            });
+
+            function loadRecentOrders() {
+                $('#recentOrdersList').html('<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">جاري تحميل الطلبات...</p></td></tr>');
+                
+                $.ajax({
+                    url: 'ajax/get_recent_orders.php',
+                    method: 'GET',
+                    success: function(response) {
+                        try {
+                            // If response is a string (due to accidental whitespace/BOM), parse it
+                            if (typeof response === 'string') {
+                                // Try to extract JSON if mixed with HTML
+                                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                                if (jsonMatch) {
+                                    response = JSON.parse(jsonMatch[0]);
+                                } else {
+                                    response = JSON.parse(response);
+                                }
+                            }
+
+                            if (response.success && response.orders) {
+                                var html = '';
+                                if (response.orders.length === 0) {
+                                    html = '<tr><td colspan="8" class="text-center py-4">لا توجد طلبات حديثة</td></tr>';
+                                } else {
+                                    response.orders.forEach(function(order, index) {
+                                        var statusBadge = order.status === 'ملغى' ? 'bg-danger' : 'bg-success';
+                                        var typeBadge = order.type === 'دليفري' ? 'bg-info text-dark' : (order.type === 'طاولة' ? 'bg-warning text-dark' : 'bg-secondary');
+                                        
+                                        html += `
+                                            <tr>
+                                                <td>${index + 1}</td>
+                                                <td class="fw-bold">${order.invoice_number}</td>
+                                                <td>${order.date}</td>
+                                                <td>${order.customer_name}</td>
+                                                <td><span class="badge ${typeBadge}">${order.type}</span></td>
+                                                <td class="fw-bold text-primary">${parseFloat(order.total).toFixed(2)}</td>
+                                                <td><span class="badge ${statusBadge}">${order.status}</span></td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="pos_barcode.php?edit=${order.id}" class="btn btn-warning" title="تعديل">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button type="button" class="btn btn-secondary" onclick="reprintOrder(${order.id})" title="طباعة">
+                                                            <i class="fas fa-print"></i>
+                                                        </button>
+                                                        ${order.status !== 'ملغى' ? `
+                                                        <button type="button" class="btn btn-danger" onclick="deleteOrder(${order.id})" title="حذف">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>` : ''}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    });
+                                }
+                                $('#recentOrdersList').html(html);
+                            } else {
+                                $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">فشل تحميل البيانات: ' + (response.error || 'خطأ غير معروف') + '</td></tr>');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing recent orders:', e);
+                            $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">خطأ في معالجة البيانات</td></tr>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#recentOrdersList').html('<tr><td colspan="8" class="text-center text-danger py-4">خطأ في الاتصال بالخادم</td></tr>');
+                    }
+                });
+            }
+
+            // Global functions for actions
+            window.reprintOrder = function(orderId) {
+                // Use existing print function logic or redirect
+                // Usually calling the print endpoint directly
+                 window.open('print/receipt.php?order_id=' + orderId, '_blank');
+            };
+
+            window.deleteOrder = function(orderId) {
+                Swal.fire({
+                    title: 'هل أنت متأكد؟',
+                    text: "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'نعم، احذفه!',
+                    cancelButtonText: 'إلغاء'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'ajax/delete_order.php',
+                            method: 'POST',
+                            data: { id: orderId },
+                            success: function(response) {
+                                try {
+                                    if (typeof response === 'string') response = JSON.parse(response);
+                                    if (response.success) {
+                                        Swal.fire(
+                                            'تم الحذف!',
+                                            'تم حذف الطلب بنجاح.',
+                                            'success'
+                                        );
+                                        loadRecentOrders(); // Reload list
+                                    } else {
+                                        Swal.fire(
+                                            'خطأ!',
+                                            'فشل الحذف: ' + (response.error || 'خطأ غير معروف'),
+                                            'error'
+                                        );
+                                    }
+                                } catch (e) {
+                                    Swal.fire(
+                                        'خطأ!',
+                                        'خطأ في استجابة الخادم',
+                                        'error'
+                                    );
+                                }
+                            },
+                            error: function() {
+                                Swal.fire(
+                                    'خطأ!',
+                                    'خطأ في الاتصال',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
+            };
+        });
+    </script>
+

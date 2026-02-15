@@ -17,6 +17,7 @@ $usertype = $_POST['usertype'] ?? '';
 $userrole = $_POST['userrole'] ?? '';
 $password = $_POST['password'] ?? '';
 $confirm_password = $_POST['confirm_password'] ?? '';
+$is_waiter = isset($_POST['is_waiter']) ? 1 : 0;
 
 // التحقق من تطابق كلمات المرور (لو أدخلت)
 if ($password !== '' && $password !== $confirm_password) {
@@ -57,6 +58,11 @@ if ($password !== '') {
     $types .= "s";
     $values[] = $md5_pass;
 }
+
+// حالة الويتر
+$fields[] = "is_waiter = ?";
+$types .= "i";
+$values[] = $is_waiter;
 
 // التعامل مع رفع الصورة (لو تم رفعها)
 if (!empty($_FILES['img']['name'])) {

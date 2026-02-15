@@ -144,7 +144,25 @@
                                     </select>
                                     <small class="text-muted">يحدد نوع POS الظاهر في القائمة</small>
                                 </div>
-                            </div>    
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label>حماية POS بكلمة مرور</label>
+                                    <div class="custom-control custom-switch" style="padding-top: 8px;">
+                                        <input type="checkbox" 
+                                               class="custom-control-input" 
+                                               id="pos_has_password" 
+                                               name="pos_has_password" 
+                                               value="1"
+                                               <?= (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) ? 'checked' : '' ?>>
+                                        <label class="custom-control-label" for="pos_has_password">
+                                            <i class="fas fa-lock"></i> تفعيل حماية POS بالباركود
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">عند التفعيل، سيطلب POS مسح باركود قبل الاستخدام</small>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row">
