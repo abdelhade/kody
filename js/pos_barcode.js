@@ -4,16 +4,10 @@
  */
 
 $(document).ready(function() {
-    console.log('POS Barcode System Initialized');
-    console.log('jQuery version:', $.fn.jquery);
-    console.log('Search input exists:', $('#itemFilterInput').length);
-    console.log('Items count:', $('.item-wrapper').length);
-    
     // ========================================
     // Initialize on page load - Update totals if items exist (edit mode)
     // ========================================
     if ($('#itemData .item-card-order').length > 0) {
-        console.log('Edit mode detected - updating totals and item count');
         updateItemCount();
         updateTotal();
     }
@@ -22,20 +16,23 @@ $(document).ready(function() {
     // Category Filter
     // ========================================
     $('.category-btn').on('click', function() {
+        const $this = $(this);
+        const categoryId = $this.data('category');
+        
+        // تحديث الأزرار
         $('.category-btn').removeClass('active btn-primary').addClass('btn-outline-primary');
-        $(this).removeClass('btn-outline-primary').addClass('btn-primary active');
+        $this.removeClass('btn-outline-primary').addClass('btn-primary active');
         
-        let categoryId = $(this).data('category');
-        console.log('Category selected:', categoryId);
-        
-        // Clear search when selecting category
+        // مسح البحث
         $('#itemFilterInput').val('');
         
+        // فلترة الأصناف
+        const $items = $('.item-wrapper');
         if (categoryId === 'all') {
-            $('.item-wrapper').show();
+            $items.removeClass('hidden');
         } else {
-            $('.item-wrapper').hide();
-            $('.item-wrapper[data-category="' + categoryId + '"]').show();
+            $items.addClass('hidden');
+            $(`.item-wrapper[data-category="${categoryId}"]`).removeClass('hidden');
         }
     });
 
@@ -60,58 +57,52 @@ $(document).ready(function() {
                 // Try barcode search first
                 searchItemByBarcode(search);
                 
-                // Also perform advanced search if not found
-                setTimeout(function() {
-                    if (search.length >= 2) {
-                        $('#itemFilterInput').val(search);
-                        performAdvancedSearch(search);
-                    }
-                }, 100);
+                // Also trigger the filter search
+                if (search.length >= 2) {
+                    $('#itemFilterInput').val(search).trigger('input');
+                }
                 
                 $(this).val('');
             }
         }
     });
     
-    // البحث البسيط
-    console.log('Setting up search...');
-    $('#itemFilterInput').keyup(function() {
-        console.log('Search triggered!');
-        var searchText = $(this).val().toLowerCase();
-        console.log('البحث عن:', searchText);
+    // البحث البسيط مع Debouncing للأداء
+    let searchTimeout;
+    $('#itemFilterInput').on('input', function() {
+        clearTimeout(searchTimeout);
+        const searchText = $(this).val().toLowerCase().trim();
         
+        // لو فاضي، اعرض كل الأصناف فوراً
         if (searchText === '') {
-            $('.item-wrapper').show();
+            $('.item-wrapper').removeClass('hidden');
             return;
         }
         
-        var found = 0;
-        $('.item-wrapper').each(function() {
-            var $card = $(this).find('.item-card');
-            var itemName = $card.data('item-name');
-            var itemBarcode = $card.data('item-barcode');
+        // انتظر 200ms قبل البحث (debouncing)
+        searchTimeout = setTimeout(function() {
+            const $items = $('.item-wrapper');
             
-            if (itemName) itemName = itemName.toString().toLowerCase();
-            if (itemBarcode) itemBarcode = itemBarcode.toString().toLowerCase();
-            
-            if ((itemName && itemName.includes(searchText)) || 
-                (itemBarcode && itemBarcode.includes(searchText))) {
-                $(this).show();
-                found++;
-            } else {
-                $(this).hide();
-            }
-        });
-        
-        console.log('تم العثور على', found, 'صنف');
-    }).on('input', function() {
-        $(this).trigger('keyup');
+            // استخدم CSS classes للأداء الأفضل
+            $items.each(function() {
+                const $this = $(this);
+                const $card = $this.find('.item-card');
+                const itemName = ($card.data('item-name') || '').toString().toLowerCase();
+                const itemBarcode = ($card.data('item-barcode') || '').toString().toLowerCase();
+                
+                // اعرض أو اخفي حسب النتيجة
+                if (itemName.includes(searchText) || itemBarcode.includes(searchText)) {
+                    $this.removeClass('hidden');
+                } else {
+                    $this.addClass('hidden');
+                }
+            });
+        }, 200);
     });
     
     $('#clearFilter').click(function() {
         $('#itemFilterInput').val('');
-        $('.item-wrapper').show();
-        console.log('تم مسح البحث');
+        $('.item-wrapper').removeClass('hidden');
     });
 
     // ========================================
@@ -219,15 +210,6 @@ $(document).ready(function() {
         let itemPrice = parseFloat(data.price) || 0;
         addItemToOrder(data.id, data.name, itemPrice, data.barcode);
         $('#itemDetailsModal').modal('hide');
-    });
-
-    // Item card hover effect
-    $('#itemsGrid').on('mouseenter', '.item-card', function() {
-        $(this).addClass('shadow').css('transform', 'translateY(-5px)');
-    });
-
-    $('#itemsGrid').on('mouseleave', '.item-card', function() {
-        $(this).removeClass('shadow').css('transform', 'translateY(0)');
     });
 
     // ========================================
