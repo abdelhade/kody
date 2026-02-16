@@ -13,10 +13,10 @@ if (!isset($action_url)) {
                         <div
                             class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
-                                <i class="fas fa-shopping-cart me-2"></i>معلومات الطلب
+                            معلومات الطلب
                             </h6>
                             <button type="button" id="recentOrdersBtn2" class="btn btn-light btn-sm recent-orders-btn">
-                                <i class="fas fa-history me-1"></i> عرض الطلبات السابقة
+                                 عرض الطلبات السابقة
                             </button>
                         </div>
                         <div class="card-body flex-grow-1 overflow-auto d-flex flex-column">
@@ -30,19 +30,19 @@ if (!isset($action_url)) {
                                 <div class="btn-group w-100" role="group">
                                     <input type="radio" class="btn-check" id="age1" name="age" value="1" checked>
                                     <label class="btn btn-outline-primary btn-sm" for="age1">
-                                        <i class="fas fa-shopping-bag me-1"></i>تيك أواي
+                                        تيك اواي
                                     </label>
 
                                                                                                                                                         <input type="radio" class="btn-check" id="age2" name="age" value="2"
                                         <?php if (isset($_GET['table'])) {echo " checked ";} ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age2">
-                                        <i class="fas fa-chair me-1"></i>طاولة
+                                        طاولة
                                     </label>
 
                                     <input type="radio" class="btn-check" id="age3" name="age" value="3">
                                     <label class="btn btn-outline-primary btn-sm" for="age3"
                                         onclick="openDeliveryModal()">
-                                        <i class="fas fa-motorcycle me-1"></i>دليفري
+                                        دليفري
                                     </label>
                                 </div>
                             </div>
@@ -52,9 +52,9 @@ if (!isset($action_url)) {
                                 <!-- البحث -->
                                 <div class="col-6">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text">
+                                        <!-- <span class="input-group-text">
                                             <i class="fas fa-search"></i>
-                                        </span>
+                                        </span> -->
                                         <input type="text" class="scnd form-control" id="searchInput"
                                             placeholder="ابحث عن الصنف..."
                                             title="ابحث عن الصنف واضغط Enter | Alt+S للتركيز">
@@ -88,7 +88,7 @@ if (!isset($action_url)) {
                                     <button type="button" class="btn btn-outline-primary btn-sm w-100"
                                         data-bs-toggle="modal" data-bs-target="#tablesModal" title="اختر الطاولة"
                                         style="font-size: 0.75rem;">
-                                        <i class="fas fa-chair me-1"></i>
+                                        
                                         <span id="selected_table_display">اختر طاولة</span>
                                     </button>
                                     <input type="hidden" id="selected_table_id" name="table_id" value="0">
@@ -202,7 +202,7 @@ if (!isset($action_url)) {
                                     <div class="card-header bg-gradient bg-primary text-white py-2">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0" style="font-size: 0.95rem;">
-                                                <i class="fas fa-shopping-cart me-2"></i>الأصناف المُضافة
+                                                الأصناف المُضافة
                                             </h6>
                                             <span class="badge bg-white text-primary" id="itemCount">0</span>
                                         </div>
@@ -1589,7 +1589,7 @@ if (!isset($action_url)) {
         style="width: 80%; max-width: 1200px;">
         <div class="offcanvas-header bg-primary text-white">
             <h5 class="offcanvas-title" id="recentOrdersModalLabel">
-                <i class="fas fa-history me-2"></i>الطلبات الأخيرة (آخر 10 طلبات)
+                الطلبات الأخيرة (آخر 10 طلبات)
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
                 aria-label="Close"></button>

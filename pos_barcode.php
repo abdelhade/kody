@@ -77,62 +77,90 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
             <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
             <style>
                 body {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
                     min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     margin: 0;
-                    font-family: Arial, sans-serif;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 }
                 .login-box {
                     background: white;
-                    border-radius: 20px;
-                    padding: 40px;
-                    max-width: 450px;
+                    border-radius: 16px;
+                    padding: 3rem 2.5rem;
+                    max-width: 420px;
                     width: 90%;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
                     text-align: center;
                 }
                 .barcode-icon {
-                    font-size: 70px;
-                    color: #667eea;
-                    margin-bottom: 20px;
+                    font-size: 64px;
+                    color: #4A90E2;
+                    margin-bottom: 1.5rem;
+                    opacity: 0.9;
                 }
                 h2 {
-                    color: #2d3748;
-                    margin-bottom: 10px;
+                    color: #2C3E50;
+                    margin-bottom: 0.5rem;
+                    font-weight: 600;
+                    font-size: 1.75rem;
+                }
+                .login-box p {
+                    color: #7F8C8D;
+                    margin-bottom: 2rem;
+                    font-size: 0.95rem;
                 }
                 .form-control {
-                    padding: 15px;
-                    font-size: 1.3rem;
+                    padding: 0.875rem 1rem;
+                    font-size: 1.1rem;
                     text-align: center;
-                    border: 2px solid #667eea;
+                    border: 2px solid #E0E6ED;
                     border-radius: 10px;
-                    letter-spacing: 2px;
+                    letter-spacing: 1px;
                     width: 100%;
-                    margin-bottom: 15px;
+                    margin-bottom: 1rem;
+                    transition: all 0.3s ease;
+                }
+                .form-control:focus {
+                    border-color: #4A90E2;
+                    box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.1);
+                    outline: none;
                 }
                 .btn-login {
                     width: 100%;
-                    padding: 15px;
-                    font-size: 1.2rem;
-                    background: #667eea;
+                    padding: 0.875rem;
+                    font-size: 1.1rem;
+                    background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
                     border: none;
                     border-radius: 10px;
                     color: white;
-                    font-weight: bold;
+                    font-weight: 600;
                     cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
                 }
                 .btn-login:hover {
-                    background: #764ba2;
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+                }
+                .btn-login:active {
+                    transform: translateY(0);
                 }
                 .error {
-                    background: #f8d7da;
-                    color: #721c24;
-                    padding: 10px;
-                    border-radius: 8px;
-                    margin-bottom: 15px;
+                    background: #FFEBEE;
+                    color: #C62828;
+                    padding: 0.875rem;
+                    border-radius: 10px;
+                    margin-bottom: 1rem;
+                    border: 1px solid #FFCDD2;
+                    font-size: 0.9rem;
+                }
+                .info-text {
+                    color: #95A5A6;
+                    margin-top: 1.25rem;
+                    margin-bottom: 0;
+                    font-size: 0.85rem;
                 }
             </style>
         </head>
@@ -166,7 +194,7 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
                     </button>
                 </form>
                 
-                <p style="color: #6c757d; margin-top: 15px; margin-bottom: 0; font-size: 0.9rem;">
+                <p class="info-text">
                     <i class="fas fa-info-circle"></i>
                     استخدم قارئ الباركود أو اكتب يدوياً
                 </p>
@@ -214,6 +242,7 @@ if(isset($_SESSION['success_message'])){
     <link href="dist/css/pos.css" rel="stylesheet">
     <link href="dist/css/pos_barcode.css" rel="stylesheet">
     <link href="dist/css/pos_search.css" rel="stylesheet">
+    <link href="dist/css/pos_clean.css" rel="stylesheet">
     <!-- SweetAlert2 CSS -->
     <link href="assets/libs/sweetalert2/sweetalert2-bootstrap-4.css" rel="stylesheet">
     <!-- Load jQuery early for plugins -->
@@ -266,7 +295,8 @@ if(isset($_SESSION['success_message'])){
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="dashboard.php">
                 <i class="fas fa-home me-2"></i>
-                <i class="fas fa-cash-register me-2"></i>نظام نقاط البيع
+                نظام نقاط البيع
+
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
