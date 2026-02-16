@@ -401,7 +401,7 @@ if ($resuser) {
             <div class="mb-4 text-end">
                 <label for="uname" class="form-label">اسم المستخدم</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-user text-muted"></i></span>
+                    <!-- <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-user text-muted"></i></span> -->
                     <select name="uname" id="uname" class="form-select border-start-0 ps-0" required style="border-radius: 0 12px 12px 0;">
                         <option value="" selected disabled>اختر المستخدم...</option>
                         <?php foreach ($users as $u): ?>
@@ -417,7 +417,7 @@ if ($resuser) {
             <div class="mb-4 text-end">
                 <label for="password" class="form-label">كلمة المرور</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-lock text-muted"></i></span>
+                    <!-- <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-lock text-muted"></i></span> -->
                     <input type="password" name="password" id="password" class="form-control border-start-0 ps-0" placeholder="أدخل كلمة المرور" required style="border-radius: 0 12px 12px 0;">
                 </div>
             </div>
