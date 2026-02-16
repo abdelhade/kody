@@ -372,20 +372,17 @@ if (!isset($action_url)) {
                                     <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
                                 </h6>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="input-group" style="width: 220px;">
-                                        <span class="input-group-text bg-white">
-                                            <i class="fas fa-filter text-primary"></i>
-                                        </span>
-                                        <input type="text" class="scnd form-control" id="itemFilterInput"
-                                            placeholder="فلترة الأصناف بالاسم أو الباركود" autocomplete="off"
-                                            title="اضغط Ctrl+F للتركيز على البحث | Escape للمسح"
+                                    <div class="input-group" style="width: 280px;">
+                                       
+                                        <input type="text" class="scnd form-control border-start-0" id="itemFilterInput"
+                                            placeholder="فلترة الأصناف..." autocomplete="off"
+                                            title="اضغط Ctrl+F للتركيز | Escape للمسح"
                                             style="font-size: 0.9rem;">
-                                        <button class="btn btn-outline-light" type="button" id="clearFilter"
+                                        <button class="btn btn-outline-secondary" type="button" id="clearFilter"
                                             title="مسح الفلتر">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -997,6 +994,8 @@ if (!isset($action_url)) {
 
             // F1 للتركيز على العنصر الذي يحمل كلاس frst
             // F2 للتركيز على العنصر الذي يحمل كلاس scnd
+            // F1 للتركيز على العنصر الذي يحمل كلاس frst
+            // F2 للتركيز على العنصر الذي يحمل كلاس scnd
             $(document).keydown(function (e) {
                 if (e.key === 'F1') {
                     e.preventDefault();
@@ -1007,56 +1006,7 @@ if (!isset($action_url)) {
                 }
             });
 
-            $('#itemFilterInput').on('keyup input', function () {
-                var searchText = $(this).val().toLowerCase();
-                console.log('البحث:', searchText);
-
-                if (searchText === '') {
-                    $('.item-wrapper').show();
-                    return;
-                }
-
-                $('.item-wrapper').each(function () {
-                    var itemName = $(this).find('[data-item-name]').attr('data-item-name');
-                    var itemBarcode = $(this).find('[data-item-barcode]').attr(
-                        'data-item-barcode');
-
-                    if (itemName) itemName = itemName.toLowerCase();
-                    if (itemBarcode) itemBarcode = itemBarcode.toLowerCase();
-
-                    if ((itemName && itemName.indexOf(searchText) >= 0) ||
-                        (itemBarcode && itemBarcode.indexOf(searchText) >= 0)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            });
-
-            $('#clearFilter').click(function () {
-                $('#itemFilterInput').val('');
-                $('.item-wrapper').show();
-            });
-
-            // فلترة التصنيفات
-            $('.category-btn').click(function (e) {
-                e.preventDefault();
-
-                $('.category-btn').removeClass('active btn-primary').addClass('btn-outline-primary');
-                $(this).removeClass('btn-outline-primary').addClass('btn-primary active');
-
-                var categoryId = $(this).data('category');
-                console.log('تصنيف مختار:', categoryId);
-
-                $('#itemFilterInput').val('');
-
-                if (categoryId === 'all') {
-                    $('.item-wrapper').show();
-                } else {
-                    $('.item-wrapper').hide();
-                    $('.item-wrapper[data-category="' + categoryId + '"]').show();
-                }
-            });
+            // ملاحظة: كود السيرش والفلترة موجود في pos_barcode.js (محسّن للأداء)
 
             // وظيفة إغلاق الشيفت
             window.closeShift = function () {

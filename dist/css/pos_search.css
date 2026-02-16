@@ -1,9 +1,8 @@
-/* POS Search Enhancements */
+/* POS Search Enhancements - Optimized for Performance */
 
 /* Search input styling */
 #itemFilterInput {
     border: 2px solid #17a2b8;
-    transition: all 0.3s ease;
 }
 
 #itemFilterInput:focus {
@@ -11,68 +10,38 @@
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-/* Search results highlighting */
-.search-result {
-    animation: fadeInUp 0.3s ease;
-}
-
-.search-result .item-card {
-    border: 2px solid #28a745 !important;
-    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
-}
-
 /* Filter button styling */
 #clearFilter {
-    border-color: #17a2b8;
-    color: #17a2b8;
-    transition: all 0.3s ease;
+    border-color: #6c757d;
+    color: #6c757d;
 }
 
 #clearFilter:hover {
-    background-color: #17a2b8;
+    background-color: #6c757d;
     color: white;
+    border-color: #6c757d;
 }
 
-/* Animation for search results */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Input group styling for seamless look */
+.input-group .input-group-text.border-end-0 {
+    border-right: 0;
 }
 
-/* Item card hover effects */
-.item-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+.input-group .form-control.border-start-0 {
+    border-left: 0;
 }
 
-/* Search loading indicator */
-.search-loading {
-    position: relative;
+.input-group .form-control.border-start-0:focus {
+    border-left: 0;
 }
 
-.search-loading::after {
-    content: '';
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #17a2b8;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+/* Performance optimization - use CSS for hiding */
+.item-wrapper {
+    display: block;
 }
 
-@keyframes spin {
-    0% { transform: translateY(-50%) rotate(0deg); }
-    100% { transform: translateY(-50%) rotate(360deg); }
+.item-wrapper.hidden {
+    display: none !important;
 }
 
 /* Responsive search bar */
@@ -85,14 +54,6 @@
     #itemFilterInput {
         font-size: 0.8rem;
     }
-}
-
-/* Search highlight */
-.search-highlight {
-    background-color: #fff3cd;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-weight: bold;
 }
 
 /* No results message */
