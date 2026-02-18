@@ -1,5 +1,5 @@
 <?php
-include('../../includes/connect.php'); // Adjust path as necessary
+include('../includes/connect.php'); // Adjust path as necessary
 $company_name = $rowstg['company_name'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $codes = $_POST['code'];
