@@ -10,7 +10,7 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-// جلب الإعدادات
+// جلب الإعدادات مرة واحدة فقط
 $rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
 
 // نظام الحماية البسيط
@@ -23,9 +23,10 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
         if (empty($barcode)) {
             $login_error = 'الرجاء إدخال الباركود';
         } else {
-            // جلب كل اليوزرز النشطين
-            $query = "SELECT id, uname, password FROM users WHERE isdeleted = 0";
-            $result = $conn->query($query);
+            // استخدام prepared statement للأمان
+            $stmt = $conn->prepare("SELECT id, uname, password FROM users WHERE isdeleted = 0");
+            $stmt->execute();
+            $result = $stmt->get_result();
             
             $user_found = false;
             
@@ -50,6 +51,9 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
                         $_SESSION['pos_authenticated'] = true;
                         $_SESSION['pos_user_id'] = $user['id'];
                         $_SESSION['pos_user_name'] = $user['uname'];
+                        
+                        // تنظيف وإعادة توجيه
+                        $stmt->close();
                         header('Location: pos_barcode.php');
                         exit();
                     }
@@ -60,6 +64,8 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
             } else {
                 $login_error = 'خطأ في قاعدة البيانات';
             }
+            
+            $stmt->close();
         }
     }
     
@@ -72,25 +78,34 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
 }
 // ============================================
 
-// إضافة طاولات تجريبية إذا لم تكن موجودة
+// إضافة طاولات تجريبية إذا لم تكن موجودة (مرة واحدة فقط)
 $check_tables = $conn->query("SELECT COUNT(*) as count FROM tables WHERE isdeleted = 0");
 if ($check_tables) {
     $tables_count = $check_tables->fetch_assoc()['count'];
     if ($tables_count == 0) {
+        // استخدام prepared statement للأمان
+        $stmt = $conn->prepare("INSERT INTO tables (tname, table_case) VALUES (?, 0)");
         for ($i = 1; $i <= 12; $i++) {
             $table_name = "طاولة " . $i;
-            $conn->query("INSERT INTO tables (tname, table_case) VALUES ('$table_name', 0)");
+            $stmt->bind_param("s", $table_name);
+            $stmt->execute();
         }
+        $stmt->close();
     }
 }
 
 // جلب البيانات الأساسية
 $posdate = date('Y-m-d', strtotime('-4 hours'));
-$rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
 
+// معالجة وضع التعديل
 if(isset($_GET['edit'])){
-    $id = $_GET['edit'];
-    $rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();
+    $id = intval($_GET['edit']); // تأمين المدخلات
+    $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $rowed = $result->fetch_assoc();
+    $stmt->close();
 }
 
 // التحقق من رسالة النجاح
@@ -101,124 +116,60 @@ if(isset($_SESSION['success_message'])){
 }
 ?>
 
-    <!-- Duplicate HTML headers removed -->
-    <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
-    <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
-    <link href="dist/css/pos.css" rel="stylesheet">
-    <link href="dist/css/pos_barcode.css" rel="stylesheet">
-    <link href="dist/css/pos_search.css" rel="stylesheet">
-    <link href="dist/css/pos_clean.css" rel="stylesheet">
-    <!-- SweetAlert2 CSS -->
-    <link href="assets/libs/sweetalert2/sweetalert2-bootstrap-4.css" rel="stylesheet">
-    <!-- Load jQuery early for plugins -->
-    <script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
-    <!-- SweetAlert2 JS -->
-    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
-    
-    <?php if(isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1): ?>
-    <!-- نظام القفل البسيط -->
-    <script>
-        // القفل عند تبديل التاب
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && sessionStorage.getItem('pos_hidden')) {
-                window.location.href = 'pos_barcode.php?logout=1';
-            }
-            if (document.hidden) {
-                sessionStorage.setItem('pos_hidden', '1');
-            }
-        });
-        
-        // القفل عند الضغط على أي رابط غير tables.php و pos_barcode.php
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (link && link.href && 
-                !link.href.includes('tables.php') && 
-                !link.href.includes('pos_barcode.php') && 
-                link.target !== '_blank') {
-                // قفل الجلسة قبل المغادرة
-                sessionStorage.setItem('pos_locked', '1');
-            }
-        });
-        
-        // فحص عند تحميل الصفحة: لو راجع من صفحة تانية، اقفل
-        if (sessionStorage.getItem('pos_locked') === '1') {
-            sessionStorage.removeItem('pos_locked');
-            window.location.href = 'pos_barcode.php?logout=1';
-        }
-    </script>
-    <?php endif; ?>
-    
+<!-- Assets (CSS & JS) -->
+<?php include('includes/pos_assets.php'); ?>
 
+<!-- نظام القفل -->
+<?php include('includes/pos_lock_system.php'); ?>
 
-    <body class="bg-light">
-    
-    <!-- Hidden input for Edit Mode -->
-    <input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
+<body class="bg-light">
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="dashboard.php">
-                <i class="fas fa-home me-2"></i>
-                نظام نقاط البيع
+<!-- Hidden input for Edit Mode -->
+<input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
 
-            </a>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="dashboard.php">
+            <i class="fas fa-home me-2"></i>
+            نظام نقاط البيع
+        </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto"></ul>
 
-                </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <button class="btn btn-outline-light btn-sm me-2" id="fullscreenBtn" title="ملء الشاشة">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </button>
 
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <button class="btn btn-outline-light btn-sm me-2" id="fullscreenBtn" title="ملء الشاشة">
-                            <i class="fas fa-expand-arrows-alt"></i>
-                        </button>
-
-
-                        <button type="button" class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal"
-                            data-bs-target="#closeShiftModal" title="إغلاق الشيفت">
-                            <i class="fas fa-power-off me-1"></i> إغلاق الشيفت
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <a href="do/do_logout.php" class="nav-link">
-                            <i class="fas fa-sign-out-alt me-1"></i> 
-                        </a>
-                    </li>
-                </ul>
-            </div>
+                    <button type="button" class="btn btn-outline-warning btn-sm me-2" data-bs-toggle="modal"
+                        data-bs-target="#closeShiftModal" title="إغلاق الشيفت">
+                        <i class="fas fa-power-off me-1"></i> إغلاق الشيفت
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <a href="do/do_logout.php" class="nav-link">
+                        <i class="fas fa-sign-out-alt me-1"></i> 
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
+<!-- رسالة النجاح -->
+<?php include('includes/pos_success_message.php'); ?>
 
-    <!-- رسالة النجاح -->
-    <?php if(!empty($success_message)): ?>
-    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                icon: 'success',
-                title: 'تم بنجاح!',
-                text: '<?= htmlspecialchars($success_message) ?>',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false
-            });
-        });
-    </script>
-    <?php endif; ?>
+<!-- Main Content -->
+<?php 
+$action_url = "do/doadd_invoice.php";
+include('includes/pos_content.php');
+?>
 
-    <!-- Main Content -->
-    <?php 
-    $action_url = "do/doadd_invoice.php";
-    include('includes/pos_content.php');
-    ?>
-
-
-
-    <?php include('includes/pos_simple_footer.php');?>
+<?php include('includes/pos_simple_footer.php');?>

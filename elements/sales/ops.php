@@ -20,32 +20,44 @@
                             </thead>
                             <tbody>
                             <?php
-                            $resop = $conn->query("SELECT id,pro_tybe,acc1,acc2,pro_value from ot_head where isdeleted = 0 order by id desc ") ;
-                    $x= 0;
-                    while ($rowop = $resop->fetch_assoc()) {
-                        $x++;
-                    ?>
+                            // استعلام محسّن مع JOIN وLIMIT
+                            $query = "SELECT 
+                                        o.id, 
+                                        o.pro_value,
+                                        p.pname as pro_tybe_name,
+                                        a.aname as acc_name
+                                      FROM ot_head o
+                                      LEFT JOIN pro_tybes p ON o.pro_tybe = p.id
+                                      LEFT JOIN acc_head a ON o.acc2 = a.id
+                                      WHERE o.isdeleted = 0 
+                                      ORDER BY o.id DESC 
+                                      LIMIT 50";
+                            
+                            $resop = $conn->query($query);
+                            $x = 0;
+                            
+                            if ($resop && $resop->num_rows > 0) {
+                                while ($rowop = $resop->fetch_assoc()) {
+                                    $x++;
+                            ?>
                             <tr>
                                     <th><?= $x ?></th>
-                                    <th><a class="btn btn-block btn-light border"  href="print/print_sales.php?id=<?= $rowop['id']?>" target="_blank"><p><?php 
-                                    $tybe = $rowop['pro_tybe'];
-                                    if ($tybe) {
-                                        $rowtybe = $conn->query("SELECT pname from pro_tybes where id = $tybe ")->fetch_assoc();
-                                        echo $rowtybe['pname'] ?? 'غير محدد';
-                                    }
-                                    ?></p></a></th>
-                                    <th><?php 
-                                    $acc2 = $rowop['acc2'] ?? 0;
-                                    if ($acc2 > 0) {
-                                        $rowacc2 = $conn->query("SELECT aname from acc_head where id = $acc2 ")->fetch_assoc();
-                                        echo $rowacc2['aname'] ?? 'غير محدد';
-                                    } else {
-                                        echo 'غير محدد';
-                                    }
-                                    ?></th>
-                                    <th><?= $rowop['pro_value'] ?></th>
+                                    <th>
+                                        <a class="btn btn-block btn-light border" 
+                                           href="print/print_sales.php?id=<?= $rowop['id']?>" 
+                                           target="_blank">
+                                            <p><?= htmlspecialchars($rowop['pro_tybe_name'] ?? 'غير محدد') ?></p>
+                                        </a>
+                                    </th>
+                                    <th><?= htmlspecialchars($rowop['acc_name'] ?? 'غير محدد') ?></th>
+                                    <th><?= number_format($rowop['pro_value'], 2) ?></th>
                                 </tr>
-                <?php }?>
+                            <?php 
+                                }
+                            } else {
+                                echo '<tr><td colspan="4" class="text-center">لا توجد عمليات</td></tr>';
+                            }
+                            ?>
                             </tbody>
                         </table>
 

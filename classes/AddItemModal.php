@@ -188,22 +188,9 @@ class AddItemModal extends InvoiceElementBase
      */
     private function renderItemNameDatalist()
     {
-        if (!$this->conn) return;
-
-        try {
-            $query = "SELECT DISTINCT iname FROM myitems ORDER BY iname LIMIT 100";
-            $result = $this->executeSecureQuery($query);
-            $items = $result->fetch_all(MYSQLI_ASSOC);
-
-            echo '<datalist id="inamelist">';
-            foreach ($items as $item) {
-                echo "<option value='{$this->sanitizeInput($item['iname'])}'>";
-            }
-            echo '</datalist>';
-
-        } catch (Exception $e) {
-            // في حالة الخطأ، لا نعرض أي خيارات
-        }
+        // تم تعطيل تحميل الأصناف - يتم استخدام AJAX بدلاً منه
+        echo '<datalist id="inamelist"></datalist>';
+        return;
     }
 
     /**

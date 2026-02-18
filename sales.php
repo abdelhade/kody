@@ -1,65 +1,58 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php 
+// بدء Output Buffering وقياس الأداء
+$page_start_time = microtime(true);
+ob_start();
 
-<?php
-// تضمين فئات العناصر الجديدة
+include('includes/header.php');
+include('includes/navbar.php');
+include('includes/sidebar.php');
+
+// تضمين فئات العناصر مرة واحدة فقط
 require_once 'classes/InvoiceElementFactory.php';
 
-// تعريف ثوابت أنواع الفواتير
-define('INVOICE_TYPES', [
-    'sale' => 4,
-    'buy' => 3,
-    'resale' => 10,
-    'rebuy' => 11,
-    'po' => 12,
-    'so' => 13,
-    'offer' => 14
-]);
+// تعريف ثوابت أنواع الفواتير (Cached)
+if (!defined('INVOICE_TYPES')) {
+    define('INVOICE_TYPES', [
+        'sale' => 4, 'buy' => 3, 'resale' => 10, 'rebuy' => 11,
+        'po' => 12, 'so' => 13, 'offer' => 14
+    ]);
+    
+    define('INVOICE_NAMES', [
+        3 => 'فاتورة مبيعات', 4 => 'فاتورة مشتريات',
+        10 => 'فاتورة مردود مشتريات', 11 => 'فاتورة مردود مبيعات',
+        12 => 'أمر شراء', 13 => 'أمر بيع', 14 => 'عرض سعر'
+    ]);
+    
+    define('EDIT_NAMES', [
+        4 => 'تعديل فاتورة المشتريات', 3 => 'تعديل فاتورة المبيعات',
+        10 => 'تعديل فاتورة مردود المبيعات', 11 => 'تعديل فاتورة مردود المشتريات',
+        14 => 'تعديل عرض السعر'
+    ]);
+}
 
-// تعريف أسماء الفواتير بالعربية
-define('INVOICE_NAMES', [
-    3 => 'فاتورة مبيعات',
-    4 => 'فاتورة مشتريات',
-    10 => 'فاتورة مردود مشتريات',
-    11 => 'فاتورة مردود مبيعات',
-    12 => 'أمر شراء',
-    13 => 'أمر بيع',
-    14 => 'عرض سعر'
-]);
-
-// تعريف أسماء التعديل
-define('EDIT_NAMES', [
-    4 => 'تعديل فاتورة المشتريات',
-    3 => 'تعديل فاتورة المبيعات',
-    10 => 'تعديل فاتورة مردود المبيعات',
-    11 => 'تعديل فاتورة مردود المشتريات',
-    14 => 'تعديل عرض السعر'
-]);
-
-// معالجة نوع الفاتورة بشكل آمن
+// معالجة نوع الفاتورة بشكل آمن وسريع
 $pro_tybe = null;
 $invoice_title = 'غير محدد';
 $is_edit_mode = false;
 $invoice_data = null;
+$opid = null;
 
-if (!empty($_GET['q']) && array_key_exists($_GET['q'], INVOICE_TYPES)) {
-    $pro_tybe = INVOICE_TYPES[$_GET['q']];
-    if (array_key_exists($pro_tybe, INVOICE_NAMES)) {
-        $invoice_title = INVOICE_NAMES[$pro_tybe];
-    } else {
-        $invoice_title = 'نوع فاتورة غير معروف';
-    }
-} elseif (!empty($_GET['q'])) {
-    // نوع فاتورة غير صحيح
-    $invoice_title = 'نوع فاتورة غير صحيح: ' . htmlspecialchars($_GET['q']);
-    error_log("Invalid invoice type: " . $_GET['q']);
-} elseif (!empty($_GET['e']) && is_numeric($_GET['e'])) {
-    $is_edit_mode = true;
-    $opid = intval($_GET['e']);
+// تحسين: معالجة GET parameters مرة واحدة
+$q_param = $_GET['q'] ?? null;
+$e_param = $_GET['e'] ?? null;
+
+if (!empty($q_param) && isset(INVOICE_TYPES[$q_param])) {
+    // وضع إضافة فاتورة جديدة
+    $pro_tybe = INVOICE_TYPES[$q_param];
+    $invoice_title = INVOICE_NAMES[$pro_tybe] ?? 'نوع فاتورة غير معروف';
     
-    // استخدام Prepared Statement للأمان
-    $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ?");
+} elseif (!empty($e_param) && is_numeric($e_param)) {
+    // وضع التعديل - استعلام محسّن
+    $is_edit_mode = true;
+    $opid = intval($e_param);
+    
+    // استخدام Prepared Statement مع تحسين الاستعلام
+    $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ? LIMIT 1");
     if ($stmt) {
         $stmt->bind_param("i", $opid);
         $stmt->execute();
@@ -67,75 +60,78 @@ if (!empty($_GET['q']) && array_key_exists($_GET['q'], INVOICE_TYPES)) {
         
         if ($result && $result->num_rows > 0) {
             $invoice_data = $result->fetch_assoc();
-            $pro_tybe = $invoice_data['pro_tybe'];
+            $pro_tybe = (int)$invoice_data['pro_tybe'];
             $invoice_title = EDIT_NAMES[$pro_tybe] ?? 'تعديل فاتورة غير معروفة';
         } else {
             $invoice_title = 'لم يتم العثور على السجل';
         }
         $stmt->close();
     }
+} elseif (!empty($q_param)) {
+    $invoice_title = 'نوع فاتورة غير صحيح';
+    error_log("Invalid invoice type: " . $q_param);
 } else {
-    // لا يوجد نوع فاتورة محدد
-    if (empty($_GET['q']) && empty($_GET['e'])) {
-        $invoice_title = 'يرجى تحديد نوع الفاتورة';
-    }
+    $invoice_title = 'يرجى تحديد نوع الفاتورة';
 }
 
-// تحديد لون الخلفية بناء على نوع الفاتورة
-function getBackgroundClass($pro_tybe, $is_edit_mode) {
-    if ($is_edit_mode) {
-        return 'bg-red-500';
+// تحديد لون الخلفية (Optimized with array lookup)
+$bg_colors = [
+    3 => 'bg-teal-500', 4 => 'bg-teal-500',
+    10 => 'bg-red-500', 11 => 'bg-red-500',
+    12 => 'bg-red-500', 13 => 'bg-red-500', 14 => 'bg-red-500'
+];
+$background_class = $is_edit_mode ? 'bg-red-500' : ($bg_colors[$pro_tybe] ?? 'bg-gray-500');
+
+// Lazy Loading: إنشاء العناصر فقط عند الحاجة
+$invoice_elements = null;
+function getInvoiceElements() {
+    global $invoice_elements, $pro_tybe, $is_edit_mode, $invoice_data, $conn;
+    
+    if ($invoice_elements === null && $pro_tybe !== null) {
+        try {
+            $invoice_elements = InvoiceElementFactory::createAllElements(
+                $pro_tybe, 
+                $is_edit_mode, 
+                $invoice_data, 
+                $conn
+            );
+        } catch (Exception $e) {
+            error_log("Error creating invoice elements: " . $e->getMessage());
+            $invoice_elements = [];
+        }
     }
     
-    switch ($pro_tybe) {
-        case 3:
-        case 4:
-            return 'bg-teal-500';
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
-            return 'bg-red-500';
-        default:
-            return 'bg-gray-500';
-    }
-}
-
-$background_class = getBackgroundClass($pro_tybe, $is_edit_mode);
-
-// إنشاء عناصر الفاتورة باستخدام Factory Pattern
-try {
-    if ($pro_tybe !== null) {
-        $invoice_elements = InvoiceElementFactory::createAllElements(
-            $pro_tybe, 
-            $is_edit_mode, 
-            $invoice_data, 
-            $conn
-        );
-    } else {
-        $invoice_elements = [];
-    }
-} catch (Exception $e) {
-    error_log("Error creating invoice elements: " . $e->getMessage());
-    $invoice_elements = [];
+    return $invoice_elements;
 }
 ?>
 
-<link rel="stylesheet" href="dist/css/sales.css">
+<!-- Preload Critical CSS -->
+<link rel="preload" href="dist/css/sales.css" as="style">
+
+<!-- Load Critical CSS Inline (for faster First Paint) -->
+<style>
+    /* Critical CSS - يتم تحميله مباشرة */
+    .content-wrapper { background: #f0fdfa; }
+    .card { border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: #fff; }
+    .card-body { padding: 1rem; }
+    .bg-teal-50 { background-color: #f0fdfa; }
+    .bg-teal-500 { background-color: #14b8a6; }
+    .bg-red-500 { background-color: #ef4444; }
+    .bg-gray-500 { background-color: #6b7280; }
+    .text-teal-50 { color: #f0fdfa; }
+    .hadi-wonder { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+</style>
+
+<!-- Load Non-Critical CSS Async -->
+<link rel="stylesheet" href="dist/css/sales.css" media="print" onload="this.media='all'; this.onload=null;">
+<noscript><link rel="stylesheet" href="dist/css/sales.css"></noscript>
+
 <div class="content-wrapper bg-teal-50">
 <section class="content-header">
 <div class="container-fluid p-0 m-0">
 
-<!-- 
-OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+<input type="hidden" name="pro_tybe" value="<?php echo htmlspecialchars($pro_tybe ?? ''); ?>">
 
-                                                      
-
-OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
--->
-
-<input type="text" name="pro_tybe" hidden value="<?php echo htmlspecialchars($pro_tybe ?? ''); ?>">
 <center>
 <h4 class="font-thin text-md <?php echo $background_class; ?> text-teal-50 hadi-wonder" style="font-size:2em;padding:10px">
     <?php echo htmlspecialchars($invoice_title); ?>
@@ -143,65 +139,77 @@ OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 </center>
 
 <?php
-// عرض نافذة إضافة الأصناف
-if (isset($invoice_elements['add_item_modal'])) {
-    echo $invoice_elements['add_item_modal']->render();
+// Lazy Loading: تحميل Modal فقط عند الحاجة
+$elements = getInvoiceElements();
+if (!empty($elements['add_item_modal'])) {
+    echo $elements['add_item_modal']->render();
 }
 ?>
-<div class="card 111 ">
+
+<div class="card">
   <div class="card-body p-0 m-0">
           <?php
-          // عرض صف إضافة جديد (مؤقت - سيتم استبداله بالعناصر الجديدة)
-          if (isset($invoice_elements['details'])) {
-              echo $invoice_elements['details']->renderNewRow();
+          // Lazy Loading: تحميل صف الإضافة فقط عند الحاجة
+          if (!empty($elements['details'])) {
+              echo $elements['details']->renderNewRow();
           } else {
-              // عرض مؤقت للصف القديم
               include('elements/sales/add_row.php');
           }
           ?>
             <?php 
-            // تحديد ما إذا كان في وضع التعديل وتحميل البيانات
-            if($is_edit_mode && $invoice_data){
-                $e = intval($_GET['e']);
-                $rowedit = $invoice_data; // البيانات محملة مسبقاً
-            }
-            if(isset($_GET['q'])){?>
+            // تحديد action الفورم بناءً على الوضع
+            $form_action = $is_edit_mode ? 'do/doedit_invoice.php' : 'do/doadd_invoice.php';
+            ?>
         
-                <form action="do/doadd_invoice.php" method="post" id="myForm2">
-                      <?php }elseif(isset($_GET['e'])){?>
-                <form action="do/doedit_invoice.php" method="post" id="myForm2">
-                      <?php }?>
-      <input type="text" hidden value="<?php if(isset($_GET['e']) && is_numeric($_GET['e'])){echo intval($_GET['e']);}?>" name="ot_id">
-          <?php
-          // عرض رأس الفاتورة
-          if (isset($invoice_elements['header'])) {
-              echo $invoice_elements['header']->render();
-          }
-          
-          // عرض تفاصيل الفاتورة
-          if (isset($invoice_elements['details'])) {
-              echo $invoice_elements['details']->render();
-          }
-          
-          // عرض ذيل الفاتورة
-          if (isset($invoice_elements['footer'])) {
-              echo $invoice_elements['footer']->render();
-          }
-          ?>
-                    
-          
-                </form>
+            <form action="<?php echo $form_action; ?>" method="post" id="myForm2">
+                <input type="hidden" value="<?php echo $opid ?? ''; ?>" name="ot_id">
+                
+                <?php
+                // Lazy Loading: عرض العناصر فقط عند الحاجة
+                if (!empty($elements['header'])) {
+                    echo $elements['header']->render();
+                }
+                
+                if (!empty($elements['details'])) {
+                    echo $elements['details']->render();
+                }
+                
+                if (!empty($elements['footer'])) {
+                    echo $elements['footer']->render();
+                }
+                ?>
+            </form>
         </div>    
-                  </div>    
+    </div>    
 
-
-            <?php include('elements/sales/ops.php')?>
+    <?php include('elements/sales/ops.php'); ?>
 
 </div>
 </section>
 </div>
 
-<?php include('includes/footer.php') ?>
+<?php 
+include('includes/footer.php');
 
-<script src="js/sales.js"></script>
-<script src="js/sales0.js"></script>
+// قياس الأداء (في وضع التطوير فقط)
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    $page_end_time = microtime(true);
+    $page_load_time = ($page_end_time - $page_start_time) * 1000;
+    error_log("Sales page load time: " . number_format($page_load_time, 2) . " ms");
+}
+
+// إنهاء Output Buffering وإرسال المحتوى
+ob_end_flush();
+?>
+
+<!-- Preload JavaScript Files -->
+<link rel="preload" href="js/sales.js" as="script">
+<link rel="preload" href="js/sales0.js" as="script">
+
+<!-- Load JavaScript Async with defer -->
+<script src="js/sales.js" defer></script>
+<script src="js/sales0.js" defer></script>
+
+<!-- Prefetch للصفحات المحتملة -->
+<link rel="prefetch" href="do/doadd_invoice.php">
+<link rel="prefetch" href="do/doedit_invoice.php">
