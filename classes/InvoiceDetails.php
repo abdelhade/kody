@@ -25,15 +25,10 @@ class InvoiceDetails extends InvoiceElementBase
      */
     private function loadItems()
     {
-        if (!$this->conn) return;
-
-        try {
-            $query = "SELECT id, iname, name2 FROM myitems WHERE isdeleted = 0 ORDER BY iname LIMIT 25";
-            $result = $this->executeSecureQuery($query);
-            $this->items = $result->fetch_all(MYSQLI_ASSOC);
-        } catch (Exception $e) {
-            error_log("Error loading items: " . $e->getMessage());
-        }
+        // تم تعطيل تحميل الأصناف - يتم استخدام Live Search بدلاً منه
+        // Items are now loaded via AJAX on-demand
+        $this->items = [];
+        return;
     }
 
     /**
