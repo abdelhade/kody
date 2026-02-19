@@ -4,26 +4,40 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// إعدادات قاعدة البيانات
-if ($_SERVER['HTTP_HOST'] === 'localhost' || strpos($_SERVER['HTTP_HOST'], '127.0.0.1') !== false) {
-    // إعدادات localhost
-    $dbhost = 'localhost';
-    $dbuser = 'root';
-    $dbpass = '';
-    $dbname = 'focus';
-} else {
-    // إعدادات الهوست
-    $dbhost = '127.0.0.1';
-    $dbuser = 'u173148011_focua';
-    $dbpass = 'AbAbAb@1234';
-    $dbname = 'u173148011_focus';
-}
+$dbhost = 'localhost';
+$dbuser = 'root';
+$dbpass = '';
+$dbname = 'kody2';
 
-$conn = new mysqli($dbhost, $dbuser, $dbpass, $dbname);
+// Check connection
+mysqli_report(MYSQLI_REPORT_OFF);
+$conn = @new mysqli($dbhost, $dbuser, $dbpass);
+
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    // If we can't even connect to MySQL server
+    if (basename($_SERVER['PHP_SELF']) !== 'pre_start.php' && strpos($_SERVER['PHP_SELF'], 'ajax/') === false) {
+        header("Location: pre_start.php?error=server_down");
+        exit;
+    } else {
+        die("Connection failed: " . $conn->connect_error);
+    }
 }
 
+// Try to select database
+if (!$conn->select_db($dbname)) {
+    // Database doesn't exist
+    if (basename($_SERVER['PHP_SELF']) !== 'pre_start.php' && strpos($_SERVER['PHP_SELF'], 'ajax/') === false) {
+        header("Location: pre_start.php?reason=db_missing");
+        exit;
+    } else if (strpos($_SERVER['PHP_SELF'], 'ajax/') !== false) {
+        // For AJAX, return a JSON error if database is missing (optional, but safer)
+        // For now, let's just let it continue or die
+        die("Database '$dbname' not found. Please run pre_start.php");
+    }
+}
+
+// Enable SQL error reporting for debugging
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 // تحميل نظام Logging المبسط (إذا كان موجود)
 if (file_exists('simple_logger.php')) {
     require_once 'simple_logger.php';

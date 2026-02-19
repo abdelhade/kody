@@ -10,9 +10,6 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-// جلب الإعدادات مرة واحدة فقط
-$rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
-
 // نظام الحماية البسيط
 if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
     
@@ -33,52 +30,36 @@ if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
             if ($result && $result->num_rows > 0) {
                 while ($user = $result->fetch_assoc()) {
                     $stored_password = $user['password'];
-                    
-                    // التحقق من النوعين: MD5 أو bcrypt
                     $is_valid = false;
-                    
-                    // لو الباسورد MD5 (32 حرف)
                     if (strlen($stored_password) == 32) {
                         $is_valid = (md5($barcode) === $stored_password);
                     }
-                    // لو الباسورد bcrypt (يبدأ بـ $2y$)
                     elseif (strpos($stored_password, '$2y$') === 0) {
                         $is_valid = password_verify($barcode, $stored_password);
                     }
                     
                     if ($is_valid) {
-                        // ✅ تم العثور على المستخدم
                         $_SESSION['pos_authenticated'] = true;
                         $_SESSION['pos_user_id'] = $user['id'];
                         $_SESSION['pos_user_name'] = $user['uname'];
-                        
-                        // تنظيف وإعادة توجيه
                         $stmt->close();
                         header('Location: pos_barcode.php');
                         exit();
                     }
                 }
-                
-                // لو وصلنا هنا، معناه الباركود غلط
                 $login_error = 'باركود غير صحيح';
             } else {
                 $login_error = 'خطأ في قاعدة البيانات';
             }
-            
             $stmt->close();
         }
     }
-    
-    // التحقق من تسجيل الدخول
     if (!isset($_SESSION['pos_authenticated']) || $_SESSION['pos_authenticated'] !== true) {
         // عرض شاشة تسجيل الدخول
         include('includes/pos_login_screen.php');
         exit();
     }
 }
-// ============================================
-
-// إضافة طاولات تجريبية إذا لم تكن موجودة (مرة واحدة فقط)
 $check_tables = $conn->query("SELECT COUNT(*) as count FROM tables WHERE isdeleted = 0");
 if ($check_tables) {
     $tables_count = $check_tables->fetch_assoc()['count'];
@@ -93,11 +74,7 @@ if ($check_tables) {
         $stmt->close();
     }
 }
-
-// جلب البيانات الأساسية
 $posdate = date('Y-m-d', strtotime('-4 hours'));
-
-// معالجة وضع التعديل
 if(isset($_GET['edit'])){
     $id = intval($_GET['edit']); // تأمين المدخلات
     $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ?");
@@ -107,8 +84,6 @@ if(isset($_GET['edit'])){
     $rowed = $result->fetch_assoc();
     $stmt->close();
 }
-
-// التحقق من رسالة النجاح
 $success_message = '';
 if(isset($_SESSION['success_message'])){
     $success_message = $_SESSION['success_message'];

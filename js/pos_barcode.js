@@ -634,8 +634,33 @@ $(document).ready(function() {
         
         setTimeout(function() {
             try {
-                HTMLFormElement.prototype.submit.call(form);
-                console.log('✅ Form submitted successfully!');
+                // إضافة hidden input للإشارة بالقفل بعد الحفظ
+                let lockAfterSaveInput = form.querySelector('input[name="lock_after_save"]');
+                if (!lockAfterSaveInput) {
+                    lockAfterSaveInput = document.createElement('input');
+                    lockAfterSaveInput.type = 'hidden';
+                    lockAfterSaveInput.name = 'lock_after_save';
+                    lockAfterSaveInput.value = '1';
+                    form.appendChild(lockAfterSaveInput);
+                }
+                
+                // عرض رسالة تأكيد للقفل التلقائي
+                if (confirm('سيتم قفل النظام بعد الحفظ. هل تريد المتابعة؟')) {
+                    HTMLFormElement.prototype.submit.call(form);
+                    console.log('✅ Form submitted successfully!');
+                } else {
+                    // لو المستخدم ألغى، شيل خاصية القفل
+                    lockAfterSaveInput.value = '0';
+                    
+                    // فك الأزرار
+                    if (saveBtn.length > 0) {
+                        saveBtn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>حفظ الطلب');
+                    }
+                    if (printBtn.length > 0) {
+                        printBtn.prop('disabled', false).html('<i class="fas fa-print me-1"></i>حفظ وطباعة');
+                    }
+                }
+                
             } catch (error) {
                 console.error('❌ Error submitting form:', error);
                 alert('حدث خطأ أثناء إرسال البيانات: ' + error.message);

@@ -1,9 +1,6 @@
 <?php 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-include('../includes/header.php'); 
+include('includes/header.php'); 
 
 if (!isset($_GET['id'])) {
     echo "لا يوجد فاتورة بهذا الرقم";
@@ -19,7 +16,13 @@ if ($rowfat == null) {
     
     // تحديد صفحة العودة حسب نوع POS
     $pos_type = $rowstg['pos_type'] ?? 'barcode';
-    $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+    // التحقق من طلب القفل بعد الطباعة
+    if (isset($_SESSION['lock_after_print']) && $_SESSION['lock_after_print'] === true) {
+        $back_page = '../pos_barcode.php?logout=1';
+        unset($_SESSION['lock_after_print']); // مسح المتغير بعد الاستخدام
+    } else {
+        $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+    }
 ?>
 
 
@@ -209,4 +212,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include('../includes/footer.php') ?>
+<?php include('includes/footer.php') ?>
