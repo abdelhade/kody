@@ -750,14 +750,29 @@ if ($submit == 'print') {
 } elseif ($submit == 'cash') {
     error_log('Redirecting to receipt page');
     error_log('Header: Location: ../print/receipt.php?id=$last_op');
+    
+    // التحقق من طلب القفل بعد الحفظ والطباعة
+    if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
+        error_log('Lock after save and print requested - will redirect to logout after print');
+        // يمكن إضافة session variable هنا لو محتاج تقفل بعد الطباعة
+        $_SESSION['lock_after_print'] = true;
+    }
+    
     header("Location: ../print/receipt.php?id=$last_op");
 } elseif ($submit == 'save') {
     error_log('Redirecting with save action');
     // For save action, redirect back to POS for POS invoices, or to sales page for others
     if ($pro_tybe == INVOICE_TYPES['POS']) {
         error_log('Redirecting to POS barcode page');
-        error_log('Header: Location: ../pos_barcode.php');
-        header("Location: ../pos_barcode.php?r=" . time());
+        
+        // التحقق من طلب القفل بعد الحفظ
+        if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
+            error_log('Lock after save requested - redirecting to logout');
+            header("Location: ../pos_barcode.php?logout=1");
+        } else {
+            error_log('Header: Location: ../pos_barcode.php');
+            header("Location: ../pos_barcode.php?r=" . time());
+        }
     } else {
         $redirects = [
             INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',

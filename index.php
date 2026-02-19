@@ -9,12 +9,25 @@ session_start();
 $dbhost = 'localhost';
 $dbuser = 'root';
 $dbpass = '';
-$dbname = 'focus';
+$dbname = 'kody2';
 
-$conn = new mysqli($dbhost, $dbuser, $dbpass, $dbname);
+// Check connection
+mysqli_report(MYSQLI_REPORT_OFF);
+$conn = @new mysqli($dbhost, $dbuser, $dbpass);
+
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    header("Location: pre_start.php?error=server_down");
+    exit;
 }
+
+// Try to select database
+if (!$conn->select_db($dbname)) {
+    header("Location: pre_start.php?reason=db_missing");
+    exit;
+}
+
+// Enable SQL error reporting for debugging subsequent queries
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // -------------------- دوال مساعدة --------------------
 function e($str) {

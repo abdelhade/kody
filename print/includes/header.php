@@ -20,8 +20,6 @@ $up = $conn->query("SELECT * FROM users where id = $userid ")
   <!-- Tell the browser to be responsive to screen width -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Font Awesome -->
-  <link rel="stylesheet" href="../plugins/fontawesome-free/css/all.min.css">
-  <link rel="stylesheet" href="../dist/css/adminlte.min.css">
   <link rel="stylesheet" href="../dist/css/bootstrap4.2.min.css">
   <link rel="stylesheet" href="../dist/css/custom.css">
   <link href="../dist/css/horstec.css" rel="stylesheet">
