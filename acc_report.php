@@ -78,8 +78,24 @@ if (isset($_GET)) {
 // اجمالي المدين - اجمالي الدائن في جدول journal_entries where account_id = acc_head.id 
 $sqlchk = "UPDATE acc_head SET balance = ( SELECT SUM(journal_entries.debit)- SUM(journal_entries.credit) FROM journal_entries WHERE journal_entries.account_id = acc_head.id AND journal_entries.isdeleted = 0 );";
 
-
 $conn->query($sqlchk);
+
+// أولاً: نتأكد إن الحسابات الرئيسية is_basic = 1
+$main_accounts = ['122', '211', '121', '124', '44', '32', '212', '125', '221', '11', '213', '112', '123'];
+foreach ($main_accounts as $acc_code) {
+    $fix_main = "UPDATE acc_head SET is_basic = 1 WHERE code = '$acc_code' AND isdeleted = 0";
+    $conn->query($fix_main);
+}
+
+// ثانياً: إصلاح الحسابات الفرعية لتكون is_basic = 0
+$fix_clients = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '122%' AND code != '122' AND is_basic = 1 AND isdeleted = 0";
+$conn->query($fix_clients);
+
+$fix_suppliers = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '211%' AND code != '211' AND is_basic = 1 AND isdeleted = 0";
+$conn->query($fix_suppliers);
+
+$fix_employees = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '213%' AND code != '213' AND is_basic = 1 AND isdeleted = 0";
+$conn->query($fix_employees);
 
 ?>
 <div class="content-wrapper">
@@ -108,7 +124,7 @@ $conn->query($sqlchk);
 
             <div class="card-body">
             <div class="table-responsive">
-            <table id="myTable" class="table table-hover table-stripped " data-page-length='50'>
+            <table id="horsTable" class="table table-hover table-stripped " data-page-length='50'>
                 <thead>
                    <tr>
                     <th>#</th>

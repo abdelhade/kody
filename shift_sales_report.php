@@ -61,9 +61,9 @@ $invoices_query = $conn->query("SELECT
     oh.fat_net,
     oh.info,
     CASE 
-        WHEN oh.age = 1 THEN 'تيك أواي'
-        WHEN oh.age = 2 THEN 'طاولة'
-        WHEN oh.age = 3 THEN 'دليفري'
+        WHEN oh.info LIKE '%تيك أواي%' THEN 'تيك أواي'
+        WHEN oh.info LIKE '%طاولة%' THEN 'طاولة'
+        WHEN oh.info LIKE '%دليفري%' THEN 'دليفري'
         ELSE 'غير محدد'
     END as order_type
     FROM ot_head oh

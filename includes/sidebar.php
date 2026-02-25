@@ -20,8 +20,8 @@
       <div class="search-wrapper" style="position: relative;">
         <i class="fas fa-search"
           style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 0.85rem; pointer-events: none; z-index: 1;"></i>
-        <input class="form-control form-control-sm" type="text" placeholder="<?= $lang_search_placeholder ?>" id="searchSide"
-          style="padding-right: 35px;">
+        <input class="form-control form-control-sm" type="text" placeholder="<?= $lang_search_placeholder ?>"
+          id="searchSide" style="padding-right: 35px;">
       </div>
     </div>
     <nav class="mt-2">
@@ -29,8 +29,6 @@
       <!--                                             main                                                                        -->
 
       <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-        <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
         <li class="nav-item has-treeview">
           <a href="index.php" class="nav-link">
             <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -45,7 +43,7 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-pen"></i>
               <p>
-               <?= $lang_basic_data ?> 
+                <?= $lang_basic_data ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
@@ -267,7 +265,7 @@
 
 
 
-
+<!-- -------------------نقاط البيع  -->
         <?php if (($role['sid_sales'] ?? 0) == 1) { ?>
 
           <li class="nav-item has-treeview">
@@ -280,22 +278,22 @@
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="stock" style="display: none;">
 
-              <?php 
+              <?php
               // جلب نوع نظام POS من الإعدادات
               $pos_type = $rowstg['pos_type'] ?? 'barcode';
-              
+
               if ($pos_type === 'clothes') {
                 // عرض POS الملابس فقط
-              ?>
+                ?>
                 <li class="nav-item">
                   <a href="pos_clothes.php" class="nav-link">
                     <i class="nav-icon fas fa-tshirt"></i>
                     <p>POS الملابس</p>
                   </a>
                 </li>
-              <?php } else { 
+              <?php } else {
                 // عرض POS العادي فقط
-              ?>
+                ?>
                 <li class="nav-item">
                   <a href="pos_barcode.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
@@ -468,6 +466,15 @@
                   </a>
                 </li>
 
+                <li class="nav-item">
+                  <a href="sales.php?q=rebuy" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p>
+                      فاتورة مردود مبيعات
+                    </p>
+                  </a>
+                </li>
+
 
 
 
@@ -609,14 +616,14 @@
                     <p><?= $lang_sidedepartments ?></p>
                   </a>
                 </li>
-                
+
                 <li class="nav-item">
                   <a href="hr_operations.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-cogs"></i> </i>
                     <p><?= $lang_operations ?></p>
                   </a>
                 </li>
-                
+
                 <li class="nav-item">
                   <a href="employee_operations.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-users-cog"></i> </i>

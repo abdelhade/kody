@@ -1,9 +1,10 @@
 <?php if(isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1): ?>
-<!-- نظام القفل البسيط -->
+<!-- نظام القفل البسيط - يعمل فقط عند تفعيل الحماية بالباركود -->
 <script>
     // القفل عند تبديل التاب
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden && sessionStorage.getItem('pos_hidden')) {
+            sessionStorage.removeItem('pos_hidden');
             window.location.href = 'pos_barcode.php?logout=1';
         }
         if (document.hidden) {
@@ -28,5 +29,7 @@
         sessionStorage.removeItem('pos_locked');
         window.location.href = 'pos_barcode.php?logout=1';
     }
+    
+    console.log('نظام القفل مفعل - الحماية بالباركود نشطة');
 </script>
 <?php endif; ?>

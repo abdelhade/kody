@@ -77,7 +77,7 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
                     
                 <div class="form-group">
                             <label for="">نوع الحساب</label><span class="text-danger">*</span>
-                            <select class="form-control font-bold  " name="is_basic" id="">
+                            <select class="form-control font-bold" name="is_basic" id="">
                                 <option value="1">اساسي</option>
                                 <option selected value="0">حساب عادي</option>
                             </select>

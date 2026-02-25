@@ -16,48 +16,72 @@
 
         <div class="card-header">
             <form action="" method="post" id="myForm">
-            <div class="row">
+            <div class="row align-items-end">
                 <div class="col-md-3">
                     <div class="form-group">
-                        <p>اختر حساب</p>
-                    </div>
-                <select class="select2 frst" name="acc_id" id="acc" require>
-                    <option value="0">اختر حساب</option>
+                        <label>اختر حساب</label>
+                        <select class="select2 frst form-control" name="acc_id" id="acc" required>
+                            <option value="0">اختر حساب</option>
                             <?php
-                                $resacc = $conn->query("SELECT * FROM `acc_head` WHERE is_basic = 0;");
+                                $resacc = $conn->query("SELECT * FROM `acc_head` WHERE is_basic = 0 ORDER BY aname");
                             while ($rowacc = $resacc->fetch_assoc()) { ?>
-                            <option value="<?= $rowacc['id'] ?>">{<?= $rowacc['code'] ?>}-<?= $rowacc['aname'] ?></option>
+                            <option value="<?= $rowacc['id'] ?>" <?= (isset($_POST['acc_id']) && $_POST['acc_id'] == $rowacc['id']) ? 'selected' : '' ?>>
+                                {<?= $rowacc['code'] ?>}-<?= $rowacc['aname'] ?>
+                            </option>
                             <?php } ?>
                         </select>
-                            </div>
-                            <div class="col-sm-4">
-                    <b>التاريخ </b>
-                    من <input type="date" value="<?= $rowstg['startdate']?>" name="startdate" require id="">
-                    <br>
-                     الي
-                    <input type="date" value="<?= $rowstg['enddate'];?>" name="enddate" require id="">
-                    <p>
-                    رصيد الحساب
-                    <?php if(isset($_POST['acc_id'])){
-                $ac_id = $_POST['acc_id'];
-                if ($ac_id != null) { 
-                $rowaccbalance = $conn->query("SELECT balance from acc_head where id = $ac_id")->fetch_assoc();
-            if ($rowaccbalance != null) {
-                echo $rowaccbalance['balance'];
-            }};} ?>
-
-                    </p>
-
+                    </div>
                 </div>
                 
-                <div class="col-sm-1">
-                    <button type="submit" class="btn btn-primary btn-lg btn-block" >اعرض</button>
-                            </div>
-                            <div class="col-md-2">
-                    <button  class="btn btn-outline-secondary btn-sm btn-block " id="printBtn" >طباعه<i class="fa fa-solid fa-print"></i></button>
-                    <button  class="btn btn-outline-success btn-sm btn-block " id="exportExcel" ><i class="fa fa-solid fa-table"></i></button>
-                    </div>   
-                </div>                    
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>من تاريخ</label>
+                        <input type="date" class="form-control" value="<?= isset($_POST['startdate']) ? $_POST['startdate'] : date('Y-m-01') ?>" name="startdate" required>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>إلى تاريخ</label>
+                        <input type="date" class="form-control" value="<?= isset($_POST['enddate']) ? $_POST['enddate'] : date('Y-m-d') ?>" name="enddate" required>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label>رصيد الحساب</label>
+                        <input type="text" class="form-control" readonly value="<?php 
+                        if(isset($_POST['acc_id'])){
+                            $ac_id = $_POST['acc_id'];
+                            if ($ac_id != null && $ac_id != 0) { 
+                                $rowaccbalance = $conn->query("SELECT balance from acc_head where id = $ac_id")->fetch_assoc();
+                                echo ($rowaccbalance && isset($rowaccbalance['balance'])) ? number_format($rowaccbalance['balance'], 2) : '0.00';
+                            } else {
+                                echo '0.00';
+                            }
+                        } else {
+                            echo '0.00';
+                        }
+                        ?>">
+                    </div>
+                </div>
+                
+                <div class="col-md-1">
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">عرض</button>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm btn-block mb-1" id="printBtn">
+                            <i class="fa fa-print"></i> طباعة
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm btn-block" id="exportExcel">
+                            <i class="fa fa-table"></i> Excel
+                        </button>
+                    </div>
+                </div>
             </div>
             </form>
         </div>

@@ -4,7 +4,7 @@ if (!isset($action_url)) {
 }
 ?>
 <!-- Main Content -->
-<form action="<?= $action_url ?>" method="post" id="posForm" onsubmit="return handleFormSubmit(this);">
+<form action="<?= $action_url ?>" method="post" id="posForm">
         <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
             <div class="row h-100 g-1">
                 <!-- القسم الأيمن - معلومات الطلب -->
