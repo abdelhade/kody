@@ -5,8 +5,8 @@ include('includes/sidebar.php');
 
 
 $q = isset($_GET['q']) ? $_GET['q'] : "all";  // استقبال قيمة q من GET
-$strtdate = isset($_POST['strtdate']) ? $_POST['strtdate'] : null;
-$enddate = isset($_POST['enddate']) ? $_POST['enddate'] : null;
+$strtdate = isset($_GET['strtdate']) ? $_GET['strtdate'] : (isset($_POST['strtdate']) ? $_POST['strtdate'] : null);
+$enddate = isset($_GET['enddate']) ? $_GET['enddate'] : (isset($_POST['enddate']) ? $_POST['enddate'] : null);
 
 $dateFilter = "";
 if ($strtdate && $enddate) {
@@ -15,18 +15,26 @@ if ($strtdate && $enddate) {
     $dateFilter = "AND pro_date = '$today'";
 }
 
+// Pagination
+$limit = 50;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
 switch ($q) {
     case "sale":
         $report_name = "مشتريات";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE pro_tybe = 4 AND isdeleted != 1 $dateFilter ORDER BY id DESC");
+        $where_clause = "pro_tybe = 4 AND isdeleted != 1 $dateFilter";
+        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     case "buy":
         $report_name = "مبيعات";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9) AND isdeleted != 1 $dateFilter ORDER BY id DESC");
+        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9) AND isdeleted != 1 $dateFilter";
+        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE isdeleted != 1 $dateFilter ORDER BY id DESC");
+        $where_clause = "isdeleted != 1 $dateFilter";
+        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
 }
 ?>
 
@@ -47,20 +55,20 @@ switch ($q) {
                         </div>
                     <?php endif; ?>
               
-                    <form action="" method="post">
+                    <form action="" method="get">
                     <?php
-                        $strtdate = isset($_POST['strtdate']) ? $_POST['strtdate'] : date("Y-m-d");
-                        $enddate = isset($_POST['enddate']) ? $_POST['enddate'] : date("Y-m-d");
+                        $strtdate_display = $strtdate ?: date("Y-m-d");
+                        $enddate_display = $enddate ?: date("Y-m-d");
                         ?>
-
+                        <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
                         <div class="row">
                             <div class="col-md-4 col-sm-6 col-12 mb-2">
                                 <label>من</label>
-                                <input class="form-control" type="date" value="<?= $strtdate ?>" name="strtdate">
+                                <input class="form-control" type="date" value="<?= $strtdate_display ?>" name="strtdate">
                             </div>
                             <div class="col-md-4 col-sm-6 col-12 mb-2">
                                 <label>إلى</label>
-                                <input class="form-control" type="date" value="<?= $enddate ?>" name="enddate">
+                                <input class="form-control" type="date" value="<?= $enddate_display ?>" name="enddate">
                             </div>
                             <div class="col-md-4 col-12 mb-2">
                                 <label class="d-none d-md-block">&nbsp;</label>
@@ -93,7 +101,7 @@ switch ($q) {
                             </thead>
                             <tbody>
                                 <?php
-                                $x = 0;
+                                $x = $offset; // بدء العد من الـ offset
                                 while ($rowop = $resop->fetch_assoc()) {
                                     $x++;
                                     $proid = $rowop['id'];
@@ -117,7 +125,7 @@ switch ($q) {
                                         <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc1']}")->fetch_assoc()['aname'] ?></td>
                                         <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc2']}")->fetch_assoc()['aname'] ?></td>
                                         <td><?= $rowop['store_id'] > 0 ? $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['store_id']}")->fetch_assoc()['aname'] : '' ?></td>
-                                        <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['emp_id']}")->fetch_assoc()['aname'] ?></td>
+                                        <td><?= $rowop['emp_id'] > 0 ? $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['emp_id']}")->fetch_assoc()['aname'] : '' ?></td>
                                          <td class="prft"><?= $rowop['profit'] ?></td>
                                         <td><?= $conn->query("SELECT uname FROM users WHERE id = {$rowop['user']}")->fetch_assoc()['uname'] ?></td>
                                         <td>
@@ -246,6 +254,86 @@ switch ($q) {
                        
                         </table>
                     </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="card-footer">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <?php
+                            // حساب إجمالي السجلات
+                            $count_query = $conn->query("SELECT COUNT(*) as total FROM ot_head WHERE $where_clause");
+                            $total_items = $count_query->fetch_assoc()['total'];
+                            $total_pages = ceil($total_items / $limit);
+                            
+                            // بناء query string للفلاتر
+                            $filter_params = "q=$q";
+                            if (!empty($strtdate)) $filter_params .= "&strtdate=" . urlencode($strtdate);
+                            if (!empty($enddate)) $filter_params .= "&enddate=" . urlencode($enddate);
+                            
+                            // زر السابق
+                            if ($page > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="operations_summary.php?<?= $filter_params ?>&page=<?= $page - 1 ?>" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            <?php else: ?>
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo;</span>
+                                </li>
+                            <?php endif;
+                            
+                            // عرض أرقام الصفحات
+                            $start_page = max(1, $page - 2);
+                            $end_page = min($total_pages, $page + 2);
+                            
+                            // الصفحة الأولى
+                            if ($start_page > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="operations_summary.php?<?= $filter_params ?>&page=1">1</a>
+                                </li>
+                                <?php if ($start_page > 2): ?>
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                <?php endif;
+                            endif;
+                            
+                            // الصفحات المحيطة
+                            for ($i = $start_page; $i <= $end_page; $i++): ?>
+                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                                    <a class="page-link" href="operations_summary.php?<?= $filter_params ?>&page=<?= $i ?>"><?= $i ?></a>
+                                </li>
+                            <?php endfor;
+                            
+                            // الصفحة الأخيرة
+                            if ($end_page < $total_pages): 
+                                if ($end_page < $total_pages - 1): ?>
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                <?php endif; ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="operations_summary.php?<?= $filter_params ?>&page=<?= $total_pages ?>"><?= $total_pages ?></a>
+                                </li>
+                            <?php endif;
+                            
+                            // زر التالي
+                            if ($page < $total_pages): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="operations_summary.php?<?= $filter_params ?>&page=<?= $page + 1 ?>" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            <?php else: ?>
+                                <li class="page-item disabled">
+                                    <span class="page-link">&raquo;</span>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                عرض <?= ($offset + 1) ?> - <?= min($offset + $limit, $total_items) ?> من <?= $total_items ?> عملية
+                            </small>
+                        </div>
+                    </nav>
                 </div>
             </div>
         </div>

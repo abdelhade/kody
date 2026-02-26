@@ -39,7 +39,7 @@ $opid = null;
 
 // تحسين: معالجة GET parameters مرة واحدة
 $q_param = $_GET['q'] ?? null;
-$e_param = $_GET['e'] ?? null;
+$e_param = $_GET['e'] ?? $_GET['edit_id'] ?? null; // دعم e و edit_id
 
 if (!empty($q_param) && isset(INVOICE_TYPES[$q_param])) {
     // وضع إضافة فاتورة جديدة

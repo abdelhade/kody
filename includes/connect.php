@@ -79,3 +79,9 @@ if (isset($_COOKIE['login'])) {
 }else {
   $user = '';
 }
+
+// رسالة خطأ الصلاحيات
+$userErrorMassage = '<div class="alert alert-danger text-center">
+    <i class="fas fa-exclamation-triangle"></i> 
+    ليس لديك صلاحية للوصول إلى هذه الصفحة
+</div>';
