@@ -25,7 +25,7 @@
             <div class="card-body">
          
                 <div class="table-responsive">
-                    <table data-page-length='100'  id="horsTable" class="table table-striped"> 
+                    <table data-page-length='50'  id="horsTable" class="table table-striped"> 
                         <thead>
                             <tr>
                                 <th>م</th>
@@ -44,11 +44,11 @@
                         <tbody>
                         <?php
 
-                        $limit = 100;  // عدد العناصر في الصفحة الواحدة
+                        $limit = 50;  // عدد العناصر في الصفحة الواحدة
                         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;  // الصفحة الحالية
                         $offset = ($page - 1) * $limit;
                         $resitm = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 LIMIT $limit OFFSET $offset");
-                        $x=0;
+                        $x = $offset;  // البدء من رقم الصف الصحيح
                         while ($rowitm = $resitm->fetch_assoc()) {
                         $x++;
                         ?>

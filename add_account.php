@@ -20,10 +20,17 @@
         }else {$last_id = $parent."001";}
         }else{$parent = 0 ;$last_id="";}
         if (isset($_GET['parent_id'])) {
-        $sqlasc = "SELECT * FROM acc_head where is_basic = 1 AND code like '$parent%' order by code";
-        $resacs =$conn->query($sqlasc);
-        }else{$sqlasc = "SELECT * FROM acc_head where is_basic = 1 order by code";
-        $resacs =$conn->query($sqlasc);}
+        // جلب جميع الحسابات الأساسية + الحساب الأب المحدد
+        $first_digit = substr($parent, 0, 1); // أول رقم من الكود
+        $sqlasc = "SELECT * FROM acc_head 
+                   WHERE (is_basic = 1 AND code LIKE '$first_digit%') 
+                   OR code = '$parent' 
+                   ORDER BY code";
+        $resacs = $conn->query($sqlasc);
+        } else {
+            $sqlasc = "SELECT * FROM acc_head WHERE is_basic = 1 ORDER BY code";
+            $resacs = $conn->query($sqlasc);
+        }
         ?>
     <div class="content-wrapper">
     <!-- Content Header (Page header) -->
@@ -90,8 +97,18 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
                             <select class="form form-control font-bold"  name="parent_id" id="">
                                 
                                 <?php
-                                while ($rowacs = $resacs->fetch_assoc()) {?>
-                                   <option value="<?= $rowacs['id'] ?>"><?= $rowacs['code'] ?>-<?= $rowacs['aname'] ?></option>
+                                while ($rowacs = $resacs->fetch_assoc()) {
+                                    // تحديد الحساب الأب المختار
+                                    $selected = '';
+                                    if (isset($_GET['parent_id'])) {
+                                        // البحث عن الحساب الأب بناءً على الكود
+                                        $parent_code = $_GET['parent_id'];
+                                        if ($rowacs['code'] == $parent_code) {
+                                            $selected = 'selected';
+                                        }
+                                    }
+                                    ?>
+                                   <option value="<?= $rowacs['id'] ?>" <?= $selected ?>><?= $rowacs['code'] ?>-<?= $rowacs['aname'] ?></option>
                                <?php }?>
                             </select>
 
@@ -178,13 +195,18 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
             </div>
                 </div>
             </div>
-
+ 
 
         </div>
         </form>
 
 
-        <?php }else{ echo $userErrorMassage; }?>
+        <?php }else{ 
+            echo '<div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    ليس لديك صلاحية للوصول إلى هذه الصفحة
+                  </div>'; 
+        }?>
 
 
 
