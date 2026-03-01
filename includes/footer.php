@@ -333,8 +333,35 @@ $(document).ready(function() {
         $('#paid').val(headnet.toFixed(2));
     });
     
-    // معالجة submit للـ form
-    $('#myForm2').on('submit', function(e) {
+    // معالجة الأزرار بشكل صريح - تعمل مع أي form
+    $('button[type="submit"][name="submit"]').on('click', function(e) {
+        const buttonValue = $(this).val();
+        const form = $(this).closest('form');
+        
+        console.log('Button clicked with value:', buttonValue);
+        console.log('Form ID:', form.attr('id'));
+        
+        // إزالة أي hidden inputs قديمة
+        form.find('input[type="hidden"][name="submit"]').remove();
+        
+        // إضافة hidden input جديد بقيمة الزر
+        form.append('<input type="hidden" name="submit" value="' + buttonValue + '">');
+        
+        console.log('Hidden input added with value:', buttonValue);
+    });
+    
+    // معالجة submit للـ forms
+    $('form').on('submit', function(e) {
+        const submitter = e.originalEvent?.submitter;
+        if (submitter && submitter.name === 'submit') {
+            console.log('Submit button clicked:', submitter.name, '=', submitter.value);
+            
+            // التأكد من وجود hidden input بنفس القيمة
+            const form = $(this);
+            form.find('input[type="hidden"][name="submit"]').remove();
+            form.append('<input type="hidden" name="submit" value="' + submitter.value + '">');
+        }
+        
         // التحقق من الكميات
         const qtyInputs = document.querySelectorAll('.itmqty');
         let hasZeroQty = false;

@@ -1,7 +1,7 @@
 <?php
 include('../../includes/connect.php');
 $input = $_POST['input'];
-$sql = "SELECT * FROM myitems WHERE iname LIKE ?";
+$sql = "SELECT * FROM myitems WHERE iname LIKE ? AND isdeleted = 0 LIMIT 50";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $inputParam);
 $inputParam = '%' . $input . '%'; // Add wildcards for partial matching

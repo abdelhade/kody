@@ -3,7 +3,7 @@ include('../../includes/connect.php');
 
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 
-$sql = "SELECT id, iname FROM myitems WHERE iname LIKE ? order by iname limit 5";
+$sql = "SELECT id, iname FROM myitems WHERE iname LIKE ? AND isdeleted = 0 order by iname limit 50";
 $stmt = $conn->prepare($sql);
 $searchTerm = "%".$search."%";
 $stmt->bind_param("s", $searchTerm);

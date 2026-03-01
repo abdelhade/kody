@@ -167,8 +167,9 @@
 
 <div class="row">
                             <div class=" col-md-4">
-                              <button id="submit" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="save">حفظ (F12) </button>
-                              <button id="submit2" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="print">حفظ و طباعه (F11) </button>
+                              <button id="submit" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="save" onclick="this.form.submit_action.value='save';">حفظ (F12) </button>
+                              <button id="submit2" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="print" onclick="this.form.submit_action.value='print';">حفظ و طباعه (F11) </button>
+                              <input type="hidden" name="submit_action" value="save">
                           </div>                            
                         <div class="col-md-6">
                         <input type="text" class="form-control bg-orange-300" name="info" id="info" placeholder="ملاحظات">

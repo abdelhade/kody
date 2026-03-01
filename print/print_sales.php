@@ -306,18 +306,21 @@ echo $unitid['uname'];
 <?php if ($rowfat['fat_plus'] > 0 ){?>
 <tr><th>إضافي:</th><td style="color: #28a745;">+ <?= number_format($rowfat['fat_plus'], 2) ?></td></tr>
 <?php }?>
-<tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($rowfat['pro_value'], 2) ?></strong></td></tr>
+<tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($rowfat['fat_net'], 2) ?></strong></td></tr>
 <tr><th>المدفوع:</th><td style="color: #28a745;"><?php
+           // البحث عن سند قبض/دفع مرتبط بالفاتورة
            $rowpaid = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = '2' OR pro_tybe = '1') AND op2 = $id AND isdeleted = 0")->fetch_assoc();
-           if ($rowpaid) {
-               if ($rowpaid['pro_value'] !== null) {
-                   $paidval = $rowpaid['pro_value'];
-                   $change = $rowfat['pro_value'] - $paidval;
-               }}else {
-                $paidval = 0;
-                   $change = $rowfat['pro_value'];
-            }
-            echo number_format($paidval, 2);
+           
+           if ($rowpaid && $rowpaid['pro_value'] !== null) {
+               // إذا وجد سند، استخدم قيمته
+               $paidval = $rowpaid['pro_value'];
+           } else {
+               // إذا لم يوجد سند، افترض أن المدفوع = الصافي (دفع كامل)
+               $paidval = $rowfat['fat_net'];
+           }
+           
+           $change = $rowfat['fat_net'] - $paidval;
+           echo number_format($paidval, 2);
     ?></td></tr>
 <tr><th>المتبقي:</th><td style="color: <?= $change > 0 ? '#dc3545' : '#28a745' ?>; font-weight: bold;"><?= number_format($change, 2) ?></td></tr>
 </table>

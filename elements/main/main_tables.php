@@ -71,7 +71,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="view-all-btn">
+                    <a href="acc_report.php" class="view-all-btn">
                         <span>عرض جميع الحسابات</span>
                         <i class="fas fa-arrow-left"></i>
                     </a>
@@ -142,7 +142,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="view-all-btn">
+                    <a href="operations_summary.php" class="view-all-btn">
                         <span>عرض جميع العمليات</span>
                         <i class="fas fa-arrow-left"></i>
                     </a>

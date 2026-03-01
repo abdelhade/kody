@@ -63,9 +63,20 @@ endif;
             </thead>
             <tbody>
                 <?php 
+                // إعدادات الترقيم
+                $records_per_page = 20;
+                $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+                $page = max(1, $page);
+                $offset = ($page - 1) * $records_per_page;
+                
+                // حساب إجمالي السجلات
                 $total_count = $conn->query("SELECT COUNT(*) as count FROM closed_orders")->fetch_assoc()['count'];
-                $x = $total_count;
-                $res_closed = $conn->query("SELECT * FROM closed_orders ORDER BY id DESC");
+                $total_pages = ceil($total_count / $records_per_page);
+                
+                // جلب السجلات للصفحة الحالية
+                $x = $total_count - $offset;
+                $res_closed = $conn->query("SELECT * FROM closed_orders ORDER BY id DESC LIMIT $offset, $records_per_page");
+                
                 while ($rowcl = $res_closed->fetch_assoc()) {
                 ?> 
                 <tr>
@@ -84,6 +95,59 @@ endif;
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination -->
+    <?php if ($total_pages > 1): ?>
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                <!-- زر الصفحة السابقة -->
+                <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=<?= $page - 1 ?>" aria-label="السابق">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                
+                <?php
+                // عرض أرقام الصفحات
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                
+                if ($start_page > 1) {
+                    echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
+                    if ($start_page > 2) {
+                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                    }
+                }
+                
+                for ($i = $start_page; $i <= $end_page; $i++) {
+                    $active = ($i == $page) ? 'active' : '';
+                    echo '<li class="page-item ' . $active . '"><a class="page-link" href="?page=' . $i . '">' . $i . '</a></li>';
+                }
+                
+                if ($end_page < $total_pages) {
+                    if ($end_page < $total_pages - 1) {
+                        echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                    }
+                    echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '">' . $total_pages . '</a></li>';
+                }
+                ?>
+                
+                <!-- زر الصفحة التالية -->
+                <li class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=<?= $page + 1 ?>" aria-label="التالي">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                الصفحة <?= $page ?> من <?= $total_pages ?> (إجمالي <?= $total_count ?> شيفت)
+            </small>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
           

@@ -514,7 +514,7 @@ if (!isset($action_url)) {
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="paymentModalLabel">
-                        <i class="fas fa-cash-register me-2"></i>الدفع والإجماليات
+                       الدفع والإجماليات
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
@@ -528,7 +528,7 @@ if (!isset($action_url)) {
                                     <div class="row align-items-center">
                                         <div class="col-4">
                                             <label class="mb-0 fw-bold text-primary">
-                                                <i class="fas fa-coins me-2"></i>الإجمالي
+                                                الإجمالي
                                             </label>
                                         </div>
                                         <div class="col-8">
@@ -544,7 +544,7 @@ if (!isset($action_url)) {
                             <div class="card border-primary">
                                 <div class="card-header bg-primary bg-opacity-10">
                                     <h6 class="mb-0 text-primary">
-                                        <i class="fas fa-percentage me-2"></i>الخصم
+                                       الخصم
                                     </h6>
                                 </div>
                                 <div class="card-body">
@@ -554,7 +554,7 @@ if (!isset($action_url)) {
                                             <div class="input-group">
                                                 <input class="form-control text-center" type="number"
                                                     id="modal_discperc" value="0" min="0" max="100" step="0.1">
-                                                <span class="input-group-text">%</span>
+                                              
                                             </div>
                                         </div>
                                         <div class="col-6">
@@ -562,7 +562,7 @@ if (!isset($action_url)) {
                                             <div class="input-group">
                                                 <input class="form-control text-center" type="number"
                                                     id="modal_discount" value="0" step="0.01">
-                                                <span class="input-group-text bg-primary text-white">ج.م</span>
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -577,7 +577,7 @@ if (!isset($action_url)) {
                                     <div class="row align-items-center">
                                         <div class="col-4">
                                             <label class="mb-0 fw-bold text-success">
-                                                <i class="fas fa-check-circle me-2"></i>الصافي
+                                                الصافي
                                             </label>
                                         </div>
                                         <div class="col-8">
@@ -591,22 +591,22 @@ if (!isset($action_url)) {
                         <!-- المدفوع والباقي -->
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-money-bill-wave me-2"></i>المدفوع
+                                المدفوع
                             </label>
                             <div class="input-group input-group-lg">
                                 <input class="form-control text-center fw-bold" type="number" id="modal_paid"
                                     value="0.00" step="0.01">
-                                <span class="input-group-text">ج.م</span>
+                                
                             </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold text-danger">
-                                <i class="fas fa-arrow-left me-2"></i>الباقي
+                                الباقي
                             </label>
                             <div class="input-group input-group-lg">
                                 <input class="form-control text-center fw-bold bg-danger text-white" type="text"
                                     id="modal_change" value="0.00" readonly>
-                                <span class="input-group-text bg-danger text-white">ج.م</span>
+                                
                             </div>
                         </div>
 
@@ -615,7 +615,7 @@ if (!isset($action_url)) {
                              <div class="card border-warning">
                                  <div class="card-header bg-warning bg-opacity-10 py-1">
                                      <h6 class="mb-0 text-dark" style="font-size: 0.8rem;">
-                                         <i class="fas fa-user-clock me-1"></i>بيانات الأجل
+                                         بيانات الأجل
                                      </h6>
                                  </div>
                                  <div class="card-body p-2">
@@ -624,7 +624,7 @@ if (!isset($action_url)) {
                                              <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">قيمة الأجل</label>
                                               <div class="input-group input-group-sm">
                                                  <input type="number" class="form-control form-control-sm fw-bold text-danger" id="jal_amount" value="0.00" step="0.01" min="0">
-                                                 <span class="input-group-text bg-danger text-white">ج.م</span>
+                                               
                                              </div>
                                          </div>
                                          <div class="col-md-4">
@@ -651,11 +651,11 @@ if (!isset($action_url)) {
                     </button>
                     <?php else: ?>
                     <button type="button" class="btn btn-success" onclick="submitPOS('save');">
-                        <i class="fas fa-save me-1"></i>حفظ الطلب
+                       حفظ الطلب
                     </button>
                     <?php endif; ?>
                     <button type="button" class="btn btn-primary" onclick="submitPOS('cash');">
-                        <i class="fas fa-print me-1"></i>حفظ وطباعة
+                        حفظ وطباعة
                     </button>
                 </div>
             </div>
