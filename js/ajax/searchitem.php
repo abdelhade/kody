@@ -7,7 +7,7 @@ if ($conn->connect_error) {
 $input = $_GET['input']; // Assuming you're using GET method
 
 // Prepare and execute SQL query
-$sql = "SELECT id, iname FROM myitems WHERE iname LIKE '%" . $conn->real_escape_string($input) . "%' LIMIT 10";
+$sql = "SELECT id, iname FROM myitems WHERE iname LIKE '%" . $conn->real_escape_string($input) . "%' AND isdeleted = 0 LIMIT 50";
 $result = $conn->query($sql);
 
 // Check if any rows were returned

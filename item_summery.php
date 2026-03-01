@@ -12,10 +12,25 @@
                     $sqlitm = "SELECT * FROM myitems WHERE id = '$itmid'";
                     $resitm = mysqli_query($conn, $sqlitm);
                     $rowitm = mysqli_fetch_assoc($resitm);
+                    
+                    // التحقق من وجود الصنف
+                    if (!$rowitm) {
+                        echo '<div class="alert alert-danger">الصنف غير موجود أو تم حذفه</div>';
+                        echo '<a href="items_summery.php" class="btn btn-primary">العودة لقائمة الأصناف</a>';
+                        echo '</div></div></div></section></div>';
+                        include('includes/footer.php');
+                        exit;
+                    }
+                } else {
+                    echo '<div class="alert alert-warning">يرجى تحديد رقم الصنف</div>';
+                    echo '<a href="items_summery.php" class="btn btn-primary">العودة لقائمة الأصناف</a>';
+                    echo '</div></div></div></section></div>';
+                    include('includes/footer.php');
+                    exit;
                 }
                 ?>
                 <div class="card-header">
-                    <h2 class="hors-head hazaz"> حركة صنف [ <?= $rowitm['iname'] ?> ]</h2>
+                    <h2 class="hors-head hazaz"> حركة صنف [ <?= htmlspecialchars($rowitm['iname']) ?> ]</h2>
                 </div>
 
                 <div class="card-body">

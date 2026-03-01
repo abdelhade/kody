@@ -453,12 +453,17 @@ try {
             $u_val = floatval($_POST['u_val'][$index]);
             
             // تحديد الكميات حسب نوع الفاتورة
-            if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_RETURN']])) {
+                // مشتريات، أمر شراء، مردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER'], INVOICE_TYPES['PURCHASE_RETURN']])) {
+                // مبيعات، كاشير، أمر بيع، عرض سعر، مردود مشتريات → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
+            } else {
+                $qty_in = 0;
+                $qty_out = 0;
             }
             
             $det_value = $itmqty * ($itmprice - $itmdisc);

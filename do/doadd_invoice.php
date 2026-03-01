@@ -7,6 +7,8 @@ error_log('POST data received: ' . print_r($_POST, true));
 
 // Debug: Log individual key values
 error_log('pro_tybe: ' . (isset($_POST['pro_tybe']) ? $_POST['pro_tybe'] : 'NOT SET'));
+error_log('submit: ' . (isset($_POST['submit']) ? $_POST['submit'] : 'NOT SET'));
+error_log('submit_action: ' . (isset($_POST['submit_action']) ? $_POST['submit_action'] : 'NOT SET'));
 error_log('store_id: ' . (isset($_POST['store_id']) ? $_POST['store_id'] : 'NOT SET'));
 error_log('acc2_id: ' . (isset($_POST['acc2_id']) ? $_POST['acc2_id'] : 'NOT SET'));
 error_log('emp_id: ' . (isset($_POST['emp_id']) ? $_POST['emp_id'] : 'NOT SET'));
@@ -71,7 +73,7 @@ $headplus = isset($_POST['headplus']) ? floatval($_POST['headplus']) : 0;
 $headnet = isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0;
 $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
-$submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
+$submit = isset($_POST['submit_action']) ? htmlspecialchars($_POST['submit_action'], ENT_QUOTES, 'UTF-8') : (isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save');
 $jal_name = isset($_POST['jal_name']) ? htmlspecialchars(trim($_POST['jal_name']), ENT_QUOTES, 'UTF-8') : NULL;
 $jal_notes = isset($_POST['jal_notes']) ? htmlspecialchars(trim($_POST['jal_notes']), ENT_QUOTES, 'UTF-8') : NULL;
 $jal_amount = isset($_POST['jal_amount']) ? floatval($_POST['jal_amount']) : 0;
@@ -621,10 +623,12 @@ try {
             $u_val = floatval($_POST['u_val'][$index]);
             
             // تحديد الكميات حسب نوع الفاتورة
-            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER']])) {
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_RETURN']])) {
+                // مشتريات، أمر شراء، مردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER'], INVOICE_TYPES['PURCHASE_RETURN']])) {
+                // مبيعات، كاشير، أمر بيع، عرض سعر، مردود مشتريات → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
             } else {
@@ -743,24 +747,34 @@ try {
 }
 
 // إعادة التوجيه حسب نوع العملية
-error_log('Redirecting with submit value: ' . $submit . ' and invoice type: ' . $pro_tybe);
+error_log('=== REDIRECT START ===');
+error_log('Submit value: ' . $submit);
+error_log('Submit raw from POST: ' . (isset($_POST['submit']) ? $_POST['submit'] : 'NOT SET'));
+error_log('Invoice type (pro_tybe): ' . $pro_tybe);
 error_log('Last operation ID: ' . $last_op);
+error_log('All POST keys: ' . implode(', ', array_keys($_POST)));
+
 if ($submit == 'print') {
-    error_log('Redirecting to print sales page');
-    error_log('Header: Location: ../print/print_sales.php?id=$last_op');
-    header("Location: ../print/print_sales.php?id=$last_op");
+    error_log('CONDITION MATCHED: submit == print');
+    $redirect_url = "../print/print_sales.php?id=$last_op";
+    error_log('Redirecting to: ' . $redirect_url);
+    header("Location: $redirect_url");
+    error_log('Header sent - this should not appear if redirect works');
+    exit;
 } elseif ($submit == 'cash') {
-    error_log('Redirecting to receipt page');
-    error_log('Header: Location: ../print/receipt.php?id=$last_op');
+    error_log('CONDITION MATCHED: submit == cash');
+    $redirect_url = "../print/receipt.php?id=$last_op";
+    error_log('Redirecting to: ' . $redirect_url);
     
     // التحقق من طلب القفل بعد الحفظ والطباعة
     if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
-        error_log('Lock after save and print requested - will redirect to logout after print');
-        // يمكن إضافة session variable هنا لو محتاج تقفل بعد الطباعة
+        error_log('Lock after save and print requested');
         $_SESSION['lock_after_print'] = true;
     }
     
-    header("Location: ../print/receipt.php?id=$last_op");
+    header("Location: $redirect_url");
+    error_log('Header sent - this should not appear if redirect works');
+    exit;
 } elseif ($submit == 'save') {
     error_log('Redirecting with save action');
     // For save action, redirect back to POS for POS invoices, or to sales page for others
@@ -777,8 +791,10 @@ if ($submit == 'print') {
         }
     } else {
         $redirects = [
-            INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
-            INVOICE_TYPES['SALES'] => '../sales.php?q=buy'
+            INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',  // مشتريات
+            INVOICE_TYPES['SALES'] => '../sales.php?q=buy',      // مبيعات
+            INVOICE_TYPES['PURCHASE_RETURN'] => '../sales.php?q=resale',  // مردود مشتريات
+            INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy'       // مردود مبيعات
         ];
         $redirect = $redirects[$pro_tybe] ?? '../sales.php';
         error_log('Redirecting to: ' . $redirect);
@@ -791,7 +807,9 @@ if ($submit == 'print') {
     $redirects = [
         INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
         INVOICE_TYPES['SALES'] => '../sales.php?q=buy',
-        INVOICE_TYPES['POS'] => '../pos_barcode.php'
+        INVOICE_TYPES['POS'] => '../pos_barcode.php',
+        INVOICE_TYPES['PURCHASE_RETURN'] => '../sales.php?q=resale',
+        INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy'
     ];
     
     $redirect = $redirects[$pro_tybe] ?? '../sales.php';

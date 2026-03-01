@@ -39,7 +39,7 @@
 
                     <!-- ✅ جدول البيانات -->
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="myTable" data-page-length="100">
+                        <table class="table table-bordered table-striped" id="itemsSummaryTable" data-page-length="100">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -112,7 +112,7 @@
 <script>
     $(document).ready(function() {
         // حساب القيم أولاً قبل تفعيل DataTables
-        $('#myTable tbody tr').each(function() {
+        $('#itemsSummaryTable tbody tr').each(function() {
             var $row = $(this);
             var val = parseFloat($row.find('.val').text()) || 0;
             var qty = parseFloat($row.find('.qty').text()) || 0;
@@ -145,8 +145,14 @@
             }
         });
 
+        // تحقق إذا كان الجدول متهيأ مسبقاً
+        if ($.fn.DataTable.isDataTable('#itemsSummaryTable')) {
+            // إذا كان متهيأ، دمره أولاً
+            $('#itemsSummaryTable').DataTable().destroy();
+        }
+
         // تفعيل DataTables بعد حساب القيم
-        var table = $('#myTable').DataTable({
+        var table = $('#itemsSummaryTable').DataTable({
             "pageLength": 100,
             "language": {
                 "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json",

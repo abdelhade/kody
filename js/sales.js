@@ -12,6 +12,11 @@ $(document).ready(function() {
     
     // تحديث المدفوع عند تغيير الخصم أو الإضافات أو الإجمالي
     $(document).on('input change', '#headdisc, #headplus, #headtotal, #headnet', function() {
+        // إعادة حساب الإجمالي عند تغيير الخصم أو الإضافات
+        if ($(this).attr('id') === 'headdisc' || $(this).attr('id') === 'headplus') {
+            updateTotal();
+        }
+        
         const headnet = parseFloat($('#headnet').val()) || 0;
         $('#paid').val(headnet.toFixed(2));
         $('#change').val('0.00');

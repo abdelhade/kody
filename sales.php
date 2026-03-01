@@ -25,7 +25,7 @@ if (!defined('INVOICE_TYPES')) {
     
     define('EDIT_NAMES', [
         4 => 'تعديل فاتورة المشتريات', 3 => 'تعديل فاتورة المبيعات',
-        10 => 'تعديل فاتورة مردود المبيعات', 11 => 'تعديل فاتورة مردود المشتريات',
+        10 => 'تعديل فاتورة مردود المشتريات', 11 => 'تعديل فاتورة مردود المبيعات',
         14 => 'تعديل عرض السعر'
     ]);
 }
@@ -124,7 +124,11 @@ function getInvoiceElements() {
 
 <!-- Load Non-Critical CSS Async -->
 <link rel="stylesheet" href="dist/css/sales.css" media="print" onload="this.media='all'; this.onload=null;">
-<noscript><link rel="stylesheet" href="dist/css/sales.css"></noscript>
+<link rel="stylesheet" href="dist/css/keyboard-hints.css" media="print" onload="this.media='all'; this.onload=null;">
+<noscript>
+    <link rel="stylesheet" href="dist/css/sales.css">
+    <link rel="stylesheet" href="dist/css/keyboard-hints.css">
+</noscript>
 
 <div class="content-wrapper bg-teal-50">
 <section class="content-header">
@@ -188,6 +192,92 @@ if (!empty($elements['add_item_modal'])) {
 </section>
 </div>
 
+<!-- زر إظهار اختصارات الكيبورد -->
+<button class="show-keyboard-help" id="showKeyboardHelp" title="اختصارات الكيبورد">
+    ⌨️
+</button>
+
+<!-- نافذة المساعدة -->
+<div class="keyboard-help" id="keyboardHelp" style="display: none;">
+    <button class="close-btn" onclick="document.getElementById('keyboardHelp').style.display='none'">×</button>
+    <h4>⌨️ اختصارات الكيبورد</h4>
+    <ul style="direction: rtl; text-align: right;">
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">التنقل لأعلى</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">↑</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">التنقل لأسفل</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">↓</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">التنقل لليمين</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">→</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">التنقل لليسار</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">←</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">الحقل التالي</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Tab</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">الحقل السابق</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Shift+Tab</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">تأكيد/التالي</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Enter</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">إلغاء/إغلاق</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Esc</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">إضافة صف جديد</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Alt+N</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">حقل الخصم</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">F6</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">حقل المدفوع</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">F7</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">حفظ وطباعة</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">F11</kbd> أو <kbd style="direction: ltr; unicode-bidi: isolate;">Alt+P</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">حفظ</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">F12</kbd> أو <kbd style="direction: ltr; unicode-bidi: isolate;">Alt+S</kbd>
+        </li>
+        <li style="display: flex; justify-content: space-between; direction: rtl;">
+            <span style="direction: rtl;">إظهار/إخفاء المساعدة</span> 
+            <kbd style="direction: ltr; unicode-bidi: isolate;">Alt+H</kbd>
+        </li>
+    </ul>
+</div>
+
+<script>
+<script>
+// إظهار/إخفاء نافذة المساعدة بالضغط على الزر
+document.getElementById('showKeyboardHelp')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const helpDiv = document.getElementById('keyboardHelp');
+    if (helpDiv.style.display === 'none') {
+        helpDiv.style.display = 'block';
+    } else {
+        helpDiv.style.display = 'none';
+    }
+});
+
+// تم نقل معالج Alt+H إلى keyboard_navigation.js
+</script>
+
 <?php 
 include('includes/footer.php');
 
@@ -205,10 +295,12 @@ ob_end_flush();
 <!-- Preload JavaScript Files -->
 <link rel="preload" href="js/sales.js" as="script">
 <link rel="preload" href="js/sales0.js" as="script">
+<link rel="preload" href="js/keyboard_navigation.js" as="script">
 
 <!-- Load JavaScript Async with defer -->
 <script src="js/sales.js" defer></script>
 <script src="js/sales0.js" defer></script>
+<script src="js/keyboard_navigation.js" defer></script>
 
 <!-- Prefetch للصفحات المحتملة -->
 <link rel="prefetch" href="do/doadd_invoice.php">
