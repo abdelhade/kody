@@ -241,12 +241,12 @@ function getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id) {
         case INVOICE_TYPES['SALES']:
         case INVOICE_TYPES['POS']:
             return [
-                'acc1' => $acc2_id,
-                'acc2' => $store_id,
-                'acc3' => 91,
-                'acc4' => $acc2_id,
-                'acc5' => $fund_id,
-                'acc6' => $acc2_id
+                'acc1' => $fund_id,      // الصندوق (مدين) - النقدية بتدخل الصندوق
+                'acc2' => $acc2_id,      // العميل (دائن) - اللي انتي بتختاريه من الدروب داون
+                'acc3' => 91,            // حساب المبيعات (للمرجعية)
+                'acc4' => $acc2_id,      // العميل
+                'acc5' => $fund_id,      // الصندوق (للدفع)
+                'acc6' => $acc2_id       // العميل (للدفع الآجل)
             ];
             
         case INVOICE_TYPES['PURCHASE_RETURN']:
@@ -512,7 +512,9 @@ try {
         $stmt->close();
     }
     // معالجة المدفوعات إذا وجدت
-    if ($paid > 0) {
+    // ملاحظة: قيد الدفع يُسجل فقط إذا كان المدفوع مختلف عن الصافي
+    // لو المدفوع = الصافي، القيد الأساسي كافي ومش محتاجين قيد إضافي
+    if ($paid > 0 && $paid != $headnet) {
         // إدخال عملية الدفع/القبض
         $stmt = $conn->prepare(
             "INSERT INTO ot_head (

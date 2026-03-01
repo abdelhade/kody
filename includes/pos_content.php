@@ -600,6 +600,9 @@ if (!isset($action_url)) {
                             </div>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-bold text-danger">
+                                <i class="fas fa-arrow-left me-2"></i>الباقي
+                            </label>
                             <div class="input-group input-group-lg">
                                 <input class="form-control text-center fw-bold bg-danger text-white" type="text"
                                     id="modal_change" value="0.00" readonly>

@@ -1,4 +1,5 @@
 <?php include('includes/header.php'); ?>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
 <?php include('includes/navbar.php'); ?>
 <?php include('includes/sidebar.php'); ?>
 
@@ -105,10 +106,14 @@
 
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+
 <script>
     $(document).ready(function() {
-        $('.price').each(function() {
-            var $row = $(this).closest('tr');
+        // حساب القيم أولاً قبل تفعيل DataTables
+        $('#myTable tbody tr').each(function() {
+            var $row = $(this);
             var val = parseFloat($row.find('.val').text()) || 0;
             var qty = parseFloat($row.find('.qty').text()) || 0;
             var costPrice = parseFloat($row.find('.cost_price').text()) || 0;
@@ -139,21 +144,49 @@
                 $row.find('.salesprofit').text('0%');
             }
         });
-    });
-</script>
-<script>
-    $('#qtyFilter').on('change', function() {
-        var filter = $(this).val();
 
-        $('#myTable tbody tr').each(function() {
-            var qty = parseFloat($(this).find('.qty').text()) || 0;
-            var show = true;
+        // تفعيل DataTables بعد حساب القيم
+        var table = $('#myTable').DataTable({
+            "pageLength": 100,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json",
+                "search": "بحث في جميع الأصناف:",
+                "lengthMenu": "عرض _MENU_ صنف",
+                "info": "عرض _START_ إلى _END_ من _TOTAL_ صنف",
+                "infoFiltered": "(تم الفلترة من _MAX_ صنف)",
+                "zeroRecords": "لا توجد نتائج",
+                "emptyTable": "لا توجد بيانات"
+            },
+            "order": [[3, "desc"]], // ترتيب حسب كمية المبيعات (تنازلي)
+            "columnDefs": [
+                { "orderable": false, "targets": 0 } // تعطيل الترتيب للعمود الأول (#)
+            ]
+        });
 
-            if (filter === 'greater' && qty <= 0) show = false;
-            if (filter === 'less' && qty >= 0) show = false;
-            if (filter === 'equal' && qty != 0) show = false;
-
-            $(this).toggle(show);
+        // فلتر الكمية
+        $('#qtyFilter').on('change', function() {
+            var filter = $(this).val();
+            
+            // إزالة الفلتر السابق
+            $.fn.dataTable.ext.search.pop();
+            
+            if (filter !== 'all') {
+                // إضافة فلتر مخصص
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, dataIndex) {
+                        var qty = parseFloat(data[3]) || 0; // العمود الرابع (الكمية)
+                        
+                        if (filter === 'greater') return qty > 0;
+                        if (filter === 'less') return qty <= 0;
+                        if (filter === 'equal') return qty == 0;
+                        
+                        return true;
+                    }
+                );
+            }
+            
+            // إعادة رسم الجدول
+            table.draw();
         });
     });
 </script>

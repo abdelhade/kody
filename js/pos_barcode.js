@@ -335,6 +335,12 @@ $(document).ready(function() {
         $('#net_val').val(net.toFixed(2));
         $('#net_display').text(net.toFixed(2) + ' ج.م');
         $('#modal_net').text(net.toFixed(2) + ' ج.م');
+        
+        // تعبئة المدفوع تلقائياً بقيمة الصافي
+        $('#modal_paid').val(net.toFixed(2));
+        // حساب الباقي (سيكون صفر لأن المدفوع = الصافي)
+        $('#modal_change').val('0.00');
+        $('#jal_amount').val('0.00');
     }
     
     // ========================================
@@ -455,6 +461,11 @@ $(document).ready(function() {
         $('#modal_net').text(net + ' ج.م');
         $('#net_val').val(net);
         $('#net_display').text(net + ' ج.م');
+        
+        // تحديث المدفوع تلقائياً
+        $('#modal_paid').val(net);
+        $('#modal_change').val('0.00');
+        $('#jal_amount').val('0.00');
     });
 
     $('#modal_discount').on('input', function() {
@@ -467,6 +478,11 @@ $(document).ready(function() {
         $('#modal_net').text(net + ' ج.م');
         $('#net_val').val(net);
         $('#net_display').text(net + ' ج.م');
+        
+        // تحديث المدفوع تلقائياً
+        $('#modal_paid').val(net);
+        $('#modal_change').val('0.00');
+        $('#jal_amount').val('0.00');
     });
 
     $('#modal_paid').on('input', function() {
