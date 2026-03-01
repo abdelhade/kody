@@ -101,7 +101,7 @@
                 echo $rowaccname['aname'];}
             };} ?></h3>   
             </center>
-                <table class="table table-bordered"  style="text-align:center" data-page-length='50'>
+                <table class="table table-bordered" id="summaryTable" style="text-align:center">
                     <thead>
                         <tr>
                             <th>م</th>
@@ -118,70 +118,78 @@
                         
             <?php if($_POST){
                 $acc = $_POST['acc_id'];
-                $x=0;
-                $sqlacc = "SELECT * FROM ot_head where acc1 = $acc or acc2 = $acc AND isdeleted = 0 order by pro_date ";
-                $resacc= $conn->query($sqlacc);
-                if (isset($resacc)) {
-                    $x=0;
-                while ($rowacc = $resacc->fetch_assoc()) {
-                $x++;
+                $startdate = isset($_POST['startdate']) && !empty($_POST['startdate']) ? $_POST['startdate'] : '1970-01-01';
+                $enddate = isset($_POST['enddate']) && !empty($_POST['enddate']) ? $_POST['enddate'] : date('Y-m-d');
+                
+                // استعلام واحد محسّن بدل استعلامات متعددة
+                $sqlacc = "SELECT 
+                            oh.id,
+                            oh.pro_date,
+                            oh.pro_tybe,
+                            oh.acc1,
+                            oh.acc2,
+                            oh.info,
+                            pt.pname as pro_type_name,
+                            a1.aname as acc1_name,
+                            a2.aname as acc2_name,
+                            COALESCE((SELECT SUM(debit) FROM journal_entries WHERE (op_id = oh.id OR op2 = oh.id) AND debit > 0), 0) as total_debit,
+                            COALESCE((SELECT SUM(credit) FROM journal_entries WHERE (op_id = oh.id OR op2 = oh.id) AND credit > 0), 0) as total_credit
+                        FROM ot_head oh
+                        LEFT JOIN pro_tybes pt ON oh.pro_tybe = pt.id
+                        LEFT JOIN acc_head a1 ON oh.acc1 = a1.id
+                        LEFT JOIN acc_head a2 ON oh.acc2 = a2.id
+                        WHERE (oh.acc1 = $acc OR oh.acc2 = $acc) 
+                        AND oh.isdeleted = 0
+                        AND oh.pro_date BETWEEN '$startdate' AND '$enddate'
+                        ORDER BY oh.pro_date, oh.id";
+                
+                $resacc = $conn->query($sqlacc);
+                
+                if ($resacc && $resacc->num_rows > 0) {
+                    $x = 0;
+                    while ($rowacc = $resacc->fetch_assoc()) {
+                        $x++;
+                        
+                        // تحديد المدين والدائن حسب الحساب
+                        $debit = ($rowacc['acc1'] == $acc) ? $rowacc['total_debit'] : 0;
+                        $credit = ($rowacc['acc2'] == $acc) ? $rowacc['total_credit'] : 0;
+                        
+                        // تحديد الحساب المقابل
+                        $opposite_acc = ($rowacc['acc2'] == $acc) ? $rowacc['acc1_name'] : $rowacc['acc2_name'];
                 ?>
                         <tr>
                             <td><?= $x ?></td>
-                            <td><?= $rowacc['pro_date']?></td>
-                     
-                            <td><?php $pro_tybe =  $rowacc['pro_tybe'];$row_tybe = $conn->query("SELECT pname FROM pro_tybes where id = $pro_tybe")->fetch_assoc();echo ($row_tybe && isset($row_tybe['pname'])) ? $row_tybe['pname'] : '';?></td>
-
-                     
-                            <td class="td4">
-                            <?php if($rowacc['acc1'] == $acc){
-                            $op_id = $rowacc['id'];
-                            $rowdb = $conn->query("SELECT debit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND debit > 0 ")->fetch_assoc();echo ($rowdb && isset($rowdb['debit'])) ? $rowdb['debit'] : 0;}else{echo 0;}?>
-                            </td>
-                     
-                            <td class="td5">
-                            <?php if($rowacc['acc2'] == $acc){
-                            $op_id = $rowacc['id'];
-        
-                            $rowcr = $conn->query("SELECT credit from journal_entries where (op_id = '$op_id' OR op2 = '$op_id') AND credit > 0 ")->fetch_assoc();echo ($rowcr && isset($rowcr['credit'])) ? $rowcr['credit'] : 0;}else{echo 0;}?>
-                            
-                            </td>
-                     
+                            <td><?= $rowacc['pro_date'] ?></td>
+                            <td><?= htmlspecialchars($rowacc['pro_type_name'] ?? '') ?></td>
+                            <td class="td4"><?= number_format($debit, 2) ?></td>
+                            <td class="td5"><?= number_format($credit, 2) ?></td>
                             <td class="td6"></td>
-
-                     
-                            <td><?php if($rowacc['acc2'] == $acc){
-                            $acc_name = $rowacc['acc1'];
-                            }elseif($rowacc['acc1'] == $acc){
-                            $acc_name = $rowacc['acc2'];}
-                            $rowaccname = $conn->query("SELECT * FROM acc_head where id = $acc_name")->fetch_assoc();
-                            echo ($rowaccname && isset($rowaccname['aname'])) ? $rowaccname['aname'] : '';
-                            ?></td>
-                            
-                            <td><?= $rowacc['info']?></td>
-                            
+                            <td><?= htmlspecialchars($opposite_acc ?? '') ?></td>
+                            <td><?= htmlspecialchars($rowacc['info']) ?></td>
                         </tr>
-                    
-                        <?php };?>
-                        <tfoot>
-                       
-                        <?php }; 
-                    
-                    }else{echo "<b style='text-align:center'>ابدأ اختيار الحساب و حدد التاريخ</b>";} ?>
+                <?php 
+                    }
+                } else {
+                    echo "<tr><td colspan='8' style='text-align:center'>لا توجد حركات في هذه الفترة</td></tr>";
+                }
+            } else {
+                echo "<tr><td colspan='8' style='text-align:center'><b>ابدأ اختيار الحساب و حدد التاريخ</b></td></tr>";
+            } 
+            ?>
                         
                     </tbody>
-                    <tr class="bg-sky-100" style="font-size:20px">
+                    <tfoot>
+                        <tr class="bg-sky-100" style="font-size:20px">
                             <th></th>
                             <th></th>
                             <th>اجمالي مدين</th>
                             <th class="sumth4"></th>
-                            <th >اجمالي دائن</th>
+                            <th>اجمالي دائن</th>
                             <th class="sumth5"></th>
                             <th>صافي الحركة</th>
                             <th class="net"></th>
-                            
                         </tr>
-                        </tfoot>
+                    </tfoot>
 
                 </table>
             </div>
@@ -198,7 +206,20 @@
 
 <script>
   $(document).ready(function() {
-    $('#acc').select2();});
+    $('#acc').select2();
+    
+    // تفعيل DataTables مع pagination
+    $('#summaryTable').DataTable({
+        "pageLength": 50,
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
+        },
+        "order": [], // عدم الترتيب الافتراضي
+        "columnDefs": [
+            { "orderable": false, "targets": [0, 7] } // تعطيل الترتيب للعمود الأول والأخير
+        ]
+    });
+});
 </script>
 <script>
     document.getElementById("myForm").addEventListener("submit", function(event) {
@@ -212,30 +233,37 @@
 
 <script>
 $(document).ready(function() {
+    // حساب الرصيد المتحرك
     var cumulativeSum = 0;
-    $('#horsTable tr').each(function() {
-        var td4Value = parseFloat($(this).find('.td4').text());
-        var td5Value = parseFloat($(this).find('.td5').text());
-        if (!isNaN(td4Value) && !isNaN(td5Value)) { // Check if values are valid numbers
+    $('#summaryTable tbody tr').each(function() {
+        var td4Text = $(this).find('.td4').text().replace(/,/g, '');
+        var td5Text = $(this).find('.td5').text().replace(/,/g, '');
+        var td4Value = parseFloat(td4Text);
+        var td5Value = parseFloat(td5Text);
+        
+        if (!isNaN(td4Value) && !isNaN(td5Value)) {
             cumulativeSum += td4Value - td5Value;
-            $(this).find('.td6').text(cumulativeSum);
+            $(this).find('.td6').text(cumulativeSum.toFixed(2));
         }
     });
+
+    // حساب الإجماليات
+    var sum4 = 0;
+    $(".td4").each(function() { 
+        var val = $(this).text().replace(/,/g, '');
+        sum4 += parseFloat(val) || 0; 
+    });
+    $(".sumth4").text(sum4.toFixed(2));
+
+    var sum5 = 0;
+    $(".td5").each(function() { 
+        var val = $(this).text().replace(/,/g, '');
+        sum5 += parseFloat(val) || 0; 
+    });
+    $(".sumth5").text(sum5.toFixed(2));
+
+    $(".net").text((sum4 - sum5).toFixed(2));
 });
-
-
-var sum4 = 0;
-$(".td4").each(function() { sum4 += parseFloat($(this).text()) || 0; });
-$(".sumth4").text(sum4);
-
-var sum5 = 0;
-$(".td5").each(function() { sum5 += parseFloat($(this).text()) || 0; });
-$(".sumth5").text(sum5);
-
-$(".net").text(sum4 - sum5);
-
-
-
 </script>
 <script>
 
