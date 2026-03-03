@@ -78,6 +78,20 @@ $jal_name = isset($_POST['jal_name']) ? htmlspecialchars(trim($_POST['jal_name']
 $jal_notes = isset($_POST['jal_notes']) ? htmlspecialchars(trim($_POST['jal_notes']), ENT_QUOTES, 'UTF-8') : NULL;
 $jal_amount = isset($_POST['jal_amount']) ? floatval($_POST['jal_amount']) : 0;
 
+// معالجة الدفع المقسم (كاش + صرافة)
+$paid_cash = isset($_POST['paid_cash']) ? floatval($_POST['paid_cash']) : 0;
+$paid_bank = isset($_POST['paid_bank']) ? floatval($_POST['paid_bank']) : 0;
+$payment_fund_id = isset($_POST['payment_fund_id']) ? intval($_POST['payment_fund_id']) : $fund_id;
+$payment_bank_id = isset($_POST['payment_bank_id']) ? intval($_POST['payment_bank_id']) : 0;
+
+error_log('=== SPLIT PAYMENT DEBUG ===');
+error_log('POST paid_cash: ' . (isset($_POST['paid_cash']) ? $_POST['paid_cash'] : 'NOT SET'));
+error_log('POST paid_bank: ' . (isset($_POST['paid_bank']) ? $_POST['paid_bank'] : 'NOT SET'));
+error_log('POST payment_fund_id: ' . (isset($_POST['payment_fund_id']) ? $_POST['payment_fund_id'] : 'NOT SET'));
+error_log('POST payment_bank_id: ' . (isset($_POST['payment_bank_id']) ? $_POST['payment_bank_id'] : 'NOT SET'));
+error_log('Processed: paid_cash=' . $paid_cash . ', paid_bank=' . $paid_bank . ', payment_fund_id=' . $payment_fund_id . ', payment_bank_id=' . $payment_bank_id);
+error_log('=========================');
+
 // Get order type from age parameter
 $order_type = isset($_POST['age']) ? intval($_POST['age']) : 1; // Default to takeaway (1)
 
@@ -120,7 +134,10 @@ if (!empty($table_name)) {
 }
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
-if($pro_tybe == INVOICE_TYPES['POS']){
+// أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
+if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+    $paid = 0;
+} elseif($pro_tybe == INVOICE_TYPES['POS']){
     // If paid amount is sent (which is true for our new POS), use it. 
     // Otherwise calculate it (fallback for old behavior)
     if(isset($_POST['paid'])) {
@@ -463,8 +480,9 @@ try {
         error_log('Order header inserted successfully with ID: ' . $last_op);
         $stmt->close();
     }
-    // إدخال قيود اليومية للفواتير المدعومة
-    if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+    
+    // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض)
+    if (!in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
         // الحصول على رقم القيد التالي
         $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
         $stmt->execute();
@@ -480,7 +498,7 @@ try {
         );
         
         $details = $config['note'] . " _ " . $last_op;
-        $stmt->bind_param("ssssss", $journal_id, $headnet, $pro_date, $details, $usid, $last_op);
+        $stmt->bind_param("sdssss", $journal_id, $headnet, $pro_date, $details, $usid, $last_op);
         
         if (!$stmt->execute()) {
             throw new Exception('فشل في إدخال رأس القيد: ' . $stmt->error);
@@ -489,100 +507,204 @@ try {
         $journal_lastid = $conn->insert_id;
         $stmt->close();
         
-        // إدخال تفاصيل القيد (المدين)
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
-             VALUES (?, ?, ?, 0, 0, ?)"
-        );
-        $stmt->bind_param("ssss", $journal_lastid, $accounts['acc1'], $headnet, $last_op);
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في إدخال القيد المدين: ' . $stmt->error);
+        // القيد الأساسي للفاتورة (حسب نوع الفاتورة)
+        if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS']])) {
+            // فاتورة مبيعات: مدين العميل / دائن المبيعات
+            
+            // المدين: العميل
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+                 VALUES (?, ?, ?, 0, 0, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $headnet, $last_op);
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال القيد المدين: ' . $stmt->error);
+            }
+            $stmt->close();
+            
+            // الدائن: المبيعات (حساب 91)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+                 VALUES (?, ?, 0, ?, 1, ?)"
+            );
+            $sales_account = 91;
+            $stmt->bind_param("ssds", $journal_lastid, $sales_account, $headnet, $last_op);
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال القيد الدائن: ' . $stmt->error);
+            }
+            $stmt->close();
+            
+        } else {
+            // فواتير أخرى (مشتريات، مردودات، إلخ)
+            
+            // إدخال تفاصيل القيد (المدين)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+                 VALUES (?, ?, ?, 0, 0, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $accounts['acc1'], $headnet, $last_op);
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال القيد المدين: ' . $stmt->error);
+            }
+            $stmt->close();
+            
+            // إدخال تفاصيل القيد (الدائن)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
+                 VALUES (?, ?, 0, ?, 1, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $accounts['acc2'], $headnet, $last_op);
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال القيد الدائن: ' . $stmt->error);
+            }
+            $stmt->close();
         }
-        $stmt->close();
-        
-        // إدخال تفاصيل القيد (الدائن)
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
-             VALUES (?, ?, 0, ?, 1, ?)"
-        );
-        $stmt->bind_param("ssss", $journal_lastid, $accounts['acc2'], $headnet, $last_op);
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في إدخال القيد الدائن: ' . $stmt->error);
-        }
-        $stmt->close();
     }
-    // معالجة المدفوعات إذا وجدت
-    // ملاحظة: قيد الدفع يُسجل فقط إذا كان المدفوع مختلف عن الصافي
-    // لو المدفوع = الصافي، القيد الأساسي كافي ومش محتاجين قيد إضافي
-    if ($paid > 0 && $paid != $headnet) {
-        // إدخال عملية الدفع/القبض
-        $stmt = $conn->prepare(
-            "INSERT INTO ot_head (
-                pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
-                emp_id, acc1, acc2, pro_value, cost_center, profit, user, op2
-            ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)"
-        );
-        
-        $stmt->bind_param(
-            "sssssssssss",
-            $paid_op_id, $config['paid_type'], $config['paid_type'], $info, $pro_date,
-            $emp_id, $accounts['acc5'], $accounts['acc6'], $paid, $usid, $last_op
-        );
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في إدخال عملية الدفع: ' . $stmt->error);
-        }
-        
-        $last_paid = $conn->insert_id;
-        $stmt->close();
-        
-        // إدخال قيد الدفع/القبض
-        $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
-        $stmt->close();
-        
-        // رأس قيد الدفع
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
-        );
-        
-        $paid_details = $config['paid_note'] . " _ " . $pro_id;
-        $stmt->bind_param("sssssss", $journal_id, $last_paid, $paid, $pro_date, $paid_details, $usid, $last_op);
-        $stmt->execute();
-        $journal_lastid = $conn->insert_id;
-        $stmt->close();
-        
-        // تفاصيل قيد الدفع (مدين)
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-             VALUES (?, ?, ?, 0, 0, ?)"
-        );
-        $stmt->bind_param("ssss", $journal_lastid, $accounts['acc5'], $paid, $last_op);
-        $stmt->execute();
-        $stmt->close();
-        
-        // تفاصيل قيد الدفع (دائن)
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-             VALUES (?, ?, 0, ?, 1, ?)"
-        );
-        $stmt->bind_param("ssss", $journal_lastid, $accounts['acc6'], $paid, $last_op);
-        $stmt->execute();
-        $stmt->close();
-    }
-
-
-
-
     
-
-
+    // معالجة المدفوعات إذا وجدت (فقط للفواتير الفعلية، ليس للأوامر أو العروض)
+    // الدفع المقسم: كاش + صرافة
+    if (!in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+        
+        // معالجة الدفع الكاش
+        if ($paid_cash > 0 && $payment_fund_id > 0) {
+            error_log('Processing cash payment: ' . $paid_cash . ' to fund: ' . $payment_fund_id);
+            
+            // إدخال عملية الدفع الكاش
+            $cash_op_id = getNextOperationNumber($conn, $config['paid_type']);
+            $stmt = $conn->prepare(
+                "INSERT INTO ot_head (
+                    pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
+                    emp_id, acc1, acc2, pro_value, cost_center, profit, user, op2
+                ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)"
+            );
+            
+            $cash_info = $info . " - دفع كاش";
+            $stmt->bind_param(
+                "ssssssdssss",
+                $cash_op_id, $config['paid_type'], $config['paid_type'], $cash_info, $pro_date,
+                $emp_id, $payment_fund_id, $acc2_id, $paid_cash, $usid, $last_op
+            );
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال عملية الدفع الكاش: ' . $stmt->error);
+            }
+            
+            $last_cash_paid = $conn->insert_id;
+            $stmt->close();
+            
+            // إدخال قيد الدفع الكاش
+            $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
+            $stmt->close();
+            
+            // رأس قيد الدفع الكاش
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            
+            $cash_details = $config['paid_note'] . " كاش _ " . $pro_id;
+            $stmt->bind_param("ssdssss", $journal_id, $last_cash_paid, $paid_cash, $pro_date, $cash_details, $usid, $last_op);
+            $stmt->execute();
+            $journal_lastid = $conn->insert_id;
+            $stmt->close();
+            
+            // تفاصيل قيد الدفع الكاش (مدين - الصندوق)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+                 VALUES (?, ?, ?, 0, 0, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $payment_fund_id, $paid_cash, $last_op);
+            $stmt->execute();
+            $stmt->close();
+            
+            // تفاصيل قيد الدفع الكاش (دائن - العميل)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+                 VALUES (?, ?, 0, ?, 1, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $paid_cash, $last_op);
+            $stmt->execute();
+            $stmt->close();
+            
+            error_log('Cash payment processed successfully');
+        }
+        
+        // معالجة الدفع الصرافة (البنك)
+        if ($paid_bank > 0 && $payment_bank_id > 0) {
+            error_log('Processing bank payment: ' . $paid_bank . ' to bank: ' . $payment_bank_id);
+            
+            // إدخال عملية الدفع الصرافة
+            $bank_op_id = getNextOperationNumber($conn, $config['paid_type']);
+            $stmt = $conn->prepare(
+                "INSERT INTO ot_head (
+                    pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
+                    emp_id, acc1, acc2, pro_value, cost_center, profit, user, op2
+                ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)"
+            );
+            
+            $bank_info = $info . " - دفع صرافة";
+            $stmt->bind_param(
+                "ssssssdssss",
+                $bank_op_id, $config['paid_type'], $config['paid_type'], $bank_info, $pro_date,
+                $emp_id, $payment_bank_id, $acc2_id, $paid_bank, $usid, $last_op
+            );
+            
+            if (!$stmt->execute()) {
+                throw new Exception('فشل في إدخال عملية الدفع الصرافة: ' . $stmt->error);
+            }
+            
+            $last_bank_paid = $conn->insert_id;
+            $stmt->close();
+            
+            // إدخال قيد الدفع الصرافة
+            $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
+            $stmt->close();
+            
+            // رأس قيد الدفع الصرافة
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            
+            $bank_details = $config['paid_note'] . " صرافة _ " . $pro_id;
+            $stmt->bind_param("ssdssss", $journal_id, $last_bank_paid, $paid_bank, $pro_date, $bank_details, $usid, $last_op);
+            $stmt->execute();
+            $journal_lastid = $conn->insert_id;
+            $stmt->close();
+            
+            // تفاصيل قيد الدفع الصرافة (مدين - البنك)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+                 VALUES (?, ?, ?, 0, 0, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $payment_bank_id, $paid_bank, $last_op);
+            $stmt->execute();
+            $stmt->close();
+            
+            // تفاصيل قيد الدفع الصرافة (دائن - العميل)
+            $stmt = $conn->prepare(
+                "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
+                 VALUES (?, ?, 0, ?, 1, ?)"
+            );
+            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $paid_bank, $last_op);
+            $stmt->execute();
+            $stmt->close();
+            
+            error_log('Bank payment processed successfully');
+        }
+    }
 
     // معالجة تفاصيل الفواتير باستخدام Prepared Statements
     error_log('Processing order items');
@@ -623,12 +745,17 @@ try {
             $u_val = floatval($_POST['u_val'][$index]);
             
             // تحديد الكميات حسب نوع الفاتورة
-            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_RETURN']])) {
-                // مشتريات، أمر شراء، مردود مبيعات → كمية واردة
+            // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+                // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
+                $qty_in = 0;
+                $qty_out = 0;
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES_RETURN']])) {
+                // مشتريات، مردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER'], INVOICE_TYPES['PURCHASE_RETURN']])) {
-                // مبيعات، كاشير، أمر بيع، عرض سعر، مردود مشتريات → كمية منصرفة
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['PURCHASE_RETURN']])) {
+                // مبيعات، كاشير، مردود مشتريات → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
             } else {

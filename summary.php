@@ -132,13 +132,28 @@
                             pt.pname as pro_type_name,
                             a1.aname as acc1_name,
                             a2.aname as acc2_name,
-                            COALESCE((SELECT SUM(debit) FROM journal_entries WHERE (op_id = oh.id OR op2 = oh.id) AND debit > 0), 0) as total_debit,
-                            COALESCE((SELECT SUM(credit) FROM journal_entries WHERE (op_id = oh.id OR op2 = oh.id) AND credit > 0), 0) as total_credit
+                            COALESCE((SELECT SUM(je.debit) 
+                                     FROM journal_entries je 
+                                     WHERE je.account_id = $acc 
+                                     AND je.isdeleted = 0
+                                     AND (je.op_id = oh.id OR je.op2 = oh.id)
+                                     ), 0) as my_debit,
+                            COALESCE((SELECT SUM(je.credit) 
+                                     FROM journal_entries je 
+                                     WHERE je.account_id = $acc 
+                                     AND je.isdeleted = 0
+                                     AND (je.op_id = oh.id OR je.op2 = oh.id)
+                                     ), 0) as my_credit
                         FROM ot_head oh
                         LEFT JOIN pro_tybes pt ON oh.pro_tybe = pt.id
                         LEFT JOIN acc_head a1 ON oh.acc1 = a1.id
                         LEFT JOIN acc_head a2 ON oh.acc2 = a2.id
-                        WHERE (oh.acc1 = $acc OR oh.acc2 = $acc) 
+                        WHERE EXISTS (
+                            SELECT 1 FROM journal_entries je2 
+                            WHERE je2.account_id = $acc 
+                            AND je2.isdeleted = 0
+                            AND (je2.op_id = oh.id OR je2.op2 = oh.id)
+                        )
                         AND oh.isdeleted = 0
                         AND oh.pro_date BETWEEN '$startdate' AND '$enddate'
                         ORDER BY oh.pro_date, oh.id";
@@ -147,12 +162,16 @@
                 
                 if ($resacc && $resacc->num_rows > 0) {
                     $x = 0;
+                    $running_balance = 0;
                     while ($rowacc = $resacc->fetch_assoc()) {
                         $x++;
                         
-                        // تحديد المدين والدائن حسب الحساب
-                        $debit = ($rowacc['acc1'] == $acc) ? $rowacc['total_debit'] : 0;
-                        $credit = ($rowacc['acc2'] == $acc) ? $rowacc['total_credit'] : 0;
+                        // استخدام القيم المحسوبة مباشرة من journal_entries
+                        $debit = floatval($rowacc['my_debit']);
+                        $credit = floatval($rowacc['my_credit']);
+                        
+                        // حساب الرصيد المتحرك
+                        $running_balance += ($debit - $credit);
                         
                         // تحديد الحساب المقابل
                         $opposite_acc = ($rowacc['acc2'] == $acc) ? $rowacc['acc1_name'] : $rowacc['acc2_name'];
@@ -161,9 +180,9 @@
                             <td><?= $x ?></td>
                             <td><?= $rowacc['pro_date'] ?></td>
                             <td><?= htmlspecialchars($rowacc['pro_type_name'] ?? '') ?></td>
-                            <td class="td4"><?= number_format($debit, 2) ?></td>
-                            <td class="td5"><?= number_format($credit, 2) ?></td>
-                            <td class="td6"></td>
+                            <td class="td4"><?= $debit > 0 ? number_format($debit, 2) : '0.00' ?></td>
+                            <td class="td5"><?= $credit > 0 ? number_format($credit, 2) : '0.00' ?></td>
+                            <td class="td6"><?= number_format($running_balance, 2) ?></td>
                             <td><?= htmlspecialchars($opposite_acc ?? '') ?></td>
                             <td><?= htmlspecialchars($rowacc['info']) ?></td>
                         </tr>

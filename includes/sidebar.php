@@ -423,18 +423,6 @@
                   </p>
                 </a>
               </li>
-
-
-              <li class="nav-item">
-                <a href="pos_po.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p> <?= $lang_barcode_po ?>
-                  </p>
-                </a>
-              </li>
-
-
-
             </ul>
           </li>
         <?php } ?>

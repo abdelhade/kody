@@ -196,6 +196,17 @@ class InvoiceFooter extends InvoiceElementBase
      */
     private function renderPayment()
     {
+        // إخفاء جزء الدفع لأوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14)
+        $hidePayment = in_array($this->invoiceType, [12, 13, 14]);
+        
+        if ($hidePayment) {
+            // عرض رسالة بديلة أو ترك المساحة فارغة
+            echo '<div class="alert alert-info text-center" style="margin: 20px;">
+                    <i class="fas fa-info-circle"></i> 
+                    لا يتطلب هذا المستند معلومات دفع
+                  </div>';
+            return;
+        }
         ?>
         <div class="row">
             <div class="col-md-4">

@@ -56,7 +56,14 @@ $headtotal = isset($_POST['headtotal']) ? floatval($_POST['headtotal']) : 0;
 $headdisc = isset($_POST['headdisc']) ? floatval($_POST['headdisc']) : 0;
 $headplus = isset($_POST['headplus']) ? floatval($_POST['headplus']) : 0;
 $headnet = isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0;
-$paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
+
+// تحديد المبلغ المدفوع - أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
+if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+    $paid = 0;
+} else {
+    $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
+}
+
 $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
@@ -453,12 +460,17 @@ try {
             $u_val = floatval($_POST['u_val'][$index]);
             
             // تحديد الكميات حسب نوع الفاتورة
-            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_RETURN']])) {
-                // مشتريات، أمر شراء، مردود مبيعات → كمية واردة
+            // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون
+            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+                // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
+                $qty_in = 0;
+                $qty_out = 0;
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES_RETURN']])) {
+                // مشتريات، مردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER'], INVOICE_TYPES['PURCHASE_RETURN']])) {
-                // مبيعات، كاشير، أمر بيع، عرض سعر، مردود مشتريات → كمية منصرفة
+            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['PURCHASE_RETURN']])) {
+                // مبيعات، كاشير، مردود مشتريات → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
             } else {
