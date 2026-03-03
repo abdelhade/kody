@@ -107,6 +107,14 @@
 
 </div>
 <div class="col-md-3">
+<?php 
+// إخفاء جزء الدفع لأوامر الشراء والبيع وعروض الأسعار
+// Debug: عرض قيمة pro_tybe
+echo "<!-- pro_tybe = " . (isset($pro_tybe) ? $pro_tybe : 'NOT SET') . " -->";
+$hide_payment = (isset($pro_tybe) && (intval($pro_tybe) == 12 || intval($pro_tybe) == 13 || intval($pro_tybe) == 14));
+echo "<!-- hide_payment = " . ($hide_payment ? 'true' : 'false') . " -->";
+if (!$hide_payment): 
+?>
                             <div class="row">
                               <?php
                               if(isset($_GET['e'])){
@@ -158,6 +166,7 @@
                                 </select>
                             </div>
                             </div>
+<?php endif; // نهاية إخفاء جزء الدفع ?>
                             
                           </div>
 </div>

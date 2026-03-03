@@ -336,11 +336,12 @@ $(document).ready(function() {
         $('#net_display').text(net.toFixed(2) + ' ج.م');
         $('#modal_net').text(net.toFixed(2) + ' ج.م');
         
-        // تعبئة المدفوع تلقائياً بقيمة الصافي
-        $('#modal_paid').val(net.toFixed(2));
+        // تعبئة المدفوع كاش تلقائياً بقيمة الصافي
+        $('#modal_paid_cash').val(net.toFixed(2));
+        // مسح المدفوع صرافة
+        $('#modal_paid_bank').val('0.00');
         // حساب الباقي (سيكون صفر لأن المدفوع = الصافي)
-        $('#modal_change').val('0.00');
-        $('#jal_amount').val('0.00');
+        $('#modal_change').text('0.00 ج.م');
     }
     
     // ========================================
@@ -462,10 +463,8 @@ $(document).ready(function() {
         $('#net_val').val(net);
         $('#net_display').text(net + ' ج.م');
         
-        // تحديث المدفوع تلقائياً
-        $('#modal_paid').val(net);
-        $('#modal_change').val('0.00');
-        $('#jal_amount').val('0.00');
+        // حساب الباقي
+        calculateChange();
     });
 
     $('#modal_discount').on('input', function() {
@@ -479,43 +478,26 @@ $(document).ready(function() {
         $('#net_val').val(net);
         $('#net_display').text(net + ' ج.م');
         
-        // تحديث المدفوع تلقائياً
-        $('#modal_paid').val(net);
-        $('#modal_change').val('0.00');
-        $('#jal_amount').val('0.00');
+        // حساب الباقي
+        calculateChange();
     });
 
-    $('#modal_paid').on('input', function() {
-        let net = parseFloat($('#net_val').val()) || 0;
-        let paid = parseFloat($(this).val()) || 0;
-        
-        let change = paid - net;
-        
-        if (change < 0) {
-            // Less than net => Credit
-            $('#jal_amount').val(Math.abs(change).toFixed(2));
-            $('#modal_change').val('0.00'); 
-        } else {
-            // More than net => Change
-            $('#jal_amount').val('0.00'); 
-            $('#modal_change').val(change.toFixed(2));
-        }
+    // حساب الباقي عند تغيير المدفوع كاش أو صرافة
+    $('#modal_paid_cash, #modal_paid_bank').on('input', function() {
+        calculateChange();
     });
 
-    $(document).on('input', '#jal_amount', function() {
+    function calculateChange() {
         let net = parseFloat($('#net_val').val()) || 0;
-        let credit = parseFloat($(this).val()) || 0;
+        let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
+        let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
+        let totalPaid = paidCash + paidBank;
         
-        if (credit > net) {
-             credit = net;
-             $(this).val(net.toFixed(2));
-        }
+        let change = totalPaid - net;
         
-        // Paid = Net - Credit
-        let paid = net - credit;
-        $('#modal_paid').val(paid.toFixed(2));
-        $('#modal_change').val('0.00');
-    });
+        // الباقي للحساب فقط - لا يؤثر على السند
+        $('#modal_change').text(change.toFixed(2) + ' ج.م');
+    }
 
     // ========================================
     // Delete & Update Row
@@ -555,61 +537,93 @@ $(document).ready(function() {
         }
         console.log('✅ Validation passed');
         
-        let paidValue = parseFloat($('#modal_paid').val()) || 0;
-        console.log('💰 Paid value:', paidValue);
+        // جمع بيانات الدفع
+        let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
+        let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
+        let fundId = $('#payment_fund_id').val();
+        let bankId = $('#payment_bank_id').val();
+        let net = parseFloat($('#net_val').val()) || 0;
         
+        console.log('=== PAYMENT DATA DEBUG ===');
+        console.log('modal_paid_cash value:', $('#modal_paid_cash').val());
+        console.log('modal_paid_bank value:', $('#modal_paid_bank').val());
+        console.log('payment_fund_id value:', $('#payment_fund_id').val());
+        console.log('payment_bank_id value:', $('#payment_bank_id').val());
+        console.log('Processed:', {
+            paidCash: paidCash,
+            paidBank: paidBank,
+            fundId: fundId,
+            bankId: bankId,
+            net: net
+        });
+        console.log('==========================');
+        
+        // التحقق من صحة البيانات
+        if (paidCash > 0 && (!fundId || fundId == '0')) {
+            alert('يجب اختيار الصندوق عند الدفع كاش');
+            return false;
+        }
+        
+        if (paidBank > 0 && (!bankId || bankId == '0' || bankId == '')) {
+            alert('يجب اختيار البنك عند الدفع صرافة');
+            return false;
+        }
+        
+        // إضافة حقول الدفع المخفية
+        let paidCashInput = form.querySelector('input[name="paid_cash"]');
+        if (!paidCashInput) {
+            paidCashInput = document.createElement('input');
+            paidCashInput.type = 'hidden';
+            paidCashInput.name = 'paid_cash';
+            form.appendChild(paidCashInput);
+            console.log('✅ Created paid_cash input');
+        }
+        paidCashInput.value = paidCash;
+        console.log('Set paid_cash =', paidCash);
+
+        let paidBankInput = form.querySelector('input[name="paid_bank"]');
+        if (!paidBankInput) {
+            paidBankInput = document.createElement('input');
+            paidBankInput.type = 'hidden';
+            paidBankInput.name = 'paid_bank';
+            form.appendChild(paidBankInput);
+            console.log('✅ Created paid_bank input');
+        }
+        paidBankInput.value = paidBank;
+        console.log('Set paid_bank =', paidBank);
+
+        let paymentFundInput = form.querySelector('input[name="payment_fund_id"]');
+        if (!paymentFundInput) {
+            paymentFundInput = document.createElement('input');
+            paymentFundInput.type = 'hidden';
+            paymentFundInput.name = 'payment_fund_id';
+            form.appendChild(paymentFundInput);
+            console.log('✅ Created payment_fund_id input');
+        }
+        paymentFundInput.value = fundId;
+        console.log('Set payment_fund_id =', fundId);
+
+        let paymentBankInput = form.querySelector('input[name="payment_bank_id"]');
+        if (!paymentBankInput) {
+            paymentBankInput = document.createElement('input');
+            paymentBankInput.type = 'hidden';
+            paymentBankInput.name = 'payment_bank_id';
+            form.appendChild(paymentBankInput);
+            console.log('✅ Created payment_bank_id input');
+        }
+        paymentBankInput.value = bankId || '';
+        console.log('Set payment_bank_id =', bankId || '');
+
+        // إضافة المدفوع الإجمالي (للتوافق مع الكود القديم)
+        let totalPaid = paidCash + paidBank;
         let paidInput = form.querySelector('input[name="paid"]');
         if (!paidInput) {
             paidInput = document.createElement('input');
             paidInput.type = 'hidden';
             paidInput.name = 'paid';
             form.appendChild(paidInput);
-            console.log('➕ Created paid input');
         }
-        paidInput.value = paidValue;
-
-        // إضافة بيانات الأجل
-        let jalName = $('#jal_name').val();
-        let jalNotes = $('#jal_notes').val();
-        let jalAmount = $('#jal_amount').val();
-        
-        console.log('Jal Data:', {name: jalName, notes: jalNotes, amount: jalAmount});
-
-        let jalNameInput = form.querySelector('input[name="jal_name"]');
-        if (!jalNameInput) {
-            jalNameInput = document.createElement('input');
-            jalNameInput.type = 'hidden';
-            jalNameInput.name = 'jal_name';
-            form.appendChild(jalNameInput);
-        }
-        jalNameInput.value = jalName || '';
-
-        let jalNotesInput = form.querySelector('input[name="jal_notes"]');
-        if (!jalNotesInput) {
-            jalNotesInput = document.createElement('input');
-            jalNotesInput.type = 'hidden';
-            jalNotesInput.name = 'jal_notes';
-            form.appendChild(jalNotesInput);
-        }
-        jalNotesInput.value = jalNotes || '';
-        
-        let jalAmountInput = form.querySelector('input[name="jal_amount"]');
-        if (!jalAmountInput) {
-            jalAmountInput = document.createElement('input');
-            jalAmountInput.type = 'hidden';
-            jalAmountInput.name = 'jal_amount';
-            form.appendChild(jalAmountInput);
-        }
-        jalAmountInput.value = jalAmount || 0;
-        
-        const existingSubmits = form.querySelectorAll('input[name="submit"]');
-        existingSubmits.forEach(input => input.remove());
-        
-        const submitInput = document.createElement('input');
-        submitInput.type = 'hidden';
-        submitInput.name = 'submit';
-        submitInput.value = action;
-        form.appendChild(submitInput);
+        paidInput.value = totalPaid;
 
         // Check for Edit ID
         let editId = $('#edit_order_id').val();
@@ -624,6 +638,15 @@ $(document).ready(function() {
             }
             editIdInput.value = editId;
         }
+        
+        const existingSubmits = form.querySelectorAll('input[name="submit"]');
+        existingSubmits.forEach(input => input.remove());
+        
+        const submitInput = document.createElement('input');
+        submitInput.type = 'hidden';
+        submitInput.name = 'submit';
+        submitInput.value = action;
+        form.appendChild(submitInput);
         
         console.log('➕ Added submit input with value:', action);
         

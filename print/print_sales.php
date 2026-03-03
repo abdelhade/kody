@@ -307,6 +307,10 @@ echo $unitid['uname'];
 <tr><th>إضافي:</th><td style="color: #28a745;">+ <?= number_format($rowfat['fat_plus'], 2) ?></td></tr>
 <?php }?>
 <tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($rowfat['fat_net'], 2) ?></strong></td></tr>
+<?php 
+// إخفاء المدفوع والمتبقي لأوامر الشراء والبيع وعروض الأسعار
+if (!in_array($tybe, [12, 13, 14])): 
+?>
 <tr><th>المدفوع:</th><td style="color: #28a745;"><?php
            // البحث عن سند قبض/دفع مرتبط بالفاتورة
            $rowpaid = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = '2' OR pro_tybe = '1') AND op2 = $id AND isdeleted = 0")->fetch_assoc();
@@ -323,6 +327,7 @@ echo $unitid['uname'];
            echo number_format($paidval, 2);
     ?></td></tr>
 <tr><th>المتبقي:</th><td style="color: <?= $change > 0 ? '#dc3545' : '#28a745' ?>; font-weight: bold;"><?= number_format($change, 2) ?></td></tr>
+<?php endif; ?>
 </table>
 </td>
 </tr>

@@ -302,11 +302,14 @@ function dis() {
         return false;
     }
     
-    // التحقق من قيمة الفاتورة
-    const headtotal = parseFloat(document.getElementById('headtotal')?.value) || 0;
-    if (headtotal <= 0) {
-        alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
-        return false;
+    // التحقق من قيمة الفاتورة (فقط إذا كان الحقل موجود)
+    const headtotalElement = document.getElementById('headtotal');
+    if (headtotalElement) {
+        const headtotal = parseFloat(headtotalElement.value) || 0;
+        if (headtotal <= 0) {
+            alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
+            return false;
+        }
     }
     
     // إخفاء الأزرار فقط إذا كانت البيانات صحيحة
@@ -379,12 +382,15 @@ $(document).ready(function() {
             return false;
         }
         
-        // التحقق من قيمة الفاتورة
-        const headtotal = parseFloat($('#headtotal').val()) || 0;
-        if (headtotal <= 0) {
-            e.preventDefault();
-            alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
-            return false;
+        // التحقق من قيمة الفاتورة (فقط إذا كان الحقل موجود)
+        const headtotalElement = document.getElementById('headtotal');
+        if (headtotalElement) {
+            const headtotal = parseFloat(headtotalElement.value) || 0;
+            if (headtotal <= 0) {
+                e.preventDefault();
+                alert("يجب أن تكون قيمة الفاتورة أكبر من صفر");
+                return false;
+            }
         }
         
         // إخفاء الأزرار

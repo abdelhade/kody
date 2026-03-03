@@ -542,15 +542,15 @@ if (!isset($action_url)) {
                         <!-- الخصم -->
                         <div class="col-12">
                             <div class="card border-primary">
-                                <div class="card-header bg-primary bg-opacity-10">
-                                    <h6 class="mb-0 text-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
                                        الخصم
                                     </h6>
                                 </div>
                                 <div class="card-body">
                                     <div class="row g-2">
                                         <div class="col-6">
-                                            <label class="form-label fw-bold">الخصم %</label>
+                                            <label class="form-label fw-bold text-dark">الخصم %</label>
                                             <div class="input-group">
                                                 <input class="form-control text-center" type="number"
                                                     id="modal_discperc" value="0" min="0" max="100" step="0.1">
@@ -558,7 +558,7 @@ if (!isset($action_url)) {
                                             </div>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label fw-bold">قيمة الخصم</label>
+                                            <label class="form-label fw-bold text-dark">قيمة الخصم</label>
                                             <div class="input-group">
                                                 <input class="form-control text-center" type="number"
                                                     id="modal_discount" value="0" step="0.01">
@@ -588,57 +588,103 @@ if (!isset($action_url)) {
                             </div>
                         </div>
 
-                        <!-- المدفوع والباقي -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">
-                                المدفوع
-                            </label>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control text-center fw-bold" type="number" id="modal_paid"
-                                    value="0.00" step="0.01">
-                                
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold text-danger">
-                                الباقي
-                            </label>
-                            <div class="input-group input-group-lg">
-                                <input class="form-control text-center fw-bold bg-danger text-white" type="text"
-                                    id="modal_change" value="0.00" readonly>
-                                
-                            </div>
-                        </div>
+                        <!-- قسم الدفع -->
+                        <div class="col-12">
+                            <div class="card border-success">
+                                <div class="card-header bg-success bg-opacity-10">
+                                    <h6 class="mb-0 text-success">
+                                        <i class="fas fa-money-bill-wave me-2"></i>طريقة الدفع
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <!-- مدفوع كاش -->
+                                        <div class="col-md-6">
+                                            <div class="card border-primary h-100">
+                                                <div class="card-header bg-primary text-white py-2">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-money-bill me-2"></i>مدفوع كاش
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-2">
+                                                        <label class="form-label fw-bold">اختر الصندوق</label>
+                                                        <select class="form-select" id="payment_fund_id">
+                                                            <?php
+                                                            $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                                                            while ($rowfund = $resfund->fetch_assoc()) { 
+                                                                $selected = '';
+                                                                if($rowstg['def_pos_fund'] == $rowfund['id']){
+                                                                    $selected = "selected";
+                                                                }
+                                                            ?>
+                                                            <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label fw-bold">المبلغ المدفوع كاش</label>
+                                                        <div class="input-group input-group-lg">
+                                                            <input class="form-control text-center fw-bold" type="number" 
+                                                                   id="modal_paid_cash" value="0.00" step="0.01" min="0">
+                                                            <span class="input-group-text">ج.م</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                        <!-- بيانات الأجل -->
-                         <div class="col-12 mt-2">
-                             <div class="card border-warning">
-                                 <div class="card-header bg-warning bg-opacity-10 py-1">
-                                     <h6 class="mb-0 text-dark" style="font-size: 0.8rem;">
-                                         بيانات الأجل
-                                     </h6>
-                                 </div>
-                                 <div class="card-body p-2">
-                                     <div class="row g-2">
-                                         <div class="col-md-4">
-                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">قيمة الأجل</label>
-                                              <div class="input-group input-group-sm">
-                                                 <input type="number" class="form-control form-control-sm fw-bold text-danger" id="jal_amount" value="0.00" step="0.01" min="0">
-                                               
-                                             </div>
-                                         </div>
-                                         <div class="col-md-4">
-                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">الاسم (أجل)</label>
-                                             <input type="text" class="form-control form-control-sm" id="jal_name" placeholder="اسم الشخص...">
-                                         </div>
-                                         <div class="col-md-4">
-                                             <label class="form-label fw-bold mb-1" style="font-size: 0.75rem;">ملاحظات الأجل</label>
-                                             <input type="text" class="form-control form-control-sm" id="jal_notes" placeholder="ملاحظات...">
-                                         </div>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
+                                        <!-- مدفوع صرافة -->
+                                        <div class="col-md-6">
+                                            <div class="card border-info h-100">
+                                                <div class="card-header bg-info text-white py-2">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-credit-card me-2"></i>مدفوع صرافة
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-2">
+                                                        <label class="form-label fw-bold">اختر البنك</label>
+                                                        <select class="form-select" id="payment_bank_id">
+                                                            <option value="">-- اختر البنك --</option>
+                                                            <?php
+                                                            $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                                                            while ($rowbank = $resbank->fetch_assoc()) { ?>
+                                                            <option value="<?= $rowbank['id'] ?>"><?= $rowbank['aname'] ?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label fw-bold">المبلغ المدفوع صرافة</label>
+                                                        <div class="input-group input-group-lg">
+                                                            <input class="form-control text-center fw-bold" type="number" 
+                                                                   id="modal_paid_bank" value="0.00" step="0.01" min="0">
+                                                            <span class="input-group-text">ج.م</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- الباقي -->
+                                        <div class="col-12">
+                                            <div class="alert alert-warning mb-0">
+                                                <div class="row align-items-center">
+                                                    <div class="col-6">
+                                                        <h6 class="mb-0">
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>الباقي 
+                                                        </h6>
+                                                    </div>
+                                                    <div class="col-6 text-end">
+                                                        <h4 class="mb-0 text-danger" id="modal_change">0.00 ج.م</h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1447,7 +1493,85 @@ if (!isset($action_url)) {
             return false;
         }
         
-        let paidValue = parseFloat($('#modal_paid').val()) || 0;
+        // جمع بيانات الدفع
+        let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
+        let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
+        let fundId = $('#payment_fund_id').val();
+        let bankId = $('#payment_bank_id').val();
+        let net = parseFloat($('#net_val').val()) || 0;
+        
+        console.log('=== INLINE PAYMENT DATA DEBUG ===');
+        console.log('modal_paid_cash value:', $('#modal_paid_cash').val());
+        console.log('modal_paid_bank value:', $('#modal_paid_bank').val());
+        console.log('payment_fund_id value:', $('#payment_fund_id').val());
+        console.log('payment_bank_id value:', $('#payment_bank_id').val());
+        console.log('Processed:', {
+            paidCash: paidCash,
+            paidBank: paidBank,
+            fundId: fundId,
+            bankId: bankId,
+            net: net
+        });
+        console.log('==================================');
+        
+        // التحقق من صحة البيانات
+        if (paidCash > 0 && (!fundId || fundId == '0')) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يجب اختيار الصندوق عند الدفع كاش'
+            });
+            return false;
+        }
+        
+        if (paidBank > 0 && (!bankId || bankId == '0' || bankId == '')) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يجب اختيار البنك عند الدفع صرافة'
+            });
+            return false;
+        }
+        
+        // إضافة حقول الدفع المخفية
+        let paidCashInput = form.querySelector('input[name="paid_cash"]');
+        if (!paidCashInput) {
+            paidCashInput = document.createElement('input');
+            paidCashInput.type = 'hidden';
+            paidCashInput.name = 'paid_cash';
+            form.appendChild(paidCashInput);
+        }
+        paidCashInput.value = paidCash;
+
+        let paidBankInput = form.querySelector('input[name="paid_bank"]');
+        if (!paidBankInput) {
+            paidBankInput = document.createElement('input');
+            paidBankInput.type = 'hidden';
+            paidBankInput.name = 'paid_bank';
+            form.appendChild(paidBankInput);
+        }
+        paidBankInput.value = paidBank;
+
+        let paymentFundInput = form.querySelector('input[name="payment_fund_id"]');
+        if (!paymentFundInput) {
+            paymentFundInput = document.createElement('input');
+            paymentFundInput.type = 'hidden';
+            paymentFundInput.name = 'payment_fund_id';
+            form.appendChild(paymentFundInput);
+        }
+        paymentFundInput.value = fundId;
+
+        let paymentBankInput = form.querySelector('input[name="payment_bank_id"]');
+        if (!paymentBankInput) {
+            paymentBankInput = document.createElement('input');
+            paymentBankInput.type = 'hidden';
+            paymentBankInput.name = 'payment_bank_id';
+            form.appendChild(paymentBankInput);
+        }
+        paymentBankInput.value = bankId || '';
+
+        // إضافة المدفوع الإجمالي (للتوافق مع الكود القديم)
+        let totalPaid = paidCash + paidBank;
         let paidInput = form.querySelector('input[name="paid"]');
         if (!paidInput) {
             paidInput = document.createElement('input');
@@ -1455,19 +1579,7 @@ if (!isset($action_url)) {
             paidInput.name = 'paid';
             form.appendChild(paidInput);
         }
-        paidInput.value = paidValue;
-
-        // إضافة بيانات الأجل
-        let jalName = $('#jal_name').val();
-        let jalNotes = $('#jal_notes').val();
-        let jalAmount = $('#jal_amount').val();
-        
-        // Ensure jal_amount is set if there is a remaining balance
-        let total = parseFloat($('#net_val').val()) || 0;
-        let remaining = total - paidValue;
-        if (remaining > 0.01 && (!jalAmount || jalAmount == 0)) {
-             jalAmount = remaining.toFixed(2);
-        }
+        paidInput.value = totalPaid;
 
         // Check for Edit ID
         let editId = $('#edit_order_id').val();
@@ -1482,35 +1594,6 @@ if (!isset($action_url)) {
             }
             editIdInput.value = editId;
         }
-
-        console.log('Jal Data (Inline):', {name: jalName, notes: jalNotes, amount: jalAmount, editId: editId});
-
-        let jalNameInput = form.querySelector('input[name="jal_name"]');
-        if (!jalNameInput) {
-            jalNameInput = document.createElement('input');
-            jalNameInput.type = 'hidden';
-            jalNameInput.name = 'jal_name';
-            form.appendChild(jalNameInput);
-        }
-        jalNameInput.value = jalName || '';
-
-        let jalNotesInput = form.querySelector('input[name="jal_notes"]');
-        if (!jalNotesInput) {
-            jalNotesInput = document.createElement('input');
-            jalNotesInput.type = 'hidden';
-            jalNotesInput.name = 'jal_notes';
-            form.appendChild(jalNotesInput);
-        }
-        jalNotesInput.value = jalNotes || '';
-        
-        let jalAmountInput = form.querySelector('input[name="jal_amount"]');
-        if (!jalAmountInput) {
-            jalAmountInput = document.createElement('input');
-            jalAmountInput.type = 'hidden';
-            jalAmountInput.name = 'jal_amount';
-            form.appendChild(jalAmountInput);
-        }
-        jalAmountInput.value = jalAmount || 0;
 
         const existingSubmits = form.querySelectorAll('input[name="submit"]');
         existingSubmits.forEach(input => input.remove());
