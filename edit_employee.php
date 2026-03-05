@@ -7,13 +7,61 @@ $id = $_GET['id'];
 $sqlemp = "SELECT * FROM `employees` WHERE `id` = '$id'";
 $rowemp = $conn->query($sqlemp)->fetch_assoc();
 
-
-
 ?>
+
+<style>
+.content-wrapper {
+    background: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-control, .custom-select {
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.form-control:focus, .custom-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+#editbtn {
+    float: left;
+    padding: 0.375rem 0.75rem;
+}
+
+label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+</style>
+
 <form class='validate_form' id="validate_form" action="do/doedit_employee.php?id=<?= $id ?>" method="post" enctype='multipart/form-data'>
-    <!-- First Box -->
-
-
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
         <section class="content-header">
@@ -22,25 +70,24 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
 
 <div class="row">
                 <div class="col col-md-6">
-                <div class="card card-warning">
-                    <div class="card-header">
-                        <h3 class="card-title float-left"><?= $lang_addemployee_personalinfo ?></h3>
-                        <button tybe="button" id="editbtn" class="btn btn-warning"><i class="fa fa-pen"></i></button>
-
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3><?= $lang_addemployee_personalinfo ?></h3>
+                        <button type="button" id="editbtn" class="btn btn-primary btn-sm">
+                            <i class="fa fa-pen"></i> تعديل
+                        </button>
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
                     <div class="card-body">
                         <div class="row">
                             <!-- FIRST COLUMN -->
                             <div class="col">
                                 <div class="form-group">
                                     <label for="name"><?= $lang_addemployee_name ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['name'] ?>" class="form-control form-control-sm bg-lime-100 text-slate-700" autofocus id="name" name="name" placeholder="<?= $lang_pbholder_name ?>">
+                                    <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['name'] ?>" class="form-control" autofocus id="name" name="name" placeholder="<?= $lang_pbholder_name ?>">
                                 </div>
                                 <div class="form-group">
                                     <label for="phone"><?= $lang_addemployee_phone ?></label>
-                                    <input type="text" data-parsley-type="digits" data-parsley-trigger="keyup" value="<?= $rowemp['number'] ?>" class="form-control form-control-sm" name="number" id="phone" placeholder="<?= $lang_pbholder_phone ?>">
+                                    <input type="text" data-parsley-type="digits" data-parsley-trigger="keyup" value="<?= $rowemp['number'] ?>" class="form-control" name="number" id="phone" placeholder="<?= $lang_pbholder_phone ?>">
                                 </div>
                             </div>
 
@@ -49,7 +96,7 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                             <div class="col">
                                 <div class="form-group">
                                     <label for="email"><?= $lang_addemployee_email ?></label>
-                                    <input type="email" data-parsley-type="email" data-parsley-trigger="keyup" value="<?= $rowemp['email'] ?>" class="form-control form-control-sm" name="email" id="email" placeholder="<?= $lang_pbholder_email ?>">
+                                    <input type="email" data-parsley-type="email" data-parsley-trigger="keyup" value="<?= $rowemp['email'] ?>" class="form-control" name="email" id="email" placeholder="<?= $lang_pbholder_email ?>">
                                 </div>
                                 <div class="form-group">
                                     <label for="exampleInputFile"><?= $lang_addemployee_image ?></label>
@@ -74,7 +121,7 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                             <div class="col">
                                 <div class="form-group">
                                     <label for="date"><?= $lang_addemployee_dateofbirth ?></label>
-                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofbirth'] ?>" class="form-control form-control-sm" name="dateofbirth" id="date" placeholder="">
+                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofbirth'] ?>" class="form-control" name="dateofbirth" id="date" placeholder="">
                                 </div>
                             </div>
                             <div class="col">
@@ -94,7 +141,7 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                         </div>
                         <div class="form-group">
                             <label for="info"><?= $lang_addemployee_info ?></label>
-                            <textarea name="info" class="form-control form-control-sm" data-parsley-trigger="keyup" rows="4" id="info"><?= $rowemp['info'] ?></textarea>
+                            <textarea name="info" class="form-control" data-parsley-trigger="keyup" rows="4" id="info"><?= $rowemp['info'] ?></textarea>
                         </div>
                         <div class="form-group">
                             <div class="form-check">
@@ -111,22 +158,19 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
 
 
                 <div class="col col-md-6">
-                <div class="card card-warning">
+                <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title float-left"><?= $lang_addemployee_details ?></h3>
+                        <h3><?= $lang_addemployee_details ?></h3>
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
-
                     <div class="card-body">
                         <div class="form-group">
                             <label for="name"><?= $lang_addemployee_address1 ?></label>
-                            <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address'] ?>" class="form-control form-control-sm" id="name" name="address2" placeholder="<?= $lang_pbholder_address ?>">
+                            <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address'] ?>" class="form-control" id="name" name="address2" placeholder="<?= $lang_pbholder_address ?>">
                         </div>
 
                         <div class="form-group">
                             <label for="address_1"><?= $lang_addemployee_address2 ?></label>
-                            <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address2'] ?>" class="form-control form-control-sm" id="address" name="address" placeholder="<?= $lang_pbholder_address ?>">
+                            <input type="text" data-parsley-trigger="keyup" value="<?= $rowemp['address2'] ?>" class="form-control" id="address" name="address" placeholder="<?= $lang_pbholder_address ?>">
                         </div>
 
                     </div>
@@ -158,13 +202,10 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
  
  
                 <div class="col col-md-6">
-                <div class="card card-warning">
+                <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title float-left"><?= $lang_addemployee_jobinfo ?></h3>
+                        <h3><?= $lang_addemployee_jobinfo ?></h3>
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
-
                     <div class="card-body">
                         <div class="row">
                             <div class="col">
@@ -224,14 +265,14 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                             <div class="col">
                                 <div class="form-group">
                                     <label for="start_date"><?= $lang_addemployee_jobstart ?></label>
-                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofhire'] ?>" class="form-control form-control-sm" name="dateofhire" id="start_date" placeholder="<?= $lang_pbholder_enddate ?>">
+                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofhire'] ?>" class="form-control" name="dateofhire" id="start_date" placeholder="<?= $lang_pbholder_enddate ?>">
                                 </div>
 
                             </div>
                             <div class="col">
                                 <div class="form-group">
                                     <label for="end_date"><?= $lang_addemployee_jobend ?></label>
-                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofend'] ?>" class="form-control form-control-sm" name="dateofend" id="end_date" placeholder="<?= $lang_pbholder_startdate ?>">
+                                    <input type="date" data-parsley-trigger="keyup" value="<?= $rowemp['dateofend'] ?>" class="form-control" name="dateofend" id="end_date" placeholder="<?= $lang_pbholder_startdate ?>">
                                 </div>
 
                             </div>
@@ -243,19 +284,17 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
 
 
                 <div class="col col-md-6">
-                <div class="card card-warning">
+                <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title float-left"><?= $lang_addemployee_salaries ?></h3>
+                        <h3><?= $lang_addemployee_salaries ?></h3>
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
                     <div class="card-body">
                         <div class="row">
                             <!-- FIRST COLUMN -->
                             <div class="col">
                                 <div class="form-group">
                                     <label for="salary"><?= $lang_addemployee_salary ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" data-parsley-type="digits" value="<?= (int) $rowemp['salary'] ?>" class="form-control form-control-sm form-control form-control-sm-sm" id="salary" name="salary" placeholder="<?= $lang_pbholder_salary ?>">
+                                    <input type="text" data-parsley-trigger="keyup" data-parsley-type="digits" value="<?= (int) $rowemp['salary'] ?>" class="form-control" id="salary" name="salary" placeholder="<?= $lang_pbholder_salary ?>">
                                 </div>
                             </div>
                             <div class="col">
@@ -299,7 +338,7 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                         <div class="col">
                         <div class="form-group">
                             <label for="hour_extra">الساعة الاضافي تحسب ك </label>
-                            <input type="number" data-parsley-trigger="keyup" autocomplete="off" class="form-control form-control-sm " step=".01" id="hour_extra" name="hour_extra" placeholder="" value="<?= $rowemp['hour_extra'] ?>">
+                            <input type="number" data-parsley-trigger="keyup" autocomplete="off" class="form-control" step=".01" id="hour_extra" name="hour_extra" placeholder="" value="<?= $rowemp['hour_extra'] ?>">
                         </div>
                         </div>
 
@@ -307,7 +346,7 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                         <div class="col" hidden>
                         <div class="form-group">
                             <label for="day_extra">اليوم الاضافي يحسب ك  </label>
-                            <input type="number" data-parsley-trigger="keyup" data-parsley-type="digits"  autocomplete="off" class="form-control form-control-sm " id="day_extra" name="day_extra" placeholder="" value="<?= $rowemp['day_extra'] ?>">
+                            <input type="number" data-parsley-trigger="keyup" data-parsley-type="digits"  autocomplete="off" class="form-control" id="day_extra" name="day_extra" placeholder="" value="<?= $rowemp['day_extra'] ?>">
                         </div>
                         </div>
 
@@ -318,20 +357,20 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                             <div class="col">
                                 <div class="form-group">
                                     <label for="basmaid"><?= $lang_addemployee_basmaid ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" data-parsley-type="integer" value="<?= $rowemp['basma_id'] ?>" autocomplete="off" class="form-control form-control-sm form-control form-control-sm-sm" name="basma_id" id="basmaid" placeholder="ادخل">
+                                    <input type="text" data-parsley-trigger="keyup" data-parsley-type="integer" value="<?= $rowemp['basma_id'] ?>" autocomplete="off" class="form-control" name="basma_id" id="basmaid" placeholder="ادخل">
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="form-group">
                                     <label for="basmaname"><?= $lang_addemployee_basmaname ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" autocomplete="off" class="form-control form-control-sm form-control form-control-sm-sm" value="<?= $rowemp['basma_name'] ?>" name="basma_name" id="basma_name" placeholder="ادخل">
+                                    <input type="text" data-parsley-trigger="keyup" autocomplete="off" class="form-control" value="<?= $rowemp['basma_name'] ?>" name="basma_name" id="basma_name" placeholder="ادخل">
                                 </div>
                             </div>
 
                             <div class="col">
                                 <div class="form-group">
                                     <label for="phone"><?= $lang_addemployee_password ?></label>
-                                    <input type="password" data-parsley-trigger="keyup" autocomplete="off" class="form-control form-control-sm form-control form-control-sm-sm" value="<?= $rowemp['password'] ?>" name="password" id="password" placeholder="باسورد الهاتف">
+                                    <input type="password" data-parsley-trigger="keyup" autocomplete="off" class="form-control" value="<?= $rowemp['password'] ?>" name="password" id="password" placeholder="باسورد الهاتف">
                                 </div>
                             </div>
                         </div>
@@ -343,7 +382,9 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
                 </div>
                 <div class="row">
                     <div class="col">
-                        <input type="submit" id="submit" value="<?= $lang_publicconfirm ?>" name="submit" class="btn btn-warning btn-lg w-100"></input>
+                        <button type="submit" id="submit" name="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fa fa-check"></i> <?= $lang_publicconfirm ?>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -353,9 +394,34 @@ $rowemp = $conn->query($sqlemp)->fetch_assoc();
     <!-- /.card -->
 </form>
 <script>
-    $(document).ready(function() {
-        $("#validate_form").parsley()
-    })
+$(document).ready(function() {
+    // Configure Parsley with translated messages
+    window.Parsley.addMessages('<?= $_SESSION['lang'] ?? 'ar' ?>', {
+        defaultMessage: "<?= $lang_validation_required ?>",
+        type: {
+            email: "<?= $lang_validation_email ?>",
+            url: "<?= $lang_validation_url ?>",
+            number: "<?= $lang_validation_number ?>",
+            integer: "<?= $lang_validation_integer ?>",
+            digits: "<?= $lang_validation_digits ?>",
+            alphanum: "<?= $lang_validation_pattern ?>"
+        },
+        notblank: "<?= $lang_validation_required ?>",
+        required: "<?= $lang_validation_required ?>",
+        pattern: "<?= $lang_validation_pattern ?>",
+        min: "<?= sprintf($lang_validation_min, '%s') ?>",
+        max: "<?= sprintf($lang_validation_max, '%s') ?>",
+        range: "<?= sprintf($lang_validation_range, '%s', '%s') ?>",
+        minlength: "<?= sprintf($lang_validation_minlength, '%s') ?>",
+        maxlength: "<?= sprintf($lang_validation_maxlength, '%s') ?>",
+        length: "<?= sprintf($lang_validation_length, '%s', '%s') ?>",
+        equalto: "<?= $lang_validation_equalto ?>"
+    });
+
+    window.Parsley.setLocale('<?= $_SESSION['lang'] ?? 'ar' ?>');
+
+    $("#validate_form").parsley();
+});
 </script>
 <script>
 $(function() {

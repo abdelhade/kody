@@ -3,6 +3,143 @@
 <?php include('includes/sidebar.php') ?>
 <?php include('includes/connect.php') ?>
 
+<style>
+.content-wrapper {
+    background: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+.card-header h3, .card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.profile-user-img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-username {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f1f3f5;
+    padding: 0.875rem 1.25rem;
+    background: transparent;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item b {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.nav-pills .nav-link {
+    color: #6c757d;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    margin: 0 0.25rem;
+    font-weight: 500;
+}
+
+.nav-pills .nav-link.active {
+    background: #007bff;
+    color: #fff;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.875rem;
+}
+
+.table td, .table th {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+}
+
+#totalSum {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.375rem 0.5rem;
+    text-align: center;
+    width: 70px;
+    font-weight: 600;
+    background: #f8f9fa;
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-warning {
+    background: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+    border-color: #d39e00;
+}
+
+.alert {
+    border-radius: 6px;
+    border: none;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+hr {
+    border-top: 1px solid #e9ecef;
+}
+</style>
 
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
@@ -44,78 +181,63 @@ if (!isset($rowemp['id'])) {
           <div class="col-md-3">
 
             <!-- Profile Image -->
-            <div class="card card-primary card-outline">
-              <div class="card-header">
-              </div>
+            <div class="card">
+              <div class="card-body text-center">
+                <img onerror="this.src='assets/alt/altemprofile.png';" class="profile-user-img img-fluid img-circle mb-3"
+                     src="assets/<?= $rowemp['imgs']?>"
+                     alt="User profile picture">
 
-              <div class="card-body box-profile">
-                <div class="text-center">
-                  <img onerror="this.src='assets/alt/altemprofile.png';" class="profile-user-img img-fluid img-circle"
-                       src="assets/<?= $rowemp['imgs']?>"
-                       alt="User profile picture">
-                </div>
+                <h3 class="profile-username"><?= $rowemp['name'] ?></h3>
+                <p class="text-muted small"><?= $rowemp['info'] ?></p>
 
-                <h3 class="profile-username text-center"><?= $rowemp['name'] ?></h3>
-
-
-                
-                <p class="text-muted text-center"><?= $rowemp['info'] ?></p>
-
-                <ul class="list-group list-group-unbordered mb-3">
-                  <li class="list-group-item">
-                    <b>الوظيفه</b> <a class="float-right"><?php
+                <ul class="list-group list-group-flush mt-3">
+                  <li class="list-group-item d-flex justify-content-between">
+                    <b>الوظيفه</b>
+                    <span><?php
                     $jopid = $rowemp['jop'];
-
                     $rowjop = $conn->query("SELECT * FROM `jops` where id = $jopid ")->fetch_assoc();
-                     echo $rowjop['name'] ?></a>
+                     echo $rowjop['name'] ?></span>
                   </li>
-                  <li class="list-group-item">
-                    <b>الادراه</b> <a class="float-right"><?php
+                  <li class="list-group-item d-flex justify-content-between">
+                    <b>الادراه</b>
+                    <span><?php
                     $dprtid = $rowemp['department'];
                     $rowdprt = $conn->query("SELECT * FROM `departments` where id = $dprtid ")->fetch_assoc();
-                     echo $rowdprt['name'] ?></a>
+                     echo $rowdprt['name'] ?></span>
                   </li>
-                  <li class="list-group-item">
-                    <b>المرتب</b> <a class="float-right"><?= $rowemp['salary'] ?></a>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <b>المرتب</b>
+                    <span><?= number_format($rowemp['salary']) ?></span>
                   </li>
-                  <li class="list-group-item">
-                    <b>التقييم العالم</b> <b class="float-right"><input type="text" id="totalSum">
-                    </b>
+                  <li class="list-group-item d-flex justify-content-between">
+                    <b>التقييم العام</b>
+                    <input type="text" id="totalSum" readonly>
                   </li>
                 </ul>
 
-                <a href="edit_employee.php?id=<?= $id?>" class="btn btn-warning btn-block"><b>تعديل</b></a>
+                <a href="edit_employee.php?id=<?= $id?>" class="btn btn-warning btn-block mt-3">تعديل البيانات</a>
               </div>
-              <!-- /.card-body -->
             </div>
             <!-- /.card -->
 
             <!-- About Me Box -->
-            <div class="card card-primary">
+            <div class="card">
               <div class="card-header">
-                <h3 class="card-title">نبذة عني</h3>
+                <h3>نبذة عني</h3>
               </div>
-              <!-- /.card-header -->
               <div class="card-body">
-                <strong><i class="fas fa-book mr-1"></i> التعليم</strong>
-                <div class="btn"><?= $rowemp['education']?></div>
-                <hr>
+                <strong>التعليم</strong>
+                <p class="text-muted mb-3"><?= $rowemp['education']?></p>
 
-                <strong><i class="fas fa-map-marker-alt mr-1"></i> الموقع</strong>
+                <strong>الموقع</strong>
+                <p class="text-muted mb-3"><?= $rowemp['town']?>, <?= $rowemp['address']?></p>
 
-                <p class="text-muted"><?= $rowemp['town']?> , <?= $rowemp['address']?> </p>
-                <hr>
-                <strong><i class="fas fa-pencil-alt mr-1"></i> المهارات</strong>
+                <strong>المهارات</strong>
+                <p class="text-muted mb-3"><?= $rowemp['skills'] ?></p>
 
-                <p><?= $rowemp['skills'] ?></p>
-
-                <hr>
-
-                <strong><i class="far fa-file-alt mr-1"></i> معلومات</strong>
-
-                <p class="text-muted"><?= $rowemp['info'] ?></p>
+                <strong>معلومات</strong>
+                <p class="text-muted mb-0"><?= $rowemp['info'] ?></p>
               </div>
-              <!-- /.card-body -->
             </div>
             <!-- /.card -->
           </div>
@@ -125,37 +247,61 @@ if (!isset($rowemp['id'])) {
               <div class="card-header p-2">
                 <ul class="nav nav-pills">
                   <li class="nav-item"><a class="nav-link active" href="#activity" data-toggle="tab"><?= $lang_emprofilemainentry ?></a></li>
-                  <li class="nav-item"><a class="nav-link " href="#emprofilejop" data-toggle="tab"><?= $lang_emprofilejopentry ?></a></li>
-                  <li class="nav-item"><a class="nav-link" href="#timeline" data-toggle="tab">K B I </a></li>
-                  <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab">Settings</a></li>
+                  <li class="nav-item"><a class="nav-link" href="#emprofilejop" data-toggle="tab"><?= $lang_emprofilejopentry ?></a></li>
+                  <li class="nav-item"><a class="nav-link" href="#timeline" data-toggle="tab">التقييم (KBI)</a></li>
                 </ul>
               </div><!-- /.card-header -->
               <div class="card-body">
                 <div class="tab-content">
 
                   <div class="active tab-pane" id="activity">
-                  
-                    <div class="post clearfix">
-
-                        <ul class="list-group card fw-bold mt-4">
-
-                         <li class="list-group-item bg-body-secondary text-light card-title bg-primary"><?=$lang_addemployee_personalinfo?></li>
-                         <li class="list-group-item"><?=$lang_publicname?> : <?= $rowemp['name'] ?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_email?> :<?= $rowemp['email']?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_phone?> :<?= $rowemp['number']?>   </li>
-                         <li class="list-group-item"> <?=$lang_addemployee_dateofbirth?> :<?= $rowemp['dateofbirth']?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_gender?> :<?php if ($rowemp['gender'] == 0 ) {
-                         echo "ذكر";
-                         }else {echo "انثي";}?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_info?> :<?= $rowemp['info']?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_address1?> :<?= $rowemp['address']?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_address2?> :<?= $rowemp['address2']?></li>
-                         <li class="list-group-item"><?=$lang_addemployee_country?> :<?php  $twnid = $rowemp['town'];
-                         $rowtwn = $conn->query("SELECT * FROM towns where id = '$twnid'")->fetch_assoc();
-                         echo $rowtwn['name'];
-                         ?></li>
-
+                    <div class="card">
+                      <div class="card-header">
+                        <h5><?=$lang_addemployee_personalinfo?></h5>
+                      </div>
+                      <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_publicname?></b>
+                             <span><?= $rowemp['name'] ?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_email?></b>
+                             <span><?= $rowemp['email']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_phone?></b>
+                             <span><?= $rowemp['number']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_dateofbirth?></b>
+                             <span><?= $rowemp['dateofbirth']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_gender?></b>
+                             <span><?php echo $rowemp['gender'] == 0 ? 'ذكر' : 'انثي'; ?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_info?></b>
+                             <span><?= $rowemp['info']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_address1?></b>
+                             <span><?= $rowemp['address']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_address2?></b>
+                             <span><?= $rowemp['address2']?></span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between">
+                             <b><?=$lang_addemployee_country?></b>
+                             <span><?php  $twnid = $rowemp['town'];
+                             $rowtwn = $conn->query("SELECT * FROM towns where id = '$twnid'")->fetch_assoc();
+                             echo $rowtwn['name'];
+                             ?></span>
+                         </li>
                        </ul>
+                      </div>
                     </div>
                     <!-- /.post -->
 
@@ -188,34 +334,53 @@ if (!isset($rowemp['id'])) {
                     <!-- /.post -->
                   </div>
                   <div class=" tab-pane" id="emprofilejop">
-                    <!-- /.post -->
-                    <!-- Post -->
-                    <div class="post clearfix">
-  
-                   <ul class="list-group card fw-bold mt-4 mb-3">
-
-                     <li class="list-group-item bg-body-secondary text-light card-title bg-primary"><?=$lang_emprofilejop?></li>
-                      <li class="list-group-item"> <?=$lang_addemployee_job?> : <?php $jopid = $rowemp['jop'];
-                      $resjop = $conn->query("SELECT name from jops where id = '$jopid'");
-                      $rowjop = $resjop ? $resjop->fetch_assoc() : null;
-                      echo $rowjop ? $rowjop['name'] : 'N/A'; ?></li>
-                      <li class="list-group-item"><?=$lang_addemployee_jobdepart?> : <?php $dprtid = $rowemp['department'];
-                      $resdprt = $conn->query("SELECT name from departments where id = '$dprtid'");
-                      $rowdprt = $resdprt ? $resdprt->fetch_assoc() : null;
-                      echo $rowdprt ? $rowdprt['name'] : 'N/A'; ?></li>
-                      <li class="list-group-item"> <?=$lang_addemployee_jobtype?> :<?php $tybid = $rowemp['joptybe'];
-                      $restyb = $conn->query("SELECT name from joptybes where id = '$tybid'");
-                      $rowtyb = $restyb ? $restyb->fetch_assoc() : null;
-                      echo $rowtyb ? $rowtyb['name'] : 'N/A'; ?> </li>
-                      <li class="list-group-item"> <?=$lang_addemployee_jobstart?> : <?= $rowemp['dateofhire'] ?></li>
-                      <li class="list-group-item"> <?=$lang_addemployee_jobend?> : <?= $rowemp['dateofend'] ?></li>
-                      <li class="list-group-item"> <?=$lang_addemployee_salary?> : <?= $rowemp['salary'] ?></li>
-                      <li class="list-group-item"> <?=$lang_addemployee_shift?> : <?php $shftid = $rowemp['shift'];
-                      $rowshft = $conn->query("SELECT name from shifts where id = '$shftid'")->fetch_assoc();
-                      echo $rowshft['name'] ?></li>
-
-                   </ul>
-
+                    <div class="card">
+                      <div class="card-header">
+                        <h5><?=$lang_emprofilejop?></h5>
+                      </div>
+                      <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_job?></b>
+                              <span><?php $jopid = $rowemp['jop'];
+                              $resjop = $conn->query("SELECT name from jops where id = '$jopid'");
+                              $rowjop = $resjop?->fetch_assoc();
+                              echo $rowjop ? $rowjop['name'] : 'N/A'; ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_jobdepart?></b>
+                              <span><?php $dprtid = $rowemp['department'];
+                              $resdprt = $conn->query("SELECT name from departments where id = '$dprtid'");
+                              $rowdprt = $resdprt?->fetch_assoc();
+                              echo $rowdprt ? $rowdprt['name'] : 'N/A'; ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_jobtype?></b>
+                              <span><?php $tybid = $rowemp['joptybe'];
+                              $restyb = $conn->query("SELECT name from joptybes where id = '$tybid'");
+                              $rowtyb = $restyb?->fetch_assoc();
+                              echo $rowtyb ? $rowtyb['name'] : 'N/A'; ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_jobstart?></b>
+                              <span><?= $rowemp['dateofhire'] ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_jobend?></b>
+                              <span><?= $rowemp['dateofend'] ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_salary?></b>
+                              <span><?= number_format($rowemp['salary']) ?></span>
+                          </li>
+                          <li class="list-group-item d-flex justify-content-between">
+                              <b><?=$lang_addemployee_shift?></b>
+                              <span><?php $shftid = $rowemp['shift'];
+                              $rowshft = $conn->query("SELECT name from shifts where id = '$shftid'")->fetch_assoc();
+                              echo $rowshft['name'] ?></span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                     <!-- /.post -->
 
@@ -245,10 +410,11 @@ if (!isset($rowemp['id'])) {
 
                   <!-- /.tab-pane -->
                   <div class="tab-pane" id="timeline">
-                    <div class="table">
-                    <form id="kbiForm" action="" method="post">
-
-                                    <table id="mytable" class="table table-striped table-bordered table-hover">
+                    <div class="card">
+                      <div class="card-body">
+                        <form id="kbiForm" action="" method="post">
+                          <div class="table-responsive">
+                            <table id="mytable" class="table table-striped">
                                         <thead>
                                             <tr>
                                                 <th>المعدل</th>
@@ -296,73 +462,18 @@ if (!isset($rowemp['id'])) {
                                             </form>
 
                             </table>
-                            <div class="row">
-                              <div class="col"><button class="btn bg-lime-600 text-slate-50 btn-lg">حفظ</button></div>
-                            </div>
-                            
-                            </form>
-
-                            </div>
-                            <div id="successMessage" style="display:none;" class="alert alert-success"></div>
-                            <div id="errorMessage" style="display:none;" class="alert alert-danger"></div>
-
-
-                                </div>
+                          </div>
+                          <div class="mt-3">
+                            <button type="submit" class="btn btn-success">حفظ التعديلات</button>
+                          </div>
+                        </form>
+                        <div id="successMessage" style="display:none;" class="alert alert-success mt-3"></div>
+                        <div id="errorMessage" style="display:none;" class="alert alert-danger mt-3"></div>
+                      </div>
+                    </div>
+                  </div>
                     
 
-                  <div class="tab-pane" id="settings">
-                    <form class="form-horizontal">
-                      <div class="form-group">
-                        <label for="inputName" class="col-sm-2 control-label">Name</label>
-
-                        <div class="col-sm-10">
-                          <input type="email" class="form-control" id="inputName" placeholder="Name">
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="inputEmail" class="col-sm-2 control-label">Email</label>
-
-                        <div class="col-sm-10">
-                          <input type="email" class="form-control" id="inputEmail" placeholder="Email">
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="inputName2" class="col-sm-2 control-label">Name</label>
-
-                        <div class="col-sm-10">
-                          <input type="text" class="form-control" id="inputName2" placeholder="Name">
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="inputExperience" class="col-sm-2 control-label">Experience</label>
-
-                        <div class="col-sm-10">
-                          <textarea class="form-control" id="inputExperience" placeholder="Experience"></textarea>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <label for="inputSkills" class="col-sm-2 control-label">Skills</label>
-
-                        <div class="col-sm-10">
-                          <input type="text" class="form-control" id="inputSkills" placeholder="Skills">
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <div class="col-sm-offset-2 col-sm-10">
-                          <div class="checkbox">
-                            <label>
-                              <input type="checkbox"> I agree to the <a href="#">terms and conditions</a>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="form-group">
-                        <div class="col-sm-offset-2 col-sm-10">
-                          <button type="submit" class="btn btn-danger">Submit</button>
-                        </div>
-                      </div>
-                    </form>
-                  </div>
                   <!-- /.tab-pane -->
                 </div>
                 <!-- /.tab-content -->

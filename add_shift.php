@@ -3,17 +3,71 @@
 <?php include('includes/sidebar.php') ?>
 <?php include('includes/connect.php'); ?>
 
+<style>
+.content-wrapper {
+    background: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+.card-header h3, .card-header h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-check-label {
+    font-weight: 400;
+}
+
+hr {
+    border-top: 1px solid #e9ecef;
+    margin: 1.5rem 0;
+}
+</style>
+
 <div class="content-wrapper">
   <!-- Content Header (Page header) -->
   <section class="content-header">
     <div class="container-fluid">
 
-      <div class="card card-primary">
+      <div class="card">
         <div class="card-header">
-          <h3 class="card-title text-white"> <?= $lang_infoshift ?></h3>
+          <h3><?= $lang_infoshift ?></h3>
         </div>
-        <!-- /.card-header -->
-        <!-- form start -->
         <form role="form" action="do/doadd_shift.php" method="POST">
           <div class="card-body">
 
@@ -67,79 +121,72 @@
 
             <hr>
 
-            <div class="card card-info">
-              <div class="card-header">
-                <h3 class="card-title text-white"> <?= $lang_Attendance_rules ?></h3>
+            <h5 class="mb-3"><?= $lang_Attendance_rules ?></h5>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_start ?></label>
+                  <input name="shiftstart" type="time" class="form-control" required>
+                </div>
               </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_start ?></label>
-                      <input name="shiftstart" type="time" class="form-control" required>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_end ?></label>
-                      <input name="shiftend" type="time" class="form-control" required>
-                    </div>
-                  </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_end ?></label>
+                  <input name="shiftend" type="time" class="form-control" required>
                 </div>
-
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_stardatt ?></label>
-                      <input name="instart" type="time" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_endatt ?></label>
-                      <input name="inend" type="time" class="form-control">
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_startout ?></label>
-                      <input name="outstart" type="time" class="form-control">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_endout ?></label>
-                      <input name="outend" type="time" class="form-control">
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-12">
-                    <h5 class="mt-3 mb-2"><?= $lang_end_dismissal_date ?></h5>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_delaylimits ?></label>
-                      <input name="latelimit" type="number" class="form-control" placeholder="0">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="form-group">
-                      <label><?= $lang_addsh_earlylimits ?></label>
-                      <input name="earlylimit" type="number" class="form-control" placeholder="0">
-                    </div>
-                  </div>
-                </div>
-
               </div>
+            </div>
 
-              <div class="card-footer px-0">
-                <button type="submit" class="btn btn-primary btn-block py-2 text-bold"><i class="fas fa-save mr-2"></i> <?= $lang_addhicont_confirm ?></button>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_stardatt ?></label>
+                  <input name="instart" type="time" class="form-control">
+                </div>
               </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_endatt ?></label>
+                  <input name="inend" type="time" class="form-control">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_startout ?></label>
+                  <input name="outstart" type="time" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_endout ?></label>
+                  <input name="outend" type="time" class="form-control">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_delaylimits ?></label>
+                  <input name="latelimit" type="number" class="form-control" placeholder="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label><?= $lang_addsh_earlylimits ?></label>
+                  <input name="earlylimit" type="number" class="form-control" placeholder="0">
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success btn-lg btn-block">
+                <i class="fas fa-save mr-2"></i><?= $lang_addhicont_confirm ?>
+              </button>
             </div>
           </div>
         </form>
