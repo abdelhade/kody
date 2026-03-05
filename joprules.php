@@ -31,65 +31,70 @@
           <div class="card-body">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
-                <tr>
+                <tr class="text-center">
                   <th>م</th>
                   <th><?= $lang_publicname ?></th>
-                  <th><? $lang_publicinfo ?></th>
+                  <th><?= $lang_publicinfo ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
               </thead>
+              <tbody>
               <?php
               $sql = "SELECT * FROM `joprules` WHERE isdeleted != 1 order by id desc";
               $res = $conn->query($sql);
-
 
               $x = 0;
 
               while ($row = $res->fetch_assoc()) {
                 $x++;
               ?>
-                <tbody>
-                  <tr>
-                    <th><?php echo $x ?></th>
-                    <th><a href='#'><?= $row['name'] ?></a></th>
-                    <th><?= $row['info'] ?></th>
-                    <th><a class="btn btn-warning" href="edit_joprule.php?id=<?= $row['id'] ?>"><?= $lang_edit ?></a>
-                      <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
-                        <?= $lang_delete ?>
+                  <tr class="text-center">
+                    <td><?php echo $x ?></td>
+                    <td><?= $row['name'] ?></td>
+                    <td><?= $row['info'] ?></td>
+                    <td>
+                      <a class="btn btn-sm btn-warning" href="edit_joprule.php?id=<?= $row['id'] ?>">
+                        <i class="fas fa-edit"></i>
                       </a>
+                      <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
+                        <i class="fas fa-trash"></i>
+                      </button>
 
+                      <!-- Delete Modal -->
                       <div class="modal fade" id="modal-danger<?= $row['id'] ?>">
                         <div class="modal-dialog">
-                          <div class="modal-content bg-danger">
-                            <div class="modal-header">
+                          <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
                               <h4 class="modal-title"><?= $lang_warning ?></h4>
-                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                               </button>
                             </div>
                             <form action="DO/dodel_joprule.php?id=<?= $row['id'] ?>" method="POST">
-                            <div class="modal-body">
-                                   <p><?= $lang_job_delete_confirm ?></p>
-                                   <input type="hidden" name="password" value="">
-                                  </div>
-                                  <div class="modal-footer justify-content-between">
-                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal"><?= $lang_cancel ?></button>
-                                     <button type="submit" class="btn btn-outline-light"><?= $lang_delete ?></button>
-                               </div>
+                              <div class="modal-body text-right">
+                                <p><?= $lang_job_delete_confirm ?></p>
+                                <div class="form-group">
+                                  <label><?= $lang_password ?>:</label>
+                                  <input type="password" name="password" class="form-control" required>
+                                </div>
+                              </div>
+                              <div class="modal-footer justify-content-between">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal"><?= $lang_cancel ?></button>
+                                <button type="submit" class="btn btn-danger"><?= $lang_delete ?></button>
+                              </div>
                             </form>
                           </div>
-                          <!-- /.modal-content -->
                         </div>
-                        <!-- /.modal-dialog -->
                       </div>
+                    </td>
                   </tr>
                 <?php } ?>
                 </tbody>
                 <tfoot>
-                  <tr>
+                  <tr class="text-center">
                     <th>م</th>
                     <th><?= $lang_publicname ?></th>
-                    <th><? $lang_publicinfo ?></th>
+                    <th><?= $lang_publicinfo ?></th>
                     <th><?= $lang_publicoperations ?></th>
                   </tr>
                 </tfoot>

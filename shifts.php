@@ -35,7 +35,7 @@
           <div class="card-body">
             <table id="example2" class="table table-bordered table-hover">
               <thead>
-                <tr>
+                <tr class="text-center">
                   <th style="width: 50px;">م</th>
                   <th><?= $lang_publicname ?></th>
                   <th>أيام العطلة</th>
@@ -53,7 +53,7 @@
                     $days = explode(",", $wd);
                     $x++;
                 ?>
-                  <tr>
+                  <tr class="text-center">
                     <td><?= $x ?></td>
                     <td><?= $rowshft['name'] ?></td>
                     <td>
@@ -69,7 +69,7 @@
                       echo empty($off_days) ? "لا يوجد" : implode(" - ", $off_days);
                       ?>
                     </td>
-                    <td class="text-center">
+                    <td>
                       <a href="edit_shift.php?id=<?= $rowshft['id'] ?>" class="btn btn-sm btn-warning">
                         <i class="fas fa-edit"></i>
                       </a>
