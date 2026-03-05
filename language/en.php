@@ -474,3 +474,20 @@ $lang_emprofilejop = "Job";
 $lang_addemployee_address1 = "Address 1";
 $lang_addemployee_address2 = "Address 2";
 ?>
+
+// Validation Messages
+$lang_validation_required = "This field is required";
+$lang_validation_email = "Please enter a valid email address";
+$lang_validation_minlength = "Must be at least %s characters";
+$lang_validation_maxlength = "Must be at most %s characters";
+$lang_validation_length = "Must be between %s and %s characters";
+$lang_validation_digits = "Please enter only digits";
+$lang_validation_number = "Please enter a valid number";
+$lang_validation_integer = "Please enter a valid integer";
+$lang_validation_min = "Value must be at least %s";
+$lang_validation_max = "Value must be at most %s";
+$lang_validation_range = "Value must be between %s and %s";
+$lang_validation_url = "Please enter a valid URL";
+$lang_validation_date = "Please enter a valid date";
+$lang_validation_pattern = "Invalid format";
+$lang_validation_equalto = "Values must match";

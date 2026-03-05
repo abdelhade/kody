@@ -569,9 +569,32 @@ try {
     // الدفع المقسم: كاش + صرافة
     if (!in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
         
-        // معالجة الدفع الكاش
-        if ($paid_cash > 0 && $payment_fund_id > 0) {
-            error_log('Processing cash payment: ' . $paid_cash . ' to fund: ' . $payment_fund_id);
+        // حساب المبلغ الفعلي الداخل للصندوق (المدفوع - الباقي)
+        $total_paid = $paid_cash + $paid_bank;
+        $change = max(0, $total_paid - $headnet); // الباقي (المرتجع للعميل)
+        
+        // المبلغ الفعلي الداخل = المدفوع - الباقي
+        $actual_cash_received = max(0, $paid_cash - $change);
+        $actual_bank_received = $paid_bank; // البنك لا يتأثر بالباقي (الباقي يُرد من الكاش فقط)
+        
+        // إذا كان الباقي أكبر من الكاش المدفوع، نخصم الفرق من البنك
+        if ($change > $paid_cash) {
+            $remaining_change = $change - $paid_cash;
+            $actual_cash_received = 0;
+            $actual_bank_received = max(0, $paid_bank - $remaining_change);
+        }
+        
+        error_log('=== PAYMENT CALCULATION ===');
+        error_log('Total paid: ' . $total_paid);
+        error_log('Net amount: ' . $headnet);
+        error_log('Change (return): ' . $change);
+        error_log('Actual cash received: ' . $actual_cash_received);
+        error_log('Actual bank received: ' . $actual_bank_received);
+        error_log('==========================');
+        
+        // معالجة الدفع الكاش (فقط إذا كان هناك مبلغ فعلي داخل)
+        if ($actual_cash_received > 0 && $payment_fund_id > 0) {
+            error_log('Processing cash payment: ' . $actual_cash_received . ' to fund: ' . $payment_fund_id);
             
             // إدخال عملية الدفع الكاش
             $cash_op_id = getNextOperationNumber($conn, $config['paid_type']);
@@ -586,7 +609,7 @@ try {
             $stmt->bind_param(
                 "ssssssdssss",
                 $cash_op_id, $config['paid_type'], $config['paid_type'], $cash_info, $pro_date,
-                $emp_id, $payment_fund_id, $acc2_id, $paid_cash, $usid, $last_op
+                $emp_id, $payment_fund_id, $acc2_id, $actual_cash_received, $usid, $last_op
             );
             
             if (!$stmt->execute()) {
@@ -611,7 +634,7 @@ try {
             );
             
             $cash_details = $config['paid_note'] . " كاش _ " . $pro_id;
-            $stmt->bind_param("ssdssss", $journal_id, $last_cash_paid, $paid_cash, $pro_date, $cash_details, $usid, $last_op);
+            $stmt->bind_param("ssdssss", $journal_id, $last_cash_paid, $actual_cash_received, $pro_date, $cash_details, $usid, $last_op);
             $stmt->execute();
             $journal_lastid = $conn->insert_id;
             $stmt->close();
@@ -621,7 +644,7 @@ try {
                 "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
                  VALUES (?, ?, ?, 0, 0, ?)"
             );
-            $stmt->bind_param("ssds", $journal_lastid, $payment_fund_id, $paid_cash, $last_op);
+            $stmt->bind_param("ssds", $journal_lastid, $payment_fund_id, $actual_cash_received, $last_op);
             $stmt->execute();
             $stmt->close();
             
@@ -630,7 +653,7 @@ try {
                 "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
                  VALUES (?, ?, 0, ?, 1, ?)"
             );
-            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $paid_cash, $last_op);
+            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $actual_cash_received, $last_op);
             $stmt->execute();
             $stmt->close();
             
@@ -638,8 +661,8 @@ try {
         }
         
         // معالجة الدفع الصرافة (البنك)
-        if ($paid_bank > 0 && $payment_bank_id > 0) {
-            error_log('Processing bank payment: ' . $paid_bank . ' to bank: ' . $payment_bank_id);
+        if ($actual_bank_received > 0 && $payment_bank_id > 0) {
+            error_log('Processing bank payment: ' . $actual_bank_received . ' to bank: ' . $payment_bank_id);
             
             // إدخال عملية الدفع الصرافة
             $bank_op_id = getNextOperationNumber($conn, $config['paid_type']);
@@ -654,7 +677,7 @@ try {
             $stmt->bind_param(
                 "ssssssdssss",
                 $bank_op_id, $config['paid_type'], $config['paid_type'], $bank_info, $pro_date,
-                $emp_id, $payment_bank_id, $acc2_id, $paid_bank, $usid, $last_op
+                $emp_id, $payment_bank_id, $acc2_id, $actual_bank_received, $usid, $last_op
             );
             
             if (!$stmt->execute()) {
@@ -679,7 +702,7 @@ try {
             );
             
             $bank_details = $config['paid_note'] . " صرافة _ " . $pro_id;
-            $stmt->bind_param("ssdssss", $journal_id, $last_bank_paid, $paid_bank, $pro_date, $bank_details, $usid, $last_op);
+            $stmt->bind_param("ssdssss", $journal_id, $last_bank_paid, $actual_bank_received, $pro_date, $bank_details, $usid, $last_op);
             $stmt->execute();
             $journal_lastid = $conn->insert_id;
             $stmt->close();
@@ -689,7 +712,7 @@ try {
                 "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
                  VALUES (?, ?, ?, 0, 0, ?)"
             );
-            $stmt->bind_param("ssds", $journal_lastid, $payment_bank_id, $paid_bank, $last_op);
+            $stmt->bind_param("ssds", $journal_lastid, $payment_bank_id, $actual_bank_received, $last_op);
             $stmt->execute();
             $stmt->close();
             
@@ -698,7 +721,7 @@ try {
                 "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
                  VALUES (?, ?, 0, ?, 1, ?)"
             );
-            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $paid_bank, $last_op);
+            $stmt->bind_param("ssds", $journal_lastid, $acc2_id, $actual_bank_received, $last_op);
             $stmt->execute();
             $stmt->close();
             

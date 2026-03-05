@@ -122,8 +122,72 @@ try {
         $conn->query("UPDATE ot_head SET isdeleted = 1 WHERE id = $original_order_id");
     }
 
+    // 6. إنشاء سند قبض (Receipt Voucher) للمبلغ المدفوع
+    $usid = $_SESSION['userid'] ?? 1;
+    $date = date('Y-m-d');
+    
+    // جلب حساب الخزينة/الصندوق
+    $safe_acc = 51; // القيمة الافتراضية
+    $safe_res = $conn->query("SELECT id FROM acc_head WHERE aname LIKE '%خزينة%' OR aname LIKE '%صندوق%' LIMIT 1");
+    if ($safe_res && $safe_res->num_rows > 0) {
+        $safe_acc = $safe_res->fetch_assoc()['id'];
+    }
+    
+    // إنشاء سند القبض (pro_tybe = 1)
+    $stmt = $conn->prepare(
+        "INSERT INTO ot_head (
+            pro_tybe, is_journal, journal_tybe, info, pro_date, 
+            emp_id, acc1, acc2, pro_value, fat_net, cost_center, profit, user, op2
+        ) VALUES (1, 1, 1, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)"
+    );
+    
+    $info_text = "سند قبض - سداد جزئي طاولة " . $table_id . " - فاتورة رقم " . $new_head_id;
+    $customer_acc = $orig_order['acc1'] ?? 0;
+    $emp_id = $orig_order['emp_id'] ?? 0;
+    
+    $stmt->bind_param("ssiiiddii", 
+        $info_text, $date, $emp_id, $safe_acc, $customer_acc, 
+        $paid_amount, $paid_amount, $usid, $new_head_id
+    );
+    $stmt->execute();
+    $receipt_id = $conn->insert_id;
+    $stmt->close();
+    
+    // 7. إنشاء قيد يومية (Journal Entry)
+    // الحصول على رقم القيد التالي
+    $res_jid = $conn->query("SELECT MAX(journal_id) as max_id FROM journal_heads");
+    $row_jid = $res_jid->fetch_assoc();
+    $journal_id = ($row_jid['max_id'] ?? 0) + 1;
+    
+    // رأس القيد
+    $stmt = $conn->prepare("INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $j_details = "سند قبض - سداد جزئي طاولة " . $table_id;
+    $stmt->bind_param("idsssii", $journal_id, $receipt_id, $paid_amount, $date, $j_details, $usid, $new_head_id);
+    $stmt->execute();
+    $j_head_id = $conn->insert_id;
+    $stmt->close();
+    
+    // مدين: الخزينة (من ح/ الخزينة)
+    $stmt = $conn->prepare("INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) VALUES (?, ?, ?, 0, 0, ?)");
+    $stmt->bind_param("iidi", $j_head_id, $safe_acc, $paid_amount, $new_head_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // دائن: العميل (إلى ح/ العميل)
+    if ($customer_acc > 0) {
+        $stmt = $conn->prepare("INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) VALUES (?, ?, 0, ?, 1, ?)");
+        $stmt->bind_param("iidi", $j_head_id, $customer_acc, $paid_amount, $new_head_id);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     $conn->commit();
-    echo json_encode(['success' => true, 'message' => 'تم سداد الأصناف المختارة بنجاح', 'new_invoice_id' => $new_head_id]);
+    echo json_encode([
+        'success' => true, 
+        'message' => 'تم سداد الأصناف المختارة بنجاح وإنشاء سند القبض', 
+        'new_invoice_id' => $new_head_id,
+        'receipt_id' => $receipt_id
+    ]);
 
 } catch (Exception $e) {
     $conn->rollback();

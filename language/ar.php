@@ -297,6 +297,23 @@ $lang_emprofilejopentry = "بيانات الوظيفة";
 $lang_emprofilejop = "الوظيفة";
 $lang_addemployee_address1 = "العنوان 1";
 $lang_addemployee_address2 = "العنوان 2";
+
+// Validation Messages
+$lang_validation_required = "هذا الحقل مطلوب";
+$lang_validation_email = "يرجى إدخال بريد إلكتروني صحيح";
+$lang_validation_minlength = "يجب أن يكون الحد الأدنى %s أحرف";
+$lang_validation_maxlength = "يجب أن يكون الحد الأقصى %s أحرف";
+$lang_validation_length = "يجب أن يكون الطول بين %s و %s أحرف";
+$lang_validation_digits = "يرجى إدخال أرقام فقط";
+$lang_validation_number = "يرجى إدخال رقم صحيح";
+$lang_validation_integer = "يرجى إدخال عدد صحيح";
+$lang_validation_min = "يجب أن تكون القيمة %s على الأقل";
+$lang_validation_max = "يجب أن تكون القيمة %s على الأكثر";
+$lang_validation_range = "يجب أن تكون القيمة بين %s و %s";
+$lang_validation_url = "يرجى إدخال رابط صحيح";
+$lang_validation_date = "يرجى إدخال تاريخ صحيح";
+$lang_validation_pattern = "القيمة المدخلة غير صحيحة";
+$lang_validation_equalto = "يجب أن تتطابق القيمتان";
 // Operations
 $lang_operations = "العمليات";
 $lang_operations_list = "قائمة العمليات";
