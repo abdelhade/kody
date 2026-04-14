@@ -43,12 +43,8 @@
                         </thead>
                         <tbody>
                         <?php
-
-                        $limit = 50;  // عدد العناصر في الصفحة الواحدة
-                        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;  // الصفحة الحالية
-                        $offset = ($page - 1) * $limit;
-                        $resitm = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 LIMIT $limit OFFSET $offset");
-                        $x = $offset;  // البدء من رقم الصف الصحيح
+                        $resitm = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0");
+                        $x = 1;
                         while ($rowitm = $resitm->fetch_assoc()) {
                         $x++;
                         ?>
@@ -135,79 +131,7 @@
                 </div>
             </div>
             
-            <!-- Pagination -->
-            <div class="card-footer">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm justify-content-center mb-0">
-                        <?php
-                        $countitm = $conn->query("SELECT COUNT(*) as total FROM myitems WHERE isdeleted = 0")->fetch_assoc();
-                        $total_items = $countitm['total'];
-                        $total_pages = ceil($total_items / $limit);
-                        
-                        // زر السابق
-                        if ($page > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="myitems.php?page=<?= $page - 1 ?>" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                        <?php else: ?>
-                            <li class="page-item disabled">
-                                <span class="page-link">&laquo;</span>
-                            </li>
-                        <?php endif;
-                        
-                        // عرض أرقام الصفحات
-                        $start_page = max(1, $page - 2);
-                        $end_page = min($total_pages, $page + 2);
-                        
-                        // الصفحة الأولى
-                        if ($start_page > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="myitems.php?page=1">1</a>
-                            </li>
-                            <?php if ($start_page > 2): ?>
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            <?php endif;
-                        endif;
-                        
-                        // الصفحات المحيطة
-                        for ($i = $start_page; $i <= $end_page; $i++): ?>
-                            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                <a class="page-link" href="myitems.php?page=<?= $i ?>"><?= $i ?></a>
-                            </li>
-                        <?php endfor;
-                        
-                        // الصفحة الأخيرة
-                        if ($end_page < $total_pages): 
-                            if ($end_page < $total_pages - 1): ?>
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            <?php endif; ?>
-                            <li class="page-item">
-                                <a class="page-link" href="myitems.php?page=<?= $total_pages ?>"><?= $total_pages ?></a>
-                            </li>
-                        <?php endif;
-                        
-                        // زر التالي
-                        if ($page < $total_pages): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="myitems.php?page=<?= $page + 1 ?>" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        <?php else: ?>
-                            <li class="page-item disabled">
-                                <span class="page-link">&raquo;</span>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                    <div class="text-center mt-2">
-                        <small class="text-muted">
-                            عرض <?= ($offset + 1) ?> - <?= min($offset + $limit, $total_items) ?> من <?= $total_items ?> صنف
-                        </small>
-                    </div>
-                </nav>
-            </div>
+            <!-- Pagination removed for global search functionality -->
         </div>
 
         </div>
@@ -218,6 +142,28 @@
 
 <script>
 $(document).ready(function() {
+    // Global search functionality
+    $('#search').on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        
+        // If search is empty, show all rows
+        if (searchTerm === '') {
+            $('#horsTable tbody tr').show();
+            return;
+        }
+        
+        // Hide all rows first
+        $('#horsTable tbody tr').hide();
+        
+        // Show rows that contain the search term
+        $('#horsTable tbody tr').each(function() {
+            var rowText = $(this).text().toLowerCase();
+            if (rowText.includes(searchTerm)) {
+                $(this).show();
+            }
+        });
+    });
+    
     // إعادة تعيين حماية الأسعار اليدوية
     $('#reset-manual-prices').click(function() {
         if (confirm('هل أنت متأكد من إعادة تعيين حماية الأسعار؟ سيتم إعادة حساب جميع الأسعار عند الضغط على إعادة حساب')) {
