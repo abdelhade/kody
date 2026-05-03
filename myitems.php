@@ -37,7 +37,6 @@
                                 <th>سعر البيع</th>
                                 <th>سعر الشراء</th>
                                 <th>سعر التكلفة</th>
-                                <th>سعر السوق</th>
                                 <th>عمليات</th>
                             </tr>
                         </thead>
@@ -78,7 +77,6 @@
                                 <td><b><?= $rowitm['price1'] ?></b></td>
                                 <td><b><?= $rowitm['last_price'] ?></b></td>
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
-                                <td><b><?= $rowitm['market_price'] ?></b></td>
                                
                                     <td>
                                         <a class="btn btn-warning btn-sm" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>

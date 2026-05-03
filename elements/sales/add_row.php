@@ -2,6 +2,19 @@
       <div class="table-responsive">
         <table class="table table-condensed table-hover table-striped table-bordered" id="searchTable">
     
+          <thead class="bg-teal-500 text-white">
+            <tr>
+              <th class="col-1 text-center">#</th>
+              <th class="col-lg-5 text-center">اسم الصنف</th>
+              <th class="text-center">الوحدة</th>
+              <th class="text-center">كمية</th>
+              <th class="text-center">سعر</th>
+              <th class="text-center">خصم</th>
+              <th class="text-center">القيمة</th>
+              <th class="text-center"></th>
+            </tr>
+          </thead>
+
           <tbody id="">
             <tr>
               <td class="col-1">
@@ -24,40 +37,37 @@
                        style="width:100%">
                 <input type="hidden" name="myitm[]" id="selectedItemId">
                 <div id="searchResults" style="position:absolute; z-index:1000; background:white; border:1px solid #ddd; max-height:300px; overflow-y:auto; display:none; width:100%;"></div>
-                <input id="itmprice2" type="number" name="itmname[]" hidden onclick=sT(this)>
+                <input id="itmprice2" type="number" hidden onclick=sT(this)>
               </td>
 
                  <!-- الوحدة -->
 
                  <td>
-                <select name="u_val[]" id="" class="form-control form-control-sm" style="width:100px;">
+                <select id="inputUnitSelect" class="form-control form-control-sm" style="width:100px;">
                 <option value="">اختر وحدة</option>
                 </select>
               </td>
 
               <!-- الكمية -->
               <td>
-                <input type="number" name="itmname[]" hidden>
-                <input id="itmqty" value="1.00" type="number" name="itmqty[]" onclick=sT(this) class="itmqty form-control form-control-sm nozero" style="width:90px;">
+                <input type="number" hidden>
+                <input id="itmqty" value="1.00" type="number" onclick=sT(this) class="itmqty form-control form-control-sm nozero" style="width:90px;">
               </td>
            
              
               <!-- السعر -->
               <td>
-                <input id="itmprice" value="0.00" type="number" name="itmprice[]" onclick=sT(this) class="itmprice form-control form-control-sm nozero" style="width:90px;" step="0.001" 
-                >
+                <input id="itmprice" value="0.00" type="number" onclick=sT(this) class="itmprice form-control form-control-sm nozero" style="width:90px;" step="0.001">
               </td>
               <!-- الخصم -->
               <td>
-                <input id="itmdisc" value="0.00" type="number" name="itmdisc[]" onclick=sT(this) class="itmdisc form-control form-control-sm nozero" style="width:120px;" step="0.001" 
-                >
+                <input id="itmdisc" value="0.00" type="number" onclick=sT(this) class="itmdisc form-control form-control-sm nozero" style="width:120px;" step="0.001">
               </td>
               <!-- القيمة -->
               <td>
-                <input readonly id="itmval" value="0.00" type="number" name="itmval[]" class="itmval bg-light form-control form-control-sm nozero" style="width:150px;" step="0.001" 
-                >
+                <input readonly id="itmval" value="0.00" type="number" class="itmval bg-light form-control form-control-sm nozero" style="width:150px;" step="0.001">
               </td>
-              <input id="itmprofit" name="itmprofit" hidden>
+              <input id="itmprofit" hidden>
               <td>
                 <button type="button" id="addRow" class="btn btn-light">إضافة</button>
               </td>

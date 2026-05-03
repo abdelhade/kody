@@ -2,18 +2,12 @@
 session_start();
 include('../includes/connect.php');
 
-// Debug: Log all POST data
-error_log('POST data received: ' . print_r($_POST, true));
-
-// Debug: Log individual key values
-error_log('pro_tybe: ' . (isset($_POST['pro_tybe']) ? $_POST['pro_tybe'] : 'NOT SET'));
-error_log('submit: ' . (isset($_POST['submit']) ? $_POST['submit'] : 'NOT SET'));
-error_log('submit_action: ' . (isset($_POST['submit_action']) ? $_POST['submit_action'] : 'NOT SET'));
-error_log('store_id: ' . (isset($_POST['store_id']) ? $_POST['store_id'] : 'NOT SET'));
-error_log('acc2_id: ' . (isset($_POST['acc2_id']) ? $_POST['acc2_id'] : 'NOT SET'));
-error_log('emp_id: ' . (isset($_POST['emp_id']) ? $_POST['emp_id'] : 'NOT SET'));
-error_log('itmname: ' . (isset($_POST['itmname']) ? 'SET' : 'NOT SET'));
-
+// Debug مؤقت - اعرض الـ POST data
+if (isset($_GET['debug'])) {
+    header('Content-Type: text/plain');
+    print_r($_POST);
+    exit;
+}
 
 
 
@@ -762,10 +756,11 @@ try {
             if (empty($itmname)) continue;
             
             $itmname = intval($itmname);
-            $itmqty = floatval($_POST['itmqty'][$index]);
-            $itmprice = floatval($_POST['itmprice'][$index]);
-            $itmdisc = floatval($_POST['itmdisc'][$index]);
-            $u_val = floatval($_POST['u_val'][$index]);
+            $itmqty  = floatval($_POST['itmqty'][$index]  ?? 1);
+            $itmprice = floatval($_POST['itmprice'][$index] ?? 0);
+            $itmdisc  = floatval($_POST['itmdisc'][$index]  ?? 0);
+            $u_val   = floatval($_POST['u_val'][$index]   ?? 1);
+            if ($u_val <= 0) $u_val = 1; // حماية من القسمة على صفر
             
             // تحديد الكميات حسب نوع الفاتورة
             // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون

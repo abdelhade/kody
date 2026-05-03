@@ -347,6 +347,19 @@ $(document).ready(function() {
     // ========================================
     // Tables System
     // ========================================
+
+    // مسح الطاولة عند التبديل لتيك أواي أو دليفري
+    $('input[name="age"]').on('change', function() {
+        const val = $(this).val();
+        if (val == '1' || val == '3') {
+            // تيك أواي أو دليفري - امسح الطاولة المختارة
+            $('#selected_table_id').val('');
+            $('#selected_table_name').val('');
+            $('#selected_order_id').val('');
+            $('#selected_table_display').html('اختر طاولة');
+        }
+    });
+
     $(document).on('click', '.table-select-btn', function() {
         const tableId = $(this).data('table-id');
         const tableName = $(this).data('table-name');

@@ -139,31 +139,55 @@ function fetchItemInfo(itemId, row) {
 }
         
         function handleRowAddition() {
-            $(document).on("click", "#addRow", function(e) {
+            $(document).off("click", "#addRow").on("click", "#addRow", function(e) {
                 e.preventDefault();
-                const itemId = $("#mySelectitm").val();
-                if (itemId) {
-                    addNewRow(itemId);
+                const itemId = $("#selectedItemId").val();
+                const itemName = $("#itemSearchInput").val().trim();
+                if (itemId && itemName) {
+                    addNewRow(itemId, itemName);
                 } else {
                     alert("يرجى اختيار صنف.");
                 }
             });
         }
 
-        function addNewRow(itemId) {
-            const newRow = $("#searchTable tbody tr").first().clone();
-            newRow.find("td:first").text(counter++);
-            newRow.find("td:nth-child(2)").text($("#mySelectitm option:selected").text());
-            newRow.find("input[name='itmname[]']").val(itemId);
-            const selectedUnit = $("select[name='u_val[]']").first().val();
-            newRow.find("select[name='u_val[]']").val(selectedUnit);
-            $('#searchTable tbody tr').last().find(".itmqty").val(1.00);    // تعيين الكمية إلى 1.00 في آخر صف
-            $('#searchTable tbody tr').last().find(".itmprice").val(0.00);  // تعيين السعر إلى 0.00
-            $('#searchTable tbody tr').last().find(".itmdisc").val(0.00);   // تعيين الخصم إلى 0.00
-            $('#searchTable tbody tr').last().find(".itmval").val(0.00);    // تعيين القيمة إلى 0.00            
+        function addNewRow(itemId, itemName) {
+            const qty    = parseFloat($("#itmqty").val())   || 1;
+            const price  = parseFloat($("#itmprice").val()) || 0;
+            const disc   = parseFloat($("#itmdisc").val())  || 0;
+            const val    = parseFloat($("#itmval").val())   || (qty * price - disc);
+            const unitVal  = parseFloat($("#inputUnitSelect").val()) || 1;
+            const unitName = $("#inputUnitSelect option:selected").text() || '-';
+
+            const newRow = $(`<tr>
+                <td class="col-1">${counter++}</td>
+                <td class="col-lg-5">
+                    <p>${itemName}</p>
+                    <input type="number" name="itmname[]" hidden value="${itemId}">
+                </td>
+                <td>
+                    <select name="u_val[]" class="form-control form-control-sm" style="width:100px;">
+                        <option value="${unitVal}">${unitName}</option>
+                    </select>
+                </td>
+                <td><input type="number" name="itmqty[]"   value="${qty}"   class="itmqty  form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
+                <td><input type="number" name="itmprice[]" value="${price}" class="itmprice form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
+                <td><input type="number" name="itmdisc[]"  value="${disc}"  class="itmdisc  form-control form-control-sm" style="width:120px;" onclick="sT(this)" step="0.001"></td>
+                <td><input type="number" name="itmval[]"   value="${val}"   class="itmval   bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
+                <td><input name="itmprofit" hidden><button type="button" class="deleteRow btn btn-danger">X</button></td>
+            </tr>`);
+
             newRow.appendTo("#itmrow");
-            newRow.find("td:last").html('<button type="button" class="deleteRow btn btn-danger">X</button>');
-            $('#itmTd').focus();
+
+            // مسح حقول الإدخال بعد الإضافة
+            $("#itemSearchInput").val('');
+            $("#selectedItemId").val('');
+            $("#itmprice").val('0.00');
+            $("#itmqty").val('1.00');
+            $("#itmdisc").val('0.00');
+            $("#itmval").val('0.00');
+            $("#inputUnitSelect").empty().append('<option value="">اختر وحدة</option>');
+            $("#itemSearchInput").focus();
             updateTotal();
         }
 
