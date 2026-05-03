@@ -153,13 +153,9 @@ if (!empty($elements['add_item_modal'])) {
 <div class="card">
   <div class="card-body p-0 m-0">
           <?php
-          // Lazy Loading: تحميل صف الإضافة فقط عند الحاجة
-          if (!empty($elements['details'])) {
-              echo $elements['details']->renderNewRow();
-          } else {
-              include('elements/sales/add_row.php');
-          }
+          // صف الإدخال موجود داخل render() مباشرة تحت هيدر الجدول
           ?>
+
             <?php 
             // تحديد action الفورم بناءً على الوضع
             $form_action = $is_edit_mode ? 'do/doedit_invoice.php' : 'do/doadd_invoice.php';
