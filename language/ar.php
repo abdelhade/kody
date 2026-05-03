@@ -353,4 +353,10 @@ $lang_addhicont_confirm = "تأكيد الحفظ";
 $lang_joplvledit = "تعديل المستوى الوظيفي";
 $lang_depart_edit = "تعديل القسم";
 $lang_jopedit = "تعديل الوظيفة";
-?>
+$lang_username = "اسم المستخدم";
+$lang_userimage = "صورة المستحدم";
+$lang_useroperations = "عمليات المستخدم";
+$lang_image_upload ="تحميل الصورة";
+$lang_add_new_user = "اضافة مستخدم جديد";
+$lang_pbholder_uname = "اسم المستخدم ";
+$lang_pbholder_password = "كلمة السر ";

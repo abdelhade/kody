@@ -105,7 +105,7 @@ if(isset($_SESSION['success_message'])){
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="dashboard.php">
+        <a class="navbar-brand me-5 fw-bold" href="dashboard.php">
             <i class="fas fa-home me-2"></i>
             نظام نقاط البيع
         </a>
@@ -146,5 +146,6 @@ if(isset($_SESSION['success_message'])){
 $action_url = "do/doadd_invoice.php";
 include('includes/pos_content.php');
 ?>
+<?php include('elements/pos/cofe_widget.php'); ?>
 
 <?php include('includes/pos_simple_footer.php');?>
