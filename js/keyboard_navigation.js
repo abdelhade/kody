@@ -179,11 +179,6 @@
                 navigateUp();
                 break;
                 
-            case 'ArrowDown':
-                e.preventDefault();
-                navigateDown();
-                break;
-                
             case 'ArrowRight':
                 // السماح بالتنقل داخل النص إذا لم يكن في البداية
                 if (tagName === 'INPUT' && activeElement.type === 'text') {
