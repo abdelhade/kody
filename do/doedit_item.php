@@ -34,8 +34,8 @@ $stmt->execute();
 $chkname = $stmt->get_result()->fetch_assoc();
 
 if ($chkname !== null) {
-    echo "يوجد صنف بنفس الاسم " . $iname;
-    die;
+    header('Location: ../add_item.php?edit=' . (int) $item_id . '&error=duplicate_name');
+    exit;
 }
 
 // Prepare to update the main item
@@ -82,7 +82,10 @@ if ($checkColumn->num_rows == 0) {
 
 // تعيين علامة التعديل اليدوي
 $conn->query("UPDATE myitems SET manual_price_edit=1 WHERE id='$item_id'");
-$conn->query($sql);
+if (!$conn->query($sql)) {
+    header('Location: ../add_item.php?edit=' . (int) $item_id . '&error=save_failed');
+    exit;
+}
 
 // تحديث وحدات الصنف
 foreach ($_POST['unit_id'] as $index => $unit_id) {
@@ -106,6 +109,6 @@ foreach ($_POST['unit_id'] as $index => $unit_id) {
 }
 
 
-    // Redirect to the items page
-    header('location:../myitems.php');
+    header('Location: ../add_item.php?edit=' . (int) $item_id . '&saved=1');
+    exit;
 ?>

@@ -5,6 +5,20 @@
     <section class="content-header">
         <div class="container-fluid">
 
+            <?php if (isset($_GET['recost']) && $_GET['recost'] === 'ok'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-check-circle"></i>
+                    تم إعادة حساب التكاليف بنجاح.
+                </div>
+            <?php elseif (isset($_GET['recost']) && $_GET['recost'] === 'fail'): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    تعذّر إكمال إعادة حساب التكاليف. تحقق من الاتصال بقاعدة البيانات أو البيانات ثم أعد المحاولة.
+                </div>
+            <?php endif; ?>
+
         <div class="card">
             <div class="card-header">
                 <div class="row">
@@ -46,9 +60,29 @@
                         $x = 1;
                         while ($rowitm = $resitm->fetch_assoc()) {
                         $x++;
+                            $itemid = (int) $rowitm['id'];
+                            $resunt = $conn->query("SELECT iu.*, u.uname FROM item_units iu LEFT JOIN myunits u ON u.id = iu.unit_id WHERE iu.item_id = $itemid");
+                            $unitRows = [];
+                            while ($r = $resunt->fetch_assoc()) {
+                                $unitRows[] = $r;
+                            }
+                            $searchParts = [
+                                (string) $rowitm['id'],
+                                isset($rowitm['code']) ? (string) $rowitm['code'] : '',
+                                isset($rowitm['barcode']) ? (string) $rowitm['barcode'] : '',
+                                (string) $rowitm['iname'],
+                                isset($rowitm['name2']) ? (string) $rowitm['name2'] : '',
+                                isset($rowitm['info']) ? (string) $rowitm['info'] : '',
+                            ];
+                            foreach ($unitRows as $ur) {
+                                $searchParts[] = isset($ur['uname']) ? (string) $ur['uname'] : '';
+                                $searchParts[] = isset($ur['unit_barcode']) ? (string) $ur['unit_barcode'] : '';
+                                $searchParts[] = isset($ur['u_val']) ? (string) $ur['u_val'] : '';
+                            }
+                            $dataSearch = htmlspecialchars(implode(' ', array_filter($searchParts)), ENT_QUOTES, 'UTF-8');
                         ?>
                         
-                            <tr>
+                            <tr data-search="<?= $dataSearch ?>">
                                 <td><?= $x ?></td>
                                 <td><?= $rowitm['id'] ?></td>
                                 <td><b><?= $rowitm['iname'] ?></b></td>
@@ -57,17 +91,9 @@
                                 </td>
                                 <td class="unit">
                                 <select name="" id="item_unit_<?= $rowitm['id'] ?>" class="form-control form-control-sm" data-row-id="<?= $rowitm['id'] ?>">
-                                    <?php
-                                    $itemid = $rowitm['id'];
-                                    $resunt = $conn->query("SELECT * from item_units where item_id = $itemid");
-                                    while ($rowunt = $resunt->fetch_assoc()) {
-                                    ?>
+                                    <?php foreach ($unitRows as $rowunt) { ?>
                                     <option value="<?= $rowunt['u_val']?>">
-                                        <?php
-                                        $unit_id = $rowunt['unit_id'];
-                                        $rowuname = $conn->query("SELECT uname from myunits where id = $unit_id")->fetch_assoc();
-                                        echo $rowuname['uname'];
-                                        ?>
+                                        <?= htmlspecialchars($rowunt['uname']) ?>
                                         [<?= $rowunt['u_val'] ?>]
                                     </option>
                                     <?php } ?>
@@ -140,28 +166,8 @@
 
 <script>
 $(document).ready(function() {
-    // Global search functionality
-    $('#search').on('input', function() {
-        var searchTerm = $(this).val().toLowerCase();
-        
-        // If search is empty, show all rows
-        if (searchTerm === '') {
-            $('#horsTable tbody tr').show();
-            return;
-        }
-        
-        // Hide all rows first
-        $('#horsTable tbody tr').hide();
-        
-        // Show rows that contain the search term
-        $('#horsTable tbody tr').each(function() {
-            var rowText = $(this).text().toLowerCase();
-            if (rowText.includes(searchTerm)) {
-                $(this).show();
-            }
-        });
-    });
-    
+    // البحث يُدار من includes/footer.php (#search + #horsTable)
+
     // إعادة تعيين حماية الأسعار اليدوية
     $('#reset-manual-prices').click(function() {
         if (confirm('هل أنت متأكد من إعادة تعيين حماية الأسعار؟ سيتم إعادة حساب جميع الأسعار عند الضغط على إعادة حساب')) {

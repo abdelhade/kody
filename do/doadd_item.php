@@ -15,10 +15,11 @@ $iname = $_POST['iname'];
 $chkname = $conn->query("SELECT * FROM myitems WHERE iname = '$iname'")->fetch_assoc();
 
 if ($chkname !== null) {
-    echo "يوجد صنف بنفس الاسم: " . $iname;
-    die;
-} else {
-    $code = $_POST['code'];
+    header('Location: ../add_item.php?error=duplicate_name');
+    exit;
+}
+
+$code = $_POST['code'];
     $name2 = $_POST['name2']; 
     $group1 = $_POST['group1']; 
     $group2 = $_POST['group2']; 
@@ -33,7 +34,10 @@ if ($chkname !== null) {
     // إدخال البيانات إلى جدول myitems
     $sql = "INSERT INTO myitems(iname, name2, code, barcode, info, market_price, cost_price, price1, price2, group1, group2, user) 
             VALUES ('$iname', '$name2', '$code', '$barcode', '$info', '$market_price', '$cost_price', '$price1', '$price2', '$group1', '$group2', '$usid')";
-    $conn->query($sql);
+    if (!$conn->query($sql)) {
+        header('Location: ../add_item.php?error=save_failed');
+        exit;
+    }
 
     $last_id = $conn->insert_id;
 
@@ -76,8 +80,8 @@ if ($chkname !== null) {
 
             $allow_ext = ["jpg", "png", "gif", "jpeg", "webp"];
             if (!in_array($kvr_ext, $allow_ext)) {
-                echo $kvr_ext . "<h2>الملف المحمل ليس صورة أو امتداد غير مسموح به</h2>";
-                exit();
+                header('Location: ../add_item.php?error=invalid_image');
+                exit;
             }
 
             $new_kvr_name = $arrkvr[0] . rand(1, 1000000) . "." . $kvr_ext;
@@ -91,6 +95,6 @@ if ($chkname !== null) {
     $conn->query("INSERT INTO process(type) VALUES ('add item')");
 
     // إعادة التوجيه إلى صفحة إضافة الصنف
-    header('Location: ../add_item.php');
-}
+    header('Location: ../add_item.php?saved=1');
+    exit;
 ?>

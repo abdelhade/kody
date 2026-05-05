@@ -31,7 +31,7 @@ if (!empty($rowstg['def_pos_store'])) {
                     <span class="input-group-text fw-bold" style="background-color: var(--primary-violet); color: white; border: none;">
                         <i class="fas fa-barcode me-1"></i>باركود
                     </span>
-                    <input type="text" class="form-control" id="barcodeSearch" placeholder="امسح أو اكتب الباركود..." autocomplete="off" style="border: none;">
+                    <input type="text" class="frst form-control" id="barcodeSearch" placeholder="امسح أو اكتب الباركود..." autocomplete="off" style="border: none;">
                 </div>
             </div>
             
