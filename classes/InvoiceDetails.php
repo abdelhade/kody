@@ -88,15 +88,15 @@ class InvoiceDetails extends InvoiceElementBase
                                 </td>
 
                                 <!-- الصنف -->
-                                <td id="itmTd" class="col-lg-5">
+                                <td id="itmTd" class="col-lg-5" style="position:relative;">
                                     <input type="text"
                                            id="itemSearchInput"
                                            class="form-control"
-                                           placeholder="ابحث عن صنف (اكتب 3 أحرف على الأقل)..."
+                                           placeholder="ابحث عن صنف (حرفين على الأقل)..."
                                            autocomplete="off"
                                            style="width:100%">
                                     <input type="hidden" id="selectedItemId">
-                                    <div id="searchResults" style="position:absolute; z-index:1000; background:white; border:1px solid #ddd; max-height:300px; overflow-y:auto; display:none; width:100%;"></div>
+                                    <div id="searchResults" style="position:absolute; left:0; right:0; top:100%; z-index:1050; background:white; border:1px solid #ddd; max-height:300px; overflow-y:auto; display:none; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
                                     <input id="itmprice2" type="number" hidden onclick="sT(this)">
                                 </td>
 
@@ -148,6 +148,11 @@ class InvoiceDetails extends InvoiceElementBase
         </div>
 
 <!-- Live Search Script -->
+<style>
+    #searchResults .search-result-item.search-result-active {
+        background: #dbeafe !important;
+    }
+</style>
 <script>
 (function() {
     const searchInput = document.getElementById('itemSearchInput');
@@ -157,6 +162,53 @@ class InvoiceDetails extends InvoiceElementBase
 
     let searchTimeout;
     let selectedItem = null;
+    let highlightIndex = -1;
+
+    function getResultItems() {
+        return searchResults.querySelectorAll('.search-result-item');
+    }
+
+    function setHighlight(index) {
+        const items = getResultItems();
+        if (!items.length) {
+            highlightIndex = -1;
+            return;
+        }
+        highlightIndex = Math.max(0, Math.min(index, items.length - 1));
+        items.forEach(function (el, i) {
+            el.classList.toggle('search-result-active', i === highlightIndex);
+        });
+        items[highlightIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function clearHighlight() {
+        highlightIndex = -1;
+        getResultItems().forEach(function (el) {
+            el.classList.remove('search-result-active');
+        });
+    }
+
+    function bindResultItems() {
+        clearHighlight();
+        document.querySelectorAll('#searchResults .search-result-item').forEach(function (item, idx) {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectItem({
+                    id: this.dataset.id,
+                    name: this.dataset.name,
+                    price: this.dataset.price,
+                    barcode: this.dataset.barcode
+                });
+            });
+
+            item.addEventListener('mouseenter', function() {
+                highlightIndex = idx;
+                getResultItems().forEach(function (el, i) {
+                    el.classList.toggle('search-result-active', i === idx);
+                });
+            });
+        });
+    }
 
     // البحث المباشر
     searchInput.addEventListener('input', function() {
@@ -166,12 +218,14 @@ class InvoiceDetails extends InvoiceElementBase
 
         if (query.length < 2) {
             searchResults.style.display = 'none';
+            clearHighlight();
             return;
         }
 
         searchTimeout = setTimeout(() => {
             searchResults.innerHTML = '<div style="padding:10px; text-align:center;">جاري البحث...</div>';
             searchResults.style.display = 'block';
+            clearHighlight();
 
             fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(query)}&limit=20`)
                 .then(response => response.json())
@@ -193,36 +247,69 @@ class InvoiceDetails extends InvoiceElementBase
                             `;
                         });
                         searchResults.innerHTML = html;
-
-                        // إضافة event listeners
-                        document.querySelectorAll('.search-result-item').forEach(item => {
-                            item.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                selectItem({
-                                    id: this.dataset.id,
-                                    name: this.dataset.name,
-                                    price: this.dataset.price,
-                                    barcode: this.dataset.barcode
-                                });
-                            });
-
-                            item.addEventListener('mouseenter', function() {
-                                this.style.background = '#f0f9ff';
-                            });
-
-                            item.addEventListener('mouseleave', function() {
-                                this.style.background = 'white';
-                            });
-                        });
+                        bindResultItems();
                     } else {
                         searchResults.innerHTML = '<div style="padding:10px; text-align:center; color:#999;">لا توجد نتائج</div>';
+                        clearHighlight();
                     }
                 })
                 .catch(error => {
                     console.error('Search error:', error);
                     searchResults.innerHTML = '<div style="padding:10px; text-align:center; color:#ef4444;">خطأ في البحث</div>';
+                    clearHighlight();
                 });
         }, 300);
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        if (searchResults.style.display === 'none') {
+            return;
+        }
+        const items = getResultItems();
+        if (!items.length) {
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (highlightIndex < 0) {
+                setHighlight(0);
+            } else if (highlightIndex < items.length - 1) {
+                setHighlight(highlightIndex + 1);
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (highlightIndex <= 0) {
+                clearHighlight();
+            } else {
+                setHighlight(highlightIndex - 1);
+            }
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            var idx = highlightIndex >= 0 ? highlightIndex : 0;
+            if (items[idx]) {
+                e.preventDefault();
+                var row = items[idx];
+                selectItem({
+                    id: row.dataset.id,
+                    name: row.dataset.name,
+                    price: row.dataset.price,
+                    barcode: row.dataset.barcode
+                });
+            }
+            return;
+        }
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            searchResults.style.display = 'none';
+            clearHighlight();
+        }
     });
 
     // اختيار صنف
@@ -232,6 +319,7 @@ class InvoiceDetails extends InvoiceElementBase
         selectedItemId.value = item.id;
         priceInput.value = item.price;
         searchResults.style.display = 'none';
+        clearHighlight();
 
         // جلب بيانات الصنف الكاملة وتحديث الحقول مباشرة
         const isSale = window.location.href.indexOf('q=sale') !== -1;

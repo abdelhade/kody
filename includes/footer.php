@@ -50,10 +50,22 @@
     });  
 
     $(document).ready(function(){
-      $("#search").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        $("#horsTable tr").filter(function() {
-          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      $("#search").on("input keyup", function() {
+        var value = $.trim($(this).val()).toLowerCase();
+        var $rows = $("#horsTable tbody tr");
+        if (!$rows.length) {
+          return;
+        }
+        if (value === "") {
+          $rows.show();
+          return;
+        }
+        $rows.each(function () {
+          var $tr = $(this);
+          var extra = ($tr.attr("data-search") || "").toLowerCase();
+          var cells = $tr.children("td:not(:last)").text().toLowerCase();
+          var haystack = extra + " " + cells;
+          $tr.toggle(haystack.indexOf(value) > -1);
         });
       });
     });  

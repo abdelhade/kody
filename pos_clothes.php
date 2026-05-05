@@ -61,4 +61,13 @@ if(isset($_SESSION['success_message'])){
     <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="components/pos_clothes/scripts.js"></script>
 </body>
+<style>
+      input:focus {
+    background-color: greenyellow !important;
+    border-color: #005b39 !important;
+    box-shadow: 0 0 0 0.2rem rgba(168, 252, 171, 0.25) !important;
+    outline: none !important;
+    transition: all 0.3s ease !important;
+  }
+</style>
 </html>

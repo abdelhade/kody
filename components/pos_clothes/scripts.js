@@ -457,10 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('noItemsMessage').style.display = 'block';
     
     // بحث بالباركود
-    document.getElementById('barcodeSearch')?.addEventListener('input', function(e) {
-        searchByBarcode();
-    });
-    
     document.getElementById('barcodeSearch')?.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
