@@ -14,7 +14,7 @@ if ($result->num_rows == 0) {
         <div class="card">
             <div class="card-body">
                 
-<h1>about test</h1>
+<h1>about </h1>
 
 
 <div class="form-group">

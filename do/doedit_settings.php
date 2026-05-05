@@ -1,4 +1,7 @@
 <?php 
+error_log('[Settings] doedit_settings.php accessed - Method: ' . $_SERVER['REQUEST_METHOD']);
+error_log('[Settings] POST data: ' . print_r($_POST, true));
+
 include('../includes/connect.php');
 
 // التحقق من طريقة الطلب
