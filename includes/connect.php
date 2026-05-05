@@ -38,6 +38,51 @@ if (!$conn->select_db($dbname)) {
 
 // Enable SQL error reporting for debugging
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+// ======================================================
+// Global SQL Error Handler
+// أي خطأ SQL في أي صفحة يتم توجيه المستخدم لصفحة الخطأ
+// ======================================================
+set_exception_handler(function ($e) {
+    // تسجيل الخطأ الحقيقي في ملف log (للمطور فقط)
+    $logFile = __DIR__ . '/../logs/sql_errors.log';
+    $logDir  = dirname($logFile);
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    $logMsg = '[' . date('Y-m-d H:i:s') . '] '
+            . get_class($e) . ': ' . $e->getMessage()
+            . ' in ' . $e->getFile() . ':' . $e->getLine()
+            . PHP_EOL;
+    @file_put_contents($logFile, $logMsg, FILE_APPEND);
+
+    // توليد كود مرجعي للخطأ
+    $errorCode = strtoupper(substr(md5($e->getMessage() . time()), 0, 8));
+
+    // إذا كان الطلب AJAX أو JSON fetch نرجع JSON بدل redirect
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+               && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+           || (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+           || (!empty($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false)
+           || (strpos($_SERVER['PHP_SELF'], 'ajax/') !== false);
+
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'database_error',
+            'message' => 'حدث خطأ في قاعدة البيانات، يرجى التواصل مع الفيندور',
+            'code'    => $errorCode,
+        ]);
+        exit;
+    }
+
+    // للصفحات العادية — redirect لصفحة الخطأ
+    $basePath = str_repeat('../', substr_count($_SERVER['PHP_SELF'], '/') - 1);
+    header('Location: ' . $basePath . 'sql_error.php?code=' . $errorCode);
+    exit;
+});
 // تحميل نظام Logging المبسط (إذا كان موجود)
 if (file_exists('simple_logger.php')) {
     require_once 'simple_logger.php';
