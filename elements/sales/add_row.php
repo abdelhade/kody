@@ -31,7 +31,7 @@
               <td id="itmTd" class="col-lg-5">
                 <input type="text" 
                        id="itemSearchInput" 
-                       class="form-control" 
+                       class="form-control frst" 
                        placeholder="ابحث عن صنف (اكتب 3 أحرف على الأقل)..."
                        autocomplete="off"
                        style="width:100%">
