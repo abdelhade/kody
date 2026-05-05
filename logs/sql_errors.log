@@ -6,3 +6,5 @@
 [2026-05-04 18:12:36] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\ajax\cofe_create_order.php:210
 [2026-05-05 13:02:03] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:62
 [2026-05-05 13:02:14] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:62
+[2026-05-05 13:10:44] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:65
+[2026-05-05 13:12:45] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:65
