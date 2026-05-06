@@ -85,6 +85,17 @@ if ($isEdit) {
                 } else {
                     $itmid = (int) $maxCode + 1;
                 }
+                
+                // Get the last barcode and increment by 1
+                $rowlstbarcode = $conn->query('SELECT MAX(CAST(barcode AS UNSIGNED)) AS max_barcode FROM myitems WHERE barcode REGEXP \'^[0-9]+$\'')->fetch_assoc();
+                $maxBarcode = $rowlstbarcode['max_barcode'] ?? null;
+                if ($maxBarcode === null) {
+                    $newBarcode = 1;
+                } elseif ($isEdit) {
+                    $newBarcode = $rowitm['barcode'];
+                } else {
+                    $newBarcode = (int) $maxBarcode + 1;
+                }
                 ?>
 
                 <div class="card card-primary card-outline shadow-sm">
@@ -106,7 +117,7 @@ if ($isEdit) {
                             <div class="col-md-2">
                                 <div class="form-group mb-md-0">
                                     <label class="text-muted small mb-1">الباركود</label>
-                                    <input required value="<?= htmlspecialchars((string) $itmid, ENT_QUOTES, 'UTF-8') ?>" class="form-control frst" type="text" name="barcode">
+                                    <input required value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" class="form-control frst" type="text" name="barcode">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -214,7 +225,7 @@ if ($isEdit) {
                                             </select>
                                         </td>
                                         <td><input class="form-control form-control-sm text-center" type="number" readonly name="u_val[]" value="1" step="0.001"></td>
-                                        <td><input class="form-control form-control-sm" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $itmid, ENT_QUOTES, 'UTF-8') ?>"></td>
+                                        <td><input class="form-control form-control-sm" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>"></td>
                                         <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
                                         <td><input type="number" name="price1[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
                                         <td><input type="number" name="price2[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>

@@ -44,6 +44,7 @@
                             <tr>
                                 <th>م</th>
                                 <th>رقم الصنف</th>
+                                <th>الباركود</th>
                                 <th>الاسم</th>
                                 <th>الكميه</th>
                                 <th>الوحدة</th>
@@ -85,6 +86,7 @@
                             <tr data-search="<?= $dataSearch ?>">
                                 <td><?= $x ?></td>
                                 <td><?= $rowitm['id'] ?></td>
+                                <td><?= isset($rowitm['barcode']) ? $rowitm['barcode'] : '' ?></td>
                                 <td><b><?= $rowitm['iname'] ?></b></td>
                                 <td class="qty" data-row-id="<?= $rowitm['id'] ?>" data-original-qty="<?= $rowitm['itmqty'] ?>">
                                     <a class="btn btn-sm btn-light" id="item_qty_<?= $rowitm['id'] ?>" href="item_summery.php?id=<?= $rowitm['id'] ?>"><?= $rowitm['itmqty'] ?></a>
