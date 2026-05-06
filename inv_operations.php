@@ -57,6 +57,7 @@
             <tr>
                 <th>#</th>
                 <th>كود الصنف</th>
+                <th>barcode</th>
                 <th>اسم الصنف</th>
                 <th>سعر الشراء الاخير</th>
                 <th>سعر البيع <span class="text-red-500"></span><span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
@@ -74,11 +75,15 @@
             ?>
             <tr id="item-<?= $rowop2['id'] ?>">
                 <th><?= $x ?></th>
-                <th><input readonly type="text" value="<?php $id= $rowop2['id']; $rowunt = $conn->query("SELECT unit_barcode from item_units where item_id= $id ")->fetch_assoc();echo $rowunt['unit_barcode']; ?>" name="code[]"></th>
+                <th><input readonly type="text" value="<?php $id= $rowop2['id']; $rowunt = $conn->query("SELECT unit_barcode from item_units where item_id= $id ")->fetch_assoc(); echo !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode']; ?>" name="code[]">
+                </th>
+                <th><input readonly type="text" value="<?php echo ($rowop2['barcode']); ?>" name="barcode[]"></th>
+
                 <th><input readonly type="text" value="<?= $rowop2['iname'] ?>" name="iname[]"></th>
                 <th><input readonly type="text" value="<?= $rowop2['last_price'] ?>" name="last_price[]"></th>
                 <th><input type="number" step="0.01" value="<?= $rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $rowop2['id'] ?>, this.value)" class="price"></th>
                 <th><input type="number" value="<?= $rowop['qty_in'] ?>" name="qty[]"></th>
+                <input type="hidden" value="<?php echo !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode']; ?>" name="barcode[]">
             </tr>
             <?php } ?>
         </tbody>
