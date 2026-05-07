@@ -5,7 +5,7 @@
         </h6>
         <div class="d-flex align-items-center gap-2">
             <div style="width: 250px; position: relative;">
-                <input type="text" class="form-control form-control-sm" id="searchItems" placeholder="بحث عن صنف..." style="background: white; padding-left: 35px;">
+                <input type="text" class="scnd form-control form-control-sm" id="searchItems" placeholder="بحث عن صنف..." style="background: white; padding-left: 35px;">
                 <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
             </div>
         </div>

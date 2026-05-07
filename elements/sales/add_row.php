@@ -29,12 +29,20 @@
               </td>
               <!-- الصنف -->
               <td id="itmTd" class="col-lg-5">
-                <input type="text" 
-                       id="itemSearchInput" 
-                       class="form-control frst" 
-                       placeholder="ابحث عن صنف (اكتب 3 أحرف على الأقل)..."
-                       autocomplete="off"
-                       style="width:100%">
+                <div style="display:flex; gap:4px;">
+                  <input type="text" 
+                         id="itemSearchInput" 
+                         class="form-control frst" 
+                         placeholder="ابحث بالاسم..."
+                         autocomplete="off"
+                         style="flex:1">
+                  <input type="text"
+                         id="barcodeSearchInput"
+                         class="form-control scnd"
+                         placeholder="باركود"
+                         autocomplete="off"
+                         style="width:130px;">
+                </div>
                 <input type="hidden" name="myitm[]" id="selectedItemId">
                 <div id="searchResults" style="position:absolute; z-index:1000; background:white; border:1px solid #ddd; max-height:300px; overflow-y:auto; display:none; width:100%;"></div>
                 <input id="itmprice2" type="number" hidden onclick=sT(this)>
@@ -177,6 +185,30 @@
     searchInput.addEventListener('focus', function() {
         if (this.value && searchResults.children.length > 0) {
             searchResults.style.display = 'block';
+        }
+    });
+
+    // البحث بالباركود
+    const barcodeInput = document.getElementById('barcodeSearchInput');
+    barcodeInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const barcode = this.value.trim();
+            if (!barcode) return;
+
+            fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(barcode)}&limit=1&by=barcode`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.items.length > 0) {
+                        const item = data.items[0];
+                        selectItem({ id: item.id, name: item.iname, price: item.price1, barcode: item.barcode });
+                        barcodeInput.value = '';
+                    } else {
+                        barcodeInput.style.borderColor = '#ef4444';
+                        setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+                    }
+                })
+                .catch(() => { barcodeInput.style.borderColor = '#ef4444'; setTimeout(() => barcodeInput.style.borderColor = '', 1000); });
         }
     });
 })();

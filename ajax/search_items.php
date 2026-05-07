@@ -12,21 +12,17 @@ header('Content-Type: application/json; charset=utf-8');
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
-if (empty($search)) {
-    echo json_encode(['success' => false, 'message' => 'من فضلك أدخل كلمة للبحث'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 try {
-    // تحقق من الاتصال
     if (!$conn) {
         throw new Exception('Database connection failed');
     }
     
-    $search_param = '%' . $conn->real_escape_string($search) . '%';
-    
-    // استخدام الجدول الصحيح myitems والعمود الصحيح price1
-    $query = "SELECT id, iname as name, price1 as price FROM myitems WHERE iname LIKE '$search_param' AND isdeleted = 0 ORDER BY iname LIMIT 50";
+    if (empty($search)) {
+        $query = "SELECT id, iname as name, price1 as price FROM myitems WHERE isdeleted = 0 ORDER BY iname LIMIT 200";
+    } else {
+        $search_param = '%' . $conn->real_escape_string($search) . '%';
+        $query = "SELECT id, iname as name, price1 as price FROM myitems WHERE iname LIKE '$search_param' AND isdeleted = 0 ORDER BY iname LIMIT 50";
+    }
     $result = $conn->query($query);
     
     if (!$result) {

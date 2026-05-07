@@ -14,16 +14,24 @@ try {
     $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 50;
     $offset = ($page - 1) * $limit;
     
+    $by = isset($_GET['by']) ? trim($_GET['by']) : '';
+
     // بناء الاستعلام
     $where = "isdeleted = 0";
     $params = [];
     $types = '';
     
     if (!empty($search)) {
-        $where .= " AND (iname LIKE ? OR name2 LIKE ? OR barcode LIKE ?)";
-        $search_param = "%{$search}%";
-        $params = [$search_param, $search_param, $search_param];
-        $types = 'sss';
+        if ($by === 'barcode') {
+            $where .= " AND barcode = ?";
+            $params = [$search];
+            $types = 's';
+        } else {
+            $where .= " AND (iname LIKE ? OR name2 LIKE ? OR barcode LIKE ?)";
+            $search_param = "%{$search}%";
+            $params = [$search_param, $search_param, $search_param];
+            $types = 'sss';
+        }
     }
     
     // استعلام محسّن - جلب الأعمدة المطلوبة فقط
@@ -65,7 +73,11 @@ try {
     $count_stmt = $conn->prepare($count_query);
     
     if (!empty($search)) {
-        $count_stmt->bind_param('sss', $search_param, $search_param, $search_param);
+        if ($by === 'barcode') {
+            $count_stmt->bind_param('s', $search);
+        } else {
+            $count_stmt->bind_param('sss', $search_param, $search_param, $search_param);
+        }
     }
     
     $count_stmt->execute();

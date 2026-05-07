@@ -28,31 +28,54 @@
             <div class="card">
 
             <?php
+                $q = isset($_GET['q']) ? $_GET['q'] : '';
+                $isAll = ($q === 'all');
 
-                if (!(isset($_GET['q']) && isset($_GET['h']))) {
-                    echo $userErrorMassage;
-                }elseif (isset($_GET['q']) && isset($_GET['h'])) {
-                    $id = $_GET['q'];
-                    $hash = md5($id);
-                    $h = $_GET['h'];
-                    if ($hash != $h ) {
+                if (!$isAll) {
+                    // الوضع الأصلي: فاتورة محددة بـ hash
+                    if (!(isset($_GET['q']) && isset($_GET['h']))) {
                         echo $userErrorMassage;
-                    }else{
-                        $q = $_GET['q'];
-                        $resop = $conn->query("SELECT * FROM fat_details where fatid = $q AND isdeleted = 0");
-                ?>
+                    } else {
+                        $id   = $_GET['q'];
+                        $hash = md5($id);
+                        $h    = $_GET['h'];
+                        if ($hash != $h) {
+                            echo $userErrorMassage;
+                        } else {
+                            $resop = $conn->query("SELECT * FROM fat_details WHERE fatid = " . (int)$id . " AND isdeleted = 0");
+                        }
+                    }
+                }
 
-                <div class="card-header">
-                    <h3>العمليات علي الفاتورة</h3>
+                if ($isAll || isset($resop)):
+                    // بناء مصفوفة الصفوف
+                    $rows = [];
+                    if ($isAll) {
+                        $resAll = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 ORDER BY id ASC");
+                        while ($r = $resAll->fetch_assoc()) {
+                            $rows[] = ['item' => $r, 'qty_in' => 1];
+                        }
+                    } else {
+                        while ($rowop = $resop->fetch_assoc()) {
+                            $itm  = (int)$rowop['item_id'];
+                            $res2 = $conn->query("SELECT * FROM myitems WHERE id = $itm");
+                            $r2   = $res2->fetch_assoc();
+                            if ($r2) $rows[] = ['item' => $r2, 'qty_in' => $rowop['qty_in']];
+                        }
+                    }
+            ?>
 
+                <div class="card-header d-flex align-items-center gap-3 flex-wrap">
+                    <h3 class="mb-0"><?= $isAll ? 'كل الأصناف' : 'العمليات علي الفاتورة' ?></h3>
+                    <?php if ($isAll): ?>
+                    <input type="text" id="inv-search" class="form-control form-control-sm" style="max-width:250px;" placeholder="بحث باسم الصنف أو الباركود...">
+                    <?php endif; ?>
                 </div>
                 <div class="card-body">
-                    <div class="table">
-
-
-                    <form action="print/br2538.php" method="post" target="_blank">    
-    <div class="btn btn-success"><button type="submit">طباعه الباركود</button></div>
-    <table class="font-thin table table-hover table-bordered">
+                    <div class="table-responsive">
+                    <form action="print/br2538.php" method="post" target="_blank">
+    <div class="mb-2"><button type="submit" class="btn btn-success btn-sm">طباعة الباركود</button></div>
+    <table class="font-thin table table-hover table-bordered table-sm" id="inv-table">
         <thead>
             <tr>
                 <th>#</th>
@@ -60,42 +83,36 @@
                 <th>barcode</th>
                 <th>اسم الصنف</th>
                 <th>سعر الشراء الاخير</th>
-                <th>سعر البيع <span class="text-red-500"></span><span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
+                <th>سعر البيع <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
                 <th>العدد المطلوب طباعته</th>
             </tr>
         </thead>
         <tbody>
-            <?php 
-            $x = 0;
-            while ($rowop = $resop->fetch_assoc()) {
-                $itm = $rowop['item_id'];
-                $resop2 = $conn->query("SELECT * FROM myitems WHERE id = $itm");
-                $rowop2 = $resop2->fetch_assoc();
-                $x++;
+            <?php foreach ($rows as $x => $row):
+                $rowop2 = $row['item'];
+                $iid    = (int)$rowop2['id'];
+                $rowunt = $conn->query("SELECT unit_barcode FROM item_units WHERE item_id = $iid LIMIT 1")->fetch_assoc();
+                $dispCode = !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode'];
+                $searchVal = strtolower($rowop2['iname'] . ' ' . $rowop2['barcode'] . ' ' . $dispCode);
             ?>
-            <tr id="item-<?= $rowop2['id'] ?>">
-                <th><?= $x ?></th>
-                <th><input readonly type="text" value="<?php $id= $rowop2['id']; $rowunt = $conn->query("SELECT unit_barcode from item_units where item_id= $id ")->fetch_assoc(); echo !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode']; ?>" name="code[]">
-                </th>
-                <th><input readonly type="text" value="<?php echo ($rowop2['barcode']); ?>" name="barcode[]"></th>
-
-                <th><input readonly type="text" value="<?= $rowop2['iname'] ?>" name="iname[]"></th>
+            <tr id="item-<?= $iid ?>" data-search="<?= htmlspecialchars($searchVal, ENT_QUOTES) ?>">
+                <th><?= $x + 1 ?></th>
+                <th><input readonly type="text" value="<?= htmlspecialchars($dispCode) ?>" name="code[]"></th>
+                <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['barcode']) ?>" name="barcode[]"></th>
+                <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['iname']) ?>" name="iname[]"></th>
                 <th><input readonly type="text" value="<?= $rowop2['last_price'] ?>" name="last_price[]"></th>
-                <th><input type="number" step="0.01" value="<?= $rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $rowop2['id'] ?>, this.value)" class="price"></th>
-                <th><input type="number" value="<?= $rowop['qty_in'] ?>" name="qty[]"></th>
-                <input type="hidden" value="<?php echo !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode']; ?>" name="barcode[]">
+                <th><input type="number" step="0.01" value="<?= $rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="price"></th>
+                <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]"></th>
+                <input type="hidden" value="<?= htmlspecialchars($dispCode) ?>" name="barcode[]">
             </tr>
-            <?php } ?>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </form>
-
-
-
                     </div>
                 </div>
 
-                <?php }} ?>
+                <?php endif; ?>
 
 
 
@@ -117,8 +134,6 @@
             $('#msg').html("تم تغيير السعر بنجاح").show();
             setTimeout(function() {
             $('#msg').hide();}, 3000);
-
-
         },
         error: function(xhr, status, error) {
             console.error('Error updating price:', error);
@@ -135,6 +150,14 @@ $(document).ready(function() {
             }
         }
     });
-});
 
+    // filter للـ q=all
+    $('#inv-search').on('input', function() {
+        var val = $(this).val().toLowerCase();
+        $('#inv-table tbody tr').each(function() {
+            var s = $(this).data('search') || '';
+            $(this).toggle(s.indexOf(val) !== -1);
+        });
+    });
+});
 </script>
