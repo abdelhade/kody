@@ -27,12 +27,14 @@ require_once('../classes/InvoiceElementFactory.php');
 
 // تعريف ثوابت أنواع الفواتير
 define('INVOICE_TYPES', [
-    'PURCHASE' => 4,    // مشتريات
-    'SALES' => 3,       // مبيعات  
-    'POS' => 9,         // كاشير
-    'PURCHASE_RETURN' => 10,  // مردود مشتريات
-    'SALES_RETURN' => 11,     // مردود مبيعات
-    'OFFER' => 14             // عرض سعر
+    'PURCHASE' => 4,           // مشتريات
+    'SALES' => 3,              // مبيعات  
+    'POS' => 9,                // كاشير
+    'PURCHASE_RETURN' => 10,   // مردود مشتريات
+    'SALES_RETURN' => 11,      // مردود مبيعات
+    'PURCHASE_ORDER' => 12,    // أمر شراء
+    'SALES_ORDER' => 13,       // أمر بيع
+    'OFFER' => 14              // عرض سعر
 ]);
 
 // تعريف أنواع العمليات المحاسبية
@@ -209,7 +211,7 @@ try {
     }
     
     $stmt->bind_param(
-        "ssssiiiirrrrrrii",
+        "ssssiiiidddddddii",
         $info, $pro_date, $accural_date, $pro_serial, $store_id, $emp_id,
         $accounts['acc1'], $accounts['acc2'], $headtotal, $headtotal, 
         $headdisc, $fat_disc_per, $headplus, $fat_plus_per, $headnet, $fund_id, $ot_id
@@ -227,7 +229,7 @@ try {
         );
         
         $details = $config['note'] . " _ " . $ot_id;
-        $stmt->bind_param("rssi", $headnet, $pro_date, $details, $ot_id);
+        $stmt->bind_param("dssi", $headnet, $pro_date, $details, $ot_id);
         
         if (!$stmt->execute()) {
             throw new Exception('فشل في تحديث رأس القيد: ' . $stmt->error);
@@ -250,7 +252,7 @@ try {
                 "UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 
                  WHERE journal_id = ? AND tybe = 0"
             );
-            $stmt->bind_param("iri", $accounts['acc1'], $headnet, $op_journal);
+            $stmt->bind_param("idi", $accounts['acc1'], $headnet, $op_journal);
             $stmt->execute();
             $stmt->close();
             
@@ -259,7 +261,7 @@ try {
                 "UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? 
                  WHERE journal_id = ? AND tybe = 1"
             );
-            $stmt->bind_param("iri", $accounts['acc2'], $headnet, $op_journal);
+            $stmt->bind_param("idi", $accounts['acc2'], $headnet, $op_journal);
             $stmt->execute();
             $stmt->close();
         }
@@ -293,7 +295,7 @@ try {
         );
         
         $stmt->bind_param(
-            "sissssiidiii", 
+            "iiissiiidii", 
             $paid_type, $paid_type, $paid_type, $info, $pro_date, $emp_id,
             $accounts['acc5'], $accounts['acc6'], $paid, $usid, $ot_id
         );
@@ -458,6 +460,7 @@ try {
             $itmprice = floatval($_POST['itmprice'][$index]);
             $itmdisc = floatval($_POST['itmdisc'][$index]);
             $u_val = floatval($_POST['u_val'][$index]);
+            if ($u_val <= 0) $u_val = 1; // fallback لو الوحدة مش محددة
             
             // تحديد الكميات حسب نوع الفاتورة
             // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون
@@ -498,7 +501,7 @@ try {
             // حساب التكلفة والربح
             if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
                 // حساب سعر التكلفة المتوسط
-                $unit_price = $itmprice / $u_val;
+                $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
                 $oldbalance = $oldprice * $oldqty;
                 $newbalance = $qty_in * $unit_price;
                 $total_balance = $oldbalance + $newbalance;
@@ -518,7 +521,7 @@ try {
                 
             } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
                 // حساب الربح للمبيعات
-                $unit_price = $itmprice / $u_val;
+                $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
                 $itmprofit = $itmqty * $u_val * ($unit_price - $oldprice);
                 $itmprice = $unit_price;
             }
@@ -584,12 +587,12 @@ try {
 
 // إعادة التوجيه حسب نوع العملية
 $redirects = [
-    INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
-    INVOICE_TYPES['SALES'] => '../sales.php?q=buy',
-    INVOICE_TYPES['POS'] => '../pos_barcode.php'
+    INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=sale&success=1',
+    INVOICE_TYPES['SALES'] => '../operations_summary.php?q=buy&success=1',
+    INVOICE_TYPES['POS'] => '../pos_barcode.php?success=1'
 ];
 
-$redirect = $redirects[$pro_tybe] ?? '../sales.php';
+$redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?success=1';
 header("Location: $redirect");
 exit;
 ?>

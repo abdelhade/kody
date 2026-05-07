@@ -8,3 +8,11 @@
 [2026-05-05 13:02:14] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:62
 [2026-05-05 13:10:44] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:65
 [2026-05-05 13:12:45] mysqli_sql_exception: Unknown column 'pos_type' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:65
+[2026-05-07 19:18:10] ValueError: mysqli_stmt::bind_param(): Argument #1 ($types) must only contain the "b", "d", "i", "s" type specifiers in C:\xampp\htdocs\focus\do\doedit_invoice.php:213
+[2026-05-07 19:19:49] ValueError: mysqli_stmt::bind_param(): Argument #1 ($types) must only contain the "b", "d", "i", "s" type specifiers in C:\xampp\htdocs\focus\do\doedit_invoice.php:232
+[2026-05-07 19:21:24] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\focus\do\doedit_invoice.php:297
+[2026-05-07 19:21:30] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\focus\do\doedit_invoice.php:297
+[2026-05-07 19:24:24] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\do\doedit_invoice.php:503
+[2026-05-07 19:25:37] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\do\doedit_invoice.php:503
+[2026-05-07 19:26:48] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\classes\InvoiceDetails.php:430
+[2026-05-07 19:26:53] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\classes\InvoiceDetails.php:430

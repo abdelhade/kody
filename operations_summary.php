@@ -40,6 +40,15 @@ switch ($q) {
 
 
 <div class="content-wrapper">
+
+<?php if (isset($_GET['success']) && $_GET['success'] == 1): ?>
+<div class="alert alert-success alert-dismissible fade show mx-3 mt-2" role="alert" style="border-radius:8px;">
+    <i class="fas fa-check-circle me-2"></i> تم التعديل بنجاح
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+<?php endif; ?>
     <section class="content-header">
         <div class="container-fluid">
             <div class="card">

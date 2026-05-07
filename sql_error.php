@@ -4,6 +4,16 @@ error_reporting(0);
 
 // جلب كود الخطأ إذا تم تمريره (اختياري)
 $error_code = isset($_GET['code']) ? htmlspecialchars($_GET['code']) : 'DB_ERR';
+
+// جلب آخر خطأ من الـ log
+$error_detail = '';
+$logFile = __DIR__ . '/logs/sql_errors.log';
+if (file_exists($logFile)) {
+    $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!empty($lines)) {
+        $error_detail = htmlspecialchars(end($lines));
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -211,6 +221,13 @@ $error_code = isset($_GET['code']) ? htmlspecialchars($_GET['code']) : 'DB_ERR';
 
         <!-- كود الخطأ -->
         <div class="error-code">Error Reference: <?= $error_code ?> — <?= date('Y-m-d H:i') ?></div>
+
+        <!-- تفاصيل الخطأ -->
+        <?php if ($error_detail): ?>
+        <div style="background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); border-radius:8px; padding:12px; margin-bottom:20px; text-align:left; direction:ltr; font-family:monospace; font-size:12px; color:#ffaaaa; word-break:break-all;">
+            <?= $error_detail ?>
+        </div>
+        <?php endif; ?>
 
         <!-- زر الرجوع -->
         <a href="javascript:history.back()" class="btn-back">← الرجوع للصفحة السابقة</a>

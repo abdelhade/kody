@@ -177,7 +177,7 @@ function fetchItemInfo(itemId, row) {
                 <td><input name="itmprofit" hidden><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 
-            newRow.appendTo("#itmrow");
+            newRow.prependTo("#itmrow");
 
             // مسح حقول الإدخال بعد الإضافة
             $("#itemSearchInput").val('');

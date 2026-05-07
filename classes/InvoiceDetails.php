@@ -427,8 +427,8 @@ class InvoiceDetails extends InvoiceElementBase
      */
     private function renderDetailRow($detail, $rowNumber)
     {
-        $quantity = abs($detail['qty_in'] - $detail['qty_out']) / $detail['u_val'];
-        $price = $detail['price'] * $detail['u_val'];
+        $quantity = ($detail['u_val'] > 0) ? abs($detail['qty_in'] - $detail['qty_out']) / $detail['u_val'] : abs($detail['qty_in'] - $detail['qty_out']);
+        $price = $detail['price'] * ($detail['u_val'] > 0 ? $detail['u_val'] : 1);
         
         ?>
         <tr>

@@ -256,6 +256,13 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="inv_operations.php?q=all" class="nav-link">
+                  <i class="nav-icon fas fa-tags"></i>
+                  <p>التسعير والباركود</p>
+                </a>
+              </li>
+
 
 
             </ul>
