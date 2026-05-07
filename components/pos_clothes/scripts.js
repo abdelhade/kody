@@ -56,12 +56,53 @@ function searchByBarcode() {
     }, 300);
 }
 
+// تحميل كل الأصناف
+function loadAllItems() {
+    document.getElementById('itemsGrid').innerHTML = `
+        <div class="col-12 text-center py-3">
+            <div class="spinner-border spinner-border-sm" style="color: var(--primary-navy);" role="status">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+        </div>
+    `;
+    document.getElementById('itemsContainer').classList.add('show');
+    document.getElementById('noItemsMessage').style.display = 'none';
+
+    $.ajax({
+        url: 'ajax/search_items.php',
+        type: 'GET',
+        data: { search: '' },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success && data.items.length > 0) {
+                allItems = data.items;
+                displayItems(data.items);
+            } else {
+                document.getElementById('itemsGrid').innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-box-open fa-3x mb-3" style="color: var(--soft-gray);"></i>
+                        <h5>لا توجد أصناف</h5>
+                    </div>
+                `;
+            }
+        },
+        error: function() {
+            document.getElementById('itemsGrid').innerHTML = `
+                <div class="col-12 text-center py-5 text-danger">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h5>حدث خطأ في تحميل الأصناف</h5>
+                </div>
+            `;
+        }
+    });
+}
+
 // بحث عن الأصناف
 function searchItems() {
     const searchTerm = document.getElementById('searchItems').value.trim().toLowerCase();
     
     if (searchTerm === '') {
-        hideItems();
+        loadAllItems();
         return;
     }
     
@@ -454,7 +495,11 @@ function updateFullscreenIcon() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('noItemsMessage').style.display = 'block';
+    // تحميل كل الأصناف عند فتح الصفحة
+    loadAllItems();
+    
+    // focus على حقل الباركود
+    document.getElementById('barcodeSearch')?.focus();
     
     // بحث بالباركود
     document.getElementById('barcodeSearch')?.addEventListener('keypress', function(e) {
