@@ -5,14 +5,25 @@ include('includes/sidebar.php');
 
 
 $q = isset($_GET['q']) ? $_GET['q'] : "all";  // استقبال قيمة q من GET
-$strtdate = isset($_GET['strtdate']) ? $_GET['strtdate'] : (isset($_POST['strtdate']) ? $_POST['strtdate'] : null);
-$enddate = isset($_GET['enddate']) ? $_GET['enddate'] : (isset($_POST['enddate']) ? $_POST['enddate'] : null);
+$strtdate = isset($_GET['strtdate']) ? $_GET['strtdate'] : null;
+$enddate = isset($_GET['enddate']) ? $_GET['enddate'] : null;
+$search = isset($_GET['search']) ? $_GET['search'] : null;
 
 $dateFilter = "";
 if ($strtdate && $enddate) {
-    $dateFilter = "AND pro_date BETWEEN '$strtdate' AND '$enddate'";
+    $dateFilter = "AND DATE(pro_date) BETWEEN '$strtdate' AND '$enddate'";
+} elseif ($strtdate) {
+    $dateFilter = "AND DATE(pro_date) >= '$strtdate'";
+} elseif ($enddate) {
+    $dateFilter = "AND DATE(pro_date) <= '$enddate'";
 } else {
-    $dateFilter = "AND pro_date = '$today'";
+    $dateFilter = "AND DATE(pro_date) = '$today'";
+}
+
+$searchFilter = "";
+if ($search) {
+    $search = $conn->real_escape_string($search);
+    $searchFilter = "AND (pro_id LIKE '%$search%' OR info LIKE '%$search%' OR jal_name LIKE '%$search%')";
 }
 
 // Pagination
@@ -23,17 +34,17 @@ $offset = ($page - 1) * $limit;
 switch ($q) {
     case "sale":
         $report_name = "مشتريات";
-        $where_clause = "pro_tybe = 4 AND isdeleted != 1 $dateFilter";
+        $where_clause = "pro_tybe = 4 AND isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     case "buy":
         $report_name = "مبيعات";
-        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter";
+        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
-        $where_clause = "isdeleted != 1 $dateFilter";
+        $where_clause = "isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
 }
 ?>
@@ -71,15 +82,19 @@ switch ($q) {
                         ?>
                         <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
                         <div class="row">
-                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                            <div class="col-md-3 col-sm-6 col-12 mb-2">
                                 <label>من</label>
                                 <input class="form-control" type="date" value="<?= $strtdate_display ?>" name="strtdate">
                             </div>
-                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                            <div class="col-md-3 col-sm-6 col-12 mb-2">
                                 <label>إلى</label>
                                 <input class="form-control" type="date" value="<?= $enddate_display ?>" name="enddate">
                             </div>
-                            <div class="col-md-4 col-12 mb-2">
+                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                                <label>بحث (رقم الفاتورة، العميل، البيان)</label>
+                                <input class="form-control" type="text" value="<?= htmlspecialchars($search ?? '') ?>" name="search" placeholder="ابحث هنا...">
+                            </div>
+                            <div class="col-md-2 col-12 mb-2">
                                 <label class="d-none d-md-block">&nbsp;</label>
                                 <button class="btn btn-primary btn-block" type="submit">
                                     <i class="fa fa-search"></i> بحث

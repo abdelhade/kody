@@ -106,7 +106,7 @@ function searchItems() {
         return;
     }
     
-    if (searchTerm.length < 2) {
+    if (searchTerm.length < 1) {
         return;
     }
     

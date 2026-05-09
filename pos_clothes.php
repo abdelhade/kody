@@ -56,7 +56,7 @@ if(isset($_SESSION['success_message'])){
 
     <?php include('components/pos_clothes/payment_modal.php'); ?>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="components/pos_clothes/scripts.js"></script>
