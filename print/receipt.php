@@ -23,6 +23,8 @@ if ($rowfat == null) {
     } else {
         $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
     }
+
+    $is_return = (in_array($rowfat['pro_tybe'], [3, 10, 11]) || strpos($rowfat['info'], 'مردود') !== false);
 ?>
 
 
@@ -40,6 +42,12 @@ if (file_exists($logo_path)) {
 ?>
 <h1 class="text-center p-3 p-0 font-bold" style="font-size: 23px;font-weight:bolder;">
 <?= $rowstg['company_name'] ?></h1>
+
+<?php if($is_return): ?>
+<div class="text-center mb-2" style="border: 2px solid #000; padding: 5px; font-weight: bold; font-size: 18px; background-color: #f8f9fa;">
+    مردود مبيعات
+</div>
+<?php endif; ?>
 
 <?php
 $prodate = date('md', strtotime($rowfat['pro_date']));
@@ -112,7 +120,7 @@ if ($is_delivery) {
         $x++;
         $itmid= $rowdet['item_id']; 
         $rowitm = $conn->query("SELECT * FROM myitems where id = $itmid ")->fetch_assoc();
-        $qty = $rowdet['qty_out'];       
+        $qty = $is_return ? $rowdet['qty_in'] : $rowdet['qty_out'];       
     ?>
 <tr>
 <td class="p-1" style="font-size:small; border: 1px solid #ddd;"><?= $rowitm['iname']  ?></td>

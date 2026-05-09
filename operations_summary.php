@@ -28,7 +28,7 @@ switch ($q) {
         break;
     case "buy":
         $report_name = "مبيعات";
-        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9) AND isdeleted != 1 $dateFilter";
+        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
@@ -115,8 +115,9 @@ switch ($q) {
                                     $x++;
                                     $proid = $rowop['id'];
                                     $tybe = $rowop['pro_tybe'];
+                                    $is_return = ($tybe == 10);
                                     ?>
-                                    <tr>
+                                    <tr class="<?= $is_return ? 'table-danger' : '' ?>">
                                         <td><?= $x ?></td>
                                         <td><?= $rowop['crtime'] ?></td>
                                         <td>
@@ -124,7 +125,7 @@ switch ($q) {
                                                 <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?>
                                             </a>
                                         </td>
-                                         <td class="value"><?= $rowop['pro_value'] ?></td>
+                                         <td class="value <?= $is_return ? 'ret-value' : 'sale-value' ?>"><?= $rowop['pro_value'] ?></td>
                                         <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>">
                                             <?= $rowop['fat_net'] - ($rowop['jal_amount'] ?? 0) ?>
                                             <?php if(($rowop['jal_amount'] ?? 0) > 0): ?>
@@ -244,23 +245,40 @@ switch ($q) {
                                 ?>
                             </tbody>
                         </table>
-                        <table>
-                        <tbody>
-                                <tr>
-                                    <td> اجمالي </td>
-                                    <td class="bg-zinc-100" id="total"></td>
-                                    <td> _       _ </td>
-                                    <td></td>
-                                    <td> صافي </td>
-                                    <td class="" id="fatnet"></td>
-                                    <td> _       _ </td>
+                        <?php if($q == 'buy'): ?>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="small-box bg-info p-3 text-center text-white" style="border-radius: 10px;">
+                                    <h5>إجمالي المبيعات</h5>
+                                    <h3 id="total_sales_val">0.00</h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="small-box bg-danger p-3 text-center text-white" style="border-radius: 10px;">
+                                    <h5>إجمالي المردودات</h5>
+                                    <h3 id="total_returns_val">0.00</h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="small-box bg-success p-3 text-center text-white" style="border-radius: 10px;">
+                                    <h5>الصافي (مبيعات - مردود)</h5>
+                                    <h3 id="net_sales_val">0.00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
 
-                                    <td> ارباح </td>
-                                    <td class="" id="profit"></td>
-                                    <td></td>
+                        <table class="table table-bordered bg-light mt-3">
+                            <tbody>
+                                <tr class="text-center">
+                                    <td class="font-weight-bold">اجمالي الصفحة</td>
+                                    <td id="total" class="bg-white"></td>
+                                    <td class="font-weight-bold">صافي الصفحة</td>
+                                    <td id="fatnet" class="bg-white"></td>
+                                    <td class="font-weight-bold">ارباح الصفحة</td>
+                                    <td id="profit" class="bg-white"></td>
                                 </tr>
                             </tbody>
-                       
                         </table>
                     </div>
                 </div>
@@ -350,12 +368,24 @@ switch ($q) {
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const total = Array.from(document.querySelectorAll(".value")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
+        const sales = Array.from(document.querySelectorAll(".sale-value")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
+        const returns = Array.from(document.querySelectorAll(".ret-value")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
+        
+        const total = sales + returns; // الإجمالي الحسابي للصفحة
+        const net = sales - returns; // الصافي الحقيقي (مبيعات - مردود)
+        
         const fatnet = Array.from(document.querySelectorAll(".fatnet")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
         const profit = Array.from(document.querySelectorAll(".prft")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
+        
         document.getElementById("total").textContent = total.toFixed(2);
         document.getElementById("fatnet").textContent = fatnet.toFixed(2);
         document.getElementById("profit").textContent = profit.toFixed(2);
+
+        if (document.getElementById("total_sales_val")) {
+            document.getElementById("total_sales_val").textContent = sales.toFixed(2);
+            document.getElementById("total_returns_val").textContent = returns.toFixed(2);
+            document.getElementById("net_sales_val").textContent = net.toFixed(2);
+        }
     });
 </script>
 <?php include('includes/footer.php'); ?>
