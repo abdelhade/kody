@@ -25,7 +25,7 @@ $sales_query = $conn->query("SELECT
     FROM ot_head 
     WHERE DATE(pro_date) = '$today'
     AND user = '$user_id'
-    AND pro_tybe = 9
+    AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11)
     AND isdeleted = 0");
 $sales_data = $sales_query->fetch_assoc();
 
@@ -40,7 +40,7 @@ $items_query = $conn->query("SELECT
     JOIN myitems mi ON fd.item_id = mi.id
     WHERE DATE(oh.pro_date) = '$today'
     AND oh.user = '$user_id'
-    AND oh.pro_tybe = 9
+    AND (oh.pro_tybe = 9 OR oh.pro_tybe = 3 OR oh.pro_tybe = 10 OR oh.pro_tybe = 11)
     AND oh.isdeleted = 0
     AND fd.isdeleted = 0
     GROUP BY fd.item_id, fd.price

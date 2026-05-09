@@ -32,8 +32,12 @@ $paid = floatval($_POST['paid']);
 
 // إضافة نوع الطلب
 $order_type = intval($_POST['age']);
-$order_types = [1 => 'بيع مباشر', 2 => 'حجز', 3 => 'توصيل'];
+$order_types = [1 => 'بيع مباشر', 2 => 'حجز', 3 => 'توصيل', 4 => 'مردود مبيعات'];
 $order_type_text = $order_types[$order_type] ?? 'بيع مباشر';
+$is_return = ($order_type == 4);
+if ($is_return) {
+    $pro_tybe = 10; // نوع مردود مبيعات (حسب طلب المستخدم)
+}
 $info = empty($info) ? "نوع الطلب: $order_type_text" : "$info - نوع الطلب: $order_type_text";
 
 // التحقق من البيانات
@@ -79,10 +83,14 @@ try {
         )
     ");
     
+    // تحديد الحسابات بناءً على نوع العملية
+    $acc1_val = $is_return ? $sales_account : $acc2_id;
+    $acc2_val = $is_return ? $acc2_id : $sales_account;
+
     $stmt->bind_param(
         "iiissssiiiiidddi",
         $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date,
-        $store_id, $emp_id, $emp_id, $acc2_id, $sales_account, $headtotal,
+        $store_id, $emp_id, $emp_id, $acc1_val, $acc2_val, $headtotal,
         $headtotal, $headdisc, $headnet, $usid
     );
     
@@ -98,7 +106,7 @@ try {
         INSERT INTO fat_details (
             pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
             discount, det_value, fatid, fat_tybe, det_store
-        ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     foreach ($_POST['itmname'] as $index => $itmname) {
@@ -110,11 +118,12 @@ try {
         $itmdisc = floatval($_POST['itmdisc'][$index]);
         $u_val = floatval($_POST['u_val'][$index]);
         $det_value = $itmqty * ($itmprice - $itmdisc);
-        $qty_out = $itmqty * $u_val;
+        $qty_in = $is_return ? ($itmqty * $u_val) : 0;
+        $qty_out = $is_return ? 0 : ($itmqty * $u_val);
         
         $stmt_details->bind_param(
-            "iiididdiiii",
-            $pro_tybe, $last_op, $itmname, $u_val, $qty_out,
+            "iiiddddddiii",
+            $pro_tybe, $last_op, $itmname, $u_val, $qty_in, $qty_out,
             $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe, $store_id
         );
         
@@ -140,7 +149,7 @@ try {
         VALUES (?, ?, ?, ?, ?, ?)
     ");
     
-    $journal_details = "فاتورة مبيعات POS رقم " . $pro_id;
+    $journal_details = ($is_return ? "فاتورة مردود مبيعات رقم " : "فاتورة مبيعات POS رقم ") . $pro_id;
     $stmt->bind_param("idssii", $journal_id, $headnet, $pro_date, $journal_details, $usid, $last_op);
     
     if (!$stmt->execute()) {
@@ -150,24 +159,26 @@ try {
     $journal_lastid = $conn->insert_id;
     $stmt->close();
     
-    // إدخال تفاصيل القيد (المدين - العميل)
+    // إدخال تفاصيل القيد (الطرف الأول)
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, ?, 0, 0, ?)
     ");
-    $stmt->bind_param("iidi", $journal_lastid, $acc2_id, $headnet, $last_op);
+    $acc1_journal = $is_return ? $sales_account : $acc2_id;
+    $stmt->bind_param("iidi", $journal_lastid, $acc1_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
         throw new Exception('فشل في إدخال القيد المدين: ' . $stmt->error);
     }
     $stmt->close();
     
-    // إدخال تفاصيل القيد (الدائن - المبيعات)
+    // إدخال تفاصيل القيد (الطرف الثاني)
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, 0, ?, 1, ?)
     ");
-    $stmt->bind_param("iidi", $journal_lastid, $sales_account, $headnet, $last_op);
+    $acc2_journal = $is_return ? $acc2_id : $sales_account;
+    $stmt->bind_param("iidi", $journal_lastid, $acc2_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
         throw new Exception('فشل في إدخال القيد الدائن: ' . $stmt->error);
@@ -181,16 +192,21 @@ try {
             INSERT INTO ot_head (
                 pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
                 emp_id, acc1, acc2, pro_value, user, op2
-            ) VALUES (?, 7, 1, 7, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $paid_info = "سند قبض من فاتورة POS رقم " . $pro_id;
+        $paid_note = $is_return ? "سند صرف (رد) من فاتورة POS رقم " : "سند قبض من فاتورة POS رقم ";
+        $paid_info = $paid_note . $pro_id;
         $paid_pro_id = $pro_id . '-P';
+        $paid_type = $is_return ? 8 : 7; // 8: سند صرف، 7: سند قبض
         
+        $acc1_pay = $is_return ? $acc2_id : $fund_id;
+        $acc2_pay = $is_return ? $fund_id : $acc2_id;
+
         $stmt->bind_param(
-            "sssiiidii",
-            $paid_pro_id, $paid_info, $pro_date, $emp_id, 
-            $fund_id, $acc2_id, $paid, $usid, $last_op
+            "siissiiidii",
+            $paid_pro_id, $paid_type, $paid_type, $paid_info, $pro_date, $emp_id, 
+            $acc1_pay, $acc2_pay, $paid, $usid, $last_op
         );
         
         if (!$stmt->execute()) {
@@ -214,34 +230,34 @@ try {
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $paid_details = "سند قبض من فاتورة POS رقم " . $pro_id;
-        $stmt->bind_param("iidssii", $journal_id, $last_paid, $paid, $pro_date, $paid_details, $usid, $last_op);
+        $stmt->bind_param("iidssii", $journal_id, $last_paid, $paid, $pro_date, $paid_info, $usid, $last_op);
         $stmt->execute();
         $journal_lastid = $conn->insert_id;
         $stmt->close();
         
-        // تفاصيل قيد الدفع (مدين - الصندوق)
+        // تفاصيل قيد الدفع (مدين)
         $stmt = $conn->prepare("
             INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
             VALUES (?, ?, ?, 0, 0, ?)
         ");
-        $stmt->bind_param("iidi", $journal_lastid, $fund_id, $paid, $last_op);
+        $stmt->bind_param("iidi", $journal_lastid, $acc1_pay, $paid, $last_op);
         $stmt->execute();
         $stmt->close();
         
-        // تفاصيل قيد الدفع (دائن - العميل)
+        // تفاصيل قيد الدفع (دائن)
         $stmt = $conn->prepare("
             INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
             VALUES (?, ?, 0, ?, 1, ?)
         ");
-        $stmt->bind_param("iidi", $journal_lastid, $acc2_id, $paid, $last_op);
+        $stmt->bind_param("iidi", $journal_lastid, $acc2_pay, $paid, $last_op);
         $stmt->execute();
         $stmt->close();
     }
     
     $conn->commit();
     
-    $_SESSION['success_message'] = 'تم حفظ الفاتورة وإنشاء القيد المحاسبي بنجاح - رقم الفاتورة: ' . $pro_id;
+    $success_msg_prefix = $is_return ? 'تم حفظ فاتورة المردود' : 'تم حفظ الفاتورة';
+    $_SESSION['success_message'] = $success_msg_prefix . ' وإنشاء القيد المحاسبي بنجاح - رقم الفاتورة: ' . $pro_id;
     
 } catch (Exception $e) {
     $conn->rollback();

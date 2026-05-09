@@ -83,7 +83,7 @@ class ShiftReport {
                   FROM ot_head 
                   WHERE DATE(pro_date) = ? 
                   AND user = ? 
-                  AND pro_tybe = 9 
+                  AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11)
                   AND isdeleted = 0" . $timeCond;
                   
         $stmt = $this->conn->prepare($query);
@@ -174,7 +174,7 @@ class ShiftReport {
                    JOIN myitems mi ON fd.item_id = mi.id
                    WHERE DATE(oh.pro_date) = ?
                    AND oh.user = ?
-                   AND oh.pro_tybe = 9
+                   AND (oh.pro_tybe = 9 OR oh.pro_tybe = 3 OR oh.pro_tybe = 10 OR oh.pro_tybe = 11)
                    AND oh.isdeleted = 0
                    AND fd.isdeleted = 0" . $timeCond . "
                    GROUP BY fd.item_id

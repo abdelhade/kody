@@ -535,4 +535,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
     document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
     document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
+
+    // تغيير لون زر الدفع عند اختيار مردود
+    $('input[name="age"]').on('change', function() {
+        const isReturn = $(this).val() == '4';
+        const payBtn = $('.btn-violet[data-bs-target="#paymentModal"]');
+        if (isReturn) {
+            payBtn.removeClass('btn-violet').addClass('btn-danger');
+        } else {
+            payBtn.removeClass('btn-danger').addClass('btn-violet');
+        }
+    });
 });

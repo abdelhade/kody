@@ -19,7 +19,7 @@ try {
                         COALESCE(SUM(fat_net), 0) as total_sales
                     FROM ot_head 
                     WHERE DATE(pro_date) = '$shift_date' 
-                    AND pro_tybe = 9 
+                    AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11) 
                     AND isdeleted = 0
                     AND fat_net > 0
                     AND user = '$user_id'";

@@ -103,7 +103,6 @@
                 <th><input readonly type="text" value="<?= $rowop2['last_price'] ?>" name="last_price[]"></th>
                 <th><input type="number" step="0.01" value="<?= $rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="price"></th>
                 <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]"></th>
-                <input type="hidden" value="<?= htmlspecialchars($dispCode) ?>" name="barcode[]">
             </tr>
             <?php endforeach; ?>
         </tbody>

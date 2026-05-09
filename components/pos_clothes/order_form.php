@@ -51,6 +51,11 @@ if (!empty($rowstg['def_pos_store'])) {
                     <label class="btn btn-outline-secondary btn-sm" for="age3">
                         <i class="fas fa-truck me-1"></i>توصيل
                     </label>
+
+                    <input type="radio" class="btn-check" id="age4" name="age" value="4">
+                    <label class="btn btn-outline-danger btn-sm" for="age4">
+                        <i class="fas fa-undo me-1"></i>مردود
+                    </label>
                 </div>
             </div>
 
