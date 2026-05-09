@@ -18,10 +18,13 @@ try {
     }
     
     if (empty($search)) {
-        $query = "SELECT id, iname as name, price1 as price FROM myitems WHERE isdeleted = 0 ORDER BY iname LIMIT 200";
+        $query = "SELECT id, iname as name, price1 as price, barcode FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT 200";
     } else {
-        $search_param = '%' . $conn->real_escape_string($search) . '%';
-        $query = "SELECT id, iname as name, price1 as price FROM myitems WHERE iname LIKE '$search_param' AND isdeleted = 0 ORDER BY iname LIMIT 50";
+        $s = $conn->real_escape_string($search);
+        $query = "SELECT id, iname as name, price1 as price, barcode FROM myitems 
+                  WHERE (iname LIKE '%$s%' OR barcode LIKE '%$s%' OR id = '$s') 
+                  AND isdeleted = 0 
+                  ORDER BY iname LIMIT 100";
     }
     $result = $conn->query($query);
     

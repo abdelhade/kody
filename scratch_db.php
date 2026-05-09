@@ -1,6 +1,6 @@
 <?php
 include('includes/connect.php');
-$r = $conn->query('SELECT * FROM pro_tybes');
+$r = $conn->query('DESCRIBE myitems');
 while($row = $r->fetch_assoc()) {
     print_r($row);
 }
