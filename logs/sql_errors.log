@@ -16,3 +16,24 @@
 [2026-05-07 19:25:37] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\do\doedit_invoice.php:503
 [2026-05-07 19:26:48] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\classes\InvoiceDetails.php:430
 [2026-05-07 19:26:53] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\classes\InvoiceDetails.php:430
+[2026-05-09 20:21:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:05] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:05] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:05] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:05] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:21:05] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:12] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:12] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:12] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:13] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:13] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:22:13] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-09 20:41:59] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'محمد' at line 1 in C:\xampp\htdocs\focus\js\ajax\addcl.php:14
+[2026-05-09 20:42:03] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'محمد' at line 1 in C:\xampp\htdocs\focus\js\ajax\addcl.php:14

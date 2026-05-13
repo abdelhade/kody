@@ -141,21 +141,20 @@ function fetchItemInfo(itemId, row) {
         function handleRowAddition() {
             $(document).off("click", "#addRow").on("click", "#addRow", function(e) {
                 e.preventDefault();
-                const itemId = $("#selectedItemId").val();
+                const itemId   = $("#selectedItemId").val();
                 const itemName = $("#itemSearchInput").val().trim();
-                if (itemId && itemName) {
-                    addNewRow(itemId, itemName);
-                } else {
-                    alert("يرجى اختيار صنف.");
+                if (itemId) {
+                    addNewRow(itemId, itemName || '---');
                 }
+                // بدون alert - الإضافة بتحصل فقط لو في صنف محدد
             });
         }
 
         function addNewRow(itemId, itemName) {
-            const qty    = parseFloat($("#itmqty").val())   || 1;
-            const price  = parseFloat($("#itmprice").val()) || 0;
-            const disc   = parseFloat($("#itmdisc").val())  || 0;
-            const val    = parseFloat($("#itmval").val())   || (qty * price - disc);
+            const qty      = parseFloat($("#itmqty").val())   || 1;
+            const price    = parseFloat($("#itmprice").val()) || 0;
+            const disc     = parseFloat($("#itmdisc").val())  || 0;
+            const val      = (qty * price) - disc;
             const unitVal  = parseFloat($("#inputUnitSelect").val()) || 1;
             const unitName = $("#inputUnitSelect option:selected").text() || '-';
 
@@ -173,13 +172,13 @@ function fetchItemInfo(itemId, row) {
                 <td><input type="number" name="itmqty[]"   value="${qty}"   class="itmqty  form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
                 <td><input type="number" name="itmprice[]" value="${price}" class="itmprice form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
                 <td><input type="number" name="itmdisc[]"  value="${disc}"  class="itmdisc  form-control form-control-sm" style="width:120px;" onclick="sT(this)" step="0.001"></td>
-                <td><input type="number" name="itmval[]"   value="${val}"   class="itmval   bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
+                <td><input type="number" name="itmval[]"   value="${val.toFixed(3)}" class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
                 <td><input name="itmprofit" hidden><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 
             newRow.prependTo("#itmrow");
 
-            // مسح حقول الإدخال بعد الإضافة
+            // مسح حقول الإدخال
             $("#itemSearchInput").val('');
             $("#selectedItemId").val('');
             $("#itmprice").val('0.00');
@@ -187,7 +186,6 @@ function fetchItemInfo(itemId, row) {
             $("#itmdisc").val('0.00');
             $("#itmval").val('0.00');
             $("#inputUnitSelect").empty().append('<option value="">اختر وحدة</option>');
-            $("#itemSearchInput").focus();
             updateTotal();
         }
 
@@ -290,22 +288,50 @@ function updateTotal() {
         
 
 function handleKeyboardShortcuts() {
+    // ترتيب التنقل داخل صف الفاتورة بالـ Enter: كمية → سعر → خصم → بحث
+    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc'];
+
     $(document).off('keydown').on('keydown', function(event) {
         if (event.key === 'F11') {
             event.preventDefault();
             $('#submit2').click();
-        } else if (event.key === 'F12') {
+            return;
+        }
+        if (event.key === 'F12') {
             event.preventDefault();
             $('#submit').click();
-        } else if (event.key === "Enter" && $(event.target).is('input, select')) {
-            event.preventDefault();
-            let nextElement = $(event.target).closest('td').next().find('input, select');
-            if (nextElement.length) {
-                nextElement.focus();
-                if (nextElement.attr('name') === 'u_val[]') {
-                    nextElement.select2('open');
-                }
+            return;
+        }
+
+        if (event.key !== 'Enter') return;
+        const $target = $(event.target);
+        if (!$target.is('input, select')) return;
+        event.preventDefault();
+
+        // هل الحقل داخل صف فاتورة في #itmrow؟
+        const $row = $target.closest('#itmrow tr');
+        if ($row.length) {
+            // حدد الحقل الحالي وانتقل للتالي
+            let currentIdx = -1;
+            ROW_FIELDS.forEach((sel, i) => {
+                if ($target.is($row.find(sel))) currentIdx = i;
+            });
+
+            const nextIdx = currentIdx + 1;
+            if (nextIdx < ROW_FIELDS.length) {
+                const $next = $row.find(ROW_FIELDS[nextIdx]);
+                if ($next.length) { $next.focus(); $next.select(); }
+            } else {
+                // آخر حقل (خصم) → ارجع للبحث
+                $('#itemSearchInput').focus().select();
             }
+            return;
+        }
+
+        // تنقل عادي في باقي الحقول
+        let $next = $target.closest('td').next().find('input, select');
+        if ($next.length) {
+            $next.focus();
         }
     });
 }
