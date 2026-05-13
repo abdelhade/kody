@@ -59,17 +59,8 @@ $(document).ready(function() {
     //     // dis() هتتعامل مع كل الـ validation
     // });
 
-    // Enter key on itmval - optimized
-    $(document).off('keydown', '.itmval').on('keydown', '.itmval', function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            $('#addRow').click();
-            setTimeout(() => {
-                $('#mySelectitm').select2('open');
-                $('.select2-search__field').focus();
-            }, 100);
-        }
-    });
+    // Enter key on itmval - ارجع للبحث (التنقل بيتعمل في handleKeyboardShortcuts)
+    $(document).off('keydown', '.itmval');
 
     // Show operations toggle
     $('#showOps').off('click').on('click', function() {

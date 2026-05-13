@@ -76,8 +76,10 @@ class InvoiceDetails extends InvoiceElementBase
                                 <th></th>
                             </tr>
                         </thead>
-                        <!-- صف إدخال الصنف الجديد - ثابت تحت الهيدر -->
-                        <thead id="searchTable">
+                        <tbody id="itmrow">
+                            <?php $this->renderExistingRows(); ?>
+                        </tbody>
+                        <tfoot id="searchTable" style="position:relative;">
                             <tr>
                                 <td class="col-1">
                                     <div class="tool">
@@ -86,67 +88,41 @@ class InvoiceDetails extends InvoiceElementBase
                                         <div class="tooltext">إضافة صنف جديد</div>
                                     </div>
                                 </td>
-
-                                <!-- الصنف -->
-                                <td id="itmTd" class="col-lg-5" style="position:relative;">
-                                    <input type="text"
-                                           id="itemSearchInput"
-                                           class="form-control"
-                                           placeholder="ابحث عن صنف (حرفين على الأقل)..."
-                                           autocomplete="off"
-                                           style="width:100%">
+                                <td colspan="7" style="position:relative; overflow:visible;">
+                                    <div style="display:flex; gap:6px;">
+                                        <input type="text"
+                                               id="itemSearchInput"
+                                               class="form-control form-control-sm"
+                                               placeholder="ابحث عن صنف..."
+                                               autocomplete="off"
+                                               style="width:260px;">
+                                        <input type="text"
+                                               id="barcodeSearchInput"
+                                               class="form-control form-control-sm"
+                                               placeholder="باركود"
+                                               autocomplete="off"
+                                               style="width:130px;">
+                                    </div>
                                     <input type="hidden" id="selectedItemId">
-                                    <div id="searchResults" style="position:absolute; left:0; right:0; top:100%; z-index:1050; background:white; border:1px solid #ddd; max-height:300px; overflow-y:auto; display:none; width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.12);"></div>
-                                    <input id="itmprice2" type="number" hidden onclick="sT(this)">
-                                </td>
-
-                                <!-- الوحدة -->
-                                <td>
-                                    <select id="inputUnitSelect" class="form-control form-control-sm" style="width:100px;">
-                                        <option value="">اختر وحدة</option>
-                                    </select>
-                                </td>
-
-                                <!-- الكمية -->
-                                <td>
-                                    <input type="number" hidden>
-                                    <input id="itmqty" value="1.00" type="number" onclick="sT(this)"
-                                           class="itmqty form-control form-control-sm nozero" style="width:90px;">
-                                </td>
-
-                                <!-- السعر -->
-                                <td>
-                                    <input id="itmprice" value="0.00" type="number" onclick="sT(this)"
-                                           class="itmprice form-control form-control-sm nozero" style="width:90px;" step="0.001">
-                                </td>
-
-                                <!-- الخصم -->
-                                <td>
-                                    <input id="itmdisc" value="0.00" type="number" onclick="sT(this)"
-                                           class="itmdisc form-control form-control-sm nozero" style="width:120px;" step="0.001">
-                                </td>
-
-                                <!-- القيمة -->
-                                <td>
-                                    <input readonly id="itmval" value="0.00" type="number"
-                                           class="itmval bg-light form-control form-control-sm nozero" style="width:150px;" step="0.001">
-                                </td>
-
-                                <input id="itmprofit" hidden>
-                                <td>
-                                    <button type="button" id="addRow" class="btn btn-light">إضافة</button>
+                                    <!-- searchResults خارج الجدول - بيتحرك بـ JS -->
                                 </td>
                             </tr>
-                        </thead>
-                        <!-- صفوف الفاتورة -->
-                        <tbody id="itmrow">
-                            <?php $this->renderExistingRows(); ?>
-                        </tbody>
+                        </tfoot>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- حقول مخفية يستخدمها addNewRow() - خارج الجدول -->
+        <input id="itmprice"      type="number" hidden value="0.00" step="0.001">
+        <input id="itmqty"        type="number" hidden value="1.00">
+        <input id="itmdisc"       type="number" hidden value="0.00" step="0.001">
+        <input id="itmval"        type="number" hidden value="0.00" step="0.001">
+        <input id="itmprofit"     type="number" hidden>
+        <select id="inputUnitSelect" hidden><option value="">اختر وحدة</option></select>
+        <button type="button" id="addRow" hidden>إضافة</button>
+        <!-- dropdown البحث - خارج الجدول عشان مش يتقطع بالـ overflow -->
+        <div id="searchResults" style="position:fixed; z-index:9999; background:white; border:1px solid #ddd; max-height:250px; overflow-y:auto; display:none; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
 <!-- Live Search Script -->
 <style>
     #searchResults .search-result-item.search-result-active {
@@ -154,11 +130,21 @@ class InvoiceDetails extends InvoiceElementBase
     }
 </style>
 <script>
-(function() {
+$(document).ready(function() {
     const searchInput = document.getElementById('itemSearchInput');
     const searchResults = document.getElementById('searchResults');
     const selectedItemId = document.getElementById('selectedItemId');
     const priceInput = document.getElementById('itmprice');
+
+    if (!searchInput || !searchResults) return;
+
+    // تحديث موضع الـ dropdown تحت الـ input
+    function positionDropdown() {
+        const rect = searchInput.getBoundingClientRect();
+        searchResults.style.top    = (rect.bottom + window.scrollY) + 'px';
+        searchResults.style.left   = (rect.left   + window.scrollX) + 'px';
+        searchResults.style.width  = rect.width + 'px';
+    }
 
     let searchTimeout;
     let selectedItem = null;
@@ -223,6 +209,7 @@ class InvoiceDetails extends InvoiceElementBase
         }
 
         searchTimeout = setTimeout(() => {
+            positionDropdown();
             searchResults.innerHTML = '<div style="padding:10px; text-align:center;">جاري البحث...</div>';
             searchResults.style.display = 'block';
             clearHighlight();
@@ -379,11 +366,17 @@ class InvoiceDetails extends InvoiceElementBase
                     unitSelect.append('<option value="">لا توجد وحدات</option>');
                 }
 
-                // تفعيل حقل الكمية
-                document.getElementById('itmqty').focus();
+                // أضف الصف فوراً وانتقل لحقل الكمية في الصف الجديد
+                $('#addRow').click();
+                setTimeout(function() {
+                    $('#itmrow tr:last .itmqty').focus().select();
+                }, 50);
             },
             error: function() {
-                document.getElementById('itmqty').focus();
+                $('#addRow').click();
+                setTimeout(function() {
+                    $('#itmrow tr:last .itmqty').focus().select();
+                }, 50);
             }
         });
     }
@@ -401,7 +394,62 @@ class InvoiceDetails extends InvoiceElementBase
             searchResults.style.display = 'block';
         }
     });
-})();
+
+    // الباركود - يختار الصنف فوراً بمجرد وقف الكتابة (debounce 400ms)
+    const barcodeInput = document.getElementById('barcodeSearchInput');
+    let barcodeTimeout;
+
+    barcodeInput.addEventListener('input', function() {
+        clearTimeout(barcodeTimeout);
+        const barcode = this.value.trim();
+        if (!barcode) return;
+
+        barcodeTimeout = setTimeout(() => {
+            fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(barcode)}&limit=1&by=barcode`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.items.length > 0) {
+                        const item = data.items[0];
+                        barcodeInput.value = '';
+                        selectItem({ id: item.id, name: item.iname, price: item.price1, barcode: item.barcode });
+                    } else {
+                        barcodeInput.style.borderColor = '#ef4444';
+                        setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+                    }
+                })
+                .catch(() => {
+                    barcodeInput.style.borderColor = '#ef4444';
+                    setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+                });
+        }, 400);
+    });
+
+    // Enter على الباركود كمان يشتغل
+    barcodeInput.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        clearTimeout(barcodeTimeout);
+        const barcode = this.value.trim();
+        if (!barcode) return;
+
+        fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(barcode)}&limit=1&by=barcode`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.items.length > 0) {
+                    const item = data.items[0];
+                    barcodeInput.value = '';
+                    selectItem({ id: item.id, name: item.iname, price: item.price1, barcode: item.barcode });
+                } else {
+                    barcodeInput.style.borderColor = '#ef4444';
+                    setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+                }
+            })
+            .catch(() => {
+                barcodeInput.style.borderColor = '#ef4444';
+                setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+            });
+    });
+}); // end document.ready
 </script>
         <?php
         return ob_get_clean();

@@ -96,9 +96,14 @@ switch ($q) {
                             </div>
                             <div class="col-md-2 col-12 mb-2">
                                 <label class="d-none d-md-block">&nbsp;</label>
-                                <button class="btn btn-primary btn-block" type="submit">
-                                    <i class="fa fa-search"></i> بحث
-                                </button>
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-primary" type="submit" style="flex: 2;">
+                                        <i class="fa fa-search"></i> بحث
+                                    </button>
+                                    <button class="btn btn-dark" type="button" onclick="printBrutal()" style="flex: 1;" title="طباعة بتنسيق Brutal">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -402,5 +407,169 @@ switch ($q) {
             document.getElementById("net_sales_val").textContent = net.toFixed(2);
         }
     });
+</script>
+<script>
+function printBrutal() {
+    window.print();
+}
+</script>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printableTable, #printableTable * {
+        visibility: visible;
+    }
+    #printableTable {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 20px;
+    }
+    
+    /* Brutalist Styling for Print */
+    .brutal-header {
+        border-bottom: 5px solid #000;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+        font-weight: 900;
+        font-size: 32px;
+        background: #ffff00 !important;
+        -webkit-print-color-adjust: exact;
+        padding: 10px;
+    }
+    
+    .brutal-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 4px solid #000 !important;
+    }
+    
+    .brutal-table th {
+        background: #000 !important;
+        color: #fff !important;
+        border: 2px solid #000;
+        padding: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .brutal-table td {
+        border: 2px solid #000;
+        padding: 10px;
+        font-weight: 700;
+    }
+    
+    .brutal-table tr:nth-child(even) {
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .brutal-summary-box {
+        border: 4px solid #000;
+        padding: 15px;
+        margin-top: 20px;
+        display: inline-block;
+        min-width: 200px;
+        margin-right: 15px;
+        background: #fff !important;
+        box-shadow: 8px 8px 0px #000;
+        -webkit-print-color-adjust: exact;
+    }
+    
+    .brutal-summary-box.bg-info { background: #00ffff !important; }
+    .brutal-summary-box.bg-danger { background: #ff00ff !important; color: white !important; }
+    .brutal-summary-box.bg-success { background: #ffff00 !important; }
+    
+    .no-print { display: none !important; }
+}
+
+/* Base style for the printable section when visible */
+#printableTable {
+    display: none;
+}
+@media print {
+    #printableTable {
+        display: block;
+    }
+}
+</style>
+
+<!-- Hidden Section for Brutal Print -->
+<div id="printableTable">
+    <div class="brutal-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 40px;"><?= $settings['company_name'] ?? 'FOCUS' ?></div>
+            <div style="font-size: 20px;"><?= $report_name ?></div>
+        </div>
+        <div style="text-align: left; border-left: 5px solid #000; padding-left: 15px;">
+            <div style="font-size: 14px;">من: <?= $strtdate_display ?></div>
+            <div style="font-size: 14px;">إلى: <?= $enddate_display ?></div>
+            <div style="font-size: 12px; margin-top: 5px;">تاريخ الطباعة: <?= date('Y-m-d H:i') ?></div>
+        </div>
+    </div>
+    
+    <table class="brutal-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>التاريخ</th>
+                <th>البيان</th>
+                <th>القيمة</th>
+                <th>الصافي</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php 
+            // Re-run query for printing or use original results
+            if(isset($resop) && $resop->num_rows > 0) {
+                mysqli_data_seek($resop, 0); // Reset pointer
+                $i = 1;
+                while($row = $resop->fetch_assoc()) {
+                    echo "<tr>";
+                    echo "<td>".$i++."</td>";
+                    echo "<td>".$row['pro_date']."</td>";
+                    echo "<td>".$row['info']."</td>";
+                    echo "<td>".$row['pro_value']."</td>";
+                    echo "<td>".$row['fat_net']."</td>";
+                    echo "</tr>";
+                }
+            }
+            ?>
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 30px;">
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">إجمالي المبيعات</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_sales">0.00</div>
+        </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">إجمالي المردودات</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_returns">0.00</div>
+        </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">الصافي النهائي</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_net">0.00</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update brutal summary values when page loads
+$(document).ready(function() {
+    setTimeout(function() {
+        document.getElementById('brutal_sales').textContent = document.getElementById('total_sales_val')?.textContent || '0.00';
+        document.getElementById('brutal_returns').textContent = document.getElementById('total_returns_val')?.textContent || '0.00';
+        document.getElementById('brutal_net').textContent = document.getElementById('net_sales_val')?.textContent || '0.00';
+    }, 1000);
+});
 </script>
 <?php include('includes/footer.php'); ?>
