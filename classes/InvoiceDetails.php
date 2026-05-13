@@ -95,7 +95,7 @@ class InvoiceDetails extends InvoiceElementBase
                                                class="form-control form-control-sm"
                                                placeholder="ابحث عن صنف..."
                                                autocomplete="off"
-                                               style="flex:1; min-width:0;">
+                                               style="width:260px;">
                                         <input type="text"
                                                id="barcodeSearchInput"
                                                class="form-control form-control-sm"
@@ -369,13 +369,13 @@ $(document).ready(function() {
                 // أضف الصف فوراً وانتقل لحقل الكمية في الصف الجديد
                 $('#addRow').click();
                 setTimeout(function() {
-                    $('#itmrow tr:first .itmqty').focus().select();
+                    $('#itmrow tr:last .itmqty').focus().select();
                 }, 50);
             },
             error: function() {
                 $('#addRow').click();
                 setTimeout(function() {
-                    $('#itmrow tr:first .itmqty').focus().select();
+                    $('#itmrow tr:last .itmqty').focus().select();
                 }, 50);
             }
         });
