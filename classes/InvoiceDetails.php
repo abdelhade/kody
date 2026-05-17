@@ -92,13 +92,13 @@ class InvoiceDetails extends InvoiceElementBase
                                     <div style="display:flex; gap:6px;">
                                         <input type="text"
                                                id="itemSearchInput"
-                                               class="form-control form-control-sm"
+                                               class="form-control form-control-sm frst"
                                                placeholder="ابحث عن صنف..."
                                                autocomplete="off"
                                                style="width:260px;">
                                         <input type="text"
                                                id="barcodeSearchInput"
-                                               class="form-control form-control-sm"
+                                               class="form-control form-control-sm scnd"
                                                placeholder="باركود"
                                                autocomplete="off"
                                                style="width:130px;">

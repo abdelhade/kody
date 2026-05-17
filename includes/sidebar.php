@@ -332,6 +332,14 @@
 
 
 
+<!-- -------------------الزيارات  -->
+        <li class="nav-item">
+          <a href="visits.php" class="nav-link">
+            <i class="nav-icon fas fa-user-check"></i>
+            <p>الزيارات</p>
+          </a>
+        </li>
+
         <?php if (($role['sid_cards'] ?? 0) == 1) { ?>
 
           <li class="nav-item has-treeview">

@@ -164,15 +164,12 @@ if ($is_delivery) {
 <div class="col">
     <p style="font-size:12px;text-align:center"><?= $rowfat['crtime'] ?></p>
     <div style="text-align: center; direction: ltr; font-size: 12px; font-weight: bold;">
-        Thank you for choosing us where good ideas find the  
+    
         <p>❤ perfect place to grow</p>
     </div>
     
     <div style="text-align: center; margin-top: 15px;">
-        <img src="../qrCode.png" alt="QR Code" style="width: 60px; height: 60px; display: block; margin: 0 auto;">
-        <div style="margin-top: 5px;">
-            <i class="fab fa-facebook" style="font-size: 10px; color: #1877f2;"></i>
-            <span style="font-size: 10px;">FOCUS HOUSE</span>
+     
         </div>
     </div>
 </div>

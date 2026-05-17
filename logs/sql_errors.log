@@ -37,3 +37,37 @@
 [2026-05-09 20:22:13] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
 [2026-05-09 20:41:59] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'محمد' at line 1 in C:\xampp\htdocs\focus\js\ajax\addcl.php:14
 [2026-05-09 20:42:03] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'محمد' at line 1 in C:\xampp\htdocs\focus\js\ajax\addcl.php:14
+[2026-05-16 20:11:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:27] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:27] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:27] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:27] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:58] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:58] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:11:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:00] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-16 20:12:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
