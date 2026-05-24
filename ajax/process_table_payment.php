@@ -57,7 +57,7 @@ try {
     
     // 3. تحديث الطلب بالخصم والصافي
     if ($discount > 0) {
-        $update_order_disc = "UPDATE ot_head SET fat_disc = ?, fat_net = ? WHERE id = ?";
+        $update_order_disc = "UPDATE ot_head SET fat_disc = ?, fat_net = ?, crtime = crtime WHERE id = ?";
         $stmt = $conn->prepare($update_order_disc);
         $stmt->bind_param("ddi", $discount, $net, $order_id);
         $stmt->execute();
@@ -76,7 +76,7 @@ try {
     error_log('====================================');
     
     // 4. تحديث حالة الطلب إلى مسدد (type 2)
-    $update_order = "UPDATE ot_head SET pro_tybe = 2 WHERE id = ?";
+    $update_order = "UPDATE ot_head SET pro_tybe = 2, crtime = crtime WHERE id = ?";
     $stmt = $conn->prepare($update_order);
     $stmt->bind_param("i", $order_id);
     $stmt->execute();

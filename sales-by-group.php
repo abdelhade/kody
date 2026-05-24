@@ -9,7 +9,7 @@
             <div class="card">
                 <form action="" method="post">
                     <div class="card-header">
-                        <h1>المبيعات أيام</h1>
+                        <h1>المبيعات مجموعات</h1>
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
@@ -46,63 +46,34 @@
                     $to   = $_POST['to'];
                 }
 
-                // استعلام التجميع اليومي
-                $sql = "SELECT pro_date, SUM(pro_value) as total_sales 
-                        FROM ot_head 
-                        WHERE (pro_tybe = 9 OR pro_tybe = 3)
-                        AND pro_date BETWEEN '$from' AND '$to'
-                        GROUP BY pro_date
-                        ORDER BY pro_date ASC";
+                $sql = "SELECT 
+                            COALESCE(g.id, 0) as group_id,
+                            COALESCE(g.gname, 'بدون مجموعة') as group_name,
+                            COALESCE(SUM(fd.qty_out), 0) as total_qty,
+                            COALESCE(SUM(fd.det_value), 0) as total_sales
+                        FROM myitems i
+                        LEFT JOIN item_group g ON i.group1 = g.id
+                        LEFT JOIN fat_details fd ON fd.item_id = i.id 
+                            AND fd.isdeleted = 0 
+                            AND (fd.fat_tybe = 9 OR fd.fat_tybe = 3)
+                            AND fd.crtime BETWEEN '$from 00:00:00' AND '$to 23:59:59'
+                        WHERE i.isdeleted = 0
+                        GROUP BY COALESCE(g.id, 0), COALESCE(g.gname, 'بدون مجموعة')
+                        HAVING total_qty > 0 OR total_sales > 0
+                        ORDER BY total_sales DESC, total_qty DESC";
 
                 $res = $conn->query($sql);
 
                 $data = [];
                 $grand_total = 0;
+                $grand_qty = 0;
 
                 while ($row = $res->fetch_assoc()) {
                     $data[] = $row;
                     $grand_total += $row['total_sales'];
-                }
-
-                $count_days = count($data);
-
-                $max_day = $min_day = $avg_day = null;
-
-                if ($count_days > 0) {
-                    // ترتيب حسب القيمة
-                    usort($data, function($a, $b) {
-                        return $b['total_sales'] <=> $a['total_sales'];
-                    });
-
-                    $max_day = $data[0];
-                    $min_day = $data[$count_days - 1];
-                    $avg_day = $grand_total / $count_days;
+                    $grand_qty += $row['total_qty'];
                 }
                 ?>
-
-                <?php if ($count_days > 0): ?>
-                <!-- كروت التجميع -->
-                <div class="row p-3">
-                    <div class="col-md-4">
-                        <div class="alert alert-success text-center">
-                            <h5>أعلى يوم مبيعات</h5>
-                            <p><?= $max_day['pro_date'] ?> : <?= number_format($max_day['total_sales'], 2) ?></p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="alert alert-danger text-center">
-                            <h5>أقل يوم مبيعات</h5>
-                            <p><?= $min_day['pro_date'] ?> : <?= number_format($min_day['total_sales'], 2) ?></p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="alert alert-info text-center">
-                            <h5>متوسط المبيعات اليومية</h5>
-                            <p><?= number_format($avg_day, 2) ?></p>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
 
                 <!-- جدول التفاصيل -->
                 <div class="card-body">
@@ -111,7 +82,8 @@
                             <thead>
                                 <tr>
                                     <th>م</th>
-                                    <th>اليوم</th>
+                                    <th>المجموعة</th>
+                                    <th>الكمية المباعة</th>
                                     <th>إجمالي المبيعات</th>
                                 </tr>
                             </thead>
@@ -123,7 +95,8 @@
                                     ?>
                                     <tr>
                                         <td><?= $x ?></td>
-                                        <td><?= $row['pro_date'] ?></td>
+                                        <td><?= htmlspecialchars($row['group_name']) ?></td>
+                                        <td><?= $row['total_qty'] ?></td>
                                         <td><?= number_format($row['total_sales'], 2) ?></td>
                                     </tr>
                                     <?php
@@ -136,6 +109,7 @@
                                 <tfoot>
                                     <tr style="font-weight: bold; background: #f0f0f0;">
                                         <td colspan="2" class="text-center">الإجمالي الكلي</td>
+                                        <td><?= $grand_qty ?></td>
                                         <td><?= number_format($grand_total, 2) ?></td>
                                     </tr>
                                 </tfoot>

@@ -1306,6 +1306,13 @@
               </li>
 
               <li class="nav-item">
+                <a href="visits_stats.php" class="nav-link">
+                  <i class="far "> <i class="nav-icon fas fa-chart-bar"></i> </i>
+                  <p>إحصائيات الزيارات</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
                 <a href="sales-reports.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p><?= $lang_sales_reports ?></p>

@@ -3,7 +3,7 @@
 $dbhost = 'localhost';
 $dbuser = 'root';
 $dbpass = '';
-$dbname = 'kody2';
+$dbname = 'kodyelatek';
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($dbhost, $dbuser, $dbpass);

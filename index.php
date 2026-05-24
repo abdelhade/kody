@@ -9,7 +9,7 @@ session_start();
 $dbhost = 'localhost';
 $dbuser = 'root';
 $dbpass = '';
-$dbname = 'kody2';
+$dbname = 'kodyelatek';
 
 // Check connection
 mysqli_report(MYSQLI_REPORT_OFF);

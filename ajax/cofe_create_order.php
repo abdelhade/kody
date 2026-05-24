@@ -384,7 +384,7 @@ try {
     $r->close();
     $ot_profit = $row['tprofit'] ?? 0;
 
-    $stmt = $conn->prepare("UPDATE ot_head SET profit = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE ot_head SET profit = ?, crtime = crtime WHERE id = ?");
     $stmt->bind_param("ss", $ot_profit, $last_op);
     $stmt->execute();
     $stmt->close();

@@ -202,7 +202,7 @@ try {
             info = ?, pro_date = ?, accural_date = ?, pro_serial = ?, store_id = ?, 
             emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, fat_cost = 0, 
             fat_total = ?, fat_disc = ?, fat_disc_per = ?, fat_plus = ?, fat_plus_per = ?, 
-            fat_net = ?, acc_fund = ?
+            fat_net = ?, acc_fund = ?, crtime = crtime
          WHERE id = ?"
     );
     
@@ -346,7 +346,7 @@ try {
     } elseif ($paid > 0 && $rowpaid !== null) {
         // تحديث دفعة موجودة
         $stmt = $conn->prepare(
-            "UPDATE ot_head SET info = ?, pro_date = ?, emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ? 
+            "UPDATE ot_head SET info = ?, pro_date = ?, emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, crtime = crtime 
              WHERE op2 = ? AND pro_tybe = ?"
         );
         $stmt->bind_param("ssiiiiii", $info, $pro_date, $emp_id, $accounts['acc5'], $accounts['acc6'], $paid, $ot_id, $paid_type);
@@ -392,7 +392,7 @@ try {
         
     } elseif ($paid == 0 && $rowpaid !== null) {
         // حذف الدفعة
-        $stmt = $conn->prepare("UPDATE ot_head SET isdeleted = 1 WHERE op2 = ? AND pro_tybe = ?");
+        $stmt = $conn->prepare("UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE op2 = ? AND pro_tybe = ?");
         $stmt->bind_param("ii", $ot_id, $paid_type);
         $stmt->execute();
         $stmt->close();
@@ -431,8 +431,8 @@ try {
         $stmt_details = $conn->prepare(
             "INSERT INTO fat_details (
                 pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-                discount, det_value, fatid, fat_tybe, det_store, cost_price, profit
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                discount, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt_details) {
@@ -526,12 +526,15 @@ try {
                 $itmprice = $unit_price;
             }
             
+            // الحصول على crtime الأصلي إذا كان موجوداً
+            $detcrtime = (!empty($_POST['detcrtime'][$index])) ? $_POST['detcrtime'][$index] : date('Y-m-d H:i:s');
+            
             // إدخال تفاصيل الفاتورة
             $stmt_details->bind_param(
-                "iiiiddddiiiidd",
+                "iiiiddddiiiidds",
                 $pro_tybe, $ot_id, $itmname, $u_val, $qty_in, $qty_out,
                 $itmprice, $itmdisc, $det_value, $ot_id, $pro_tybe,
-                $store_id, $cost_price, $itmprofit
+                $store_id, $cost_price, $itmprofit, $detcrtime
             );
             
             if (!$stmt_details->execute()) {
@@ -556,7 +559,7 @@ try {
         $stmt->close();
         
         // تحديث رقم الربح في رأس الفاتورة
-        $stmt = $conn->prepare("UPDATE ot_head SET profit = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE ot_head SET profit = ?, crtime = crtime WHERE id = ?");
         $stmt->bind_param("di", $ot_profit, $ot_id);
         $stmt->execute();
         $stmt->close();

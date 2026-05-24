@@ -44,7 +44,8 @@ $stmt->execute();
 $visits = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 ?>
-
+<div class="container">
+  
 <div class="card" style="direction:rtl; margin:20px;">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h3 class="card-title">
@@ -114,7 +115,9 @@ $stmt->close();
                 <td><?= htmlspecialchars($age_labels[$v['age_group']] ?? $v['age_group']) ?></td>
                 <td><?= htmlspecialchars($mode_labels[$v['mode']] ?? $v['mode']) ?></td>
                 <td><?= htmlspecialchars(substr($v['start_time'], 0, 5)) ?></td>
-                <td><?= htmlspecialchars(substr($v['end_time'],   0, 5)) ?></td>
+                <td>
+                  <input type="time" class="form-control form-control-sm update-end-time" data-id="<?= (int)$v['id'] ?>" value="<?= htmlspecialchars(substr($v['end_time'], 0, 5)) ?>" style="width: 100px; display: inline-block;">
+                </td>
                 <td><?= htmlspecialchars($value_labels[$v['order_value']] ?? $v['order_value']) ?></td>
                 <td><?= htmlspecialchars($type_labels[$v['type']] ?? $v['type']) ?></td>
                 <td><?= htmlspecialchars(date('Y-m-d', strtotime($v['created_at']))) ?></td>
@@ -133,5 +136,36 @@ $stmt->close();
     </div>
   </div>
 </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      $('.update-end-time').on('change', function() {
+        var id = $(this).data('id');
+        var endTime = $(this).val();
+        
+        $.ajax({
+          url: 'ajax/update_visit_end_time.php',
+          type: 'POST',
+          data: { id: id, end_time: endTime },
+          success: function(response) {
+            try {
+              var res = typeof response === 'string' ? JSON.parse(response) : response;
+              if(res.success) {
+                // Time updated successfully
+              } else {
+                alert('حدث خطأ أثناء التحديث');
+              }
+            } catch(e) {
+              console.error(e);
+            }
+          },
+          error: function() {
+            alert('حدث خطأ أثناء الاتصال بالخادم');
+          }
+        });
+      });
+    });
+  </script>
 
 <?php include('includes/footer.php') ?>

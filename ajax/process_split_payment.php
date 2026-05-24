@@ -106,7 +106,7 @@ try {
     $calc_old->close();
     
     // تحديث الفاتورة القديمة
-    $update_old = $conn->prepare("UPDATE ot_head SET pro_value = ?, fat_total = ?, fat_net = ? WHERE id = ?");
+    $update_old = $conn->prepare("UPDATE ot_head SET pro_value = ?, fat_total = ?, fat_net = ?, crtime = crtime WHERE id = ?");
     $update_old->bind_param("dddi", $remaining_total, $remaining_total, $remaining_total, $original_order_id);
     $update_old->execute();
     $update_old->close();
@@ -119,7 +119,7 @@ try {
         $close_tbl->execute();
         
         // تعليم الفاتورة القديمة كمحذوفة
-        $conn->query("UPDATE ot_head SET isdeleted = 1 WHERE id = $original_order_id");
+        $conn->query("UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE id = $original_order_id");
     }
 
     // 6. إنشاء سند قبض (Receipt Voucher) للمبلغ المدفوع

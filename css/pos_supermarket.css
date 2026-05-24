@@ -1,0 +1,54 @@
+/* Theme for Supermarket POS */
+body.supermarket-theme {
+    background-color: #f4f6f9;
+    font-family: 'Cairo', sans-serif;
+}
+
+.supermarket-table th, 
+.supermarket-table td {
+    vertical-align: middle;
+}
+
+.supermarket-table .form-control {
+    border: none;
+    background-color: transparent;
+    padding: 0.25rem 0.5rem;
+}
+
+.supermarket-table .form-control:focus {
+    background-color: #fff;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border: 1px solid #86b7fe;
+    border-radius: 4px;
+}
+
+/* Remove arrows from number inputs in the table */
+.supermarket-table input[type=number]::-webkit-inner-spin-button, 
+.supermarket-table input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+.supermarket-table input[type=number] {
+    -moz-appearance: textfield;
+}
+
+#itemDataContainer::-webkit-scrollbar {
+    width: 8px;
+}
+#itemDataContainer::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+#itemDataContainer::-webkit-scrollbar-thumb {
+    background: #888; 
+    border-radius: 4px;
+}
+#itemDataContainer::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}
+
+.delRow {
+    transition: all 0.2s;
+}
+.delRow:hover {
+    transform: scale(1.1);
+}
