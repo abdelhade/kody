@@ -142,3 +142,7 @@
 [2026-05-24 18:23:14] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
 [2026-05-24 18:23:15] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
 [2026-05-24 18:23:15] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-05-25 17:11:20] mysqli_sql_exception: Reference 'total_value' not supported (reference to group function) in C:\xampp\htdocs\focus\items_summery.php:149
+[2026-05-25 17:11:36] mysqli_sql_exception: Reference 'total_value' not supported (reference to group function) in C:\xampp\htdocs\focus\items_summery.php:149
+[2026-05-26 00:08:06] mysqli_sql_exception: Table 'kody2.categores' doesn't exist in C:\xampp\htdocs\focus\print\closed_session_items.php:72
+[2026-05-26 00:08:10] mysqli_sql_exception: Table 'kody2.categores' doesn't exist in C:\xampp\htdocs\focus\print\closed_session_items.php:72

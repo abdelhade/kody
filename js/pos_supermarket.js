@@ -29,12 +29,139 @@ $(document).ready(function() {
         if (e.which === 13) {
             e.preventDefault();
             let barcode = $(this).val().trim();
-            if (barcode) {
+            if (barcode === '+') {
+                $(this).val('');
+                if ($('.item-card-order').length === 0) {
+                    Swal.fire('تنبيه', 'الفاتورة فارغة', 'warning');
+                    return;
+                }
+                window.openedByPlus = true;
+                $('#paymentModal').modal('show');
+            } else if (barcode) {
                 searchItemSupermarket(barcode);
                 $(this).val('');
             }
         }
     });
+
+    // Real-time exact barcode matching to add it directly to cart
+    let barcodeCheckTimeout;
+    $('#barcodeInput, #searchInput').on('input change', function() {
+        let inputField = $(this);
+        let val = inputField.val().trim();
+        
+        // Skip if empty or plus sign
+        if (!val || val === '+') return;
+        
+        clearTimeout(barcodeCheckTimeout);
+        barcodeCheckTimeout = setTimeout(function() {
+            $.ajax({
+                url: 'ajax/check_exact_barcode.php',
+                method: 'POST',
+                data: { barcode: val },
+                success: function(response) {
+                    try {
+                        let data = JSON.parse(response);
+                        if (data.success && data.item) {
+                            // Exact match found! Add to cart with quantity 1
+                            addItemToTable(data.item, 1);
+                            inputField.val('');
+                            
+                            // If it was searchInput, refocus on barcodeInput
+                            $('#barcodeInput').focus();
+                            
+                            // Close autocomplete dropdown if open
+                            if (inputField.data('ui-autocomplete')) {
+                                inputField.autocomplete('close');
+                            }
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            });
+        }, 150); // 150ms debounce
+    });
+
+    // Handle Enter key on Search Input
+    $('#searchInput').on('keypress', function(e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            let query = $(this).val().trim();
+            if (query) {
+                $.ajax({
+                    url: 'ajax/search_items_autocomplete.php',
+                    method: 'GET',
+                    data: { term: query },
+                    success: function(response) {
+                        try {
+                            let items = JSON.parse(response);
+                            if (items && items.length > 0) {
+                                // Add the first matched item
+                                addItemToTable(items[0].item, 1);
+                                $('#searchInput').val('');
+                                $('#barcodeInput').focus();
+                                // Close autocomplete if open
+                                if ($('#searchInput').data('ui-autocomplete')) {
+                                    $('#searchInput').autocomplete('close');
+                                }
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'غير موجود',
+                                    text: 'لم يتم العثور على أي صنف مطابق',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // Autocomplete on searchInput
+    $('#searchInput').autocomplete({
+        source: function(request, response) {
+            $.ajax({
+                url: 'ajax/search_items_autocomplete.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { term: request.term },
+                success: function(data) {
+                    response(data);
+                }
+            });
+        },
+        minLength: 1,
+        select: function(event, ui) {
+            if (ui.item && ui.item.item) {
+                addItemToTable(ui.item.item, 1);
+                $(this).val('');
+                $('#barcodeInput').focus();
+                return false;
+            }
+        }
+    });
+
+    // Customize autocomplete layout
+    if ($('#searchInput').data('ui-autocomplete')) {
+        $('#searchInput').autocomplete('instance')._renderItem = function(ul, item) {
+            return $('<li>')
+                .append(`<div class="d-flex justify-content-between align-items-center w-100 p-2 border-bottom">
+                            <div class="text-end">
+                                <strong class="text-dark d-block">${item.item.name}</strong>
+                                <small class="text-muted">${item.item.barcode || 'بدون باركود'}</small>
+                            </div>
+                            <span class="badge bg-primary fs-6">${parseFloat(item.item.price).toFixed(2)} ج.م</span>
+                         </div>`)
+                .appendTo(ul);
+        };
+    }
+
 
     // Payment Modal Calculation
     $('#paymentModal').on('shown.bs.modal', function() {
@@ -42,7 +169,12 @@ $(document).ready(function() {
         $('#modal_net_large').text(net.toFixed(2) + ' ج.م');
         $('#modal_paid_cash').val(net.toFixed(2));
         $('#modal_change').text('0.00 ج.م');
-        $('#modal_paid_cash').focus().select();
+        if (window.openedByPlus) {
+            $('#btn_save_print').focus();
+            window.openedByPlus = false;
+        } else {
+            $('#modal_paid_cash').focus().select();
+        }
     });
 
     $('#modal_paid_cash').on('input', function() {

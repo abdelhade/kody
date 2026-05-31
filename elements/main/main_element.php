@@ -141,20 +141,45 @@
         <!-- العمود الرابع -->
         <div class="col-lg-3 col-md-6">
             <div class="action-card-group">
-                <!-- قائمة الاصناف مع الارصدة -->
-                <div class="action-card-full">
-                    <a href="myitems.php" class="action-btn" style="background: #313647 !important;">
+                <!-- Pulse تقييم لحظي -->
+                <div class="action-card-main">
+                    <a href="pulse.php" class="action-btn" style="background: #f59e0b !important;">
                         <div class="btn-icon">
-                            <i class="fas fa-warehouse"></i>
+                            <i class="fas fa-bolt"></i>
                         </div>
                         <div class="btn-text">
-                            <span class="btn-title">قائمة الاصناف مع الارصدة</span>
-                            <span class="btn-subtitle">عرض جميع المنتجات والمخزون</span>
+                            <span class="btn-title">Pulse (تقييم لحظي)</span>
                         </div>
                         <div class="btn-hover-effect">
                             <i class="fas fa-arrow-left"></i>
                         </div>
                     </a>
+                </div>
+                
+                <div class="action-card-row">
+                    <!-- إحصائيات Pulse -->
+                    <div class="action-card-half">
+                        <a href="pulse_stats.php" class="action-btn" style="background: #3b82f6 !important;">
+                            <div class="btn-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">إحصائيات Pulse</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- قائمة الاصناف -->
+                    <div class="action-card-half">
+                        <a href="myitems.php" class="action-btn" style="background: #313647 !important;">
+                            <div class="btn-icon">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
+                            <div class="btn-text">
+                                <span class="btn-title">قائمة الأصناف</span>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

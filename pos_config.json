@@ -23,6 +23,11 @@
     "auto_focus_barcode": true,
     "clear_barcode_after_scan": true,
     "increment_existing_items": true
+  },
+  "printer": {
+    "enabled": true,
+    "default_printer": "CLASS",
+    "agent_url": "http://127.0.0.1:5000"
   }
 }
 

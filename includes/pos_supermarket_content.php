@@ -321,7 +321,7 @@ if (!isset($action_url)) {
             </div>
             <div class="modal-footer bg-white border-top p-3 d-flex justify-content-between">
                 <button type="button" class="btn btn-secondary btn-lg px-4" data-bs-dismiss="modal">إلغاء</button>
-                <button type="button" class="btn btn-success btn-lg px-5 fw-bold" onclick="submitSupermarketPOS('print');">
+                <button type="button" id="btn_save_print" class="btn btn-success btn-lg px-5 fw-bold" onclick="submitSupermarketPOS('cash');">
                     <i class="fas fa-print me-2"></i> حفظ وطباعة (Enter)
                 </button>
             </div>

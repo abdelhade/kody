@@ -21,16 +21,59 @@ if ($rowfat == null) {
         $back_page = '../pos_barcode.php?logout=1';
         unset($_SESSION['lock_after_print']); // مسح المتغير بعد الاستخدام
     } else {
-        $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+        if (!empty($_SESSION['pos_back_page'])) {
+            $back_page = $_SESSION['pos_back_page'];
+        } else {
+            $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+        }
     }
 
     $is_return = (in_array($rowfat['pro_tybe'], [3, 10, 11]) || strpos($rowfat['info'], 'مردود') !== false);
 ?>
 
+<style>
+@media print {
+    body, html { margin: 0; padding: 0; background-color: #fff; }
+    #printed { box-shadow: none !important; border: none !important; margin: 0 !important; }
+    .no-print { display: none !important; }
+}
+#printed {
+    font-family: 'Tahoma', Arial, sans-serif;
+    color: #000;
+}
+#printed .table {
+    border: 2px solid #000 !important;
+    width: 100% !important;
+    margin: 0 0 5px 0 !important;
+}
+#printed .table th, #printed .table td {
+    padding: 2px !important;
+    font-size: 9px !important;
+    font-weight: normal !important;
+    vertical-align: middle;
+    border: 1px solid #000 !important;
+}
+#printed .table thead th {
+    border-bottom: 2px solid #000 !important;
+    font-weight: bold !important;
+}
+#printed h1 {
+    font-size: 16px !important;
+    margin-bottom: 5px !important;
+    padding: 5px 0 !important;
+}
+#printed p, #printed address {
+    margin-bottom: 2px !important;
+    font-size: 12px !important;
+}
+.dashed-separator {
+    border-top: 2px dashed #000;
+    margin: 10px 0;
+}
+</style>
 
-
-<div class="card" id="printed" style="width: 72mm;">
-<div class="card-body">
+<div class="card shadow-sm" id="printed" style="width: 78mm; margin: 0; border: 1px solid #eee;">
+<div class="card-body" style="padding: 8px !important;">
 
 <?php 
 $logo_path = '../assets/logo/logo.jpg';
@@ -40,7 +83,7 @@ if (file_exists($logo_path)) {
     echo '<div class="text-center p-2">لوجو الشركة</div>';
 }
 ?>
-<h1 class="text-center p-3 p-0 font-bold" style="font-size: 23px;font-weight:bolder;">
+<h1 class="text-center font-bold">
 <?= $rowstg['company_name'] ?></h1>
 
 <?php if($is_return): ?>
@@ -54,7 +97,7 @@ $prodate = date('md', strtotime($rowfat['pro_date']));
 ?>
 <div class="row" >
     <div class="col-12">
-<p style="font-size:12px;text-align:center">
+<p style="text-align:center; font-size: 10px;">
     <?= $prodate.$rowfat['pro_id'] ?></p>
 
     <?php
@@ -103,13 +146,13 @@ if ($is_delivery) {
 
 
 
-<table class="table col-md-12 table-bordered text-center" style="border: 1px solid #ddd;">
+<table class="table table-bordered text-center mb-1" style="border: 1px solid #000; width: 100%;">
 <thead>
-<tr style="font-size:x-small; background-color: #f0f0f0;">
-<th style="border: 1px solid #ddd; padding: 8px;">الصــــنـــف</th>
-<th style="border: 1px solid #ddd; padding: 8px;">الكمية</th>
-<th style="border: 1px solid #ddd; padding: 8px;">السعر</th>
-<th style="border: 1px solid #ddd; padding: 8px;">القيمة</th>
+<tr style="background-color: #f0f0f0;">
+<th style="border: 1px solid #000; width: 40%;">الصنف</th>
+<th style="border: 1px solid #000; width: 20%;">الكمية</th>
+<th style="border: 1px solid #000; width: 20%;">السعر</th>
+<th style="border: 1px solid #000; width: 20%;">القيمة</th>
 </tr>
 </thead>
 <tbody>
@@ -123,36 +166,36 @@ if ($is_delivery) {
         $qty = $is_return ? $rowdet['qty_in'] : $rowdet['qty_out'];       
     ?>
 <tr>
-<td class="p-1" style="font-size:small; border: 1px solid #ddd;"><?= $rowitm['iname']  ?></td>
-<td style="border: 1px solid #ddd;"><?= $qty  ?></td>
-<td style="border: 1px solid #ddd;"><?= $rowdet['price']?></td>
-<td style="border: 1px solid #ddd;"><?= $rowdet['det_value']?></td>
+<td style="border: 1px solid #000; word-break: break-all;"><?= $rowitm['iname']  ?></td>
+<td style="border: 1px solid #000;"><?= $qty  ?></td>
+<td style="border: 1px solid #000;"><?= $rowdet['price']?></td>
+<td style="border: 1px solid #000;"><?= $rowdet['det_value']?></td>
 </tr>
 <?php }?>
 </tbody>
 </table>
 
-<table class="table col-md-12 table-bordered text-center" style="border: 1px solid #ddd; margin-top: 0;">
+<table class="table table-bordered text-center" style="border: 1px solid #000; width: 100%; margin-top: 0;">
 <tbody>
-<tr style="font-weight: bold;background-color: #f0f0f0;">
-<td style="border: 1px solid #ddd; padding: 8px;">اجمالي</td>
+<tr style="background-color: #f0f0f0;">
+<td style="border: 1px solid #000;">اجمالي</td>
 <?php if ($rowfat['fat_disc'] > 0 ){?>
-<td style="border: 1px solid #ddd; padding: 8px;">خصم</td>
+<td style="border: 1px solid #000;">خصم</td>
 <?php }?>
 <?php if ($rowfat['fat_plus'] > 0 ){?>
-<td style="border: 1px solid #ddd; padding: 8px;">اضافي</td>
+<td style="border: 1px solid #000;">اضافي</td>
 <?php }?>
-<td style="border: 1px solid #ddd; padding: 8px;">الصافي</td>
+<td style="border: 1px solid #000; font-weight: bold;">الصافي</td>
 </tr>
-<tr style="font-weight: bold;">
-<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_total'] ?></td>
+<tr>
+<td style="border: 1px solid #000;"><?= $rowfat['fat_total'] ?></td>
 <?php if ($rowfat['fat_disc'] > 0 ){?>
-<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_disc'] ?></td>
+<td style="border: 1px solid #000;"><?= $rowfat['fat_disc'] ?></td>
 <?php }?>
 <?php if ($rowfat['fat_plus'] > 0 ){?>
-<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_plus'] ?></td>
+<td style="border: 1px solid #000;"><?= $rowfat['fat_plus'] ?></td>
 <?php }?>
-<td style="border: 1px solid #ddd; padding: 8px;"><?= $rowfat['fat_net'] ?></td>
+<td style="border: 1px solid #000; font-weight: bold; font-size: 11px !important;"><?= $rowfat['fat_net'] ?></td>
 </tr>
 </tbody>
 </table>
