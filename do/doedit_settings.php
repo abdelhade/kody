@@ -27,6 +27,7 @@ $showclinc = (int)($_POST['showclinc'] ?? 0);
 $showrent = (int)($_POST['showrent'] ?? 0);
 $bodycolor = trim($_POST['bodycolor'] ?? '#ffffff');
 $showpayroll = (int)($_POST['showpayroll'] ?? 0);
+$showpulse = (int)($_POST['showpulse'] ?? 0);
 $acc_rent = (int)($_POST['acc_rent'] ?? 0);
 $def_pos_client = (int)($_POST['def_pos_client'] ?? 0);
 $def_pos_store = (int)($_POST['def_pos_store'] ?? 0);
@@ -59,15 +60,17 @@ SET company_name = ?,
     def_pos_employee = ?, 
     def_pos_fund = ?,
     pos_type = ?,
-    pos_has_password = ? 
+    pos_has_password = ?,
+    showpulse = ?
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssiiiisissiiisi", 
+$stmt->bind_param("sssssiiiisissiiisii", 
     $companyname, $companyadd, $companytel, $edit_pass, $lang,
     $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
     $showrent, $showclinc, $def_pos_client, $def_pos_store, 
-    $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password
+    $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+    $showpulse
 );
 
 if ($stmt->execute()) {

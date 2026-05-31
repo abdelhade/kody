@@ -51,7 +51,15 @@
                     // بناء مصفوفة الصفوف
                     $rows = [];
                     if ($isAll) {
-                        $resAll = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 ORDER BY id ASC");
+                        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+                        $limit = 100;
+                        $offset = ($page - 1) * $limit;
+                        
+                        $totalRes = $conn->query("SELECT count(*) as cnt FROM myitems WHERE isdeleted = 0");
+                        $totalRow = $totalRes->fetch_assoc();
+                        $totalPages = ceil($totalRow['cnt'] / $limit);
+
+                        $resAll = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT $limit OFFSET $offset");
                         while ($r = $resAll->fetch_assoc()) {
                             $rows[] = ['item' => $r, 'qty_in' => 1];
                         }
@@ -108,6 +116,27 @@
         </tbody>
     </table>
 </form>
+
+<?php if ($isAll && isset($totalPages) && $totalPages > 1): ?>
+    <nav aria-label="Page navigation" class="mt-3">
+      <ul class="pagination justify-content-center flex-wrap">
+        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+          <a class="page-link" href="?q=all&page=<?= $page - 1 ?>">السابق</a>
+        </li>
+        
+        <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+            <li class="page-item <?= ($p == $page) ? 'active' : '' ?>">
+              <a class="page-link" href="?q=all&page=<?= $p ?>"><?= $p ?></a>
+            </li>
+        <?php endfor; ?>
+        
+        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+          <a class="page-link" href="?q=all&page=<?= $page + 1 ?>">التالي</a>
+        </li>
+      </ul>
+    </nav>
+<?php endif; ?>
+
                     </div>
                 </div>
 

@@ -61,6 +61,7 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="plugins/sweetalert2/sweetalert2.min.css">
   <link rel="icon" href="assets/favicon/favicon.png" type="image/png">
 
   <link rel="stylesheet" href="plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">

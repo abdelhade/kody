@@ -57,7 +57,7 @@ try {
         
         // تحديث حالة الطلب إلى مسدد ومحفوظ للتقارير (type 2 or maybe keep as 9 but closed?)
         // If type 2 is used for paid/archive, then this is fine.
-        $update_order = "UPDATE ot_head SET pro_tybe = 2 WHERE id = ?";
+        $update_order = "UPDATE ot_head SET pro_tybe = 2, crtime = crtime WHERE id = ?";
         $stmt_up = $conn->prepare($update_order);
         $stmt_up->bind_param("i", $order_id);
         $stmt_up->execute();

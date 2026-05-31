@@ -44,6 +44,7 @@
                             <tr>
                                 <th class="w-2">م</th>
                                 <th class="w-4">التاريخ</th>
+                                <th class="w-4">اليوم</th>
                                 <th class="w-2">ع الوحدات</th>
                                 <th class="w-2">س الوحدة</th>
                                 <th class="w-2">القيمة</th>
@@ -65,9 +66,14 @@
                             <tr>
                                 <td class="p-1 "><?= $i ?></td>
                                 <td class="p-1 "><?= $row['date'] ?></td>
-                                <td class="p-1 "><?= $row['qty'] ?></td>
-                                <td class="p-1 "><?= $row['price'] ?></td>
-                                <td class="p-1 "><?= $row['value'] ?></td>
+                                <?php
+                                $dayName = date('l', strtotime($row['date']));
+                                $daysAr = ['Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة'];
+                                ?>
+                                <td class="p-1 "><?= $daysAr[$dayName] ?? $dayName ?></td>
+                                <td class="p-1 "><?= $row['qty'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['qty']."</span>" : $row['qty'] ?></td>
+                                <td class="p-1 "><?= $row['price'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['price']."</span>" : $row['price'] ?></td>
+                                <td class="p-1 "><?= $row['value'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['value']."</span>" : $row['value'] ?></td>
                                 <td class="p-1 "><?= $row['info'] ?></td>
                                 <td class="p-1 "><?= $row['info2'] ?></td>
                              
@@ -92,6 +98,7 @@
                             <tr>
                                 <th>م</th>
                                 <th>تاريخ</th>
+                                <th>اليوم</th>
                                 <th>الحاله</th>
                                 <th>الشيفت</th>
                                 <th>دخول</th>
@@ -109,6 +116,11 @@
                                 <tr>
                                     <td><?= $x++ ?> -- <?= $rowlog['id'] ?></td>
                                     <td><?= $rowlog['day'] ?></td>
+                                    <?php
+                                    $dayNameLog = date('l', strtotime($rowlog['day']));
+                                    $daysArLog = ['Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة'];
+                                    ?>
+                                    <td><?= $daysArLog[$dayNameLog] ?? $dayNameLog ?></td>
                                     <td><?php
                                         if ($rowlog['statue'] == 0) {
                                             echo "<p class='bg-success'> اجازة </p>";
@@ -121,13 +133,14 @@
                                     <td>من : <?= $rowlog['starttime'] ?>الي : <?= $rowlog['endtime'] ?></td>
                                     <td><?= $rowlog['fpin'] ?></td>
                                     <td><?= $rowlog['fpout'] ?></td>
-                                    <td class="td7"><?= $rowlog['curhours'] ?></td>
-                                    <td class="td8"><?= $rowlog['realdue'] ?></td>
+                                    <td class="td7"><?= $rowlog['curhours'] == 0 ? "<span class='text-danger font-weight-bold'>".$rowlog['curhours']."</span>" : $rowlog['curhours'] ?></td>
+                                    <td class="td8"><?= $rowlog['realdue'] == 0 ? "<span class='text-danger font-weight-bold'>".$rowlog['realdue']."</span>" : $rowlog['realdue'] ?></td>
                                 </tr>
                             <?php } ?>
                         </tbody>
                         <tfoot>
                             <tr>
+                                <th></th>
                                 <th></th>
                                 <th></th>
                                 <th></th>

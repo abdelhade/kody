@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // 3. Update Original Invoice
                 $note_append = "\n- تم سداد الأجل ($amount) بتاريخ " . $full_date;
-                $stmt = $conn->prepare("UPDATE ot_head SET jal_amount = 0, jal_notes = CONCAT(COALESCE(jal_notes, ''), ?) WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE ot_head SET jal_amount = 0, jal_notes = CONCAT(COALESCE(jal_notes, ''), ?), crtime = crtime WHERE id = ?");
                 $stmt->bind_param("si", $note_append, $id);
                 $stmt->execute();
                 $stmt->close();

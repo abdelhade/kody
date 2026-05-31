@@ -303,8 +303,14 @@
                 ?>
                 <li class="nav-item">
                   <a href="pos_barcode.php" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p><?= $lang_pos_barcode ?></p>
+                    <i class="nav-icon fas fa-utensils"></i>
+                    <p>نقطة بيع مطعم</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="pos_supermarket.php" class="nav-link">
+                    <i class="nav-icon fas fa-shopping-cart"></i>
+                    <p>نقطة بيع سوبر ماركت</p>
                   </a>
                 </li>
               <?php } ?>
@@ -331,6 +337,14 @@
         <?php } ?>
 
 
+
+<!-- -------------------الزيارات  -->
+        <li class="nav-item">
+          <a href="visits.php" class="nav-link">
+            <i class="nav-icon fas fa-user-check"></i>
+            <p>الزيارات</p>
+          </a>
+        </li>
 
         <?php if (($role['sid_cards'] ?? 0) == 1) { ?>
 
@@ -635,6 +649,41 @@
             </li>
           <?php }
         } ?>
+
+
+        <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
+          <?php if (($role['sid_pulse'] ?? 1) == 1) { ?>
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link nav-link-basic">
+                <i class="nav-icon fas fa-bolt text-warning"></i>
+                <p>
+                  Pulse (تقييم لحظي)
+                  <i class="fas fa-angle-left right"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+                <li class="nav-item">
+                  <a href="pulse.php" class="nav-link">
+                    <i class="nav-icon fas fa-plus-circle"></i>
+                    <p>تسجيل تقييم</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="pulse_stats.php" class="nav-link">
+                    <i class="nav-icon fas fa-chart-bar"></i>
+                    <p>الإحصائيات واللوحة</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="pulse_types.php" class="nav-link">
+                    <i class="nav-icon fas fa-tags"></i>
+                    <p>أنواع التقييم</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+          <?php } ?>
+        <?php } ?>
 
 
         <?php if ($rowstg['showrent'] == 1) { ?>
@@ -1294,6 +1343,13 @@
                 <a href="reports.php?t=rents" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                   <p><?= $lang_rent_reports ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="visits_stats.php" class="nav-link">
+                  <i class="far "> <i class="nav-icon fas fa-chart-bar"></i> </i>
+                  <p>إحصائيات الزيارات</p>
                 </a>
               </li>
 

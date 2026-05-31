@@ -88,6 +88,10 @@ $lang_pos_barcode = "نقطه بيع باركود";
 $lang_table_management = "ادارة الطاولات";
 $lang_closed_sessions = "الشيفتات المنتهية";
 
+// Visits
+$lang_visits = "الزيارات";
+$lang_new_visit = "زيارة جديدة";
+
 // Cards
 $lang_card_management_title = "ادارة الكروت";
 $lang_add_card = "اضافة كارت";

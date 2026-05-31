@@ -321,6 +321,10 @@ $lang_pos_barcode = "Barcode POS";
 $lang_table_management = "Table Management";
 $lang_closed_sessions = "Closed Shifts";
 
+// Visits
+$lang_visits = "Visits";
+$lang_new_visit = "New Visit";
+
 // Cards
 $lang_card_management_title = "Card Management";
 $lang_add_card = "Add Card";

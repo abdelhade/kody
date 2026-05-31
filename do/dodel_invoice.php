@@ -130,7 +130,7 @@ try {
     $conn->query("UPDATE fat_details SET isdeleted = 1 WHERE pro_id = $id");
     
     // حذف رأس الفاتورة
-    $conn->query("UPDATE ot_head SET isdeleted = 1 WHERE id = $id");
+    $conn->query("UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE id = $id");
     
     // حذف القيود المحاسبية
     $conn->query("UPDATE journal_entries SET isdeleted = 1 WHERE op_id = $id");

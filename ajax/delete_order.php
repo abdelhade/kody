@@ -47,7 +47,7 @@ try {
         }
         
         // حذف رأس الطلب
-        $delete_order = "UPDATE ot_head SET isdeleted = 1 WHERE id = ?";
+        $delete_order = "UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE id = ?";
         $order_stmt = $conn->prepare($delete_order);
         $order_stmt->bind_param("i", $order_id);
         

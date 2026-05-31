@@ -107,7 +107,7 @@
                 <!-- جدول التفاصيل -->
                 <div class="card-body">
                     <div class="table">
-                        <table class="table table-bordered">
+                        <table id="myTable" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>م</th>
@@ -128,17 +128,20 @@
                                     </tr>
                                     <?php
                                 }
-
-                                if ($x > 0) {
-                                    ?>
+                                ?>
+                            </tbody>
+                            <?php
+                            if ($x > 0) {
+                                ?>
+                                <tfoot>
                                     <tr style="font-weight: bold; background: #f0f0f0;">
                                         <td colspan="2" class="text-center">الإجمالي الكلي</td>
                                         <td><?= number_format($grand_total, 2) ?></td>
                                     </tr>
-                                    <?php
-                                }
-                                ?>
-                            </tbody>
+                                </tfoot>
+                                <?php
+                            }
+                            ?>
                         </table>
                     </div>
                 </div>

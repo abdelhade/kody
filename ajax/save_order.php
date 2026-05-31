@@ -38,7 +38,8 @@ try {
                        fat_total = ?,
                        fat_disc = ?,
                        pro_value = ?,
-                       mdtime = CURRENT_TIMESTAMP
+                       mdtime = CURRENT_TIMESTAMP,
+                       crtime = crtime
                        WHERE id = ?";
         
         $stmt = $conn->prepare($updateQuery);

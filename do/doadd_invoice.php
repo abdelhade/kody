@@ -900,6 +900,9 @@ error_log('Last operation ID: ' . $last_op);
 error_log('All POST keys: ' . implode(', ', array_keys($_POST)));
 
 if ($submit == 'print') {
+    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
+        $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
+    }
     error_log('CONDITION MATCHED: submit == print');
     $redirect_url = "../print/print_sales.php?id=$last_op";
     error_log('Redirecting to: ' . $redirect_url);
@@ -907,6 +910,9 @@ if ($submit == 'print') {
     error_log('Header sent - this should not appear if redirect works');
     exit;
 } elseif ($submit == 'cash') {
+    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
+        $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
+    }
     error_log('CONDITION MATCHED: submit == cash');
     $redirect_url = "../print/receipt.php?id=$last_op";
     error_log('Redirecting to: ' . $redirect_url);
