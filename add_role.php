@@ -417,6 +417,10 @@
                                         <td class="text-center"><input type="checkbox" name="sid_sales" class="user-checkbox" checked></td>
                                     </tr>
                                     <tr class="tr1">
+                                        <td>اظهار الزيارات</td>
+                                        <td class="text-center"><input type="checkbox" name="sid_visits" class="user-checkbox" checked></td>
+                                    </tr>
+                                    <tr class="tr1">
                                         <td>اظهار قسم المشتريات</td>
                                         <td class="text-center"><input type="checkbox" name="sid_purchases" class="user-checkbox" checked></td>
                                     </tr>
@@ -511,6 +515,10 @@
                                     <tr class="tr1">
                                         <td>اظهار الجداول في الشاشة الرئيسية</td>
                                         <td class="text-center"><input type="checkbox" name="show_main_tables" class="user-checkbox" checked></td>
+                                    </tr>
+                                    <tr class="tr1">
+                                        <td>اظهار الموارد البشرية في الشاشه الرئيسية</td>
+                                        <td class="text-center"><input type="checkbox" name="show_main_hr" class="user-checkbox" checked></td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -3,562 +3,520 @@
 <?php include('includes/sidebar.php') ?>
 <?php include('includes/connect.php') ?>
 
+<?php
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$sqlemp = "SELECT * FROM `employees` WHERE id = '$id'";
+$resemp = $conn->query($sqlemp);
+$rowemp = $resemp ? $resemp->fetch_assoc() : null;
+$empValid = $rowemp && isset($rowemp['id']);
+
+$jopName = '';
+$dprtName = '';
+$townName = '';
+if ($empValid) {
+    if (!empty($rowemp['jop'])) {
+        $rowjop = $conn->query("SELECT name FROM `jops` WHERE id = '" . (int) $rowemp['jop'] . "'")->fetch_assoc();
+        $jopName = $rowjop['name'] ?? '';
+    }
+    if (!empty($rowemp['department'])) {
+        $rowdprt = $conn->query("SELECT name FROM `departments` WHERE id = '" . (int) $rowemp['department'] . "'")->fetch_assoc();
+        $dprtName = $rowdprt['name'] ?? '';
+    }
+    if (!empty($rowemp['town'])) {
+        $rowtwn = $conn->query("SELECT name FROM towns WHERE id = '" . (int) $rowemp['town'] . "'")->fetch_assoc();
+        $townName = $rowtwn['name'] ?? '';
+    }
+}
+?>
+
 <style>
-.content-wrapper {
-    background: #f8f9fa;
-}
+.emprofile-page .content-wrapper { background: #f4f6f9; }
 
-.card {
-    border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.card-header {
-    background: #fff;
-    border-bottom: 1px solid #e9ecef;
-    padding: 1rem 1.25rem;
-}
-
-.card-header h3, .card-header h5 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.profile-user-img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border: 3px solid #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.profile-username {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.list-group-item {
-    border: none;
-    border-bottom: 1px solid #f1f3f5;
-    padding: 0.875rem 1.25rem;
-    background: transparent;
-}
-
-.list-group-item:last-child {
-    border-bottom: none;
-}
-
-.list-group-item b {
-    color: #6c757d;
-    font-weight: 500;
-}
-
-.nav-pills .nav-link {
-    color: #6c757d;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    margin: 0 0.25rem;
-    font-weight: 500;
-}
-
-.nav-pills .nav-link.active {
-    background: #007bff;
+.emprofile-page .page-hero {
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 55%, #5eead4 100%);
+    border-radius: 12px;
     color: #fff;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
 }
-
-.table {
-    margin-bottom: 0;
-}
-
-.table thead th {
-    background: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    color: #495057;
+.emprofile-page .page-hero h1 { font-size: 1.35rem; font-weight: 700; margin: 0; color: #fff; }
+.emprofile-page .page-hero .badge-id {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
     font-weight: 600;
-    font-size: 0.9rem;
-    padding: 0.875rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
 }
+.emprofile-page .breadcrumb { background: transparent; padding: 0; margin: 0.5rem 0 0; }
+.emprofile-page .breadcrumb a { color: rgba(255,255,255,0.9); }
+.emprofile-page .breadcrumb-item.active { color: rgba(255,255,255,0.75); }
 
-.table td, .table th {
-    padding: 0.75rem;
-    vertical-align: middle;
-}
-
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #f8f9fa;
-}
-
-#totalSum {
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    padding: 0.375rem 0.5rem;
-    text-align: center;
-    width: 70px;
-    font-weight: 600;
-    background: #f8f9fa;
-}
-
-.btn {
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-}
-
-.btn-warning {
-    background: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-
-.btn-warning:hover {
-    background: #e0a800;
-    border-color: #d39e00;
-}
-
-.alert {
-    border-radius: 6px;
+.emprofile-page .card {
     border: none;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+}
+.emprofile-page .card-header {
+    background: #fff;
+    border-bottom: 1px solid #eef1f5;
+    padding: 0.9rem 1.25rem;
+}
+.emprofile-page .card-header h3,
+.emprofile-page .card-header h5 { margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b; }
+
+.emprofile-page .profile-card .profile-banner {
+    height: 72px;
+    background: linear-gradient(135deg, #0f766e, #2dd4bf);
+}
+.emprofile-page .profile-avatar-wrap {
+    margin-top: -48px;
+    padding: 0 1.25rem;
+}
+.emprofile-page .profile-user-img {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.emprofile-page .profile-username {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0.75rem 0 0.25rem;
+}
+.emprofile-page .profile-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; }
+
+.emprofile-page .stat-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.85rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+.emprofile-page .stat-chip b { color: #64748b; font-weight: 500; }
+.emprofile-page .stat-chip span { color: #0f172a; font-weight: 600; }
+.emprofile-page .kbi-score-wrap {
+    text-align: center;
+    padding: 0.75rem;
+    background: linear-gradient(180deg, #ecfdf5, #f0fdfa);
+    border-radius: 10px;
+    margin: 0.5rem 0 1rem;
+}
+.emprofile-page .kbi-score-wrap label { font-size: 0.75rem; color: #64748b; margin: 0; display: block; }
+.emprofile-page #totalSum {
+    border: none;
+    background: transparent;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0d9488;
+    width: 100%;
+    text-align: center;
+    padding: 0;
 }
 
-.text-muted {
-    color: #6c757d !important;
+.emprofile-page .about-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid #f1f5f9;
 }
+.emprofile-page .about-item:last-child { border-bottom: none; }
+.emprofile-page .about-item i {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    background: #ecfdf5;
+    color: #0d9488;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.emprofile-page .about-item strong { display: block; font-size: 0.8rem; color: #64748b; font-weight: 600; }
+.emprofile-page .about-item p { margin: 0.15rem 0 0; color: #334155; font-size: 0.9rem; }
 
-strong {
-    color: #495057;
+.emprofile-page .nav-pills { gap: 0.35rem; flex-wrap: wrap; }
+.emprofile-page .nav-pills .nav-link {
+    color: #64748b;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
     font-weight: 600;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+}
+.emprofile-page .nav-pills .nav-link:hover { background: #f1f5f9; color: #0f766e; }
+.emprofile-page .nav-pills .nav-link.active {
+    background: #0d9488;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }
 
-hr {
-    border-top: 1px solid #e9ecef;
+.emprofile-page .detail-grid { padding: 0.25rem 0; }
+.emprofile-page .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+.emprofile-page .detail-row:last-child { border-bottom: none; }
+.emprofile-page .detail-row b {
+    color: #64748b;
+    font-weight: 600;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+.emprofile-page .detail-row span { color: #1e293b; text-align: left; word-break: break-word; }
+
+.emprofile-page .table thead th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.emprofile-page .table td,
+.emprofile-page .table th { vertical-align: middle; }
+.emprofile-page .kbi-name { margin: 0; font-weight: 600; color: #1e293b; font-size: 0.9rem; }
+.emprofile-page .kbi-form .form-control { border-radius: 8px; max-width: 120px; }
+.emprofile-page .btn-edit-emp {
+    background: #f59e0b;
+    border: none;
+    color: #1e293b;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+}
+.emprofile-page .btn-edit-emp:hover { background: #d97706; color: #fff; }
+
+.emprofile-page .alert-invalid {
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
 }
 </style>
 
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<div class="content-wrapper emprofile-page">
     <section class="content-header">
-      <div class="container-fluid">
-        
-      <div class="bg-danger">
-            <?php 
-$id = $_GET['id'];
-
-$sqlemp = "SELECT * FROM `employees`  where id = '$id' ";
-$resemp = $conn->query($sqlemp);
-$rowemp = $resemp->fetch_assoc();
-if (!isset($rowemp['id'])) {
-  ?>
-<h2>لقد دخلت هذه الصفحه من مكان غير المكان المخصص .. من فضلك عدم التلاعب بالعنوان..ارجع الي 
-  
-<a href="dashboard.php" class="btn btn-success"><h2>الرئيسية</h2></a></h2>
-<?php die; } ?>
-</div>
-        <div class="row mb-2">
-          <div class="col-sm-6">
-
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="dashboard.php"><?= $lang_main ?></a></li>
-              <li class="breadcrumb-item active"><a href="employees.php"></a></li>
-            </ol>
-          </div>
-        </div>
-      </div><!-- /.container-fluid -->
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-3">
-
-            <!-- Profile Image -->
-            <div class="card">
-              <div class="card-body text-center">
-                <img onerror="this.src='assets/alt/altemprofile.png';" class="profile-user-img img-fluid img-circle mb-3"
-                     src="assets/<?= $rowemp['imgs']?>"
-                     alt="User profile picture">
-
-                <h3 class="profile-username"><?= $rowemp['name'] ?></h3>
-                <p class="text-muted small"><?= $rowemp['info'] ?></p>
-
-                <ul class="list-group list-group-flush mt-3">
-                  <li class="list-group-item d-flex justify-content-between">
-                    <b>الوظيفه</b>
-                    <span><?php
-                    $jopid = $rowemp['jop'];
-                    $rowjop = $conn->query("SELECT * FROM `jops` where id = $jopid ")->fetch_assoc();
-                     echo $rowjop['name'] ?></span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <b>الادراه</b>
-                    <span><?php
-                    $dprtid = $rowemp['department'];
-                    $rowdprt = $conn->query("SELECT * FROM `departments` where id = $dprtid ")->fetch_assoc();
-                     echo $rowdprt['name'] ?></span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <b>المرتب</b>
-                    <span><?= number_format($rowemp['salary']) ?></span>
-                  </li>
-                  <li class="list-group-item d-flex justify-content-between">
-                    <b>التقييم العام</b>
-                    <input type="text" id="totalSum" readonly>
-                  </li>
-                </ul>
-
-                <a href="edit_employee.php?id=<?= $id?>" class="btn btn-warning btn-block mt-3">تعديل البيانات</a>
-              </div>
+        <div class="container-fluid">
+            <?php if (!$empValid): ?>
+            <div class="alert alert-danger alert-invalid shadow-sm">
+                <i class="fas fa-exclamation-triangle fa-2x mb-3 d-block"></i>
+                <h4 class="mb-2">غير مسموح بالوصول</h4>
+                <p class="mb-3 text-muted">تم الدخول من رابط غير صالح. الرجاء العودة من القائمة الرسمية.</p>
+                <a href="dashboard.php" class="btn btn-success btn-lg"><i class="fas fa-home ml-1"></i> الرئيسية</a>
             </div>
-            <!-- /.card -->
-
-            <!-- About Me Box -->
-            <div class="card">
-              <div class="card-header">
-                <h3>نبذة عني</h3>
-              </div>
-              <div class="card-body">
-                <strong>التعليم</strong>
-                <p class="text-muted mb-3"><?= $rowemp['education']?></p>
-
-                <strong>الموقع</strong>
-                <p class="text-muted mb-3"><?= $rowemp['town']?>, <?= $rowemp['address']?></p>
-
-                <strong>المهارات</strong>
-                <p class="text-muted mb-3"><?= $rowemp['skills'] ?></p>
-
-                <strong>معلومات</strong>
-                <p class="text-muted mb-0"><?= $rowemp['info'] ?></p>
-              </div>
-            </div>
-            <!-- /.card -->
-          </div>
-          <!-- /.col -->
-          <div class="col-md-9">
-            <div class="card">
-              <div class="card-header p-2">
-                <ul class="nav nav-pills">
-                  <li class="nav-item"><a class="nav-link active" href="#activity" data-toggle="tab"><?= $lang_emprofilemainentry ?></a></li>
-                  <li class="nav-item"><a class="nav-link" href="#emprofilejop" data-toggle="tab"><?= $lang_emprofilejopentry ?></a></li>
-                  <li class="nav-item"><a class="nav-link" href="#timeline" data-toggle="tab">التقييم (KBI)</a></li>
-                </ul>
-              </div><!-- /.card-header -->
-              <div class="card-body">
-                <div class="tab-content">
-
-                  <div class="active tab-pane" id="activity">
-                    <div class="card">
-                      <div class="card-header">
-                        <h5><?=$lang_addemployee_personalinfo?></h5>
-                      </div>
-                      <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_publicname?></b>
-                             <span><?= $rowemp['name'] ?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_email?></b>
-                             <span><?= $rowemp['email']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_phone?></b>
-                             <span><?= $rowemp['number']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_dateofbirth?></b>
-                             <span><?= $rowemp['dateofbirth']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_gender?></b>
-                             <span><?php echo $rowemp['gender'] == 0 ? 'ذكر' : 'انثي'; ?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_info?></b>
-                             <span><?= $rowemp['info']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_address1?></b>
-                             <span><?= $rowemp['address']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_address2?></b>
-                             <span><?= $rowemp['address2']?></span>
-                         </li>
-                         <li class="list-group-item d-flex justify-content-between">
-                             <b><?=$lang_addemployee_country?></b>
-                             <span><?php  $twnid = $rowemp['town'];
-                             $rowtwn = $conn->query("SELECT * FROM towns where id = '$twnid'")->fetch_assoc();
-                             echo $rowtwn['name'];
-                             ?></span>
-                         </li>
-                       </ul>
-                      </div>
+            <?php else: ?>
+            <div class="page-hero">
+                <div class="d-flex flex-wrap justify-content-between align-items-start">
+                    <div>
+                        <h1><i class="fas fa-user-tie ml-2"></i><?= htmlspecialchars($rowemp['name']) ?></h1>
+                        <span class="badge badge-id mt-2">#<?= (int) $rowemp['id'] ?></span>
                     </div>
-                    <!-- /.post -->
-
-                    <!-- Post -->
-                    <div class="post">
-                      <!-- /.user-block -->
-                      <div class="row mb-3">
-                        <div class="col-sm-6">
-                          
-                        </div>
-                        <!-- /.col -->
-                        <div class="col-sm-6">
-                          <div class="row">
-                            <!-- /.col -->
-                          </div>
-                          <!-- /.row -->
-                        </div>
-                        <!-- /.col -->
-                      </div>
-                      <!-- /.row -->
-
-                      <p>
-                        
-                        <span class="float-right">
-                         
-                        </span>
-                      </p>
-
-                    </div>
-                    <!-- /.post -->
-                  </div>
-                  <div class=" tab-pane" id="emprofilejop">
-                    <div class="card">
-                      <div class="card-header">
-                        <h5><?=$lang_emprofilejop?></h5>
-                      </div>
-                      <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_job?></b>
-                              <span><?php $jopid = $rowemp['jop'];
-                              $resjop = $conn->query("SELECT name from jops where id = '$jopid'");
-                              $rowjop = $resjop?->fetch_assoc();
-                              echo $rowjop ? $rowjop['name'] : 'N/A'; ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_jobdepart?></b>
-                              <span><?php $dprtid = $rowemp['department'];
-                              $resdprt = $conn->query("SELECT name from departments where id = '$dprtid'");
-                              $rowdprt = $resdprt?->fetch_assoc();
-                              echo $rowdprt ? $rowdprt['name'] : 'N/A'; ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_jobtype?></b>
-                              <span><?php $tybid = $rowemp['joptybe'];
-                              $restyb = $conn->query("SELECT name from joptybes where id = '$tybid'");
-                              $rowtyb = $restyb?->fetch_assoc();
-                              echo $rowtyb ? $rowtyb['name'] : 'N/A'; ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_jobstart?></b>
-                              <span><?= $rowemp['dateofhire'] ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_jobend?></b>
-                              <span><?= $rowemp['dateofend'] ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_salary?></b>
-                              <span><?= number_format($rowemp['salary']) ?></span>
-                          </li>
-                          <li class="list-group-item d-flex justify-content-between">
-                              <b><?=$lang_addemployee_shift?></b>
-                              <span><?php $shftid = $rowemp['shift'];
-                              $rowshft = $conn->query("SELECT name from shifts where id = '$shftid'")->fetch_assoc();
-                              echo $rowshft['name'] ?></span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    <!-- /.post -->
-
-                    <!-- Post -->
-                    <div class="post">
-                      <!-- /.user-block -->
-                      <div class="row mb-3">
-                        <div class="col-sm-6">
-                        </div>
-                        <!-- /.col -->
-                        <div class="col-sm-6">
-                          <div class="row">
-                            <!-- /.col -->
-                          </div>
-                          <!-- /.row -->
-                        </div>
-                        <!-- /.col -->
-                      </div>
-                      <!-- /.row -->
-                      <p>
-                        <span class="float-right">
-                        </span>
-                      </p>
-                    </div>
-                    <!-- /.post -->
-                  </div>
-
-                  <!-- /.tab-pane -->
-                  <div class="tab-pane" id="timeline">
-                    <div class="card">
-                      <div class="card-body">
-                        <form id="kbiForm" action="" method="post">
-                          <div class="table-responsive">
-                            <table id="mytable" class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>المعدل</th>
-                                                <th>الوزن</th>
-                                                <th>التقييم</th>
-                                                <th>القيمة</th>
-                                                <th></th>
-                                            </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                
-                                                <?php 
-                                                $resemkbi = $conn->query("SELECT * FROM `emp_kbis`  where emp_id = '$id'");
-                                                while ($rowemkbi = $resemkbi->fetch_assoc()) {
-                                                ?>
-                                                <tr>
-                                                    <th>
-                                                      <?php
-                                                      $kbi = $rowemkbi['kbi_id'];
-                                                      $rowkname = $conn->query("SELECT * FROM kbis where id = $kbi")->fetch_assoc();?>
-                                                    <p title="<?= $rowkname['info']?>"><?= $rowkname['kname']?></p>  
-                                                    </th>
-                                                    <th><input type="text" hidden value="<?= $rowemkbi['id']?>" name="kbi_id[]">
-                                                      <input type="text" id="kbi_weight" class="form-control decimalInput" placeholder="" pattern="^\d+(\.\d{0,2})?$" title="exm: 0.15" name="kbi_weight[]"  required value="<?= $rowemkbi['kbi_weight']?>"></th>
-
-                                                    <th><input type="text" id="kbi_rate" class="form-control decimalInput" placeholder="" pattern="^\d+(\.\d{0,2})?$" title="exm: 0.15" name="kbi_rate[]" required value="<?= $rowemkbi['kbi_rate']?>"></th>
-
-                                                    <th><input readonly type="text" id="kbi_sum" class="form-control decimalInput" placeholder="" pattern="^\d+(\.\d{0,2})?$" title="exm: 0.15" name="kbi_sum[]" required value="<?= $rowemkbi['kbi_sum']?>"></th>
-                                                    </th>
-                                                </tr>
-                                                
-                                                <?php } ?>
-                                            </tbody>
-                                            <tfoot>
-                                              <tr>
-                                                <th>المعدل</th>
-                                                <th>الوزن <p id="total_weight"></p></th>
-                                                <th>التقييم</th>
-                                                <th>القيمة</th>
-                                                <th></th>
-                                                
-                                                </tr>
-                                            </tfoot>
-                                            </form>
-
-                            </table>
-                          </div>
-                          <div class="mt-3">
-                            <button type="submit" class="btn btn-success">حفظ التعديلات</button>
-                          </div>
-                        </form>
-                        <div id="successMessage" style="display:none;" class="alert alert-success mt-3"></div>
-                        <div id="errorMessage" style="display:none;" class="alert alert-danger mt-3"></div>
-                      </div>
-                    </div>
-                  </div>
-                    
-
-                  <!-- /.tab-pane -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb float-sm-right mb-0">
+                            <li class="breadcrumb-item"><a href="dashboard.php"><?= $lang_main ?></a></li>
+                            <li class="breadcrumb-item"><a href="employees.php"><?= $lang_employeeslist ?></a></li>
+                            <li class="breadcrumb-item active">الملف الشخصي</li>
+                        </ol>
+                    </nav>
                 </div>
-                <!-- /.tab-content -->
-              </div><!-- /.card-body -->
             </div>
-            <!-- /.nav-tabs-custom -->
-          </div>
-          <!-- /.col -->
+            <?php endif; ?>
         </div>
-        <!-- /.row -->
-      </div><!-- /.container-fluid -->
     </section>
-    <!-- /.content -->
-  </div>
 
-  <script>
+    <?php if ($empValid): ?>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-4 col-xl-3">
+                    <div class="card profile-card">
+                        <div class="profile-banner"></div>
+                        <div class="card-body text-center pb-0">
+                            <div class="profile-avatar-wrap">
+                                <img onerror="this.src='assets/alt/altemprofile.png';"
+                                     class="profile-user-img img-fluid img-circle"
+                                     src="assets/<?= htmlspecialchars($rowemp['imgs']) ?>"
+                                     alt="<?= htmlspecialchars($rowemp['name']) ?>">
+                            </div>
+                            <h3 class="profile-username"><?= htmlspecialchars($rowemp['name']) ?></h3>
+                            <?php if (!empty($rowemp['info'])): ?>
+                            <p class="profile-meta"><?= htmlspecialchars($rowemp['info']) ?></p>
+                            <?php endif; ?>
+
+                            <div class="text-right px-1">
+                                <div class="stat-chip">
+                                    <b><i class="fas fa-briefcase ml-1 text-teal"></i> الوظيفة</b>
+                                    <span><?= htmlspecialchars($jopName ?: '—') ?></span>
+                                </div>
+                                <div class="stat-chip">
+                                    <b><i class="fas fa-building ml-1 text-teal"></i> الإدارة</b>
+                                    <span><?= htmlspecialchars($dprtName ?: '—') ?></span>
+                                </div>
+                                <div class="stat-chip">
+                                    <b><i class="fas fa-money-bill-wave ml-1 text-teal"></i> المرتب</b>
+                                    <span><?= number_format((float) $rowemp['salary']) ?></span>
+                                </div>
+                            </div>
+
+                            <div class="kbi-score-wrap">
+                                <label>التقييم العام (KBI)</label>
+                                <input type="text" id="totalSum" readonly aria-label="التقييم العام">
+                            </div>
+
+                            <a href="edit_employee.php?id=<?= $id ?>" class="btn btn-edit-emp btn-block mb-3">
+                                <i class="fas fa-edit ml-1"></i> تعديل البيانات
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-info-circle text-teal ml-1"></i> نبذة عني</h3>
+                        </div>
+                        <div class="card-body pt-2">
+                            <div class="about-item">
+                                <i class="fas fa-graduation-cap"></i>
+                                <div>
+                                    <strong>التعليم</strong>
+                                    <p><?= htmlspecialchars($rowemp['education'] ?: '—') ?></p>
+                                </div>
+                            </div>
+                            <div class="about-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <div>
+                                    <strong>الموقع</strong>
+                                    <p><?= htmlspecialchars(trim(($townName ? $townName . '، ' : '') . ($rowemp['address'] ?? ''), '، ') ?: '—') ?></p>
+                                </div>
+                            </div>
+                            <div class="about-item">
+                                <i class="fas fa-tools"></i>
+                                <div>
+                                    <strong>المهارات</strong>
+                                    <p><?= htmlspecialchars($rowemp['skills'] ?: '—') ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8 col-xl-9">
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-pills card-header-pills">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#activity" data-toggle="tab">
+                                        <i class="fas fa-id-card ml-1"></i> <?= $lang_emprofilemainentry ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#emprofilejop" data-toggle="tab">
+                                        <i class="fas fa-briefcase ml-1"></i> <?= $lang_emprofilejopentry ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#timeline" data-toggle="tab">
+                                        <i class="fas fa-chart-line ml-1"></i> التقييم (KBI)
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="tab-content">
+                                <div class="active tab-pane" id="activity">
+                                    <div class="card-header border-0 bg-light">
+                                        <h5 class="mb-0"><?= $lang_addemployee_personalinfo ?></h5>
+                                    </div>
+                                    <div class="detail-grid">
+                                        <div class="detail-row"><b><?= $lang_publicname ?></b><span><?= htmlspecialchars($rowemp['name']) ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_email ?></b><span><?= htmlspecialchars($rowemp['email'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_phone ?></b><span><?= htmlspecialchars($rowemp['number'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_dateofbirth ?></b><span><?= htmlspecialchars($rowemp['dateofbirth'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_gender ?></b><span><?= $rowemp['gender'] == 0 ? 'ذكر' : 'أنثى' ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_info ?></b><span><?= htmlspecialchars($rowemp['info'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_address1 ?></b><span><?= htmlspecialchars($rowemp['address'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_address2 ?></b><span><?= htmlspecialchars($rowemp['address2'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_country ?></b><span><?= htmlspecialchars($townName ?: '—') ?></span></div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane" id="emprofilejop">
+                                    <div class="card-header border-0 bg-light">
+                                        <h5 class="mb-0"><?= $lang_emprofilejop ?></h5>
+                                    </div>
+                                    <div class="detail-grid">
+                                        <?php
+                                        $tybName = 'N/A';
+                                        if (!empty($rowemp['joptybe'])) {
+                                            $rowtyb = $conn->query("SELECT name FROM joptybes WHERE id = '" . (int) $rowemp['joptybe'] . "'")->fetch_assoc();
+                                            $tybName = $rowtyb['name'] ?? 'N/A';
+                                        }
+                                        $shftName = 'N/A';
+                                        if (!empty($rowemp['shift'])) {
+                                            $rowshft = $conn->query("SELECT name FROM shifts WHERE id = '" . (int) $rowemp['shift'] . "'")->fetch_assoc();
+                                            $shftName = $rowshft['name'] ?? 'N/A';
+                                        }
+                                        ?>
+                                        <div class="detail-row"><b><?= $lang_addemployee_job ?></b><span><?= htmlspecialchars($jopName ?: 'N/A') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_jobdepart ?></b><span><?= htmlspecialchars($dprtName ?: 'N/A') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_jobtype ?></b><span><?= htmlspecialchars($tybName) ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_jobstart ?></b><span><?= htmlspecialchars($rowemp['dateofhire'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_jobend ?></b><span><?= htmlspecialchars($rowemp['dateofend'] ?: '—') ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_salary ?></b><span><?= number_format((float) $rowemp['salary']) ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_shift ?></b><span><?= htmlspecialchars($shftName) ?></span></div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane" id="timeline">
+                                    <div class="card-body kbi-form">
+                                        <form id="kbiForm" action="" method="post">
+                                            <div class="table-responsive">
+                                                <table id="mytable" class="table table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>المؤشر</th>
+                                                            <th>الوزن</th>
+                                                            <th>التقييم %</th>
+                                                            <th>القيمة</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php
+                                                        $resemkbi = $conn->query("SELECT * FROM `emp_kbis` WHERE emp_id = '$id'");
+                                                        while ($rowemkbi = $resemkbi->fetch_assoc()):
+                                                            $rowkname = null;
+                                                            if (!empty($rowemkbi['kbi_id'])) {
+                                                                $rowkname = $conn->query("SELECT * FROM kbis WHERE id = '" . (int) $rowemkbi['kbi_id'] . "'")->fetch_assoc();
+                                                            }
+                                                        ?>
+                                                        <tr>
+                                                            <td>
+                                                                <input type="hidden" name="kbi_id[]" value="<?= (int) $rowemkbi['id'] ?>">
+                                                                <p class="kbi-name" title="<?= htmlspecialchars($rowkname['info'] ?? '') ?>">
+                                                                    <?= htmlspecialchars($rowkname['kname'] ?? 'N/A') ?>
+                                                                </p>
+                                                            </td>
+                                                            <td>
+                                                                <input type="text" class="form-control form-control-sm decimalInput kbi-weight"
+                                                                       pattern="^\d+(\.\d{0,2})?$" name="kbi_weight[]" required
+                                                                       value="<?= htmlspecialchars($rowemkbi['kbi_weight']) ?>">
+                                                            </td>
+                                                            <td>
+                                                                <input type="text" class="form-control form-control-sm decimalInput kbi-rate"
+                                                                       pattern="^\d+(\.\d{0,2})?$" name="kbi_rate[]" required
+                                                                       value="<?= htmlspecialchars($rowemkbi['kbi_rate']) ?>">
+                                                            </td>
+                                                            <td>
+                                                                <input readonly type="text" class="form-control form-control-sm kbi-sum"
+                                                                       name="kbi_sum[]" required
+                                                                       value="<?= htmlspecialchars($rowemkbi['kbi_sum']) ?>">
+                                                            </td>
+                                                        </tr>
+                                                        <?php endwhile; ?>
+                                                    </tbody>
+                                                    <tfoot class="bg-light">
+                                                        <tr>
+                                                            <th>الإجمالي</th>
+                                                            <th><span id="total_weight" class="text-teal font-weight-bold">0</span></th>
+                                                            <th></th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                            <div class="p-3 border-top">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-save ml-1"></i> حفظ التعديلات
+                                                </button>
+                                            </div>
+                                        </form>
+                                        <div id="successMessage" style="display:none;" class="alert alert-success mx-3"></div>
+                                        <div id="errorMessage" style="display:none;" class="alert alert-danger mx-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+</div>
+
+<?php if ($empValid): ?>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to update the sum for each row
     function updateRowSum(row) {
-        const kbiWeight = parseFloat(row.querySelector('[id^="kbi_weight"]').value) || 0;
-        const kbiRate = parseFloat(row.querySelector('[id^="kbi_rate"]').value) || 0;
-        const kbiSum = row.querySelector('[id^="kbi_sum"]');
-        const sum = kbiWeight * (kbiRate / 100);
-        kbiSum.value = sum.toFixed(2);
+        const w = parseFloat(row.querySelector('.kbi-weight')?.value) || 0;
+        const r = parseFloat(row.querySelector('.kbi-rate')?.value) || 0;
+        const sumEl = row.querySelector('.kbi-sum');
+        if (sumEl) sumEl.value = (w * (r / 100)).toFixed(2);
     }
 
-    // Function to update the total sum
     function updateTotalSum() {
         let total = 0;
-        document.querySelectorAll('input[name^="kbi_sum"]').forEach(function(input) {
+        document.querySelectorAll('.kbi-sum').forEach(function(input) {
             total += parseFloat(input.value) || 0;
         });
-        document.getElementById('totalSum').value = total.toFixed(2);
+        const el = document.getElementById('totalSum');
+        if (el) el.value = total.toFixed(2);
     }
-    
 
-
+    function updateTotalWeight() {
+        let sum = 0;
+        document.querySelectorAll('[name="kbi_weight[]"]').forEach(function(input) {
+            sum += parseFloat(input.value) || 0;
+        });
+        const el = document.getElementById('total_weight');
+        if (el) el.textContent = sum.toFixed(2);
+    }
 
     document.querySelectorAll('.decimalInput').forEach(function(input) {
         input.addEventListener('input', function() {
             const row = this.closest('tr');
-            updateRowSum(row);
+            if (row) updateRowSum(row);
             updateTotalSum();
+            updateTotalWeight();
         });
     });
 
+    document.querySelectorAll('#mytable tbody tr').forEach(updateRowSum);
     updateTotalSum();
+    updateTotalWeight();
 
     document.getElementById('kbiForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log('Form submitted');
         fetch('js/ajax/update_kbi.php', {
             method: 'POST',
             body: new URLSearchParams(new FormData(this))
         })
-        .then(response => response.text())
-        .then(data => {
-            console.log('AJAX request successful. Response:', data);
-            document.getElementById('successMessage').textContent = "تم التعديل بنجاح";
-            document.getElementById('successMessage').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('successMessage').style.display = 'none';
-            }, 2000);
+        .then(function(response) { return response.text(); })
+        .then(function() {
+            var ok = document.getElementById('successMessage');
+            ok.textContent = 'تم التعديل بنجاح';
+            ok.style.display = 'block';
+            setTimeout(function() { ok.style.display = 'none'; }, 2000);
             updateTotalSum();
         })
-        .catch(error => {
-            console.error('AJAX request failed:', error);
-            document.getElementById('errorMessage').textContent = 'تأكد من البيانات و الاتصال';
-            document.getElementById('errorMessage').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('errorMessage').style.display = 'none';
-            }, 2000);
+        .catch(function() {
+            var err = document.getElementById('errorMessage');
+            err.textContent = 'تأكد من البيانات والاتصال';
+            err.style.display = 'block';
+            setTimeout(function() { err.style.display = 'none'; }, 2000);
         });
     });
 });
 </script>
-<script>
-  $(document).ready(function() {
-    function updateTotal() {
-        var sum = $('[name="kbi_weight[]"]').get().reduce((s, el) => s + (parseFloat($(el).val()) || 0), 0);
-        $('#total_weight').text(sum.toFixed(2));
-    }
-    $('[name="kbi_weight[]"]').on('input', updateTotal);
-    updateTotal();
-});
-</script>
+<?php endif; ?>
 
 <?php include('includes/footer.php') ?>

@@ -2893,7 +2893,8 @@ CREATE TABLE `usr_pwrs` (
   `show_all_tasks` int(1) DEFAULT NULL,
   `show_main_cards` tinyint(1) NOT NULL DEFAULT 1,
   `show_main_elements` tinyint(1) NOT NULL DEFAULT 1,
-  `show_main_tables` tinyint(1) NOT NULL DEFAULT 1
+  `show_main_tables` tinyint(1) NOT NULL DEFAULT 1,
+  `show_main_hr` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

@@ -10,7 +10,10 @@ if (isset($rowchkname)){echo "<center><h1 class='bg-danger'>يوجد ادخال 
 	" ;die;}
 $basmaid = $_POST['basmaid'];   
 $password = $_POST['password'];
-$ent_tybe = $_POST['ent_tybe'];
+$ent_tybe = (int)($_POST['ent_tybe'] ?? 1);
+if ($ent_tybe < 1 || $ent_tybe > 5) {
+    $ent_tybe = 1;
+}
 $hash = md5($password);
 $number = $_POST['number']; 
 $email = $_POST['email'];

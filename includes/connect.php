@@ -77,7 +77,13 @@ set_exception_handler(function ($e) {
         $basePath = '';
     }
     
-    header('Location: ' . $basePath . 'sql_error.php?code=' . $errorCode);
+    $errorUrl = $basePath . 'sql_error.php?code=' . $errorCode;
+    if (!headers_sent()) {
+        header('Location: ' . $errorUrl);
+        exit;
+    }
+    echo '<script>location.href=' . json_encode($errorUrl) . ';</script>';
+    echo '<noscript><meta http-equiv="refresh" content="0;url=' . htmlspecialchars($errorUrl, ENT_QUOTES, 'UTF-8') . '"></noscript>';
     exit;
 });
 if (file_exists('simple_logger.php')) {
@@ -101,6 +107,16 @@ $user_role_id = $_SESSION['usrole'];
 $sqlrole = "SELECT * FROM `usr_pwrs` WHERE id = $user_role_id ";
 $resrole = $conn->query($sqlrole);
 $role = $resrole->fetch_assoc();
+}
+
+$colVisits = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'sid_visits'");
+if ($colVisits && $colVisits->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN sid_visits INT DEFAULT 1');
+}
+
+$colMainHr = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'show_main_hr'");
+if ($colMainHr && $colMainHr->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN show_main_hr TINYINT(1) NOT NULL DEFAULT 1');
 }
 
 $edit_pass = $rowstg['edit_pass'];

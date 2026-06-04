@@ -12,7 +12,7 @@ LEFT JOIN fat_details d ON d.item_id = i.id
     AND (d.fat_tybe = 9 OR d.fat_tybe = 3)
 WHERE i.isdeleted = 0
 GROUP BY i.id
-ORDER BY (total_value - (total_qty * i.cost_price)) DESC
+ORDER BY (COALESCE(SUM(d.det_value), 0) - (COALESCE(SUM(d.qty_out), 0) * i.cost_price)) DESC
 LIMIT 5 OFFSET 0
 ";
 
