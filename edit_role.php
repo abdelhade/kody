@@ -428,6 +428,10 @@ if ($hash_id !== $hash) {
                                 <td><input type="checkbox" name="sid_sales"  class="user-checkbox" <?php if( $rowrol['sid_sales'] == 1){echo "checked"; }?>></td>
                             </tr>
                             <tr class="tr1">
+                                <td>اظهار الزيارات من الجانب الايمن</td>
+                                <td><input type="checkbox" name="sid_visits"  class="user-checkbox" <?php if( ($rowrol['sid_visits'] ?? 1) == 1){echo "checked"; }?>></td>
+                            </tr>
+                            <tr class="tr1">
                                 <td>اظهار قسم المشتريات من الجانب الايمن</td>
                                 <td><input type="checkbox" name="sid_purchases"  class="user-checkbox" <?php if( $rowrol['sid_purchases'] == 1){echo "checked"; }?>></td>
                             </tr>
@@ -508,6 +512,10 @@ if ($hash_id !== $hash) {
                             <tr class="tr1">
                                 <td>اظهار الجداول في الشاشة الرئيسية</td>
                                 <td><input type="checkbox"  name="show_main_tables"  class="user-checkbox" <?php if( $rowrol['show_main_tables'] == 1){echo "checked"; }?>></td>
+                            </tr>
+                            <tr class="tr1">
+                                <td>اظهار الموارد البشرية في الشاشه الرئيسية</td>
+                                <td><input type="checkbox"  name="show_main_hr"  class="user-checkbox" <?php if( ($rowrol['show_main_hr'] ?? 1) == 1){echo "checked"; }?>></td>
                             </tr>
                         </tbody>
                         </table>

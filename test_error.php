@@ -8,14 +8,14 @@ $user_id = 1;
 
 $items_query = "
     SELECT 
-        COALESCE(c.cname, 'بدون مجموعة') as category_name,
+        COALESCE(c.gname, 'بدون مجموعة') as category_name,
         i.iname as item_name,
         SUM(d.qty_out) as total_qty,
         SUM(d.det_value) as total_value
     FROM fat_details d
     JOIN ot_head h ON d.fatid = h.id
     JOIN myitems i ON d.item_id = i.id
-    LEFT JOIN categores c ON i.cat_id = c.id
+    LEFT JOIN item_group c ON i.group1 = c.id
     WHERE h.pro_date = ?
       AND h.crtime > ?
       AND h.crtime <= ?
@@ -23,9 +23,9 @@ $items_query = "
       AND d.isdeleted = 0
       AND h.isdeleted = 0
       AND (h.pro_tybe = 9 OR h.pro_tybe = 3 OR h.pro_tybe = 10 OR h.pro_tybe = 11)
-    GROUP BY c.cname, i.iname
+    GROUP BY c.gname, i.iname
     HAVING total_qty > 0
-    ORDER BY c.cname ASC, total_qty DESC
+    ORDER BY c.gname ASC, total_qty DESC
 ";
 
 $stmt = $conn->prepare($items_query);

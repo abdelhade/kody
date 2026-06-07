@@ -220,6 +220,7 @@ if ($rollname === null) {
     $sid_entry = isset($_POST['sid_entry']) ?  1: 0;
     $sid_stock = isset($_POST['sid_stock']) ?  1: 0;
     $sid_sales = isset($_POST['sid_sales']) ?  1: 0;
+    $sid_visits = isset($_POST['sid_visits']) ? 1 : 0;
     $sid_purchases = isset($_POST['sid_purchases']) ? 1 : 0;
     $sid_vouchers = isset($_POST['sid_vouchers']) ? 1 : 0;
     $sid_clinics = isset($_POST['sid_clinics']) ? 1 : 0;
@@ -240,6 +241,7 @@ if ($rollname === null) {
     $show_main_cards = isset($_POST['show_main_cards']) ? 1 : 0;    
     $show_main_elements = isset($_POST['show_main_elements']) ? 1 : 0;    
     $show_main_tables = isset($_POST['show_main_tables']) ? 1 : 0;    
+    $show_main_hr = isset($_POST['show_main_hr']) ? 1 : 0;    
     
 
 $sqledit = "UPDATE `usr_pwrs` 
@@ -413,6 +415,7 @@ SET
 `sid_entry`= '$sid_entry',
 `sid_stock`= '$sid_stock',
 `sid_sales`= '$sid_sales',
+`sid_visits`= '$sid_visits',
 `sid_purchases`= '$sid_purchases',
 `sid_vouchers`= '$sid_vouchers',
 `sid_clinics`= '$sid_clinics',
@@ -429,6 +432,7 @@ SET
 `show_main_cards`= '$show_main_cards',
 `show_main_elements`= '$show_main_elements',
 `show_main_tables`= '$show_main_tables',
+`show_main_hr`= '$show_main_hr',
 `show_all_tasks`= '$show_all_tasks'
 
 WHERE id = $id";

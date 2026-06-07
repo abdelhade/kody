@@ -36,6 +36,14 @@
           </a>
         </li>
 
+        <?php if (($role['sid_visits'] ?? 1) == 1) { ?>
+          <li class="nav-item">
+            <a href="visits.php" class="nav-link">
+              <i class="nav-icon fas fa-user-check"></i>
+              <p><?= $lang_visits ?? 'الزيارات' ?></p>
+            </a>
+          </li>
+        <?php } ?>
 
         <!--                                             البيانات الاساسيه                                                                        -->
         <?php if (($role['sid_entry'] ?? 0) == 1) { ?>
@@ -283,7 +291,7 @@
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="stock" style="display: none;">
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="pos-menu" style="display: none;">
 
               <?php
               // جلب نوع نظام POS من الإعدادات
@@ -335,16 +343,6 @@
             </ul>
           </li>
         <?php } ?>
-
-
-
-<!-- -------------------الزيارات  -->
-        <li class="nav-item">
-          <a href="visits.php" class="nav-link">
-            <i class="nav-icon fas fa-user-check"></i>
-            <p>الزيارات</p>
-          </a>
-        </li>
 
         <?php if (($role['sid_cards'] ?? 0) == 1) { ?>
 

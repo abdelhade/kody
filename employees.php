@@ -80,10 +80,13 @@
                             ?></td>
                         <td><?php
                           $shiftid = $row['shift']; 
-                          $rowshift = $conn->query("select * from shifts where id = '$shiftid' ")->fetch_assoc();
-                          if ($rowshift['id'] > 0) {
-                              echo $rowshift['name'];
-                              ?></td>
+                          if ($shiftid) {
+                              $rowshift = $conn->query("select * from shifts where id = '$shiftid' ")->fetch_assoc();
+                              if ($rowshift && isset($rowshift['id']) && $rowshift['id'] > 0) {
+                                  echo $rowshift['name'];
+                              }
+                          }
+                          ?></td>
                         <td><?= $row['salary'] ?></td>
                           <td><?= $row['info'] ?></td>
                     <td><a class="btn btn-warning" href="edit_employee.php?id=<?= $row['id'] ?>"><i class="fa fa-pen"></i></a>
@@ -118,7 +121,7 @@
 
                     </td>
                   </tr>
-                <?php }} ?>
+                <?php } ?>
                 </tbody>
                 <tfoot>
                 <tr>

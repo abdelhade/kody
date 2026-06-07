@@ -1,185 +1,369 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
-<div class="content-wrapper">
-    <section class="content-header">
+
+<?php
+$daysAr = [
+    'Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين',
+    'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة'
+];
+function day_name_ar($date, $daysAr) {
+    $n = date('l', strtotime($date));
+    return $daysAr[$n] ?? $n;
+}
+function status_label($statue) {
+    if ($statue == 0) return 'اجازة';
+    if ($statue == 1) return 'غائب';
+    if ($statue == 2) return 'حضور';
+    return '—';
+}
+
+$logid = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$rowdoc = $conn->query("SELECT * FROM attdocs WHERE id = $logid AND (isdeleted != 1 OR isdeleted IS NULL)")->fetch_assoc();
+$rowlogFirst = $conn->query("SELECT * FROM attlog WHERE attdoc = '$logid' ORDER BY day ASC LIMIT 1")->fetch_assoc();
+$hasData = $rowdoc && $rowlogFirst;
+
+$rowemp = null;
+$rowlast = null;
+$startdate = '';
+$enddate = '';
+$companyName = $rowstg['company_name'] ?? 'FOCUS';
+
+if ($hasData) {
+    $empid = (int)$rowdoc['empid'];
+    $rowemp = $conn->query("SELECT * FROM employees WHERE id = $empid")->fetch_assoc();
+    $rowlast = $conn->query("SELECT * FROM attlog WHERE attdoc = '$logid' ORDER BY day DESC LIMIT 1")->fetch_assoc();
+    $startdate = $rowdoc['fromdate'];
+    $enddate = $rowdoc['todate'];
+}
+?>
+
+<div class="content-wrapper attdoc-page">
+    <section class="content-header no-print">
         <div class="container-fluid">
-            <?php
-            $logid = $_GET['id'];
-            $sqllog = "SELECT * FROM `attlog` WHERE attdoc = '$logid'";
-            $reslog = $conn->query($sqllog);
-            $rowlog = $reslog->fetch_assoc();
-            if (empty($rowlog)) {
-                echo "يبدو انك دخلت هذه الصفحه من المكان الخطأ .. برجاء عدم التلاعب في اللينك";
-            } else {
-                $empid = $rowlog['employee'];
-                $sqlemp = "SELECT * FROM `employees` WHERE id = $empid";
-                $resemp = $conn->query($sqlemp);
-                $rowemp = $resemp->fetch_assoc();
+            <div class="row mb-2 align-items-center">
+                <div class="col-sm-6">
+                    <h1 class="m-0">تفاصيل معالجة الحضور</h1>
+                </div>
+                <div class="col-sm-6 text-left">
+                    <?php if ($hasData) { ?>
+                    <button type="button" class="btn btn-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> طباعة
+                    </button>
+                    <a href="calcsalary.php" class="btn btn-secondary">رجوع</a>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid" id="attdoc-print-area">
+            <?php if (!$hasData) { ?>
+                <div class="alert alert-danger">يبدو أنك دخلت هذه الصفحة من المكان الخطأ، أو أن المعالجة غير موجودة.</div>
+            <?php } else {
+                $empname = $conn->real_escape_string($rowemp['name']);
+                $totDef = 0;
+                $totCur = 0;
+                $totExtra = 0;
+                $totShort = 0;
+                $totDue = 0;
             ?>
-                <div class="card">
-                    <div class="card-header">
-                        <h1>المعالجه رقم <a href=""><?= $rowlog['attdoc'] ?></a> للموظف : <?= $rowemp['name'] ?></h1>
-                        <div class="row">
-                            <div class="col">
-                                من يوم <?= $rowlog['day']; ?> الي يوم <?php $rowlast = $conn->query("SELECT * FROM `attlog` WHERE attdoc = '$logid' order by id desc limit 1")->fetch_assoc();
-                                                                        echo $rowlast['day'] ?>
-                            </div>
-                   
-                    
-                            
-                        </div>
-                    </div>
-                
-            <?php } ?>
-            <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 bg-slate-900 text-slate-50 text-center">
-                    <h2 class="">الانتاجية</h2>
-                </div>
-            </div>
-            <div class="table">
-            <table id="" class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th class="w-2">م</th>
-                                <th class="w-4">التاريخ</th>
-                                <th class="w-4">اليوم</th>
-                                <th class="w-2">ع الوحدات</th>
-                                <th class="w-2">س الوحدة</th>
-                                <th class="w-2">القيمة</th>
-                                <th class="w-20">بيان</th>
-                                <th class="">ملاحظات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $empname = $rowemp['name'];
-                            $startdate = $rowlog['day'];
-                            $enddate = $rowlast['day'];
-                            $sql = "SELECT * FROM `productions` where emp_name =  '$empname' AND date >= '$startdate' AND date <= '$enddate' order by date asc";
-                            $result = $conn->query($sql);
-                            $i = 0;
-                            while($row = $result->fetch_assoc()){
-                                   $i ++; 
-                                   ?>
-                            <tr>
-                                <td class="p-1 "><?= $i ?></td>
-                                <td class="p-1 "><?= $row['date'] ?></td>
-                                <?php
-                                $dayName = date('l', strtotime($row['date']));
-                                $daysAr = ['Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة'];
-                                ?>
-                                <td class="p-1 "><?= $daysAr[$dayName] ?? $dayName ?></td>
-                                <td class="p-1 "><?= $row['qty'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['qty']."</span>" : $row['qty'] ?></td>
-                                <td class="p-1 "><?= $row['price'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['price']."</span>" : $row['price'] ?></td>
-                                <td class="p-1 "><?= $row['value'] == 0 ? "<span class='text-danger font-weight-bold'>".$row['value']."</span>" : $row['value'] ?></td>
-                                <td class="p-1 "><?= $row['info'] ?></td>
-                                <td class="p-1 "><?= $row['info2'] ?></td>
-                             
-                            </tr>
-                            <?php }?>
-                        </tbody>
-                    </table>
-            </div>
+
+            <div class="print-only print-header">
+                <h2><?= htmlspecialchars($companyName) ?></h2>
+                <p>كشف حضور واستحقاق — معالجة رقم <?= $logid ?></p>
             </div>
 
-
-
-            <div class="card-body">
-                <div class="table-responsive">
-                    <div class="row">
-                        <div class="col-md-3 bg-slate-900 text-slate-50 text-center " >
-                            <h2 >الحضور والانصراف</h2>
-                        </div>
-                    </div>
-                    <table class="table table-bordered table-responsive" data-page-length='50' id="" >
-                        <thead>
-                            <tr>
-                                <th>م</th>
-                                <th>تاريخ</th>
-                                <th>اليوم</th>
-                                <th>الحاله</th>
-                                <th>الشيفت</th>
-                                <th>دخول</th>
-                                <th>خروج</th>
-                                <th>ساعات العمل</th>
-                                <th>المستحق</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $x = 1;
-                            $sqllog = "SELECT * FROM `attlog` WHERE attdoc = '$logid'";
-                            $reslog = $conn->query($sqllog);
-                            while ($rowlog = $reslog->fetch_assoc()) { ?>
-                                <tr>
-                                    <td><?= $x++ ?> -- <?= $rowlog['id'] ?></td>
-                                    <td><?= $rowlog['day'] ?></td>
-                                    <?php
-                                    $dayNameLog = date('l', strtotime($rowlog['day']));
-                                    $daysArLog = ['Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين', 'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة'];
-                                    ?>
-                                    <td><?= $daysArLog[$dayNameLog] ?? $dayNameLog ?></td>
-                                    <td><?php
-                                        if ($rowlog['statue'] == 0) {
-                                            echo "<p class='bg-success'> اجازة </p>";
-                                        } elseif ($rowlog['statue'] == 1) {
-                                            echo "<p class='bg-danger'> غائب </p>";
-                                        } elseif ($rowlog['statue'] == 2) {
-                                            echo "<p class=''> حضور </p>";
-                                        } ?>
-                                    </td>
-                                    <td>من : <?= $rowlog['starttime'] ?>الي : <?= $rowlog['endtime'] ?></td>
-                                    <td><?= $rowlog['fpin'] ?></td>
-                                    <td><?= $rowlog['fpout'] ?></td>
-                                    <td class="td7"><?= $rowlog['curhours'] == 0 ? "<span class='text-danger font-weight-bold'>".$rowlog['curhours']."</span>" : $rowlog['curhours'] ?></td>
-                                    <td class="td8"><?= $rowlog['realdue'] == 0 ? "<span class='text-danger font-weight-bold'>".$rowlog['realdue']."</span>" : $rowlog['realdue'] ?></td>
-                                </tr>
+            <div class="card attdoc-summary-card">
+                <div class="card-body">
+                    <div class="row attdoc-meta">
+                        <div class="col-md-6">
+                            <h3 class="mb-1"><?= htmlspecialchars($rowemp['name']) ?></h3>
+                            <p class="text-muted mb-0">معالجة رقم <strong><?= $logid ?></strong></p>
+                            <p class="mb-0">الفترة: من <strong><?= $startdate ?></strong> إلى <strong><?= $enddate ?></strong></p>
+                            <?php if (!empty($rowdoc['info'])) { ?>
+                            <p class="small text-muted mb-0"><?= htmlspecialchars(trim($rowdoc['info'])) ?></p>
                             <?php } ?>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
-                                <th class="sumth7"></th>
-                                <th class="sumth8"></th>
-                            </tr>
-                        </tfoot>
-                    </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-bordered mb-0 summary-mini">
+                                <tbody>
+                                    <tr><th>الراتب</th><td><?= number_format((float)$rowemp['salary'], 2) ?></td></tr>
+                                    <tr><th>أيام الحضور</th><td><?= (int)$rowdoc['attdays'] ?> / <?= (int)$rowdoc['workdays'] ?></td></tr>
+                                    <tr><th>ساعات متوقعة (الفترة)</th><td><?= number_format((float)$rowdoc['exphours'], 2) ?> س</td></tr>
+                                    <tr><th>ساعات فعلية</th><td><?= number_format((float)$rowdoc['accualhours'], 2) ?> س</td></tr>
+                                    <tr><th>فرق الفترة</th>
+                                        <?php
+                                        $periodDiff = round((float)$rowdoc['accualhours'] - (float)$rowdoc['exphours'], 2);
+                                        $pdClass = $periodDiff > 0 ? 'text-success' : ($periodDiff < 0 ? 'text-danger' : '');
+                                        ?>
+                                        <td class="<?= $pdClass ?>"><strong><?= $periodDiff > 0 ? '+' : '' ?><?= number_format($periodDiff, 2) ?></strong> س</td>
+                                    </tr>
+                                    <tr><th>المستحق الإجمالي</th><td class="bg-light"><strong><?= number_format((float)$rowdoc['entitle'], 2) ?></strong></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- الحضور -->
+            <div class="card attdoc-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">الحضور والانصراف</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0 attdoc-att-table" id="attTable">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>م</th>
+                                    <th>تاريخ</th>
+                                    <th>اليوم</th>
+                                    <th>الحالة</th>
+                                    <th>الشيفت</th>
+                                    <th>دخول</th>
+                                    <th>خروج</th>
+                                    <th>ساعات متوقعة</th>
+                                    <th>ساعات العمل</th>
+                                    <th>زيادة / نقص</th>
+                                    <th>المستحق</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $x = 1;
+                                $reslog = $conn->query("SELECT * FROM attlog WHERE attdoc = '$logid' ORDER BY day ASC");
+                                while ($rowlog = $reslog->fetch_assoc()) {
+                                    $def = (float)$rowlog['defhours'];
+                                    $cur = (float)$rowlog['curhours'];
+                                    $diff = round($cur - $def, 2);
+                                    $due = (float)$rowlog['realdue'];
+                                    $totDef += $def;
+                                    $totCur += $cur;
+                                    if ($diff > 0) {
+                                        $totExtra += $diff;
+                                    } elseif ($diff < 0) {
+                                        $totShort += abs($diff);
+                                    }
+                                    $totDue += $due;
+                                    $diffClass = $diff > 0 ? 'text-success' : ($diff < 0 ? 'text-danger' : '');
+                                    $diffText = $diff > 0 ? '+' . number_format($diff, 2) : number_format($diff, 2);
+                                ?>
+                                <tr>
+                                    <td><?= $x++ ?></td>
+                                    <td><?= $rowlog['day'] ?></td>
+                                    <td><?= day_name_ar($rowlog['day'], $daysAr) ?></td>
+                                    <td><span class="badge-status s<?= (int)$rowlog['statue'] ?>"><?= status_label($rowlog['statue']) ?></span></td>
+                                    <td><?= $rowlog['starttime'] ?> — <?= $rowlog['endtime'] ?></td>
+                                    <td><?= $rowlog['fpin'] ?: '—' ?></td>
+                                    <td><?= $rowlog['fpout'] ?: '—' ?></td>
+                                    <td class="td-def"><?= number_format($def, 2) ?></td>
+                                    <td class="td-cur"><?= number_format($cur, 2) ?></td>
+                                    <td class="td-diff <?= $diffClass ?>"><?= $diffText ?></td>
+                                    <td class="td-due"><?= number_format($due, 2) ?></td>
+                                </tr>
+                                <?php } ?>
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-weight-bold totals-row">
+                                    <th colspan="7" class="text-left">الإجمالي</th>
+                                    <th class="sum-def"><?= number_format($totDef, 2) ?></th>
+                                    <th class="sum-cur"><?= number_format($totCur, 2) ?></th>
+                                    <th class="sum-diff">
+                                        <?php if ($totExtra > 0) { ?><span class="text-success">+<?= number_format($totExtra, 2) ?></span><?php } ?>
+                                        <?php if ($totShort > 0) { ?><span class="text-danger"> -<?= number_format($totShort, 2) ?></span><?php } ?>
+                                        <?php if ($totExtra == 0 && $totShort == 0) { ?>0.00<?php } ?>
+                                    </th>
+                                    <th class="sum-due"><?= number_format($totDue, 2) ?></th>
+                                </tr>
+                                <tr class="totals-detail-row">
+                                    <th colspan="9" class="text-left">ملخص الساعات</th>
+                                    <th colspan="2">
+                                        زيادة: <span class="text-success"><?= number_format($totExtra, 2) ?></span>
+                                        — نقص: <span class="text-danger"><?= number_format($totShort, 2) ?></span>
+                                        — صافي: <strong><?= number_format(round($totCur - $totDef, 2), 2) ?></strong>
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
+
+            <!-- الانتاجية -->
+            <div class="card attdoc-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">الانتاجية</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>م</th>
+                                    <th>التاريخ</th>
+                                    <th>اليوم</th>
+                                    <th>ع الوحدات</th>
+                                    <th>س الوحدة</th>
+                                    <th>القيمة</th>
+                                    <th>بيان</th>
+                                    <th>ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $sql = "SELECT * FROM productions WHERE emp_name = '$empname' AND date >= '$startdate' AND date <= '$enddate' ORDER BY date ASC";
+                                $result = $conn->query($sql);
+                                $i = 0;
+                                $prodSum = 0;
+                                if ($result && $result->num_rows > 0) {
+                                    while ($row = $result->fetch_assoc()) {
+                                        $i++;
+                                        $prodSum += (float)$row['value'];
+                                ?>
+                                <tr>
+                                    <td><?= $i ?></td>
+                                    <td><?= $row['date'] ?></td>
+                                    <td><?= day_name_ar($row['date'], $daysAr) ?></td>
+                                    <td><?= $row['qty'] ?></td>
+                                    <td><?= $row['price'] ?></td>
+                                    <td><?= $row['value'] ?></td>
+                                    <td><?= htmlspecialchars($row['info'] ?? '') ?></td>
+                                    <td><?= htmlspecialchars($row['info2'] ?? '') ?></td>
+                                </tr>
+                                <?php
+                                    }
+                                } else {
+                                ?>
+                                <tr><td colspan="8" class="text-center text-muted">لا توجد سجلات انتاجية في هذه الفترة</td></tr>
+                                <?php } ?>
+                            </tbody>
+                            <?php if ($i > 0) { ?>
+                            <tfoot>
+                                <tr class="font-weight-bold">
+                                    <th colspan="5" class="text-left">إجمالي الانتاجية</th>
+                                    <th colspan="3"><?= number_format($prodSum, 2) ?></th>
+                                </tr>
+                            </tfoot>
+                            <?php } ?>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="print-only print-footer">
+                <p>تاريخ الطباعة: <?= date('Y-m-d H:i') ?></p>
+            </div>
+
+            <?php } ?>
         </div>
     </section>
 </div>
 
-<script>
-    $(document).ready(function() {
-        var cumulativeSum = 0;
-        $('#horsTable tr').each(function() {
-            var td7Value = parseFloat($(this).find('.td7').text());
-            var td8Value = parseFloat($(this).find('.td8').text());
-            if (!isNaN(td7Value) && !isNaN(td8Value)) {
-                cumulativeSum += td7Value - td8Value;
-                $(this).find('.td6').text(cumulativeSum);
-            }
-        });
-    });
-    var sum7 = 0;
-    $(".td7").each(function() {
-        sum7 += parseFloat($(this).text()) || 0;
-    });
-    $(".sumth7").text(sum7.toFixed(2));
-    var sum8 = 0;
-    $(".td8").each(function() {
-        sum8 += parseFloat($(this).text()) || 0;
-    });
-    $(".sumth8").text(sum8);
-</script>
+<style>
+.attdoc-page .badge-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.attdoc-page .badge-status.s0 { background: #d4edda; color: #155724; }
+.attdoc-page .badge-status.s1 { background: #f8d7da; color: #721c24; }
+.attdoc-page .badge-status.s2 { background: #e2e3e5; color: #383d41; }
+.attdoc-page .summary-mini th { width: 45%; background: #f8f9fa; }
+.attdoc-page .totals-row th,
+.attdoc-page .totals-row td { background: #e9ecef; }
+.attdoc-page .totals-detail-row th,
+.attdoc-page .totals-detail-row td { background: #f8f9fa; font-size: 13px; }
+.print-only { display: none; }
+
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 12mm;
+    }
+    body {
+        background: #fff !important;
+        font-size: 11pt;
+        direction: rtl;
+    }
+    .main-header,
+    .main-sidebar,
+    .content-header,
+    .no-print,
+    .main-footer {
+        display: none !important;
+    }
+    .content-wrapper,
+    .content-wrapper::before,
+    .content-wrapper::after {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+    .content-wrapper {
+        min-height: auto !important;
+    }
+    .attdoc-page .content {
+        padding: 0 !important;
+    }
+    .attdoc-page .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        margin-bottom: 10px !important;
+    }
+    .attdoc-page .card-header {
+        background: #eee !important;
+        border-bottom: 1px solid #000 !important;
+        padding: 6px 10px !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .attdoc-page .table {
+        font-size: 10pt;
+        color: #000 !important;
+    }
+    .attdoc-page .table th,
+    .attdoc-page .table td {
+        border: 1px solid #333 !important;
+        padding: 4px 6px !important;
+    }
+    .attdoc-page .thead-light th {
+        background: #ddd !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .attdoc-page .text-success { color: #006400 !important; }
+    .attdoc-page .text-danger { color: #8b0000 !important; }
+    .attdoc-page .bg-light {
+        background: #f5f5f5 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .print-header {
+        text-align: center;
+        margin-bottom: 12px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 8px;
+    }
+    .print-header h2 { margin: 0; font-size: 18pt; }
+    .print-header p { margin: 4px 0 0; }
+    .print-footer {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 9pt;
+        color: #333;
+    }
+    #attdoc-print-area {
+        width: 100%;
+    }
+}
+</style>
+
 <?php include('includes/footer.php') ?>
