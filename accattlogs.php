@@ -253,6 +253,80 @@ if ($hasData) {
                 </div>
             </div>
 
+            <!-- الخصومات والإضافيات -->
+            <div class="card attdoc-section shadow-sm">
+                <div class="card-header bg-gradient-light">
+                    <h3 class="card-title mb-0 font-weight-bold text-dark">الخصومات والإضافيات المالية في هذه الفترة</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0 text-center">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 5%;">م</th>
+                                    <th style="width: 15%;">التاريخ</th>
+                                    <th style="width: 15%;">اليوم</th>
+                                    <th style="width: 15%;">النوع</th>
+                                    <th style="width: 15%;">المبلغ</th>
+                                    <th>السبب</th>
+                                    <th>ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $sql_ft = "SELECT * FROM financial_transactions WHERE emp_name = '$empname' AND date >= '$startdate' AND date <= '$enddate' ORDER BY date ASC";
+                                $res_ft = $conn->query($sql_ft);
+                                $i_ft = 0;
+                                $extraSum = 0;
+                                $deductSum = 0;
+                                if ($res_ft && $res_ft->num_rows > 0) {
+                                    while ($row_ft = $res_ft->fetch_assoc()) {
+                                        $i_ft++;
+                                        if ($row_ft['type'] == 1) {
+                                            $extraSum += (float)$row_ft['amount'];
+                                        } else {
+                                            $deductSum += (float)$row_ft['amount'];
+                                        }
+                                        $typeLabel = $row_ft['type'] == 1 ? '<span class="badge badge-success px-3 py-2 bg-success-light text-success" style="border-radius: 20px;">إضافي</span>' : '<span class="badge badge-danger px-3 py-2 bg-danger-light text-danger" style="border-radius: 20px;">خصم</span>';
+                                ?>
+                                <tr>
+                                    <td><?= $i_ft ?></td>
+                                    <td><?= $row_ft['date'] ?></td>
+                                    <td><?= day_name_ar($row_ft['date'], $daysAr) ?></td>
+                                    <td><?= $typeLabel ?></td>
+                                    <td class="<?= $row_ft['type'] == 1 ? 'text-success' : 'text-danger' ?> font-weight-bold" style="font-size: 1.05rem;">
+                                        <?= $row_ft['type'] == 1 ? '+' : '-' ?><?= number_format($row_ft['amount'], 2) ?> ج.م
+                                    </td>
+                                    <td class="text-right"><?= htmlspecialchars($row_ft['reason']) ?></td>
+                                    <td class="text-muted"><?= htmlspecialchars($row_ft['notes'] ?? '—') ?></td>
+                                </tr>
+                                <?php
+                                    }
+                                } else {
+                                ?>
+                                <tr><td colspan="7" class="text-center text-muted py-3">لا توجد سجلات خصومات أو إضافيات مالية في هذه الفترة</td></tr>
+                                <?php } ?>
+                            </tbody>
+                            <?php if ($i_ft > 0) { ?>
+                            <tfoot>
+                                <tr class="font-weight-bold bg-light">
+                                    <th colspan="4" class="text-left text-secondary">إجمالي الفترة:</th>
+                                    <th colspan="3" class="text-right">
+                                        <span class="text-success me-3">إضافي: +<?= number_format($extraSum, 2) ?> ج.م</span>
+                                        <span class="text-secondary mx-2">|</span>
+                                        <span class="text-danger me-3">خصم: -<?= number_format($deductSum, 2) ?> ج.م</span>
+                                        <span class="text-secondary mx-2">|</span>
+                                        <span class="text-dark">الصافي: <?= ($extraSum - $deductSum >= 0 ? '+' : '') . number_format($extraSum - $deductSum, 2) ?> ج.م</span>
+                                    </th>
+                                </tr>
+                            </tfoot>
+                            <?php } ?>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
             <div class="print-only print-footer">
                 <p>تاريخ الطباعة: <?= date('Y-m-d H:i') ?></p>
             </div>
@@ -263,6 +337,12 @@ if ($hasData) {
 </div>
 
 <style>
+.bg-success-light {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+}
+.bg-danger-light {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+}
 .attdoc-page .badge-status {
     display: inline-block;
     padding: 2px 8px;

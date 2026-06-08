@@ -34,6 +34,7 @@ $shift = $_POST['shift'];
 $basmaname = $_POST['basmaname'];
 $hour_extra = $_POST['hour_extra'];
 $day_extra = $_POST['day_extra'];
+$calc_type = $_POST['calc_type'] ?? 'monthly';
 
 if ($_FILES['imgs']['size'] !== 0 )  {
 
@@ -62,7 +63,7 @@ if (isset($_POST['active'])) {
 
 
 
-$sql ="INSERT INTO employees(name,  info, imgs, email, number, dateofbirth, gender, address, address2, town, jop, department, joptybe, joplevel, dateofhire, dateofend , shift,  salary ,basma_id,password, basma_name ,ent_tybe,hour_extra,day_extra ) VALUES ('$name', '$info', '$new_kvr_name', '$email', '$number', '$dateofbirth', '$gender', '$address', '$address2', '$town', '$jop', '$department', '$joptybe', '$joplevel', '$dateofhire', '$dateofend', '$shift',  '$salary',  '$basmaid',  '$password','$basmaname' , '$ent_tybe','$hour_extra','$day_extra')";
+$sql ="INSERT INTO employees(name,  info, imgs, email, number, dateofbirth, gender, address, address2, town, jop, department, joptybe, joplevel, dateofhire, dateofend , shift,  salary ,basma_id,password, basma_name ,ent_tybe,hour_extra,day_extra,calc_type ) VALUES ('$name', '$info', '$new_kvr_name', '$email', '$number', '$dateofbirth', '$gender', '$address', '$address2', '$town', '$jop', '$department', '$joptybe', '$joplevel', '$dateofhire', '$dateofend', '$shift',  '$salary',  '$basmaid',  '$password','$basmaname' , '$ent_tybe','$hour_extra','$day_extra','$calc_type')";
 $conn->query($sql);
 $empid = $conn->insert_id;
 
@@ -71,7 +72,7 @@ $empid = $conn->insert_id;
 	if (isset($_POST['active'])) {
 		$active = $_POST['active'];}
 	
-		$sql ="INSERT INTO employees(name, info, email, number, dateofbirth, gender, address, address2, town, jop, department, joptybe, joplevel, dateofhire, dateofend , shift,  salary ,basma_id,password , basma_name , ent_tybe,hour_extra,day_extra) VALUES ('$name', '$info', '$email', '$number', '$dateofbirth', '$gender', '$address', '$address2', '$town', '$jop', '$department', '$joptybe', '$joplevel', '$dateofhire', '$dateofend', '$shift',  '$salary','$basmaid',  '$password','$basmaname' , '$ent_tybe','$hour_extra','$day_extra')";
+		$sql ="INSERT INTO employees(name, info, email, number, dateofbirth, gender, address, address2, town, jop, department, joptybe, joplevel, dateofhire, dateofend , shift,  salary ,basma_id,password , basma_name , ent_tybe,hour_extra,day_extra,calc_type) VALUES ('$name', '$info', '$email', '$number', '$dateofbirth', '$gender', '$address', '$address2', '$town', '$jop', '$department', '$joptybe', '$joplevel', '$dateofhire', '$dateofend', '$shift',  '$salary','$basmaid',  '$password','$basmaname' , '$ent_tybe','$hour_extra','$day_extra','$calc_type')";
 		$conn->query($sql);
 		$empid = $conn->insert_id;
 			}

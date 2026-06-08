@@ -109,7 +109,9 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                     <th>س ع المستحقه</th>
                     <th>س ع الفعليه</th>
                     <th>س الاضافي</th>
-                    <th>المستحق</th>
+                    <th>المستحق (الصافي)</th>
+                    <th>إضافي</th>
+                    <th>خصم</th>
                     <th>الانتاجية</th>
                     <th class="no-print"><?= $lang_publicoperations ?></th>
                   </tr>
@@ -131,10 +133,12 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                 $x = 0;
                 $sumEntitle = 0;
                 $sumProd = 0;
+                $sumExtra = 0;
+                $sumDeduct = 0;
                 if ($resdoc && $resdoc->num_rows === 0) {
                 ?>
                   <tr>
-                    <td colspan="14" class="text-center text-muted py-4">لا توجد نتائج مطابقة للفلتر</td>
+                    <td colspan="16" class="text-center text-muted py-4">لا توجد نتائج مطابقة للفلتر</td>
                   </tr>
                 <?php
                 }
@@ -149,15 +153,23 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                     $rowsh1 = $conn->query("SELECT SUM(curhours) - SUM(defhours) AS diffrence FROM attlog WHERE employee = '$empid' AND day >= '$startdate' AND day <= '$enddate' AND statue != 0")->fetch_assoc();
                     $empname = $conn->real_escape_string($rowemp['name']);
                     $rowprod = $conn->query("SELECT SUM(value) AS prod_val FROM productions WHERE emp_name = '$empname' AND date >= '$startdate' AND date <= '$enddate'")->fetch_assoc();
+                    $rowextra = $conn->query("SELECT SUM(amount) AS extra_val FROM financial_transactions WHERE emp_name = '$empname' AND type = 1 AND date >= '$startdate' AND date <= '$enddate'")->fetch_assoc();
+                    $rowdeduct = $conn->query("SELECT SUM(amount) AS deduct_val FROM financial_transactions WHERE emp_name = '$empname' AND type = 0 AND date >= '$startdate' AND date <= '$enddate'")->fetch_assoc();
+                    
                     $entitle = round((float)$rowdoc['entitle'], 2);
                     $prodVal = (float)($rowprod['prod_val'] ?? 0);
+                    $extraVal = (float)($rowextra['extra_val'] ?? 0);
+                    $deductVal = (float)($rowdeduct['deduct_val'] ?? 0);
+                    
                     $sumEntitle += $entitle;
                     $sumProd += $prodVal;
+                    $sumExtra += $extraVal;
+                    $sumDeduct += $deductVal;
                 ?>
                   <tr>
                     <td><?= $x ?></td>
                     <td>
-                      <a href="accattlogs.php?id=<?= (int)$rowdoc['id'] ?>">
+                       <a href="accattlogs.php?id=<?= (int)$rowdoc['id'] ?>">
                         <?= (int)$rowdoc['id'] ?># <?= htmlspecialchars($rowemp['name']) ?>
                       </a>
                     </td>
@@ -171,6 +183,8 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                     <td><?= $rowdoc['accualhours'] ?>h</td>
                     <td><?= number_format((float)($rowsh['diffrence'] ?? 0), 2) ?> / <?= number_format((float)($rowsh1['diffrence'] ?? 0), 2) ?></td>
                     <td class="bg-sky-100 font-weight-bold"><?= number_format($entitle, 2) ?></td>
+                    <td class="text-success font-weight-bold"><?= number_format($extraVal, 2) ?></td>
+                    <td class="text-danger font-weight-bold"><?= number_format($deductVal, 2) ?></td>
                     <td class="bg-sky-100"><?= number_format($prodVal, 2) ?></td>
                     <td class="no-print">
                       <a href="do/dodel_attdoc.php?doc=<?= (int)$rowdoc['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('حذف هذه المعالجة؟')">X</a>
@@ -186,6 +200,8 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                   <tr class="font-weight-bold totals-row">
                     <th colspan="11" class="text-left">الإجمالي (<?= $x ?> معالجة)</th>
                     <th><?= number_format($sumEntitle, 2) ?></th>
+                    <th class="text-success"><?= number_format($sumExtra, 2) ?></th>
+                    <th class="text-danger"><?= number_format($sumDeduct, 2) ?></th>
                     <th><?= number_format($sumProd, 2) ?></th>
                     <th class="no-print"></th>
                   </tr>

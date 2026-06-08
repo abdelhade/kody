@@ -1021,6 +1021,31 @@
                     </ul>
                   </li>
 
+                  <li class="nav-item has-treeview shadow-inner">
+                    <a href="#" class="nav-link">
+                      <i class="nav-icon fas fa-money-bill-wave"></i>
+                      <p>
+                        الخصم والإضافي
+                        <i class="fas fa-angle-left right"></i>
+                      </p>
+                    </a>
+                    <ul class="nav nav-treeview shadow-inner" style="display: none;">
+                      <li class="nav-item">
+                        <a href="financial_transactions.php" class="nav-link">
+                          <i class="far"> <i class="nav-icon fas fa-list"></i> </i>
+                          <p>حركات الخصم والإضافي</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="add_financial_transaction.php" class="nav-link">
+                          <i class="far"> <i class="nav-icon fas fa-plus"></i> </i>
+                          <p>إضافة خصم / إضافي</p>
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+
+
 
 
 

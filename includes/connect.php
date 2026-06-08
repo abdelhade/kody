@@ -119,6 +119,35 @@ if ($colMainHr && $colMainHr->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN show_main_hr TINYINT(1) NOT NULL DEFAULT 1');
 }
 
+$colCalcType = $conn->query("SHOW COLUMNS FROM employees LIKE 'calc_type'");
+if ($colCalcType && $colCalcType->num_rows === 0) {
+    $conn->query("ALTER TABLE employees ADD COLUMN calc_type VARCHAR(20) DEFAULT 'monthly'");
+}
+
+$colMissingFp = $conn->query("SHOW COLUMNS FROM settings LIKE 'missing_fingerprint_calc'");
+if ($colMissingFp && $colMissingFp->num_rows === 0) {
+    $conn->query("ALTER TABLE settings ADD COLUMN missing_fingerprint_calc DECIMAL(3,1) DEFAULT 0.5");
+}
+
+$colHolidayWork = $conn->query("SHOW COLUMNS FROM settings LIKE 'holiday_work_calc'");
+if ($colHolidayWork && $colHolidayWork->num_rows === 0) {
+    $conn->query("ALTER TABLE settings ADD COLUMN holiday_work_calc TINYINT(1) DEFAULT 1");
+}
+
+$conn->query("CREATE TABLE IF NOT EXISTS `financial_transactions` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `snd_id` INT(11) NOT NULL,
+  `date` DATE NOT NULL,
+  `emp_name` VARCHAR(100) NOT NULL,
+  `type` TINYINT(1) NOT NULL,
+  `amount` DECIMAL(10,2) NOT NULL,
+  `reason` VARCHAR(255) NOT NULL,
+  `notes` VARCHAR(255) DEFAULT NULL,
+  `crtime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;");
+
+
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set('Africa/Cairo'); 
 $now = new DateTime();

@@ -98,219 +98,258 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
 
       <form action="do/doedit_settings.php" method="post" id="settings-main-form">
 
-        <div class="card card-primary card-outline shadow-sm mb-4">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-building ml-2"></i> بيانات الشركة واللغة</h3>
+        <div class="card card-primary card-outline card-outline-tabs shadow-sm mb-4">
+          <div class="card-header p-0 border-bottom-0">
+            <ul class="nav nav-tabs" id="settingsTabs" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" id="tabs-company-tab" data-toggle="tab" href="#tabs-company" role="tab" aria-controls="tabs-company" aria-selected="true">
+                  <i class="fas fa-building ml-1 text-primary"></i> بيانات الشركة واللغة
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tabs-pos-tab" data-toggle="tab" href="#tabs-pos" role="tab" aria-controls="tabs-pos" aria-selected="false">
+                  <i class="fas fa-cash-register ml-1 text-info"></i> نقطة البيع (POS)
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tabs-attendance-tab" data-toggle="tab" href="#tabs-attendance" role="tab" aria-controls="tabs-attendance" aria-selected="false">
+                  <i class="fas fa-user-clock ml-1 text-success"></i> الحضور والرواتب
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tabs-colors-tab" data-toggle="tab" href="#tabs-colors" role="tab" aria-controls="tabs-colors" aria-selected="false">
+                  <i class="fas fa-palette ml-1 text-secondary"></i> الألوان
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="tabs-menus-tab" data-toggle="tab" href="#tabs-menus" role="tab" aria-controls="tabs-menus" aria-selected="false">
+                  <i class="fas fa-eye ml-1 text-warning"></i> ظهور القوائم
+                </a>
+              </li>
+            </ul>
           </div>
           <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="companyname">اسم الشركة</label>
-                  <input type="text" class="form-control" id="companyname" name="companyname"
-                         value="<?= htmlspecialchars($rowstg['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="companytel">هاتف الشركة</label>
-                  <input type="text" class="form-control" id="companytel" name="companytel"
-                         value="<?= htmlspecialchars($rowstg['company_tel'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-12">
-                <div class="form-group">
-                  <label for="companyadd">عنوان الشركة</label>
-                  <input type="text" class="form-control" id="companyadd" name="companyadd"
-                         value="<?= htmlspecialchars($rowstg['company_add'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="lang-select">لغة الواجهة</label>
-                  <select class="form-control" id="lang-select" name="lang">
-                    <option value="ar" <?= (($rowstg['lang'] ?? '') === 'ar') ? 'selected' : '' ?>>العربية</option>
-                    <option value="en" <?= (($rowstg['lang'] ?? '') === 'en') ? 'selected' : '' ?>>English</option>
-                    <option value="fr" <?= (($rowstg['lang'] ?? '') === 'fr') ? 'selected' : '' ?>>Français</option>
-                    <option value="gr" <?= (($rowstg['lang'] ?? '') === 'gr') ? 'selected' : '' ?>>Deutsch</option>
-                    <option value="sp" <?= (($rowstg['lang'] ?? '') === 'sp') ? 'selected' : '' ?>>Español</option>
-                    <option value="trk" <?= (($rowstg['lang'] ?? '') === 'trk') ? 'selected' : '' ?>>Türkçe</option>
-                    <option value="ch" <?= (($rowstg['lang'] ?? '') === 'ch') ? 'selected' : '' ?>>中文</option>
-                    <option value="hn" <?= (($rowstg['lang'] ?? '') === 'hn') ? 'selected' : '' ?>>हिन्दी</option>
-                    <option value="urd" <?= (($rowstg['lang'] ?? '') === 'urd') ? 'selected' : '' ?>>اردو</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="edit_pass">كلمة مرور حماية التعديل داخل النظام</label>
-                  <input type="text" class="form-control" id="edit_pass" name="edit_pass"
-                         value="<?= htmlspecialchars($rowstg['edit_pass'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                  <small class="form-text text-muted">تُستخدم في بعض شاشات التعديل الحساسة.</small>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="form-group">
-                  <label for="editpass">الترخيص / رقم إضافي</label>
-                  <input type="text" class="form-control" id="editpass" name="editpass"
-                         value="<?= htmlspecialchars($rowstg['lic'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            <div class="tab-content" id="settingsTabsContent">
 
-        <div class="card card-outline card-info shadow-sm mb-4">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-cash-register ml-2"></i> نقطة البيع (POS)</h3>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-lg-6">
-                <div class="form-group">
-                  <label for="pos_type">نوع نظام POS</label>
-                  <select class="form-control" id="pos_type" name="pos_type">
-                    <option value="barcode" <?= (($rowstg['pos_type'] ?? 'barcode') === 'barcode') ? 'selected' : '' ?>>POS عادي (باركود)</option>
-                    <option value="clothes" <?= (($rowstg['pos_type'] ?? 'barcode') === 'clothes') ? 'selected' : '' ?>>POS ملابس</option>
-                  </select>
-                  <small class="form-text text-muted">يحدد نوع واجهة POS من القائمة.</small>
-                </div>
-              </div>
-              <div class="col-lg-6">
-                <div class="form-group mb-0">
-                  <label class="d-block">حماية POS بكلمة مرور</label>
-                  <div class="custom-control custom-switch pt-1">
-                    <input type="checkbox" class="custom-control-input" id="pos_has_password" name="pos_has_password" value="1"
-                           <?= (!empty($rowstg['pos_has_password'])) ? 'checked' : '' ?>>
-                    <label class="custom-control-label" for="pos_has_password">طلب مسح باركود قبل فتح POS</label>
+              <!-- Company Info Tab -->
+              <div class="tab-pane fade show active" id="tabs-company" role="tabpanel" aria-labelledby="tabs-company-tab">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="companyname">اسم الشركة</label>
+                      <input type="text" class="form-control" id="companyname" name="companyname"
+                             value="<?= htmlspecialchars($rowstg['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
+                    </div>
                   </div>
-                  <small class="form-text text-muted">عند التفعيل يُطلب التحقق قبل استخدام الكاشير.</small>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="companytel">هاتف الشركة</label>
+                      <input type="text" class="form-control" id="companytel" name="companytel"
+                             value="<?= htmlspecialchars($rowstg['company_tel'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-group">
+                      <label for="companyadd">عنوان الشركة</label>
+                      <input type="text" class="form-control" id="companyadd" name="companyadd"
+                             value="<?= htmlspecialchars($rowstg['company_add'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="lang-select">لغة الواجهة</label>
+                      <select class="form-control" id="lang-select" name="lang">
+                        <option value="ar" <?= (($rowstg['lang'] ?? '') === 'ar') ? 'selected' : '' ?>>العربية</option>
+                        <option value="en" <?= (($rowstg['lang'] ?? '') === 'en') ? 'selected' : '' ?>>English</option>
+                        <option value="fr" <?= (($rowstg['lang'] ?? '') === 'fr') ? 'selected' : '' ?>>Français</option>
+                        <option value="gr" <?= (($rowstg['lang'] ?? '') === 'gr') ? 'selected' : '' ?>>Deutsch</option>
+                        <option value="sp" <?= (($rowstg['lang'] ?? '') === 'sp') ? 'selected' : '' ?>>Español</option>
+                        <option value="trk" <?= (($rowstg['lang'] ?? '') === 'trk') ? 'selected' : '' ?>>Türkçe</option>
+                        <option value="ch" <?= (($rowstg['lang'] ?? '') === 'ch') ? 'selected' : '' ?>>中文</option>
+                        <option value="hn" <?= (($rowstg['lang'] ?? '') === 'hn') ? 'selected' : '' ?>>हिन्दी</option>
+                        <option value="urd" <?= (($rowstg['lang'] ?? '') === 'urd') ? 'selected' : '' ?>>اردو</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="edit_pass">كلمة مرور حماية التعديل داخل النظام</label>
+                      <input type="text" class="form-control" id="edit_pass" name="edit_pass"
+                             value="<?= htmlspecialchars($rowstg['edit_pass'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                      <small class="form-text text-muted">تُستخدم في بعض شاشات التعديل الحساسة.</small>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <hr class="my-3">
-            <h5 class="text-muted mb-3"><i class="fas fa-link ml-2"></i> الحسابات الافتراضية للكاشير</h5>
-            <div class="row">
-              <div class="col-md-6 col-lg-4">
-                <div class="form-group">
-                  <label for="acc_rent">إيجار مستحق (حساب)</label>
-                  <input type="number" class="form-control" id="acc_rent" name="acc_rent"
-                         value="<?= htmlspecialchars((string)($rowstg['acc_rent'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-md-6 col-lg-4">
-                <div class="form-group">
-                  <label for="def_pos_client">عميل الكاشير الافتراضي</label>
-                  <input type="number" class="form-control" id="def_pos_client" name="def_pos_client"
-                         value="<?= htmlspecialchars((string)($rowstg['def_pos_client'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-md-6 col-lg-4">
-                <div class="form-group">
-                  <label for="def_pos_store">مخزن الكاشير الافتراضي</label>
-                  <input type="number" class="form-control" id="def_pos_store" name="def_pos_store"
-                         value="<?= htmlspecialchars((string)($rowstg['def_pos_store'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-md-6 col-lg-4">
-                <div class="form-group">
-                  <label for="def_pos_employee">موظف الكاشير الافتراضي</label>
-                  <input type="number" class="form-control" id="def_pos_employee" name="def_pos_employee"
-                         value="<?= htmlspecialchars((string)($rowstg['def_pos_employee'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-              <div class="col-md-6 col-lg-4">
-                <div class="form-group">
-                  <label for="def_pos_fund">صندوق الكاشير الافتراضي</label>
-                  <input type="number" class="form-control" id="def_pos_fund" name="def_pos_fund"
-                         value="<?= htmlspecialchars((string)($rowstg['def_pos_fund'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="card card-outline card-secondary shadow-sm mb-4">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-palette ml-2"></i> الألوان</h3>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="bodycolor">لون خلفية المحتوى</label>
-                  <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="bodycolor" name="bodycolor"
-                         value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#f0fdfa', ENT_QUOTES, 'UTF-8') ?>">
+              <!-- POS Tab -->
+              <div class="tab-pane fade" id="tabs-pos" role="tabpanel" aria-labelledby="tabs-pos-tab">
+                <div class="row">
+                  <div class="col-lg-6">
+                    <div class="form-group">
+                      <label for="pos_type">نوع نظام POS</label>
+                      <select class="form-control" id="pos_type" name="pos_type">
+                        <option value="barcode" <?= (($rowstg['pos_type'] ?? 'barcode') === 'barcode') ? 'selected' : '' ?>>POS عادي (باركود)</option>
+                        <option value="clothes" <?= (($rowstg['pos_type'] ?? 'barcode') === 'clothes') ? 'selected' : '' ?>>POS ملابس</option>
+                      </select>
+                      <small class="form-text text-muted">يحدد نوع واجهة POS من القائمة.</small>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="form-group mb-0">
+                      <label class="d-block">حماية POS بكلمة مرور</label>
+                      <div class="custom-control custom-switch pt-1">
+                        <input type="checkbox" class="custom-control-input" id="pos_has_password" name="pos_has_password" value="1"
+                               <?= (!empty($rowstg['pos_has_password'])) ? 'checked' : '' ?>>
+                        <label class="custom-control-label" for="pos_has_password">طلب مسح باركود قبل فتح POS</label>
+                      </div>
+                      <small class="form-text text-muted">عند التفعيل يُطلب التحقق قبل استخدام الكاشير.</small>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-3">
+                <h5 class="text-muted mb-3"><i class="fas fa-link ml-2"></i> الحسابات الافتراضية للكاشير</h5>
+                <div class="row">
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                      <label for="acc_rent">إيجار مستحق (حساب)</label>
+                      <input type="number" class="form-control" id="acc_rent" name="acc_rent"
+                             value="<?= htmlspecialchars((string)($rowstg['acc_rent'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                      <label for="def_pos_client">عميل الكاشير الافتراضي</label>
+                      <input type="number" class="form-control" id="def_pos_client" name="def_pos_client"
+                             value="<?= htmlspecialchars((string)($rowstg['def_pos_client'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                      <label for="def_pos_store">مخزن الكاشير الافتراضي</label>
+                      <input type="number" class="form-control" id="def_pos_store" name="def_pos_store"
+                             value="<?= htmlspecialchars((string)($rowstg['def_pos_store'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                      <label for="def_pos_employee">موظف الكاشير الافتراضي</label>
+                      <input type="number" class="form-control" id="def_pos_employee" name="def_pos_employee"
+                             value="<?= htmlspecialchars((string)($rowstg['def_pos_employee'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-lg-4">
+                    <div class="form-group">
+                      <label for="def_pos_fund">صندوق الكاشير الافتراضي</label>
+                      <input type="number" class="form-control" id="def_pos_fund" name="def_pos_fund"
+                             value="<?= htmlspecialchars((string)($rowstg['def_pos_fund'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="nav-background">لون الشريط العلوي</label>
-                  <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="nav-background" name="nav-background"
-                         value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#ffffff', ENT_QUOTES, 'UTF-8') ?>">
-                  <small class="form-text text-muted">حفظ مستقبلي عبر النظام إن وُجد دعم في القاعدة.</small>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="form-group">
-                  <label for="side-background">لون الشريط الجانبي</label>
-                  <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="side-background" name="side-background"
-                         value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#343a40', ENT_QUOTES, 'UTF-8') ?>">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="card card-outline card-warning shadow-sm mb-4">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-eye ml-2"></i> ظهور القوائم في الشريط الجانبي</h3>
-            <div class="card-tools">
-              <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-            </div>
-          </div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover table-striped mb-0">
-                <thead class="thead-light">
-                  <tr>
-                    <th style="width:50%">القائمة</th>
-                    <th style="width:25%">الظهور (1 = ظاهر، 0 = مخفي)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><i class="fas fa-key text-warning ml-2"></i> التأجير</td>
-                    <td><input type="number" name="showrent" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showrent'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                  <tr>
-                    <td><i class="fas fa-clinic-medical text-info ml-2"></i> العيادات</td>
-                    <td><input type="number" name="showclinc" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showclinc'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                  <tr>
-                    <td><i class="fas fa-users text-primary ml-2"></i> الموارد البشرية</td>
-                    <td><input type="number" name="showhr" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showhr'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                  <tr>
-                    <td><i class="fas fa-bolt text-warning ml-2"></i> Pulse (التقييم اللحظي)</td>
-                    <td><input type="number" name="showpulse" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showpulse'] ?? '1'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                  <tr>
-                    <td><i class="fas fa-user-check text-success ml-2"></i> الحضور</td>
-                    <td><input type="number" name="showatt" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showatt'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                  <tr>
-                    <td><i class="fas fa-money-bill-wave text-secondary ml-2"></i> المرتبات</td>
-                    <td><input type="number" name="showpayroll" class="form-control form-control-sm" min="0" max="1" step="1"
-                               value="<?= htmlspecialchars((string)($rowstg['showpayroll'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
-                  </tr>
-                </tbody>
-              </table>
+              <!-- Attendance & Salaries Tab -->
+              <div class="tab-pane fade" id="tabs-attendance" role="tabpanel" aria-labelledby="tabs-attendance-tab">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="missing_fingerprint_calc">عند فقد بصمة حضور أو انصراف يحسب اليوم كـ</label>
+                      <select class="form-control" id="missing_fingerprint_calc" name="missing_fingerprint_calc">
+                        <option value="1.0" <?= (isset($rowstg['missing_fingerprint_calc']) && (float)$rowstg['missing_fingerprint_calc'] === 1.0) ? 'selected' : '' ?>>يوم كامل (1.0)</option>
+                        <option value="0.5" <?= (!isset($rowstg['missing_fingerprint_calc']) || (float)$rowstg['missing_fingerprint_calc'] === 0.5) ? 'selected' : '' ?>>نصف يوم (0.5)</option>
+                        <option value="0.0" <?= (isset($rowstg['missing_fingerprint_calc']) && (float)$rowstg['missing_fingerprint_calc'] === 0.0) ? 'selected' : '' ?>>صفر (0.0)</option>
+                      </select>
+                      <small class="form-text text-muted">النسبة من اليوم المحسوبة عند تسجيل بصمة واحدة فقط باليوم.</small>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label for="holiday_work_calc">العمل في أيام الإجازة</label>
+                      <select class="form-control" id="holiday_work_calc" name="holiday_work_calc">
+                        <option value="0" <?= (isset($rowstg['holiday_work_calc']) && (int)$rowstg['holiday_work_calc'] === 0) ? 'selected' : '' ?>>لا يحتسب (تجاهل)</option>
+                        <option value="1" <?= (!isset($rowstg['holiday_work_calc']) || (int)$rowstg['holiday_work_calc'] === 1) ? 'selected' : '' ?>>يحتسب كعمل عادي</option>
+                        <option value="2" <?= (isset($rowstg['holiday_work_calc']) && (int)$rowstg['holiday_work_calc'] === 2) ? 'selected' : '' ?>>يحتسب كإضافي كامل</option>
+                      </select>
+                      <small class="form-text text-muted">كيفية احتساب الحركة عند بصم الموظف في أيام العطلة الرسمية للوردية.</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Colors Tab -->
+              <div class="tab-pane fade" id="tabs-colors" role="tabpanel" aria-labelledby="tabs-colors-tab">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label for="bodycolor">لون خلفية المحتوى</label>
+                      <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="bodycolor" name="bodycolor"
+                             value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#f0fdfa', ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label for="nav-background">لون الشريط العلوي</label>
+                      <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="nav-background" name="nav-background"
+                             value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#ffffff', ENT_QUOTES, 'UTF-8') ?>">
+                      <small class="form-text text-muted">حفظ مستقبلي عبر النظام إن وُجد دعم في القاعدة.</small>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group">
+                      <label for="side-background">لون الشريط الجانبي</label>
+                      <input type="color" class="form-control form-control-sm p-1" style="height:42px;" id="side-background" name="side-background"
+                             value="<?= htmlspecialchars($rowstg['bodycolor'] ?? '#343a40', ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Menus Tab -->
+              <div class="tab-pane fade" id="tabs-menus" role="tabpanel" aria-labelledby="tabs-menus-tab">
+                <div class="table-responsive">
+                  <table class="table table-hover table-striped mb-0">
+                    <thead class="thead-light">
+                      <tr>
+                        <th style="width:50%">القائمة</th>
+                        <th style="width:25%">الظهور (1 = ظاهر، 0 = مخفي)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><i class="fas fa-key text-warning ml-2"></i> التأجير</td>
+                        <td><input type="number" name="showrent" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showrent'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                      <tr>
+                        <td><i class="fas fa-clinic-medical text-info ml-2"></i> العيادات</td>
+                        <td><input type="number" name="showclinc" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showclinc'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                      <tr>
+                        <td><i class="fas fa-users text-primary ml-2"></i> الموارد البشرية</td>
+                        <td><input type="number" name="showhr" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showhr'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                      <tr>
+                        <td><i class="fas fa-bolt text-warning ml-2"></i> Pulse (التقييم اللحظي)</td>
+                        <td><input type="number" name="showpulse" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showpulse'] ?? '1'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                      <tr>
+                        <td><i class="fas fa-user-check text-success ml-2"></i> الحضور</td>
+                        <td><input type="number" name="showatt" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showatt'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                      <tr>
+                        <td><i class="fas fa-money-bill-wave text-secondary ml-2"></i> المرتبات</td>
+                        <td><input type="number" name="showpayroll" class="form-control form-control-sm" min="0" max="1" step="1"
+                                   value="<?= htmlspecialchars((string)($rowstg['showpayroll'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>

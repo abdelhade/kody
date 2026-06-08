@@ -309,6 +309,16 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
+                                    <label>طريقة الاحتساب</label>
+                                    <select name="calc_type" class="custom-select">
+                                        <option value="monthly" <?= $sel('calc_type', 'monthly') ?>>شهري</option>
+                                        <option value="weekly" <?= $sel('calc_type', 'weekly') ?>>أسبوعي</option>
+                                        <option value="daily" <?= $sel('calc_type', 'daily') ?>>يومي</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
                                     <label for="hour_extra">الساعة الإضافية تحسب كـ</label>
                                     <input type="number" step=".01" class="form-control" id="hour_extra" name="hour_extra"
                                            value="<?= $e('hour_extra', '1.50') ?>" autocomplete="off">

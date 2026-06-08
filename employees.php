@@ -33,7 +33,7 @@
               <thead>
                 <tr>
                   <th>م</th>
-                  <th>id</th>
+                  <th>المسلسل</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
                   <th><?= $lang_pbholder_phone ?></th>
@@ -42,6 +42,7 @@
                   <th><?= $lang_addemployee_shift ?></th>
                   <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
+                  <th>الرقم في البصمة</th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
               </thead>
@@ -87,8 +88,9 @@
                               }
                           }
                           ?></td>
-                        <td><?= $row['salary'] ?></td>
+                        <td><?= $row['salary'] ?> / <?= ($row['calc_type'] ?? 'monthly') === 'daily' ? 'يومي' : (($row['calc_type'] ?? 'monthly') === 'weekly' ? 'أسبوعي' : 'شهري') ?></td>
                           <td><?= $row['info'] ?></td>
+                          <td><?= $row['basma_id'] ?></td>
                     <td><a class="btn btn-warning" href="edit_employee.php?id=<?= $row['id'] ?>"><i class="fa fa-pen"></i></a>
                       <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delemp<?= $row['id']?>"><i class="fa fa-trash"></i></button>
 
@@ -126,7 +128,7 @@
                 <tfoot>
                 <tr>
                   <th>م</th>
-                  <th>id</th>
+                  <th>المسلسل</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
                   <th><?= $lang_pbholder_phone ?></th>
@@ -135,6 +137,7 @@
                   <th><?= $lang_addemployee_shift ?></th>
                   <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
+                  <th>الرقم في البصمة</th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
                 </tfoot>

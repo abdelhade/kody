@@ -35,6 +35,8 @@ $def_pos_employee = (int)($_POST['def_pos_employee'] ?? 0);
 $def_pos_fund = (int)($_POST['def_pos_fund'] ?? 0);
 $pos_type = trim($_POST['pos_type'] ?? 'barcode');
 $pos_has_password = isset($_POST['pos_has_password']) ? 1 : 0;
+$missing_fingerprint_calc = (float)($_POST['missing_fingerprint_calc'] ?? 0.5);
+$holiday_work_calc = (int)($_POST['holiday_work_calc'] ?? 1);
 
 // التحقق من صحة البيانات المطلوبة
 if (empty($companyname)) {
@@ -61,16 +63,18 @@ SET company_name = ?,
     def_pos_fund = ?,
     pos_type = ?,
     pos_has_password = ?,
-    showpulse = ?
+    showpulse = ?,
+    missing_fingerprint_calc = ?,
+    holiday_work_calc = ?
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssiiiisissiiisii", 
+$stmt->bind_param("sssssiiiisissiiisiidi", 
     $companyname, $companyadd, $companytel, $edit_pass, $lang,
     $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
     $showrent, $showclinc, $def_pos_client, $def_pos_store, 
     $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
-    $showpulse
+    $showpulse, $missing_fingerprint_calc, $holiday_work_calc
 );
 
 if ($stmt->execute()) {
