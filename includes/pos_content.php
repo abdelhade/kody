@@ -999,7 +999,7 @@ if (!isset($action_url)) {
 
     <!-- Scripts - jQuery (CDN for reliability) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script>
         if (typeof jQuery === 'undefined') { 
             document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); 

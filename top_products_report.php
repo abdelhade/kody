@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "pageLength": 25,
         "order": [[ 4, "desc" ]], // ترتيب حسب الكمية المباعة (العمود 4)
         "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
+            "url": "/focus/plugins/datatables-bs4/i18n/Arabic.json"
         },
         "columnDefs": [
             { "orderable": false, "targets": 0 }, // تعطيل ترتيب عمود #

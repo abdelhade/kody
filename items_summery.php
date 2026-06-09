@@ -1,5 +1,5 @@
 <?php include('includes/header.php'); ?>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
 <?php include('includes/navbar.php'); ?>
 <?php include('includes/sidebar.php'); ?>
 
@@ -259,5 +259,4 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <?php include('includes/footer.php'); ?>

@@ -345,7 +345,7 @@ function toggleFilterInputs() {
 $(document).ready(function() {
     $('#stagnantTable').DataTable({
         "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Arabic.json"
+            "url": "/focus/plugins/datatables-bs4/i18n/Arabic.json"
         },
         "pageLength": 50,
         "order": [[ 8, "desc" ]], // ترتيب حسب أيام الركود

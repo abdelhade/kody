@@ -231,7 +231,7 @@
     $('#summaryTable').DataTable({
         "pageLength": 50,
         "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json"
+            "url": "/focus/plugins/datatables-bs4/i18n/Arabic.json"
         },
         "order": [], // عدم الترتيب الافتراضي
         "columnDefs": [

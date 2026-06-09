@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Designer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Tailwind is handled via local build if needed -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/scripts.js" defer></script>
 </head>

@@ -351,7 +351,7 @@ if (!isset($action_url)) {
 
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
 <script>if (typeof jQuery === 'undefined') { document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); }</script>
 <script src="assets/libs/bootstrap.bundle.min.js"></script>
 <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
