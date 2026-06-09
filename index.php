@@ -5,11 +5,13 @@
 
 session_start();
 
+require_once __DIR__ . '/includes/load_env.php';
+
 // -------------------- إعدادات الداتابيس --------------------
-$dbhost = 'localhost';
-$dbuser = 'root';
-$dbpass = '';
-$dbname = 'kodyelatek';
+$dbhost = env('DB_HOST', 'localhost');
+$dbuser = env('DB_USER', 'root');
+$dbpass = env('DB_PASS', '');
+$dbname = env('DB_NAME', 'kody2');
 
 // Check connection
 mysqli_report(MYSQLI_REPORT_OFF);
