@@ -5,7 +5,7 @@
             <tr>
               <td class="col-1">
                 <div class="tool">
-                  <a id="addNewElement" class="btn bg-lime-200 btn-sm hadi-white-flash" href="add_item.php" target="_blank">+</a>
+                  <a id="addNewElement" class="btn btn-sm hadi-white-flash" style="background: var(--neutral-50); color: var(--primary-dark); border: 1px solid var(--primary-light);" href="add_item.php" target="_blank">+</a>
                   <div class="tooltext">اضافه صنف جديد</div>
                 </div>
               </td>
@@ -78,7 +78,7 @@
                                          style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;">
                                         <strong>${item.iname}</strong>
                                         ${item.name2 ? ' // ' + item.name2 : ''}
-                                        <span style="float:left;color:#10b981;">${item.price1} ج.م</span>
+                                        <span style="float:left;color:var(--primary-color);">${item.price1} ج.م</span>
                                      </div>`;
                         });
                         searchResults.innerHTML = html;

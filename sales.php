@@ -76,11 +76,11 @@ if (!empty($q_param) && isset(INVOICE_TYPES[$q_param])) {
 
 // تحديد لون الخلفية (Optimized with array lookup)
 $bg_colors = [
-    3 => 'bg-teal-500', 4 => 'bg-teal-500',
-    10 => 'bg-red-500', 11 => 'bg-red-500',
-    12 => 'bg-red-500', 13 => 'bg-red-500', 14 => 'bg-red-500'
+    3 => 'bg-primary', 4 => 'bg-primary-light',
+    10 => 'bg-danger', 11 => 'bg-danger',
+    12 => 'bg-danger', 13 => 'bg-danger', 14 => 'bg-danger'
 ];
-$background_class = $is_edit_mode ? 'bg-red-500' : ($bg_colors[$pro_tybe] ?? 'bg-gray-500');
+$background_class = $is_edit_mode ? 'bg-danger' : ($bg_colors[$pro_tybe] ?? 'bg-neutral-500');
 
 // Lazy Loading: إنشاء العناصر فقط عند الحاجة
 $invoice_elements = null;
@@ -111,14 +111,14 @@ function getInvoiceElements() {
 <!-- Load Critical CSS Inline (for faster First Paint) -->
 <style>
     /* Critical CSS - يتم تحميله مباشرة */
-    .content-wrapper { background: #f0fdfa; }
+    .content-wrapper { background: #f4f4f5; }
     .card { border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); background: #fff; }
     .card-body { padding: 1rem; }
-    .bg-teal-50 { background-color: #f0fdfa; }
-    .bg-teal-500 { background-color: #14b8a6; }
-    .bg-red-500 { background-color: #ef4444; }
-    .bg-gray-500 { background-color: #6b7280; }
-    .text-teal-50 { color: #f0fdfa; }
+    .bg-neutral-50 { background-color: #EAE0CF; }
+    .bg-primary { background-color: #4B5694; }
+    .bg-primary-light { background-color: #7288AE; }
+    .bg-danger { background-color: #dc2626; }
+    .bg-neutral-500 { background-color: #71717a; }
     .hadi-wonder { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 </style>
 
@@ -130,14 +130,14 @@ function getInvoiceElements() {
     <link rel="stylesheet" href="dist/css/keyboard-hints.css">
 </noscript>
 
-<div class="content-wrapper bg-teal-50">
+<div class="content-wrapper">
 <section class="content-header">
 <div class="container-fluid p-0 m-0">
 
 <input type="hidden" name="pro_tybe" value="<?php echo htmlspecialchars($pro_tybe ?? ''); ?>">
 
 <center>
-<h4 class="font-thin text-md <?php echo $background_class; ?> text-teal-50 hadi-wonder" style="font-size:2em;padding:10px">
+<h4 class="font-thin text-md <?php echo $background_class; ?> text-white hadi-wonder" style="font-size:2em;padding:10px">
     <?php echo htmlspecialchars($invoice_title); ?>
 </h4>
 </center>

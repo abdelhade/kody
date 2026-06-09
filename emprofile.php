@@ -32,13 +32,16 @@ if ($empValid) {
 <style>
 .emprofile-page .content-wrapper { background: #f4f6f9; }
 
+/* Map .text-teal helper to primary color */
+.text-teal { color: var(--primary-color) !important; }
+
 .emprofile-page .page-hero {
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 55%, #5eead4 100%);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 55%, var(--primary-light) 100%);
     border-radius: 12px;
     color: #fff;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.25rem;
-    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 14px rgba(75, 86, 148, 0.25);
 }
 .emprofile-page .page-hero h1 { font-size: 1.35rem; font-weight: 700; margin: 0; color: #fff; }
 .emprofile-page .page-hero .badge-id {
@@ -69,7 +72,7 @@ if ($empValid) {
 
 .emprofile-page .profile-card .profile-banner {
     height: 72px;
-    background: linear-gradient(135deg, #0f766e, #2dd4bf);
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
 }
 .emprofile-page .profile-avatar-wrap {
     margin-top: -48px;
@@ -105,7 +108,7 @@ if ($empValid) {
 .emprofile-page .kbi-score-wrap {
     text-align: center;
     padding: 0.75rem;
-    background: linear-gradient(180deg, #ecfdf5, #f0fdfa);
+    background: linear-gradient(180deg, var(--neutral-100), var(--neutral-200));
     border-radius: 10px;
     margin: 0.5rem 0 1rem;
 }
@@ -115,7 +118,7 @@ if ($empValid) {
     background: transparent;
     font-size: 1.75rem;
     font-weight: 700;
-    color: #0d9488;
+    color: var(--primary-color);
     width: 100%;
     text-align: center;
     padding: 0;
@@ -133,8 +136,8 @@ if ($empValid) {
     height: 32px;
     line-height: 32px;
     text-align: center;
-    background: #ecfdf5;
-    color: #0d9488;
+    background: var(--neutral-100);
+    color: var(--primary-color);
     border-radius: 8px;
     flex-shrink: 0;
 }
@@ -150,11 +153,11 @@ if ($empValid) {
     font-size: 0.875rem;
     border: 1px solid transparent;
 }
-.emprofile-page .nav-pills .nav-link:hover { background: #f1f5f9; color: #0f766e; }
+.emprofile-page .nav-pills .nav-link:hover { background: #f1f5f9; color: var(--primary-dark); }
 .emprofile-page .nav-pills .nav-link.active {
-    background: #0d9488;
+    background: var(--primary-color);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+    box-shadow: 0 2px 8px rgba(75, 86, 148, 0.35);
 }
 
 .emprofile-page .detail-grid { padding: 0.25rem 0; }

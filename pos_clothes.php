@@ -67,9 +67,9 @@ if(isset($_SESSION['success_message'])){
 </body>
 <style>
       input:focus {
-    background-color: greenyellow !important;
-    border-color: #005b39 !important;
-    box-shadow: 0 0 0 0.2rem rgba(168, 252, 171, 0.25) !important;
+    background-color: #eef0fa !important;
+    border-color: #4B5694 !important;
+    box-shadow: 0 0 0 0.2rem rgba(75, 86, 148, 0.25) !important;
     outline: none !important;
     transition: all 0.3s ease !important;
   }

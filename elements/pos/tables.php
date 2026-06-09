@@ -30,7 +30,7 @@
 
 <!-- Tables -->
 <div class="table-container" data-table="1">
-  <div class="tab bg-green-500 text-slate-50 text-lg p-7 m-4" onclick="selectTable(1)">
+  <div class="tab text-slate-50 text-lg p-7 m-4" style="background: var(--primary-light); border-radius:8px;" onclick="selectTable(1)">
     <i class="fa fa-tv"></i>
     <p>1</p>
   </div>
@@ -41,7 +41,7 @@
 </div>
 
 <div class="table-container" data-table="2">
-  <div class="tab bg-green-500 text-slate-50 text-lg p-7 m-4" onclick="selectTable(2)">
+  <div class="tab text-slate-50 text-lg p-7 m-4" style="background: var(--primary-light); border-radius:8px;" onclick="selectTable(2)">
     <i class="fa fa-tv"></i>
     <p>2</p>
   </div>
@@ -52,7 +52,7 @@
 </div>
 
 <div class="table-container" data-table="3">
-  <div class="tab bg-green-500 text-slate-50 text-lg p-7 m-4" onclick="selectTable(3)">
+  <div class="tab text-slate-50 text-lg p-7 m-4" style="background: var(--primary-light); border-radius:8px;" onclick="selectTable(3)">
     <i class="fa fa-tv"></i>
     <p>3</p>
   </div>
@@ -63,7 +63,7 @@
 </div>
 
 <div class="table-container" data-table="4">
-  <div class="tab bg-green-500 text-slate-50 text-lg p-7 m-4" onclick="selectTable(4)">
+  <div class="tab text-slate-50 text-lg p-7 m-4" style="background: var(--primary-light); border-radius:8px;" onclick="selectTable(4)">
     <i class="fa fa-tv"></i>
     <p>4</p>
   </div>
@@ -74,7 +74,7 @@
 </div>
 
 <div class="table-container" data-table="5">
-  <div class="tab bg-green-500 text-slate-50 text-lg p-7 m-4" onclick="selectTable(5)">
+  <div class="tab text-slate-50 text-lg p-7 m-4" style="background: var(--primary-light); border-radius:8px;" onclick="selectTable(5)">
     <i class="fa fa-tv"></i>
     <p>5</p>
   </div>
@@ -119,14 +119,16 @@ var selectedTableId = 0;
 function selectTable(tableId) {
     // تغيير لون الطاولات
     document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('bg-blue-500');
-        tab.classList.add('bg-green-500');
+        tab.style.background = 'var(--primary-light)';
+        tab.style.boxShadow = '';
+        tab.classList.remove('selected-tab');
     });
     
     const selectedTab = document.querySelector(`[data-table="${tableId}"] .tab`);
     if (selectedTab) {
-        selectedTab.classList.remove('bg-green-500');
-        selectedTab.classList.add('bg-blue-500');
+        selectedTab.style.background = 'var(--primary-dark)';
+        selectedTab.style.boxShadow = '0 2px 8px rgba(17,24,68,0.4)';
+        selectedTab.classList.add('selected-tab');
     }
     
     localStorage.setItem('selectedTable', tableId);
@@ -180,7 +182,8 @@ function clearTable(tableId) {
         const tab = document.querySelector(`[data-table="${tableId}"] .tab`);
         if (tab) {
             tab.classList.remove('bg-red-500');
-            tab.classList.add('bg-green-500');
+            tab.style.background = 'var(--primary-light)';
+            tab.classList.remove('selected-tab');
         }
     }
 }
@@ -189,8 +192,8 @@ function activateTable(tableId) {
     alert('تم تشغيل الطاولة رقم ' + tableId);
     const tab = document.querySelector(`[data-table="${tableId}"] .tab`);
     if (tab) {
-        tab.classList.remove('bg-green-500');
-        tab.classList.add('bg-red-500');
+        tab.style.background = 'var(--error-color, #dc2626)';
+        tab.style.boxShadow = '';
     }
 }
 

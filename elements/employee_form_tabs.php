@@ -15,9 +15,9 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
 <style>
 .emp-form-page .content-wrapper { background: #f4f6f9; }
 .emp-form-page .page-hero {
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 55%, #5eead4 100%);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 55%, var(--primary-light) 100%);
     border-radius: 12px; color: #fff; padding: 1.1rem 1.35rem; margin-bottom: 1.25rem;
-    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 14px rgba(75, 86, 148, 0.25);
 }
 .emp-form-page .page-hero h1 { font-size: 1.25rem; font-weight: 700; margin: 0; color: #fff; }
 .emp-form-page .card { border: none; border-radius: 12px; box-shadow: 0 1px 4px rgba(15,23,42,0.06); overflow: hidden; }
@@ -25,7 +25,7 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
     color: #64748b; border-radius: 8px; padding: 0.55rem 1rem; font-weight: 600; font-size: 0.875rem;
 }
 .emp-form-page .nav-pills .nav-link.active {
-    background: #0d9488; color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,0.35);
+    background: var(--primary-color); color: #fff; box-shadow: 0 2px 8px rgba(75, 86, 148, 0.35);
 }
 .emp-form-page .tab-pane { padding: 1.25rem 1.5rem 0.5rem; }
 .emp-form-page label { font-weight: 600; color: #475569; font-size: 0.875rem; }

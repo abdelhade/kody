@@ -44,7 +44,7 @@ require $langFile;
 
 $bodyColor = isset($rowstg['bodycolor']) ? trim((string) $rowstg['bodycolor']) : '';
 if ($bodyColor === '' || !preg_match('/^#[0-9A-Fa-f]{3,8}$/', $bodyColor)) {
-    $bodyColor = '#f0fdfa';
+    $bodyColor = '#f4f4f5';
 }
 
 $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
@@ -126,9 +126,9 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
     transform: scale(1.15) rotate(5deg) !important;
   }
   input:focus {
-    background-color: greenyellow !important;
-    border-color: #005b39 !important;
-    box-shadow: 0 0 0 0.2rem rgba(168, 252, 171, 0.25) !important;
+    background-color: #eef0fa !important;
+    border-color: #4B5694 !important;
+    box-shadow: 0 0 0 0.2rem rgba(75, 86, 148, 0.25) !important;
     outline: none !important;
     transition: all 0.3s ease !important;
   }

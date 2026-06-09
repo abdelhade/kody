@@ -122,3 +122,45 @@ color:#ff0000;
     z-index: 9999;
     transition: width 0.4s ease;
   }
+
+/* ===== Unified Theme Style Overrides ===== */
+.bg-sky-100 { background-color: var(--neutral-100) !important; color: var(--primary-dark) !important; }
+.bg-sky-200 { background-color: var(--neutral-50) !important; color: var(--primary-dark) !important; border: 1px solid var(--primary-light) !important; }
+.bg-sky-300 { background-color: var(--primary-light) !important; color: #fff !important; }
+.bg-sky-500 { background-color: var(--primary-color) !important; color: #fff !important; }
+.bg-blue-500 { background-color: var(--primary-color) !important; color: #fff !important; }
+.text-cyan-700 { color: var(--primary-color) !important; }
+.text-teal-900 { color: var(--primary-dark) !important; }
+.text-teal { color: var(--primary-color) !important; }
+.bg-orange-200 { background-color: var(--neutral-50) !important; color: var(--primary-dark) !important; }
+.bg-orange-300 { background-color: var(--neutral-50) !important; color: var(--primary-dark) !important; }
+.bg-orange-50 { background-color: var(--neutral-50) !important; }
+.bg-slate-500 { background-color: var(--primary-light) !important; color: #fff !important; }
+.bg-slate-600 { background-color: var(--primary-color) !important; color: #fff !important; }
+.text-red { color: var(--primary-dark) !important; }
+
+/* === Green / Lime → Primary mappings === */
+.bg-green-100 { background-color: var(--neutral-100) !important; }
+.bg-green-400 { background-color: var(--primary-light) !important; color: #fff !important; }
+.bg-green-500 { background-color: var(--primary-light) !important; color: #fff !important; }
+.bg-green-600 { background-color: var(--primary-dark) !important; color: #fff !important; }
+.bg-lime-200 { background-color: var(--neutral-50) !important; color: var(--primary-dark) !important; border: 1px solid var(--primary-light) !important; }
+.bg-lime-400 { background-color: var(--neutral-50) !important; color: var(--primary-dark) !important; }
+.text-green-600 { color: var(--primary-color) !important; }
+
+/* === Zinc / Slate → Primary mappings === */
+.bg-zinc-500 { background-color: var(--primary-light) !important; color: #fff !important; }
+.bg-zinc-900 { background-color: var(--primary-dark) !important; color: #fff !important; }
+.bg-slate-100 { background-color: var(--neutral-100) !important; }
+.bg-slate-700 { background-color: var(--primary-dark) !important; }
+
+/* === Hover focus classes → neutralized === */
+.focus\:bg-orange-200:focus { background-color: #eef0fa !important; }
+.focus\:bg-orange-300:focus { background-color: #eef0fa !important; }
+.focus\:bg-orange-200:focus { background-color: #eef0fa !important; }
+.focus\:text-slate-950:focus { color: var(--primary-dark) !important; }
+
+/* === Red classes used as warnings/actions → keep danger color, map hover === */
+.bg-red-600 { background-color: var(--primary-dark) !important; color: #fff !important; }
+.hover\:bg-orange-600:hover { background-color: var(--primary-color) !important; color: #fff !important; }
+.hover\:text-orange-50:hover { color: #fff !important; }

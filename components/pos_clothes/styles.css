@@ -1,10 +1,11 @@
 :root {
-    --primary-navy: #2c3e50;
-    --primary-violet: #8e44ad;
-    --neutral-light: #f8f9fa;
-    --neutral-gray: #e9ecef;
-    --soft-gray: #dee2e6;
-    --text-dark: #2c3e50;
+    /* Remapped to unified theme palette */
+    --primary-navy: #111844;       /* was #2c3e50, now = var(--primary-dark) */
+    --primary-violet: #4B5694;     /* was #8e44ad, now = var(--primary-color) */
+    --neutral-light: #f4f4f5;
+    --neutral-gray: #EAE0CF;
+    --soft-gray: #e2e8f0;
+    --text-dark: #111844;
 }
 
 body {
@@ -40,14 +41,14 @@ body {
 .category-card:hover {
     transform: translateY(-2px) scale(1.03);
     box-shadow: 0 4px 12px rgba(44, 62, 80, 0.5);
-    background: #1a252f;
-    border-color: #1a252f;
+    background: #0a0e2a;
+    border-color: #0a0e2a;
 }
 
 .category-card.active {
     background: var(--primary-violet);
     border-color: var(--primary-violet);
-    box-shadow: 0 4px 12px rgba(142, 68, 173, 0.5);
+    box-shadow: 0 4px 12px rgba(75, 86, 148, 0.5);
 }
 
 .category-icon {
@@ -191,8 +192,8 @@ body {
 }
 
 .btn-navy:hover {
-    background-color: #1a252f;
-    border-color: #1a252f;
+    background-color: #0a0e2a;
+    border-color: #0a0e2a;
     color: white;
 }
 
@@ -203,8 +204,8 @@ body {
 }
 
 .btn-violet:hover {
-    background-color: #7d3c98;
-    border-color: #7d3c98;
+    background-color: #3a4480;
+    border-color: #3a4480;
     color: white;
 }
 
