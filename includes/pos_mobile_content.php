@@ -9,6 +9,8 @@ if (!isset($action_url)) {
     <input type="hidden" name="pro_tybe" value="9">
     <input type="hidden" name="pro_serial" value="0">
     <input type="hidden" name="pro_id" value="1">
+    <input type="hidden" name="submit_action" value="cash">
+    <input type="hidden" name="from_mobile" value="1">
     
     <!-- Order Settings (Collapsed by Default on Mobile) -->
     <div class="accordion accordion-flush mobile-settings-accordion" id="orderSettingsAccordion">

@@ -66,24 +66,26 @@
                     </div>
 
                     <div class="col-12">
+                        <label class="form-label fw-bold">طريقة الدفع</label>
+                        <div class="btn-group w-100 mb-2" role="group">
+                            <input type="radio" class="btn-check" name="payment_method" id="pay_cash" value="cash" checked autocomplete="off">
+                            <label class="btn btn-outline-primary" for="pay_cash">
+                                <i class="fas fa-money-bill-wave me-1"></i>نقدي (كاش)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="payment_method" id="pay_bank" value="bank" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="pay_bank">
+                                <i class="fas fa-university me-1"></i>بنك / شبكة
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-12" id="fund_select_container">
                         <label class="form-label fw-bold">
                             <i class="fas fa-wallet me-2"></i>الصندوق
                         </label>
                         <select name="fund_id" id="modal_fund_id" class="form-select" required>
-                            <?php
-                            $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
-                            $first_fund = true;
-                            while ($rowfund = $resfund->fetch_assoc()) { 
-                                $selected = '';
-                                if($rowstg['def_pos_fund'] == $rowfund['id']){
-                                    $selected = "selected";
-                                } elseif ($first_fund && empty($rowstg['def_pos_fund'])) {
-                                    $selected = "selected";
-                                }
-                                $first_fund = false;
-                            ?>
-                            <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
-                            <?php } ?>
+                            <!-- populated dynamically by JS -->
                         </select>
                     </div>
 
@@ -113,3 +115,60 @@
         </div>
     </div>
 </div>
+
+<script>
+    const posFunds = [
+        <?php
+        $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
+        $first_fund = true;
+        while ($rowfund = $resfund->fetch_assoc()) {
+            $selected = '';
+            if($rowstg['def_pos_fund'] == $rowfund['id']){
+                $selected = 'true';
+            } elseif ($first_fund && empty($rowstg['def_pos_fund'])) {
+                $selected = 'true';
+            } else {
+                $selected = 'false';
+            }
+            $first_fund = false;
+            echo "{ id: {$rowfund['id']}, name: '" . addslashes($rowfund['aname']) . "', selected: {$selected} },";
+        }
+        ?>
+    ];
+
+    const posBanks = [
+        <?php
+        $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
+        $first_bank = true;
+        while ($rowbank = $resbank->fetch_assoc()) {
+            $selected = $first_bank ? 'true' : 'false';
+            $first_bank = false;
+            echo "{ id: {$rowbank['id']}, name: '" . addslashes($rowbank['aname']) . "', selected: {$selected} },";
+        }
+        ?>
+    ];
+
+    function updatePaymentOptions() {
+        const method = $('input[name="payment_method"]:checked').val();
+        const $select = $('#modal_fund_id');
+        $select.empty();
+
+        const label = method === 'cash' ? 'الصندوق' : 'البنك';
+        const icon = method === 'cash' ? 'fa-wallet' : 'fa-university';
+        $('#fund_select_container label').html('<i class="fas ' + icon + ' me-2"></i>' + label);
+
+        const items = method === 'cash' ? posFunds : posBanks;
+        items.forEach(item => {
+            const option = new Option(item.name, item.id, item.selected, item.selected);
+            $select.append(option);
+        });
+    }
+
+    // ربط الحدث عند تغيير طريقة الدفع
+    document.addEventListener('DOMContentLoaded', function() {
+        $('input[name="payment_method"]').on('change', updatePaymentOptions);
+        
+        // تشغيل مبدئي لتعبئة الخيارات
+        updatePaymentOptions();
+    });
+</script>

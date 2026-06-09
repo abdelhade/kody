@@ -69,8 +69,8 @@ try {
     $pro_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
     $stmt->close();
     
-    // تحديد حساب المبيعات (91 هو حساب المبيعات في النظام)
-    $sales_account = 91;
+    // حساب المخزن هو الطرف الدائن في قيد البيع (يُخصم من المخزن عند البيع)
+    $store_account = $store_id;
     
     // إدخال رأس الفاتورة مع قيد محاسبي (is_journal = 1)
     $stmt = $conn->prepare("
@@ -84,8 +84,10 @@ try {
     ");
     
     // تحديد الحسابات بناءً على نوع العملية
-    $acc1_val = $is_return ? $sales_account : $acc2_id;
-    $acc2_val = $is_return ? $acc2_id : $sales_account;
+    // بيع: مدين العميل (acc2_id) ← دائن المخزن (store_id)
+    // مردود: مدين المخزن (store_id) ← دائن العميل (acc2_id)
+    $acc1_val = $is_return ? $store_account : $acc2_id;
+    $acc2_val = $is_return ? $acc2_id : $store_account;
 
     $stmt->bind_param(
         "iiissssiiiiidddi",
@@ -159,12 +161,13 @@ try {
     $journal_lastid = $conn->insert_id;
     $stmt->close();
     
-    // إدخال تفاصيل القيد (الطرف الأول)
+    // إدخال تفاصيل القيد (الطرف الأول - المدين)
+    // بيع: مدين العميل | مردود: مدين المخزن
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, ?, 0, 0, ?)
     ");
-    $acc1_journal = $is_return ? $sales_account : $acc2_id;
+    $acc1_journal = $is_return ? $store_account : $acc2_id;
     $stmt->bind_param("iidi", $journal_lastid, $acc1_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
@@ -172,12 +175,13 @@ try {
     }
     $stmt->close();
     
-    // إدخال تفاصيل القيد (الطرف الثاني)
+    // إدخال تفاصيل القيد (الطرف الثاني - الدائن)
+    // بيع: دائن المخزن | مردود: دائن العميل
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, 0, ?, 1, ?)
     ");
-    $acc2_journal = $is_return ? $acc2_id : $sales_account;
+    $acc2_journal = $is_return ? $acc2_id : $store_account;
     $stmt->bind_param("iidi", $journal_lastid, $acc2_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {

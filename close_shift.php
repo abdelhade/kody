@@ -13,50 +13,55 @@ $shift_date = date('Y-m-d');
 $shift_time = date('H:i:s');
 
 try {
-    // حساب مبيعات المستخدم الحالي لليوم
-    $sales_query = "SELECT 
-                        COUNT(*) as total_orders,
-                        COALESCE(SUM(fat_net), 0) as total_sales
-                    FROM ot_head 
-                    WHERE DATE(pro_date) = '$shift_date' 
-                    AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11) 
-                    AND isdeleted = 0
-                    AND fat_net > 0
-                    AND user = '$user_id'";
-    
-    $sales_result = $conn->query($sales_query);
-    
-    if (!$sales_result) {
-        throw new Exception('خطأ في استعلام قاعدة البيانات: ' . $conn->error);
+    // استخدام كلاس ShiftReport لحساب مبيعات الشيفت الحالي فقط (وليس اليوم بالكامل)
+    $classPath = __DIR__ . '/classes/ShiftReport.php';
+    if (file_exists($classPath)) {
+        include_once($classPath);
+        $report = new ShiftReport($conn, $user_id);
+        $totals = $report->getTotals();
+        $total_orders = intval($totals['total_orders'] ?? 0);
+        $total_sales = floatval($totals['total_net'] ?? 0);
+    } else {
+        $sales_query = "SELECT 
+                            COUNT(*) as total_orders,
+                            COALESCE(SUM(fat_net), 0) as total_sales
+                        FROM ot_head 
+                        WHERE DATE(pro_date) = '$shift_date' 
+                        AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11) 
+                        AND isdeleted = 0
+                        AND fat_net > 0
+                        AND user = '$user_id'";
+        $sales_result = $conn->query($sales_query);
+        $sales_data = $sales_result->fetch_assoc();
+        $total_orders = intval($sales_data['total_orders'] ?? 0);
+        $total_sales = floatval($sales_data['total_sales'] ?? 0);
     }
     
-    $sales_data = $sales_result->fetch_assoc();
-    
-    $total_orders = intval($sales_data['total_orders'] ?? 0);
-    $total_sales = floatval($sales_data['total_sales'] ?? 0);
+
     
     // جلب اسم المستخدم
-    $user_query = "SELECT aname FROM acc_head WHERE id = '$user_id'";
+    $user_query = "SELECT uname FROM users WHERE id = '$user_id'";
     $user_result = $conn->query($user_query);
-    $username = $user_result ? $user_result->fetch_assoc()['aname'] : 'Unknown';
+    $username = $user_result ? $user_result->fetch_assoc()['uname'] : 'Unknown';
     
     // جلب بيانات إغلاق الشيفت من POST
     $expenses = floatval($_POST['expenses'] ?? 0);
     $exp_notes = $conn->real_escape_string($_POST['exp_notes'] ?? '');
     $cash = floatval($_POST['cash'] ?? $total_sales);
     $fund_after = floatval($_POST['fund_after'] ?? $total_sales);
+    $fund_before = floatval($_POST['fund_before'] ?? 0);
     $notes = $conn->real_escape_string($_POST['notes'] ?? '');
     
     // Debug: لوج البيانات المستلمة
     error_log('POST data: ' . print_r($_POST, true));
-    error_log('Processed data: expenses=' . $expenses . ', exp_notes=' . $exp_notes . ', cash=' . $cash . ', fund_after=' . $fund_after . ', notes=' . $notes);
+    error_log('Processed data: expenses=' . $expenses . ', exp_notes=' . $exp_notes . ', cash=' . $cash . ', fund_after=' . $fund_after . ', fund_before=' . $fund_before . ', notes=' . $notes);
     
     // إدراج سجل إغلاق الشيفت
     $shift_number = date('Ymd') . '_' . $user_id;
     $insert_query = "INSERT INTO closed_orders 
-                     (shift, date, user, endtime, total_sales, expenses, exp_notes, cash, fund_after, info) 
+                     (shift, date, user, endtime, total_sales, expenses, exp_notes, cash, fund_before, fund_after, info) 
                      VALUES 
-                     ('$shift_number', '$shift_date', '$username', '$shift_time', '$total_sales', '$expenses', '$exp_notes', '$cash', '$fund_after', '$notes')";
+                     ('$shift_number', '$shift_date', '$username', '$shift_time', '$total_sales', '$expenses', '$exp_notes', '$cash', '$fund_before', '$fund_after', '$notes')";
     
     if ($conn->query($insert_query)) {
         // رسالة بسيطة

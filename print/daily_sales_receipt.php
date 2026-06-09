@@ -12,9 +12,9 @@ $user_id = $_SESSION['userid'];
 $today = date('Y-m-d');
 
 // جلب اسم المستخدم
-$user_query = $conn->query("SELECT aname FROM acc_head WHERE id = $user_id");
+$user_query = $conn->query("SELECT uname FROM users WHERE id = $user_id");
 $user_data = $user_query->fetch_assoc();
-$cashier_name = $user_data['aname'] ?? 'الكاشير';
+$cashier_name = $user_data['uname'] ?? 'الكاشير';
 
 // جلب إجمالي مبيعات اليوم للمستخدم المسجل فقط
 $sales_query = $conn->query("SELECT 

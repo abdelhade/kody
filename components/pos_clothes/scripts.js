@@ -495,6 +495,15 @@ function updateFullscreenIcon() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
+    // تفعيل select2 للعملاء والموظفين لجعلهم قابلين للبحث
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('.select2-select').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            dir: 'rtl'
+        });
+    }
+
     // تحميل كل الأصناف عند فتح الصفحة
     loadAllItems();
     
@@ -545,5 +554,68 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             payBtn.removeClass('btn-danger').addClass('btn-violet');
         }
+    });
+
+    // حفظ العميل الجديد عبر AJAX
+    $('#saveAjaxClientBtn').on('click', function() {
+        const name = $('#ajax_client_name').val().trim();
+        const phone = $('#ajax_client_phone').val().trim();
+        const address = $('#ajax_client_address').val().trim();
+
+        if (name === '') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يرجى إدخال اسم العميل',
+                confirmButtonText: 'حسناً'
+            });
+            return;
+        }
+
+        $.ajax({
+            url: 'ajax/add_client_ajax.php',
+            type: 'POST',
+            data: {
+                name: name,
+                phone: phone,
+                address: address
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم بنجاح!',
+                        text: response.message || 'تم إضافة العميل الجديد بنجاح',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+
+                    // إضافة العميل الجديد لقائمة الاختيار وتحديده
+                    const newOption = new Option(response.name, response.id, true, true);
+                    $('#clientSelect').append(newOption).trigger('change');
+
+                    // إغلاق المودال وتصفير الفورم
+                    $('#addClientModal').modal('hide');
+                    $('#ajaxAddClientForm')[0].reset();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ',
+                        text: response.message || 'حدث خطأ أثناء إضافة العميل',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة مرة أخرى.',
+                    confirmButtonText: 'حسناً'
+                });
+            }
+        });
     });
 });

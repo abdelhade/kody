@@ -100,6 +100,9 @@ switch ($q) {
                                     <button class="btn btn-primary" type="submit" style="flex: 2;">
                                         <i class="fa fa-search"></i> بحث
                                     </button>
+                                    <button class="btn btn-info" type="button" id="toggleFiltersBtn" style="flex: 1;" title="تصفية الحقول">
+                                        <i class="fa fa-filter"></i>
+                                    </button>
                                     <button class="btn btn-dark" type="button" onclick="printBrutal()" style="flex: 1;" title="طباعة بتنسيق Brutal">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
@@ -117,8 +120,10 @@ switch ($q) {
                                     <th>#</th>
                                     <th>الوقت و التاريخ</th>
                                     <th>اسم العملية</th>
+                                    <th>طريقة الدفع</th>
                                     <th>قيمة العملية</th>
                                     <th>صافي العملية</th>
+                                    <th>المدفوع</th>
                                     <th>الحساب</th>
                                     <th>الحساب المقابل</th>
                                     <th>المخزن</th>
@@ -126,6 +131,22 @@ switch ($q) {
                                     <th>الربح</th>
                                     <th>المستخدم</th>
                                     <th>معرف</th>
+                                </tr>
+                                <tr id="filterRow" style="display: none;">
+                                    <td></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="1" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="2" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="3" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="4" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="5" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="6" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="7" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="8" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="9" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="10" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="11" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="12" placeholder="فلتر..."></td>
+                                    <td></td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -145,11 +166,30 @@ switch ($q) {
                                                 <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?>
                                             </a>
                                         </td>
+                                        <td>
+                                            <?php 
+                                            $invoice_id = intval($rowop['id']);
+                                            $paid_query = $conn->query("SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = $invoice_id AND isdeleted != 1");
+                                            $paid_amount = ($paid_query && $row_paid = $paid_query->fetch_assoc()) ? ($row_paid['paid'] ?? 0) : 0;
+                                            
+                                            if ($paid_amount < $rowop['fat_net']): 
+                                            ?>
+                                                <span class="badge badge-warning">أجل</span>
+                                            <?php else: ?>
+                                                <span class="badge badge-success">نقدي</span>
+                                            <?php endif; ?>
+                                        </td>
                                          <td class="value <?= $is_return ? 'ret-value' : 'sale-value' ?>"><?= $rowop['pro_value'] ?></td>
                                         <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>">
-                                            <?= $rowop['fat_net'] - ($rowop['jal_amount'] ?? 0) ?>
-                                            <?php if(($rowop['jal_amount'] ?? 0) > 0): ?>
-                                                <small class="d-block text-muted" style="font-size: 0.65rem;">(أجل: <?= $rowop['jal_amount'] ?>)</small>
+                                            <?= $rowop['fat_net'] ?>
+                                        </td>
+                                        <td class="paid-amount">
+                                            <?= number_format($paid_amount, 2, '.', '') ?>
+                                            <?php 
+                                            $remaining = $rowop['fat_net'] - $paid_amount;
+                                            if ($remaining > 0): 
+                                            ?>
+                                                <small class="d-block text-muted" style="font-size: 0.65rem;">(أجل: <?= number_format($remaining, 2, '.', '') ?>)</small>
                                             <?php endif; ?>
                                         </td>
                                         <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc1']}")->fetch_assoc()['aname'] ?></td>
@@ -295,6 +335,8 @@ switch ($q) {
                                     <td id="total" class="bg-white"></td>
                                     <td class="font-weight-bold">صافي الصفحة</td>
                                     <td id="fatnet" class="bg-white"></td>
+                                    <td class="font-weight-bold">المدفوع للصفحة</td>
+                                    <td id="paid" class="bg-white"></td>
                                     <td class="font-weight-bold">ارباح الصفحة</td>
                                     <td id="profit" class="bg-white"></td>
                                 </tr>
@@ -388,24 +430,105 @@ switch ($q) {
 </div>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const sales = Array.from(document.querySelectorAll(".sale-value")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
-        const returns = Array.from(document.querySelectorAll(".ret-value")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
+        const toggleBtn = document.getElementById("toggleFiltersBtn");
+        const filterRow = document.getElementById("filterRow");
         
-        const total = sales + returns; // الإجمالي الحسابي للصفحة
-        const net = sales - returns; // الصافي الحقيقي (مبيعات - مردود)
-        
-        const fatnet = Array.from(document.querySelectorAll(".fatnet")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
-        const profit = Array.from(document.querySelectorAll(".prft")).reduce((sum, el) => sum + parseFloat(el.textContent || 0), 0);
-        
-        document.getElementById("total").textContent = total.toFixed(2);
-        document.getElementById("fatnet").textContent = fatnet.toFixed(2);
-        document.getElementById("profit").textContent = profit.toFixed(2);
-
-        if (document.getElementById("total_sales_val")) {
-            document.getElementById("total_sales_val").textContent = sales.toFixed(2);
-            document.getElementById("total_returns_val").textContent = returns.toFixed(2);
-            document.getElementById("net_sales_val").textContent = net.toFixed(2);
+        if (toggleBtn && filterRow) {
+            toggleBtn.addEventListener("click", function () {
+                if (filterRow.style.display === "none") {
+                    filterRow.style.display = "";
+                    toggleBtn.classList.add("active");
+                } else {
+                    filterRow.style.display = "none";
+                    toggleBtn.classList.remove("active");
+                    // Clear all filters when closing
+                    const inputs = filterRow.querySelectorAll("input");
+                    inputs.forEach(input => {
+                        input.value = "";
+                    });
+                    filterTable();
+                }
+            });
         }
+
+        const inputs = document.querySelectorAll(".column-filter");
+        inputs.forEach(input => {
+            input.addEventListener("input", filterTable);
+        });
+
+        function filterTable() {
+            const rows = document.querySelectorAll("table tbody tr");
+            rows.forEach(row => {
+                let showRow = true;
+                inputs.forEach(input => {
+                    const colIdx = parseInt(input.getAttribute("data-col-idx"));
+                    const filterVal = input.value.toLowerCase().trim();
+                    if (filterVal) {
+                        const cell = row.cells[colIdx];
+                        if (cell) {
+                            const cellText = cell.textContent.toLowerCase().trim();
+                            if (!cellText.includes(filterVal)) {
+                                showRow = false;
+                            }
+                        }
+                    }
+                });
+                row.style.display = showRow ? "" : "none";
+            });
+            
+            recalculateTotals();
+        }
+
+        function recalculateTotals() {
+            const visibleRows = Array.from(document.querySelectorAll("table tbody tr")).filter(tr => tr.style.display !== "none");
+            
+            let sales = 0;
+            let returns = 0;
+            let fatnet = 0;
+            let paid = 0;
+            let profit = 0;
+            
+            visibleRows.forEach(row => {
+                const valEl = row.querySelector(".value");
+                const netEl = row.querySelector(".fatnet");
+                const paidEl = row.querySelector(".paid-amount");
+                const prftEl = row.querySelector(".prft");
+                
+                const val = valEl ? parseFloat(valEl.textContent.trim()) || 0 : 0;
+                const net = netEl ? parseFloat(netEl.textContent.trim()) || 0 : 0;
+                const pd = paidEl ? parseFloat(paidEl.textContent.trim()) || 0 : 0;
+                const prft = prftEl ? parseFloat(prftEl.textContent.trim()) || 0 : 0;
+                
+                if (valEl) {
+                    if (valEl.classList.contains("ret-value")) {
+                        returns += val;
+                    } else if (valEl.classList.contains("sale-value")) {
+                        sales += val;
+                    }
+                }
+                
+                fatnet += net;
+                paid += pd;
+                profit += prft;
+            });
+            
+            const total = sales + returns; // الإجمالي الحسابي للصفحة
+            const net = sales - returns; // الصافي الحقيقي (مبيعات - مردود)
+            
+            document.getElementById("total").textContent = total.toFixed(2);
+            document.getElementById("fatnet").textContent = fatnet.toFixed(2);
+            document.getElementById("paid").textContent = paid.toFixed(2);
+            document.getElementById("profit").textContent = profit.toFixed(2);
+
+            if (document.getElementById("total_sales_val")) {
+                document.getElementById("total_sales_val").textContent = sales.toFixed(2);
+                document.getElementById("total_returns_val").textContent = returns.toFixed(2);
+                document.getElementById("net_sales_val").textContent = net.toFixed(2);
+            }
+        }
+
+        // Initial calculation
+        recalculateTotals();
     });
 </script>
 <script>

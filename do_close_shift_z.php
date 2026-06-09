@@ -48,9 +48,9 @@ $details_array = [
 $json_details = json_encode($details_array, JSON_UNESCAPED_UNICODE);
 
 // جلب اسم المستخدم
-$user_query = "SELECT aname FROM acc_head WHERE id = '$user_id'";
+$user_query = "SELECT uname FROM users WHERE id = '$user_id'";
 $user_result = $conn->query($user_query);
-$username = $user_result ? $user_result->fetch_assoc()['aname'] : 'Unknown';
+$username = $user_result ? $user_result->fetch_assoc()['uname'] : 'Unknown';
 
 // رقم الشيفت
 $shift_number = date('Ymd') . '_' . $user_id;

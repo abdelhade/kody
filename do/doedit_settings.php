@@ -25,7 +25,10 @@ $showhr = (int)($_POST['showhr'] ?? 0);
 $showatt = (int)($_POST['showatt'] ?? 0);
 $showclinc = (int)($_POST['showclinc'] ?? 0);
 $showrent = (int)($_POST['showrent'] ?? 0);
-$bodycolor = trim($_POST['bodycolor'] ?? '#ffffff');
+$bodycolor = trim($_POST['bodycolor'] ?? 'solarized_white');
+if (!in_array($bodycolor, ['solarized_white', 'monokai', 'tokyo_night'])) {
+    $bodycolor = 'solarized_white';
+}
 $showpayroll = (int)($_POST['showpayroll'] ?? 0);
 $showpulse = (int)($_POST['showpulse'] ?? 0);
 $acc_rent = (int)($_POST['acc_rent'] ?? 0);
@@ -35,6 +38,8 @@ $def_pos_employee = (int)($_POST['def_pos_employee'] ?? 0);
 $def_pos_fund = (int)($_POST['def_pos_fund'] ?? 0);
 $pos_type = trim($_POST['pos_type'] ?? 'barcode');
 $pos_has_password = isset($_POST['pos_has_password']) ? 1 : 0;
+$emp_commission = floatval($_POST['emp_commission'] ?? 0);
+$user_commission = floatval($_POST['user_commission'] ?? 0);
 
 // التحقق من صحة البيانات المطلوبة
 if (empty($companyname)) {
@@ -61,16 +66,18 @@ SET company_name = ?,
     def_pos_fund = ?,
     pos_type = ?,
     pos_has_password = ?,
-    showpulse = ?
+    showpulse = ?,
+    emp_commission = ?,
+    user_commission = ?
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssiiiisissiiisii", 
+$stmt->bind_param("sssssiiiisissiiisiidd", 
     $companyname, $companyadd, $companytel, $edit_pass, $lang,
     $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
     $showrent, $showclinc, $def_pos_client, $def_pos_store, 
     $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
-    $showpulse
+    $showpulse, $emp_commission, $user_commission
 );
 
 if ($stmt->execute()) {

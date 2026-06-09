@@ -206,8 +206,8 @@ if ($isEdit) {
                                         <th class="align-middle" style="min-width: 90px;">المعامل</th>
                                         <th class="align-middle" style="min-width: 110px;">الباركود</th>
                                         <th class="align-middle" style="min-width: 90px;">التكلفة</th>
-                                        <th class="align-middle" style="min-width: 90px;">البيع 1</th>
-                                        <th class="align-middle" style="min-width: 90px;">البيع 2</th>
+                                        <th class="align-middle" style="min-width: 90px;">قطاعي</th>
+                                        <th class="align-middle" style="min-width: 90px;">جملة</th>
                                         <th class="align-middle" style="min-width: 90px;">السوق</th>
                                         <th class="align-middle" style="width: 56px;"></th>
                                     </tr>

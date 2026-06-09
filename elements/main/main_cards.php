@@ -2,7 +2,7 @@
     <div class="row">
         <?php if($role['sid_rents'] == 1){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #313647 !important;">
+            <div class="stat-card" style="background: #111844 !important;">
                 <div class="card-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
@@ -27,7 +27,7 @@
         <?php } ?>
 
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #942C21 !important;">
+            <div class="stat-card" style="background: #4B5694 !important;">
                 <div class="card-icon">
                     <i class="fas fa-users"></i>
                 </div>
@@ -51,7 +51,7 @@
         </div>
 
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #E3651D !important;">
+            <div class="stat-card" style="background: #7288AE !important;">
                 <div class="card-icon">
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
@@ -75,12 +75,12 @@
         </div>
 
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #313647 !important;">
-                <div class="card-icon">
+            <div class="stat-card" style="background: #EAE0CF !important; color: #111844 !important;">
+                <div class="card-icon" style="color: #111844 !important;">
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="card-content">
-                    <h2 class="stat-number">
+                    <h2 class="stat-number" style="color: #111844 !important;">
                         <?php 
                             $cnt7 = $conn->query("SELECT COUNT(*) FROM ot_head where pro_tybe = 3 OR pro_tybe = 9")->fetch_assoc(); 
                             $cnt8 = $conn->query("SELECT sum(pro_value) FROM ot_head where pro_tybe = 3 OR pro_tybe = 9")->fetch_assoc();
@@ -88,12 +88,12 @@
                             echo $cnt7['COUNT(*)'] ." / ". $cnt09."K"; 
                         ?>
                     </h2>
-                    <p class="stat-label">المبيعات</p>
+                    <p class="stat-label" style="color: #111844 !important;">المبيعات</p>
                 </div>
-                <div class="card-footer-det">
-                    <a href="operations_summary.php?q=buy" class="card-link">
+                <div class="card-footer-det" style="border-top: 1px solid rgba(17, 24, 68, 0.15) !important;">
+                    <a href="operations_summary.php?q=buy" class="card-link" style="color: #111844 !important;">
                         <span>عرض التفاصيل</span>
-                        <i class="fas fa-chevron-left"></i>
+                        <i class="fas fa-chevron-left" style="color: #111844 !important;"></i>
                     </a>
                 </div>
                 <div class="wave-effect"></div>
@@ -102,7 +102,7 @@
 
         <?php if($role['sid_sales'] == 1){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #942C21 !important;">
+            <div class="stat-card" style="background: #111844 !important;">
                 <div class="card-icon">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
@@ -128,7 +128,7 @@
 
         <?php if($role['sid_hr'] == 1){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #E3651D !important;">
+            <div class="stat-card" style="background: #4B5694 !important;">
                 <div class="card-icon">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -154,7 +154,7 @@
 
         <?php if($role['sid_clinics'] == 1){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: #313647 !important;">
+            <div class="stat-card" style="background: #7288AE !important;">
                 <div class="card-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>

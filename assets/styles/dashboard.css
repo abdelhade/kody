@@ -1,12 +1,12 @@
 /* ===== CSS Variables - الألوان الأساسية ===== */
 :root {
     /* الألوان الأساسية */
-    --primary-color: #4f46e5;
-    --primary-dark: #4338ca;
-    --primary-light: #6366f1;
+    --primary-color: #4B5694;
+    --primary-dark: #111844;
+    --primary-light: #7288AE;
     
     /* الألوان المحايدة */
-    --neutral-50: #fafafa;
+    --neutral-50: #EAE0CF;
     --neutral-100: #f4f4f5;
     --neutral-200: #e4e4e7;
     --neutral-300: #d4d4d8;
@@ -118,7 +118,7 @@
 
 /* تدرجات الألوان للبطاقات */
 .bg-gradient-primary {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    background: linear-gradient(135deg, #4B5694, #7288AE);
 }
 
 .bg-gradient-info {
@@ -239,7 +239,7 @@
 }
 
 /* ألوان الأزرار */
-.btn-primary { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+.btn-primary { background: linear-gradient(135deg, #4B5694, #7288AE); }
 .btn-success { background: linear-gradient(135deg, #059669, #10b981); }
 .btn-warning { background: linear-gradient(135deg, #d97706, #f59e0b); }
 .btn-info { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }

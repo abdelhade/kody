@@ -114,7 +114,11 @@ $settings = $settings_query->fetch_assoc();
 
         <div class="summary-box">
             <div class="info-row">
-                <span>إجمالي المبيعات:</span>
+                <span>مبلغ بداية الشيفت:</span>
+                <span><?= number_format($shift['fund_before'], 2) ?></span>
+            </div>
+            <div class="info-row">
+                <span>صافي النقدية الواردة:</span>
                 <span><?= number_format($shift['total_sales'], 2) ?></span>
             </div>
             <div class="info-row">
@@ -128,11 +132,7 @@ $settings = $settings_query->fetch_assoc();
             <?php endif; ?>
             
             <div class="total-row">
-                <span>تسليم الكاش:</span>
-                <span><?= number_format($shift['cash'], 2) ?></span>
-            </div>
-            <div class="info-row mt-2" style="font-size: 11px;">
-                <span>المتبقي في الدرج:</span>
+                <span>الباقي (مستنتج):</span>
                 <span><?= number_format($shift['fund_after'], 2) ?></span>
             </div>
         </div>

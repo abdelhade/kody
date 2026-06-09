@@ -20,13 +20,13 @@ class ShiftReport {
     }
     
     private function getUsernameById($id) {
-        $query = "SELECT aname FROM acc_head WHERE id = ?";
+        $query = "SELECT uname FROM users WHERE id = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $res = $stmt->get_result();
         if ($row = $res->fetch_assoc()) {
-            return $row['aname'];
+            return $row['uname'];
         }
         return '';
     }

@@ -273,7 +273,7 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                                     <label for="emp_salary"><?= $lang_addemployee_salary ?></label>
                                     <input type="text" data-parsley-trigger="keyup" data-parsley-type="digits"
                                            value="<?= $e('salary', $isEdit ? '0' : '') ?>" class="form-control"
-                                           id="emp_salary" name="salary" placeholder="<?= $lang_pbholder_salary ?>" autocomplete="off">
+                                           id="emp_salary" name="salary" placeholder="00" autocomplete="off">
                                 </div>
                             </div>
                             <div class="col-md-4">

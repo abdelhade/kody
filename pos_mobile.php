@@ -138,5 +138,4 @@ include('includes/pos_mobile_content.php');
 <!-- إضافة السكريبت الخاص بنقطة بيع الموبايل -->
 <script src="js/pos_mobile.js?v=<?= time() ?>"></script>
 
-<?php include('elements/pos/cofe_widget.php'); ?>
 <?php include('includes/pos_simple_footer.php');?>

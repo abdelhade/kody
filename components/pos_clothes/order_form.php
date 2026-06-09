@@ -66,7 +66,7 @@ if (!empty($rowstg['def_pos_store'])) {
                 </div>
                 <div class="col-4">
                     <label class="form-label" style="font-size: 0.75rem;">الموظف</label>
-                    <select name="emp_id" class="form-select form-select-sm" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
+                    <select name="emp_id" class="form-select form-select-sm select2-select" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
                         $resemp = $conn->query("SELECT * FROM `acc_head` WHERE parent_id = 35 AND is_basic = 0 AND isdeleted = 0;");
                         $first_emp = true;
@@ -84,8 +84,13 @@ if (!empty($rowstg['def_pos_store'])) {
                     </select>
                 </div>
                 <div class="col-4">
-                    <label class="form-label" style="font-size: 0.75rem;">العميل</label>
-                    <select name="acc2_id" class="form-select form-select-sm" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label mb-0" style="font-size: 0.75rem;">العميل</label>
+                        <button type="button" class="btn btn-sm btn-primary py-0 px-1" style="font-size: 0.7rem; line-height: 1; min-height: auto;" data-bs-toggle="modal" data-bs-target="#addClientModal" title="إضافة عميل جديد">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-select" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
                         $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%' AND is_basic = 0 AND isdeleted = 0;");
                         $first_client = true;
@@ -115,11 +120,11 @@ if (!empty($rowstg['def_pos_store'])) {
             </div>
         </div>
 
-        <div style="padding: 0 0.8rem 0.6rem;">
-            <textarea class="form-control form-control-sm" name="info" rows="1" placeholder="ملاحظات..." style="font-size: 0.75rem;"></textarea>
-        </div>
-
         <div class="order-footer">
+            <div class="mb-2">
+                <textarea class="form-control form-control-sm" name="info" rows="1" placeholder="ملاحظات..." style="font-size: 0.75rem;"></textarea>
+            </div>
+
             <div class="row mb-2">
                 <div class="col-6 text-center">
                     <small class="text-muted" style="font-size: 0.7rem;">الإجمالي</small>
@@ -147,3 +152,37 @@ if (!empty($rowstg['def_pos_store'])) {
         </div>
     </div>
 </form>
+
+<!-- مودال إضافة عميل جديد -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--primary-navy); color: white;">
+                <h5 class="modal-title" id="addClientModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>إضافة عميل جديد
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="ajaxAddClientForm">
+                    <div class="mb-3">
+                        <label for="ajax_client_name" class="form-label fw-bold" style="font-size: 0.85rem;">اسم العميل <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" id="ajax_client_name" name="name" required placeholder="مثال: محمد أحمد" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="ajax_client_phone" class="form-label fw-bold" style="font-size: 0.85rem;">الهاتف</label>
+                        <input type="text" class="form-control form-control-sm" id="ajax_client_phone" name="phone" placeholder="مثال: 010xxxxxxxx" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="ajax_client_address" class="form-label fw-bold" style="font-size: 0.85rem;">العنوان</label>
+                        <input type="text" class="form-control form-control-sm" id="ajax_client_address" name="address" placeholder="مثال: القاهرة، مصر" style="font-size: 0.85rem;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-violet btn-sm" id="saveAjaxClientBtn">حفظ العميل</button>
+            </div>
+        </div>
+    </div>
+</div>

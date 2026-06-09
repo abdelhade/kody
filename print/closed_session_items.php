@@ -20,7 +20,7 @@ $end_time = $shift['crtime'];
 
 // جلب ID المستخدم
 $user_id = 0;
-$user_stmt = $conn->prepare("SELECT id FROM acc_head WHERE aname = ? LIMIT 1");
+$user_stmt = $conn->prepare("SELECT id FROM users WHERE uname = ? LIMIT 1");
 if ($user_stmt) {
     $user_stmt->bind_param("s", $user_name);
     $user_stmt->execute();

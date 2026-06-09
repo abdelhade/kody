@@ -10,6 +10,7 @@
 
 <!-- JavaScript Files -->
 <script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
+<script src="assets/libs/bootstrap.bundle.min.js"></script>
 <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
 <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
 

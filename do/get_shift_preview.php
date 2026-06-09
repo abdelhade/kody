@@ -60,22 +60,38 @@ try {
     
     // Get cashier name
     $cashier_name = 'الكاشير';
-    $user_stmt = $conn->prepare("SELECT aname FROM acc_head WHERE id = ?");
+    $user_stmt = $conn->prepare("SELECT uname FROM users WHERE id = ?");
     if ($user_stmt) {
         $user_stmt->bind_param("i", $user_id);
         $user_stmt->execute();
         $user_result = $user_stmt->get_result();
         if ($row = $user_result->fetch_assoc()) {
-            $cashier_name = $row['aname'];
+            $cashier_name = $row['uname'];
         }
         $user_stmt->close();
+    }
+    
+    $start_cash = 0.00;
+    // جلب آخر قيمة fund_after للشيفت السابق لهذا الكاشير
+    $prev_shift_stmt = $conn->prepare("SELECT fund_after FROM closed_orders WHERE user = ? ORDER BY id DESC LIMIT 1");
+    if ($prev_shift_stmt) {
+        $prev_shift_stmt->bind_param("s", $cashier_name);
+        $prev_shift_stmt->execute();
+        $prev_res = $prev_shift_stmt->get_result();
+        if ($prev_row = $prev_res->fetch_assoc()) {
+            $start_cash = floatval($prev_row['fund_after']);
+        }
+        $prev_shift_stmt->close();
     }
     
     $response_data = [
         'success' => true,
         'data' => [
             'total_orders' => intval($totals['total_orders'] ?? 0),
-            'total_sales' => number_format($totals['total_net'] ?? 0, 2), // 使用 total_net (صافي) or total_gross (اجمالي) depending on preference. Using Net usually.
+            'total_gross' => floatval($totals['total_gross'] ?? 0),
+            'total_discount' => floatval($totals['total_discount'] ?? 0),
+            'total_net' => floatval($totals['total_net'] ?? 0),
+            'start_cash' => $start_cash,
             'cashier_name' => $cashier_name,
             'shift_number' => date('Ymd') . '_' . $user_id
         ]

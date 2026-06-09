@@ -900,7 +900,9 @@ error_log('Last operation ID: ' . $last_op);
 error_log('All POST keys: ' . implode(', ', array_keys($_POST)));
 
 if ($submit == 'print') {
-    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
+    if (isset($_POST['from_mobile']) && $_POST['from_mobile'] == '1') {
+        $_SESSION['pos_back_page'] = '../pos_mobile.php';
+    } elseif (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
         $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
     }
     error_log('CONDITION MATCHED: submit == print');
@@ -910,7 +912,9 @@ if ($submit == 'print') {
     error_log('Header sent - this should not appear if redirect works');
     exit;
 } elseif ($submit == 'cash') {
-    if (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
+    if (isset($_POST['from_mobile']) && $_POST['from_mobile'] == '1') {
+        $_SESSION['pos_back_page'] = '../pos_mobile.php';
+    } elseif (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'pos_') !== false) {
         $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
     }
     error_log('CONDITION MATCHED: submit == cash');
@@ -930,15 +934,20 @@ if ($submit == 'print') {
     error_log('Redirecting with save action');
     // For save action, redirect back to POS for POS invoices, or to sales page for others
     if ($pro_tybe == INVOICE_TYPES['POS']) {
-        error_log('Redirecting to POS barcode page');
+        error_log('Redirecting to POS page');
         
         // التحقق من طلب القفل بعد الحفظ
         if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
             error_log('Lock after save requested - redirecting to logout');
             header("Location: ../pos_barcode.php?logout=1");
         } else {
-            error_log('Header: Location: ../pos_barcode.php');
-            header("Location: ../pos_barcode.php?r=" . time());
+            if (isset($_POST['from_mobile']) && $_POST['from_mobile'] == '1') {
+                error_log('Redirecting to mobile POS');
+                header("Location: ../pos_mobile.php?r=" . time());
+            } else {
+                error_log('Redirecting to POS barcode page');
+                header("Location: ../pos_barcode.php?r=" . time());
+            }
         }
     } else {
         $redirects = [
@@ -958,7 +967,7 @@ if ($submit == 'print') {
     $redirects = [
         INVOICE_TYPES['PURCHASE'] => '../sales.php?q=sale',
         INVOICE_TYPES['SALES'] => '../sales.php?q=buy',
-        INVOICE_TYPES['POS'] => '../pos_barcode.php',
+        INVOICE_TYPES['POS'] => (isset($_POST['from_mobile']) && $_POST['from_mobile'] == '1') ? '../pos_mobile.php' : '../pos_barcode.php',
         INVOICE_TYPES['PURCHASE_RETURN'] => '../sales.php?q=resale',
         INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy'
     ];
