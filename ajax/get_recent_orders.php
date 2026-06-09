@@ -35,15 +35,25 @@ try {
     $orders = [];
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            $customer_name = $row['customer_name'] ?: 'عميل نقدي';
+            $notes = $row['notes'] ?? '';
+
+            if (
+                ($row['type'] === 'دليفري' || strpos($notes, 'دليفري') !== false)
+                && preg_match('/العميل:\s*(.+?)\s*-\s*الهاتف:/u', $notes, $matches)
+            ) {
+                $customer_name = trim($matches[1]);
+            }
+
             $orders[] = [
                 'id' => $row['id'],
                 'invoice_number' => $row['invoice_number'] ?: 'ORD-' . $row['id'],
                 'date' => $row['date'],
-                'customer_name' => $row['customer_name'] ?: 'عميل نقدي',
+                'customer_name' => $customer_name,
                 'type' => $row['type'],
                 'total' => floatval($row['total']),
                 'status' => $row['status'],
-                'notes' => $row['notes']
+                'notes' => $notes
             ];
         }
     }

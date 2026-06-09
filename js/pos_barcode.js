@@ -806,6 +806,24 @@ function validatePOSForm() {
         alert('خطأ: يجب اختيار الموظف');
         return false;
     }
+
+    if ($('input[name="age"]:checked').val() == '3') {
+        const customer = (typeof getDeliveryCustomerData === 'function')
+            ? getDeliveryCustomerData()
+            : { phone: '', name: '', address: '' };
+
+        if (!customer.phone || !customer.name || !customer.address) {
+            alert('يرجى إدخال بيانات عميل الدليفري (الاسم، الهاتف، العنوان)');
+            if (typeof openDeliveryModal === 'function') {
+                openDeliveryModal();
+            }
+            return false;
+        }
+
+        if (typeof syncDeliveryFieldsToForm === 'function') {
+            syncDeliveryFieldsToForm(customer.phone, customer.name, customer.address);
+        }
+    }
     
     console.log('✅ Validation passed - Items found:', items.length);
     return true;

@@ -1,37 +1,37 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+header('Content-Type: application/json; charset=utf-8');
 
-$conn = new mysqli("localhost", "root", "", "focus");
+include(__DIR__ . '/../includes/connect.php');
 
-if ($conn->connect_error) {
-    error_log("Database connection failed: " . $conn->connect_error);
-    die('{"found":false,"error":"Database connection failed"}');
+$phone = trim($_POST['phone'] ?? '');
+
+if ($phone === '') {
+    echo json_encode(['found' => false, 'error' => 'Phone number is required'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-$conn->set_charset("utf8");
+$stmt = $conn->prepare(
+    "SELECT client_name, address FROM delivery_clients WHERE phone = ? AND isdeleted = 0 LIMIT 1"
+);
 
-$phone = $_POST['phone'] ?? '';
-
-if (empty($phone)) {
-    die('{"found":false,"error":"Phone number is required"}');
+if (!$stmt) {
+    echo json_encode(['found' => false, 'error' => 'Database query failed'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-$phone = mysqli_real_escape_string($conn, $phone);
-$sql = "SELECT client_name, address FROM delivery_clients WHERE phone = '$phone' AND isdeleted = 0 LIMIT 1";
-$result = $conn->query($sql);
+$stmt->bind_param('s', $phone);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (!$result) {
-    error_log("SQL Error: " . $conn->error . " - Query: " . $sql);
-    die('{"found":false,"error":"Database query failed"}');
-}
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    echo '{"found":true,"name":"' . $row['client_name'] . '","address":"' . $row['address'] . '"}';
+if ($row = $result->fetch_assoc()) {
+    echo json_encode([
+        'found' => true,
+        'name' => $row['client_name'],
+        'address' => $row['address']
+    ], JSON_UNESCAPED_UNICODE);
 } else {
-    echo '{"found":false}';
+    echo json_encode(['found' => false], JSON_UNESCAPED_UNICODE);
 }
 
+$stmt->close();
 $conn->close();
-?>

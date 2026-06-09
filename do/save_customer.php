@@ -1,37 +1,35 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+header('Content-Type: application/json; charset=utf-8');
 
-// استخدام نفس إعدادات قاعدة البيانات من الملف الرئيسي
-$conn = new mysqli("localhost", "root", "", "focus");
+include(__DIR__ . '/../includes/connect.php');
 
-if ($conn->connect_error) {
-    error_log("Database connection failed: " . $conn->connect_error);
-    die('{"success":false,"error":"Database connection failed"}');
+$phone = trim($_POST['phone'] ?? '');
+$name = trim($_POST['name'] ?? '');
+$address = trim($_POST['address'] ?? '');
+
+if ($phone === '' || $name === '' || $address === '') {
+    echo json_encode(['success' => false, 'error' => 'Missing required fields'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-$conn->set_charset("utf8");
+$stmt = $conn->prepare(
+    "INSERT INTO delivery_clients (client_name, phone, address)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE client_name = VALUES(client_name), address = VALUES(address), isdeleted = 0"
+);
 
-$phone = $_POST['phone'] ?? '';
-$name = $_POST['name'] ?? '';
-$address = $_POST['address'] ?? '';
-
-if (empty($phone) || empty($name) || empty($address)) {
-    die('{"success":false,"error":"Missing required fields"}');
+if (!$stmt) {
+    echo json_encode(['success' => false, 'error' => $conn->error], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-$customer_name = mysqli_real_escape_string($conn, $name);
-$customer_phone = mysqli_real_escape_string($conn, $phone);
-$customer_address = mysqli_real_escape_string($conn, $address);
+$stmt->bind_param('sss', $name, $phone, $address);
 
-$sql = "INSERT INTO delivery_clients (client_name, phone, address) VALUES ('$customer_name', '$customer_phone', '$customer_address')";
-
-if ($conn->query($sql)) {
-    echo '{"success":true}';
+if ($stmt->execute()) {
+    echo json_encode(['success' => true], JSON_UNESCAPED_UNICODE);
 } else {
-    error_log("SQL Error: " . $conn->error . " - Query: " . $sql);
-    echo '{"success":false,"error":"' . $conn->error . '"}';
+    echo json_encode(['success' => false, 'error' => $stmt->error], JSON_UNESCAPED_UNICODE);
 }
 
+$stmt->close();
 $conn->close();
-?>

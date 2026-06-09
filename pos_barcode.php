@@ -146,6 +146,5 @@ if(isset($_SESSION['success_message'])){
 $action_url = "do/doadd_invoice.php";
 include('includes/pos_content.php');
 ?>
-<?php include('elements/pos/cofe_widget.php'); ?>
 
 <?php include('includes/pos_simple_footer.php');?>

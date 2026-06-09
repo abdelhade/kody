@@ -863,84 +863,84 @@ if (!isset($action_url)) {
 
 
     <!-- Modal إغلاق الشيفت -->
-    <div class="modal fade" id="closeShiftModal" tabindex="-1" aria-labelledby="closeShiftModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title" id="closeShiftModalLabel">
+    <div class="modal fade" id="closeShiftModal" tabindex="-1" aria-labelledby="closeShiftModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-warning text-dark border-0 py-3">
+                    <h5 class="modal-title fw-bold" id="closeShiftModalLabel">
                         <i class="fas fa-power-off me-2"></i>إغلاق الشيفت
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                        <h5>هل أنت متأكد من إغلاق الشيفت؟</h5>
-                        <p class="text-muted">سيتم حساب إجمالي مبيعاتك وإغلاق الشيفت نهائياً</p>
+                <div class="modal-body px-4 py-3">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <h6 class="fw-bold text-dark">هل أنت متأكد من إغلاق الشيفت؟</h6>
+                        <p class="text-muted small">سيتم احتساب مبيعات الوردية الحالية وإغلاقها.</p>
                     </div>
-                    
-                    <!-- معاينة سريعة للمبيعات -->
-                    <div class="card border-primary mb-3">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>معاينة سريعة لمبيعات اليوم</h6>
-                        </div>
-                        <div class="card-body" id="shiftPreview">
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">جاري التحميل...</span>
-                                </div>
-                                <p class="mt-2">جاري حساب المبيعات...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- بيانات إغلاق الشيفت -->
-                    <div class="card border-secondary mb-3">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>بيانات إغلاق الشيفت</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">المصاريف</label>
-                                    <input type="number" class="form-control" id="shift_expenses" placeholder="0.00" step="0.01">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">تسليم الكاش</label>
-                                    <input type="number" class="form-control" id="shift_cash" placeholder="0.00" step="0.01">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">نهاية الدرج</label>
-                                    <input type="number" class="form-control" id="shift_fund_after" placeholder="0.00" step="0.01">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">بيان المصاريف</label>
-                                    <input type="text" class="form-control" id="shift_exp_notes" placeholder="تفاصيل المصاريف">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">ملاحظات</label>
-                                    <textarea class="form-control" id="shift_notes" rows="3" placeholder="ملاحظات إضافية"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
 
+                    <div class="table-responsive mb-3">
+                        <table class="table table-bordered table-sm text-center mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-light text-dark">
+                                <tr>
+                                    <th class="py-2">البيان</th>
+                                    <th class="py-2">القيمة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-start py-2 px-3 fw-bold">عدد الطلبات</td>
+                                    <td class="py-2 px-3 fw-bold text-primary" id="tbl_total_orders">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start py-2 px-3">إجمالي المبيعات</td>
+                                    <td class="py-2 px-3" id="tbl_total_gross">0.00 ج.م</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start py-2 px-3">إجمالي الخصومات</td>
+                                    <td class="py-2 px-3 text-danger" id="tbl_total_discount">0.00 ج.م</td>
+                                </tr>
+                                <tr class="table-success fw-bold">
+                                    <td class="text-start py-2 px-3">صافي المبيعات</td>
+                                    <td class="py-2 px-3 text-success" id="tbl_total_net">0.00 ج.م</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card bg-light border-0 mb-3" style="border-radius: 8px;">
+                        <div class="card-body p-3">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small mb-1">مبلغ بداية الشيفت</label>
+                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white" id="shift_start_cash" readonly value="0.00">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small mb-1">صافي النقدية الواردة</label>
+                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white" id="shift_cash_received" readonly value="0.00">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small mb-1 text-danger fw-bold">المصروفات (مصروف)</label>
+                                    <input type="number" class="form-control form-control-sm text-center fw-bold border-danger" id="shift_expenses" placeholder="0.00" step="0.01" value="0">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small mb-1 text-success fw-bold">الباقي (مستنتج)</label>
+                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white text-success border-success" id="shift_fund_after" readonly value="0.00">
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <label class="form-label small mb-1">ملاحظات إضافية</label>
+                                    <textarea class="form-control form-control-sm" id="shift_notes" rows="2" placeholder="أدخل أي ملاحظات إضافية هنا..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer border-0 pt-0 px-4">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>إلغاء
                     </button>
-                     <a href="z_report.php" class="btn btn-danger">
-                        <i class="fas fa-file-invoice me-1"></i> الانتقال لتقرير الإغلاق (Z-Report)
-                     </a>
-                    <button type="button" class="btn btn-success" onclick="printShiftSalesReport()">
-                        <i class="fas fa-user me-1"></i> طباعة  مبيعاتي
-                    </button>
-                   
-                    <button type="button" class="btn btn-warning" onclick="closeShift()">
-                        <i class="fas fa-power-off me-1"></i>إغلاق الشيفت
+                    <button type="button" class="btn btn-warning btn-sm px-4 fw-bold" onclick="closeShift()">
+                        <i class="fas fa-check-circle me-1"></i>إغلاق الشيفت
                     </button>
                 </div>
             </div>
@@ -1057,95 +1057,77 @@ if (!isset($action_url)) {
 
             // ملاحظة: كود السيرش والفلترة موجود في pos_barcode.js (محسّن للأداء)
 
-            // وظيفة إغلاق الشيفت
+            let globalStartCash = 0;
+            let globalNetSales = 0;
+
+            function calculateShiftRemaining() {
+                const expenses = parseFloat($('#shift_expenses').val()) || 0;
+                const remaining = globalStartCash + globalNetSales - expenses;
+                $('#shift_fund_after').val(remaining.toFixed(2) + ' ج.م');
+            }
+
             window.closeShift = function () {
-                const expenses = $('#shift_expenses').val() || 0;
-                const expNotes = $('#shift_exp_notes').val() || '';
-                const cash = $('#shift_cash').val() || 0;
-                const fundAfter = $('#shift_fund_after').val() || 0;
+                const expenses = parseFloat($('#shift_expenses').val()) || 0;
                 const notes = $('#shift_notes').val() || '';
-                
-                console.log('Shift data:', { expenses, expNotes, cash, fundAfter, notes });
-                
-                // إنشاء form وإرسال البيانات
+                const fundAfter = globalStartCash + globalNetSales - expenses;
+                const cash = globalNetSales;
+
                 const form = $('<form>', {
                     method: 'POST',
                     action: 'close_shift.php'
                 });
-                
+
                 form.append($('<input>', { type: 'hidden', name: 'expenses', value: expenses }));
-                form.append($('<input>', { type: 'hidden', name: 'exp_notes', value: expNotes }));
+                form.append($('<input>', { type: 'hidden', name: 'exp_notes', value: 'مصروفات شيفت' }));
                 form.append($('<input>', { type: 'hidden', name: 'cash', value: cash }));
                 form.append($('<input>', { type: 'hidden', name: 'fund_after', value: fundAfter }));
+                form.append($('<input>', { type: 'hidden', name: 'fund_before', value: globalStartCash }));
                 form.append($('<input>', { type: 'hidden', name: 'notes', value: notes }));
-                
+
                 $('body').append(form);
                 form.submit();
             };
-            
-            // تحميل معاينة المبيعات عند فتح modal إغلاق الشيفت
+
+            $('#shift_expenses').on('input', calculateShiftRemaining);
+
             $('#closeShiftModal').on('show.bs.modal', function () {
                 loadShiftPreview();
             });
-            
+
             function loadShiftPreview() {
                 $.ajax({
                     url: 'do/get_shift_preview.php',
                     method: 'GET',
                     success: function(data) {
                         try {
-                            // If data is object, use it directly, otherwise parse it
                             var response = (typeof data === 'object') ? data : JSON.parse(data);
-                            
+
                             if (response.success) {
-                                var html = `
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="text-center">
-                                                <i class="fas fa-receipt fa-2x text-info mb-2"></i>
-                                                <h4 class="text-info">${response.data.total_orders}</h4>
-                                                <p class="text-muted mb-0">عدد الطلبات</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="text-center">
-                                                <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
-                                                <h4 class="text-success">${response.data.total_sales} ج.م</h4>
-                                                <p class="text-muted mb-0">إجمالي المبيعات</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                                $('#shiftPreview').html(html);
+                                globalStartCash = parseFloat(response.data.start_cash) || 0;
+                                globalNetSales = parseFloat(response.data.total_net) || 0;
+
+                                $('#tbl_total_orders').text(response.data.total_orders);
+                                $('#tbl_total_gross').text(parseFloat(response.data.total_gross).toFixed(2) + ' ج.م');
+                                $('#tbl_total_discount').text(parseFloat(response.data.total_discount).toFixed(2) + ' ج.م');
+                                $('#tbl_total_net').text(globalNetSales.toFixed(2) + ' ج.م');
+
+                                $('#shift_start_cash').val(globalStartCash.toFixed(2) + ' ج.م');
+                                $('#shift_cash_received').val(globalNetSales.toFixed(2) + ' ج.م');
+
+                                calculateShiftRemaining();
                             } else {
-                                var errorMsg = response.error || 'لا توجد مبيعات لك اليوم';
-                                $('#shiftPreview').html('<div class="alert alert-warning text-center">' + errorMsg + '</div>');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطأ',
+                                    text: response.error || 'لا يمكن تحميل بيانات الوردية حالياً'
+                                });
                             }
                         } catch (e) {
                             console.error('Error parsing shift preview:', e);
-                            console.error('Raw response:', data);
-                            
-                            // Show a snippet of the raw response to help debugging
-                            var snippet = (typeof data === 'string') ? data.substring(0, 100) : 'Invalid Data';
-                            $('#shiftPreview').html(`
-                                <div class="alert alert-danger text-center">
-                                    <strong>خطأ في تحميل البيانات</strong><br>
-                                    <small class="text-muted" dir="ltr">${e.message}</small><br>
-                                    <small class="d-block mt-2 text-wrap bg-light border p-1" style="font-family:monospace; font-size:10px;">
-                                        Server: ${snippet}...
-                                    </small>
-                                </div>
-                            `);
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', error);
-                        $('#shiftPreview').html(`
-                            <div class="alert alert-danger text-center">
-                                <strong>خطأ في الاتصال</strong><br>
-                                <small>${error}</small>
-                            </div>
-                        `);
                     }
                 });
             }
@@ -1216,7 +1198,7 @@ if (!isset($action_url)) {
                         $('#customer_phone').removeClass('border-warning').attr('placeholder', 'أدخل رقم العميل (البحث يبدأ بعد 3 أرقام)');
                         
                         try {
-                            var response = JSON.parse(data);
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
                             if (response.found) {
                                 // عميل موجود - ملء الحقول
                                 $('#customer_phone').addClass('border-success');
@@ -1323,22 +1305,99 @@ if (!isset($action_url)) {
 
             // Listen for changes on the 'age' radio buttons
             $('input[name="age"]').change(function(){
-                if($(this).val() == '2') { // Table option
+                if ($(this).val() == '2') {
                     Swal.fire({
                         icon: 'info',
                         title: 'تنبيه',
                         text: 'يرجى اختيار طاولة',
                         confirmButtonText: 'حسناً'
                     });
+                } else if ($(this).val() == '3') {
+                    openDeliveryModal();
+                } else {
+                    clearDeliveryFieldsFromForm();
                 }
             });
 
-            window.confirmDeliveryOrder = function () {
-                const phone = $('#customer_phone').val().trim();
-                const name = $('#customer_name').val().trim();
-                const address = $('#customer_address').val().trim();
+            window.getDeliveryCustomerData = function () {
+                let phone = ($('#customer_phone').val() || '').trim();
+                if (!phone) {
+                    phone = ($('#customer_phone_display').val() || '').trim();
+                }
+                if (!phone) {
+                    phone = ($('input[name="delivery_customer_phone"]').val() || '').trim();
+                }
 
-                if (!phone || !name || !address) {
+                let name = ($('#customer_name').val() || '').trim();
+                if (!name) {
+                    name = ($('input[name="delivery_customer_name"]').val() || '').trim();
+                }
+
+                let address = ($('#customer_address').val() || '').trim();
+                if (!address) {
+                    address = ($('input[name="delivery_customer_address"]').val() || '').trim();
+                }
+
+                return { phone, name, address };
+            };
+
+            window.syncDeliveryFieldsToForm = function (phone, name, address) {
+                const form = document.getElementById('posForm');
+                if (!form) return;
+
+                const fields = {
+                    delivery_customer_name: name,
+                    delivery_customer_phone: phone,
+                    delivery_customer_address: address
+                };
+
+                Object.entries(fields).forEach(function ([fieldName, value]) {
+                    let input = form.querySelector('input[name="' + fieldName + '"]');
+                    if (!input) {
+                        input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = fieldName;
+                        form.appendChild(input);
+                    }
+                    input.value = value;
+                });
+            };
+
+            window.clearDeliveryFieldsFromForm = function () {
+                ['delivery_customer_name', 'delivery_customer_phone', 'delivery_customer_address'].forEach(function (fieldName) {
+                    document.querySelectorAll('#posForm input[name="' + fieldName + '"]').forEach(function (input) {
+                        input.remove();
+                    });
+                });
+            };
+
+            window.persistDeliveryCustomer = function (phone, name, address, onSuccess) {
+                $.ajax({
+                    url: 'do/save_customer.php',
+                    method: 'POST',
+                    data: { phone: phone, name: name, address: address },
+                    success: function (data) {
+                        try {
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
+                            if (response.success && typeof onSuccess === 'function') {
+                                onSuccess(response);
+                            } else if (!response.success) {
+                                console.error('Delivery customer save error:', response.error);
+                            }
+                        } catch (e) {
+                            console.error('Delivery customer response parse error:', e, data);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Delivery customer AJAX error:', error);
+                    }
+                });
+            };
+
+            window.confirmDeliveryOrder = function () {
+                const customer = getDeliveryCustomerData();
+
+                if (!customer.phone || !customer.name || !customer.address) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'تنبيه',
@@ -1347,72 +1406,32 @@ if (!isset($action_url)) {
                     return;
                 }
 
-                // إضافة بيانات العميل للفورم
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'delivery_customer_name',
-                    value: name
-                }).appendTo('#posForm');
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'delivery_customer_phone',
-                    value: phone
-                }).appendTo('#posForm');
-                $('<input>').attr({
-                    type: 'hidden',
-                    name: 'delivery_customer_address',
-                    value: address
-                }).appendTo('#posForm');
+                syncDeliveryFieldsToForm(customer.phone, customer.name, customer.address);
+                persistDeliveryCustomer(customer.phone, customer.name, customer.address);
 
-                // حفظ أو تحديث البيانات تلقائياً
-                const isUpdate = $('#saveCustomerBtn').text().includes('تعديل');
-                const url = isUpdate ? 'do/update_customer.php' : 'do/save_customer.php';
-
-                $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: {
-                        phone: phone,
-                        name: name,
-                        address: address
-                    },
-                    success: function (data) {
-                        $('#deliveryModal').modal('hide');
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'تم بنجاح',
-                            text: 'تم تأكيد طلب الدليفري وحفظ بيانات العميل',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    },
-                    error: function () {
-                        $('#deliveryModal').modal('hide');
-                        Swal.fire({
-                            icon: 'success', // Assuming success even if error callback for some reason, or should be error? Original logic was alert success ish? No, original said 'confirmed' even on error?
-                            title: 'تم',
-                            text: 'تم تأكيد طلب الدليفري',
-                            timer: 2000
-                        });
-                    }
+                $('#deliveryModal').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم بنجاح',
+                    text: 'تم تأكيد طلب الدليفري وحفظ بيانات العميل',
+                    timer: 2000,
+                    showConfirmButton: false
                 });
             };
 
             window.saveCustomerData = function () {
-                const phone = $('#customer_phone').val().trim();
-                const name = $('#customer_name').val().trim();
-                const address = $('#customer_address').val().trim();
+                const customer = getDeliveryCustomerData();
+                const phone = customer.phone;
+                const name = customer.name;
+                const address = customer.address;
 
                 if (!phone || !name || !address) {
                     alert('يرجى ملء جميع الحقول');
                     return;
                 }
 
-                const isUpdate = $('#saveCustomerBtn').text().includes('تعديل');
-                const url = isUpdate ? 'do/update_customer.php' : 'do/save_customer.php';
-
                 $.ajax({
-                    url: url,
+                    url: 'do/save_customer.php',
                     method: 'POST',
                     data: {
                         phone: phone,
@@ -1422,21 +1441,21 @@ if (!isset($action_url)) {
                     success: function (data) {
                         console.log('Response:', data);
                         try {
-                            var response = JSON.parse(data);
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
                             console.log('Parsed:', response);
                             if (response.success) {
+                                syncDeliveryFieldsToForm(phone, name, address);
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'تم بنجاح',
-                                    text: isUpdate ? 'تم تحديث بيانات العميل بنجاح' : 'تم حفظ بيانات العميل بنجاح',
+                                    text: 'تم حفظ بيانات العميل بنجاح',
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
-                                $('#saveCustomerBtn').hide();
+                                $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ التعديل');
                                 $('#confirmOrderBtn').show();
                             } else {
-                                var errorMsg = 'حدث خطأ في ' + (isUpdate ? 'تحديث' : 'حفظ') +
-                                    ' البيانات';
+                                var errorMsg = 'حدث خطأ في حفظ البيانات';
                                 if (response.error) {
                                     errorMsg += ': ' + response.error;
                                 }
@@ -1491,6 +1510,24 @@ if (!isset($action_url)) {
         
         if (typeof validatePOSForm === 'function' && !validatePOSForm()) {
             return false;
+        }
+
+        if ($('input[name="age"]:checked').val() == '3' && typeof getDeliveryCustomerData === 'function') {
+            const customer = getDeliveryCustomerData();
+            if (!customer.phone || !customer.name || !customer.address) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'بيانات الدليفري',
+                    text: 'يرجى إدخال اسم العميل ورقم الهاتف والعنوان'
+                });
+                if (typeof openDeliveryModal === 'function') {
+                    openDeliveryModal();
+                }
+                return false;
+            }
+            if (typeof syncDeliveryFieldsToForm === 'function') {
+                syncDeliveryFieldsToForm(customer.phone, customer.name, customer.address);
+            }
         }
         
         // جمع بيانات الدفع

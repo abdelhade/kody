@@ -118,6 +118,17 @@ if ($order_type == 3) { // دليفري
     
     if (!empty($delivery_name) && !empty($delivery_phone) && !empty($delivery_address)) {
         $info .= " - العميل: $delivery_name - الهاتف: $delivery_phone - العنوان: $delivery_address";
+
+        $delivery_stmt = $conn->prepare(
+            "INSERT INTO delivery_clients (client_name, phone, address)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE client_name = VALUES(client_name), address = VALUES(address), isdeleted = 0"
+        );
+        if ($delivery_stmt) {
+            $delivery_stmt->bind_param('sss', $delivery_name, $delivery_phone, $delivery_address);
+            $delivery_stmt->execute();
+            $delivery_stmt->close();
+        }
     }
 }
 
