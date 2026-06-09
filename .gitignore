@@ -3,5 +3,4 @@ composer.lock
 composer.phar
 .phpunit.result.cache
 .DS_Store
-includes/connect.php
-index.php
+.env

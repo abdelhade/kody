@@ -8,8 +8,14 @@ include('includes/connect.php');
 echo "<h2>🚀 تنفيذ تحديثات نظام الطاولات...</h2><hr>";
 
 // قراءة ملف SQL
-$sql_file = 'update_tables_system.sql';
+$sql_file = __DIR__ . '/update_tables_system.sql';
+if (!file_exists($sql_file)) {
+    die("<p style='color: red;'>❌ ملف SQL غير موجود: " . htmlspecialchars($sql_file) . "</p>");
+}
 $sql_content = file_get_contents($sql_file);
+if ($sql_content === false) {
+    die("<p style='color: red;'>❌ فشل في قراءة ملف SQL: " . htmlspecialchars($sql_file) . "</p>");
+}
 
 // تقسيم الاستعلامات
 $queries = array_filter(
@@ -26,6 +32,23 @@ $success_count = 0;
 $error_count = 0;
 $skipped_count = 0;
 
+function is_skippable_migration_error(string $message): bool
+{
+    $patterns = [
+        'Duplicate column name',
+        'Duplicate key name',
+        'already exists',
+    ];
+
+    foreach ($patterns as $pattern) {
+        if (stripos($message, $pattern) !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 foreach ($queries as $query) {
     if (empty($query)) continue;
     
@@ -38,10 +61,8 @@ foreach ($queries as $query) {
             $success_count++;
         } else {
             $error_msg = $conn->error;
-            
-            // تجاهل أخطاء الأعمدة الموجودة بالفعل
-            if (strpos($error_msg, 'Duplicate column name') !== false ||
-                strpos($error_msg, 'Duplicate key name') !== false) {
+
+            if (is_skippable_migration_error($error_msg)) {
                 echo "<span style='color: orange;'>⚠️ موجود بالفعل (تم التجاهل)</span>";
                 $skipped_count++;
             } else {
@@ -50,8 +71,13 @@ foreach ($queries as $query) {
             }
         }
     } catch (Exception $e) {
-        echo "<span style='color: red;'>❌ استثناء: " . htmlspecialchars($e->getMessage()) . "</span>";
-        $error_count++;
+        if (is_skippable_migration_error($e->getMessage())) {
+            echo "<span style='color: orange;'>⚠️ موجود بالفعل (تم التجاهل)</span>";
+            $skipped_count++;
+        } else {
+            echo "<span style='color: red;'>❌ استثناء: " . htmlspecialchars($e->getMessage()) . "</span>";
+            $error_count++;
+        }
     }
     
     echo "</div>";

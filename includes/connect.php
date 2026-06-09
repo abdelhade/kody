@@ -4,10 +4,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$dbhost = 'localhost';
-$dbuser = 'root';
-$dbpass = '';
-$dbname = 'kody2';
+require_once __DIR__ . '/load_env.php';
+
+$dbhost = env('DB_HOST', 'localhost');
+$dbuser = env('DB_USER', 'root');
+$dbpass = env('DB_PASS', '');
+$dbname = env('DB_NAME', 'kody2');
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($dbhost, $dbuser, $dbpass);
@@ -113,7 +115,7 @@ $role = $resrole->fetch_assoc();
 
 
 $edit_pass = $rowstg['edit_pass'];
-date_default_timezone_set('Africa/Cairo'); 
+date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 
 $now = new DateTime();
 
 if ((int)$now->format('H') < 4) {

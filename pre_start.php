@@ -1,9 +1,11 @@
 <?php
 // pre_start.php - Database Setup Page
-$dbhost = 'localhost';
-$dbuser = 'root';
-$dbpass = '';
-$dbname = 'kody2';
+require_once __DIR__ . '/includes/load_env.php';
+
+$dbhost = env('DB_HOST', 'localhost');
+$dbuser = env('DB_USER', 'root');
+$dbpass = env('DB_PASS', '');
+$dbname = env('DB_NAME', 'kody2');
 
 // Check if already connected
 mysqli_report(MYSQLI_REPORT_OFF);

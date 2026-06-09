@@ -1,6 +1,12 @@
-<?php include('../includes/connect.php');
+<?php
+include('../includes/connect.php');
 
 $id = $_GET['id'];
 
-$conn->query("UPDATE employees SET isdeleted = 1 where id = $id");
-header('location:../employees.php');
+$sql = "DELETE FROM employees WHERE id = $id";
+
+if ($conn->query($sql) === TRUE) {
+    header('location:../employees.php');
+} else {
+    echo "Error deleting record: " . $conn->error;
+}
