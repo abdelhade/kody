@@ -148,3 +148,12 @@
 [2026-05-26 00:08:10] mysqli_sql_exception: Table 'kody2.categores' doesn't exist in C:\xampp\htdocs\focus\print\closed_session_items.php:72
 [2026-06-04 15:07:31] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\do\doadd_calcsalary.php:141
 [2026-06-04 15:15:30] DivisionByZeroError: Division by zero in C:\xampp\htdocs\focus\calcsalary.php:86
+[2026-06-09 18:33:59] mysqli_sql_exception: Unknown column 'showpulse' in 'field list' in C:\xampp\htdocs\kody2\do\doedit_settings.php:67
+[2026-06-09 18:34:17] mysqli_sql_exception: Unknown column 'showpulse' in 'field list' in C:\xampp\htdocs\kody2\do\doedit_settings.php:67
+[2026-06-09 18:37:59] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'ALTER TABLE `closed_orders`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:5
+[2026-06-09 18:38:40] mysqli_sql_exception: Duplicate column name 'jal_name' in C:\xampp\htdocs\kody2\run_update_006.php:10
+[2026-06-09 18:42:47] mysqli_sql_exception: Unknown column 'showpulse' in 'field list' in C:\xampp\htdocs\kody2\do\doedit_settings.php:67
+[2026-06-09 18:45:32] mysqli_sql_exception: Duplicate column name 'showpulse' in C:\xampp\htdocs\kody2\run_pulse_setup.php:15
