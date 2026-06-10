@@ -9,14 +9,25 @@ class ShiftReport {
     
     public function __construct($conn, $userId, $date = null) {
         $this->conn = $conn;
-        $this->userId = $userId;
-        $this->date = $date ? $date : date('Y-m-d');
+        $this->userId = (int) $userId;
+        $this->date = $date ? $date : self::getBusinessDate();
         
         // جلب اسم المستخدم للبحث في جدول الإغلاقات
-        $this->username = $this->getUsernameById($userId);
+        $this->username = $this->getUsernameById($this->userId);
         
         // تحديد وقت آخر إغلاق لهذا المستخدم اليوم
         $this->setLastClosingTime();
+    }
+
+    /**
+     * يوم العمل (ينتهي الساعة 4 صباحاً) — نفس منطق connect.php
+     */
+    public static function getBusinessDate() {
+        $now = new DateTime('now');
+        if ((int) $now->format('H') < 4) {
+            $now->modify('-1 day');
+        }
+        return $now->format('Y-m-d');
     }
     
     private function getUsernameById($id) {
@@ -32,24 +43,10 @@ class ShiftReport {
     }
     
     private function setLastClosingTime() {
-        // نبحث عن آخر عملية إغلاق تمت اليوم لهذا المستخدم
-        // نعتمد على حقل created_at لأنه الأدق زمنياً
-        // إذا لم يوجد created_at في الجدول القديم، نعتمد على endtime مع date
-        
-        // التحقق من وجود created_at
-        $checkCol = $this->conn->query("SHOW COLUMNS FROM closed_orders LIKE 'created_at'");
-        
-        if ($checkCol && $checkCol->num_rows > 0) {
-            $query = "SELECT MAX(created_at) as last_time 
-                      FROM closed_orders 
-                      WHERE user = ? AND date = ?"; 
-                      // ملاحظة: نستخدم user (الاسم) لأن الجدول يخزن الاسم وليس المعرف
-        } else {
-            // fallback if created_at doesn't exist (using date + endtime)
-            $query = "SELECT MAX(CONCAT(date, ' ', endtime)) as last_time 
-                      FROM closed_orders 
-                      WHERE user = ? AND date = ?";
-        }
+        // نستخدم crtime لأنه الأدق — جدول closed_orders يخزن اسم الكاشير في user
+        $query = "SELECT MAX(crtime) as last_time 
+                  FROM closed_orders 
+                  WHERE user = ? AND date = ?";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("ss", $this->username, $this->date);
@@ -58,6 +55,7 @@ class ShiftReport {
         if ($row = $res->fetch_assoc()) {
             $this->lastClosingTime = $row['last_time'];
         }
+        $stmt->close();
     }
     
     /**
@@ -87,7 +85,7 @@ class ShiftReport {
                   AND isdeleted = 0" . $timeCond;
                   
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ss", $this->date, $this->userId);
+        $stmt->bind_param("si", $this->date, $this->userId);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_assoc();
@@ -113,7 +111,7 @@ class ShiftReport {
                   GROUP BY oh.acc1";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ss", $this->date, $this->userId);
+        $stmt->bind_param("si", $this->date, $this->userId);
         $stmt->execute();
         return $stmt->get_result();
     }
@@ -133,7 +131,7 @@ class ShiftReport {
                   AND isdeleted = 0" . $timeCond;
                   
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ss", $this->date, $this->userId);
+        $stmt->bind_param("si", $this->date, $this->userId);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_assoc();
@@ -153,7 +151,7 @@ class ShiftReport {
                   AND isdeleted = 0" . $timeCond;
                   
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ss", $this->date, $this->userId);
+        $stmt->bind_param("si", $this->date, $this->userId);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_assoc();
@@ -181,7 +179,7 @@ class ShiftReport {
                    ORDER BY value DESC";
                    
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ss", $this->date, $this->userId);
+        $stmt->bind_param("si", $this->date, $this->userId);
         $stmt->execute();
         return $stmt->get_result();
     }

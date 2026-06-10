@@ -9,7 +9,7 @@ if (!isset($_SESSION['userid'])) {
 }
 
 $user_id = $_SESSION['userid'];
-$shift_date = date('Y-m-d');
+$shift_date = isset($today) ? $today : date('Y-m-d');
 $shift_time = date('H:i:s');
 
 try {
@@ -17,7 +17,7 @@ try {
     $classPath = __DIR__ . '/classes/ShiftReport.php';
     if (file_exists($classPath)) {
         include_once($classPath);
-        $report = new ShiftReport($conn, $user_id);
+        $report = new ShiftReport($conn, $user_id, $shift_date);
         $totals = $report->getTotals();
         $total_orders = intval($totals['total_orders'] ?? 0);
         $total_sales = floatval($totals['total_net'] ?? 0);
@@ -57,7 +57,7 @@ try {
     error_log('Processed data: expenses=' . $expenses . ', exp_notes=' . $exp_notes . ', cash=' . $cash . ', fund_after=' . $fund_after . ', fund_before=' . $fund_before . ', notes=' . $notes);
     
     // إدراج سجل إغلاق الشيفت
-    $shift_number = date('Ymd') . '_' . $user_id;
+    $shift_number = date('Ymd', strtotime($shift_date)) . '_' . $user_id;
     $insert_query = "INSERT INTO closed_orders 
                      (shift, date, user, endtime, total_sales, expenses, exp_notes, cash, fund_before, fund_after, info) 
                      VALUES 
