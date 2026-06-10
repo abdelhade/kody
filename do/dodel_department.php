@@ -16,6 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_GET['id'])) {
         die;
     }
 
-    $conn->query("UPDATE departments SET isdeleted = 1 where id = $id");
+    $conn->query("DELETE FROM departments where id = $id");
     header('location:../departments.php');
 }

@@ -62,6 +62,8 @@ if ($isEdit) {
                         echo 'تعذّر حفظ البيانات. حاول مرة أخرى.';
                     } elseif ($err === 'invalid_image') {
                         echo 'صيغة الصورة غير مسموحة. استخدم jpg أو png أو gif أو jpeg أو webp.';
+                    } elseif ($err === 'no_units') {
+                        echo 'لا يمكن حفظ صنف بدون وحدات.';
                     } else {
                         echo 'حدث خطأ أثناء الحفظ.';
                     }
@@ -356,11 +358,20 @@ $(document).ready(function() {
     $('#item-main-form').on('submit', function(e) {
         var selectedValues = [];
         var duplicateFound = false;
+        var validUnitFound = false;
         $('select[name="unit_id[]"]').each(function() {
             var val = $(this).val();
-            if (val && selectedValues.indexOf(val) !== -1) duplicateFound = true;
-            selectedValues.push(val);
+            if (val) {
+                validUnitFound = true;
+                if (selectedValues.indexOf(val) !== -1) duplicateFound = true;
+                selectedValues.push(val);
+            }
         });
+        if ($('.urow').length === 0 || !validUnitFound) {
+            e.preventDefault();
+            alert('لا يمكن حفظ صنف بدون وحدات');
+            return;
+        }
         if (duplicateFound) {
             e.preventDefault();
             alert('غير مسموح بتكرار الوحدات');

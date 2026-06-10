@@ -31,7 +31,7 @@
                     <label for="exampleInputEmail1"><?=$lang_adfp_employee?></label>
                     <select class="form-control col-md-4 "  name="employee" id="emp"> 
                       <?php
-                      $resemp =$conn->query("SELECT * FROM `employees` where isdeleted != 1 order by name ");
+                      $resemp =$conn->query("SELECT * FROM `employees` where (isdeleted != 1 OR isdeleted IS NULL) order by name ");
                       while ($rowemp = $resemp->fetch_assoc()) { ?>
                         <option value="<?= $rowemp['id']?>"><?= $rowemp['name']?></option>
                     <?php } ?>

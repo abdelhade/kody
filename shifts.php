@@ -21,6 +21,48 @@
 
   <!-- Main content -->
   <section class="content">
+    <?php if (isset($_GET['success']) && $_GET['success'] === 'deleted'): ?>
+      <div class="alert alert-success alert-dismissible fade show mx-3">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <i class="fas fa-check-circle mr-1"></i> تم حذف الوردية بنجاح
+      </div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['error'])): ?>
+      <div class="alert alert-danger alert-dismissible fade show mx-3">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        <?php
+        switch ($_GET['error']) {
+            case 'invalid_password':
+                echo 'كلمة المرور غير صحيحة';
+                break;
+            case 'missing_password':
+                echo 'يجب إدخال كلمة المرور للتأكيد';
+                break;
+            case 'linked_employees':
+                echo 'لا يمكن حذف هذه الوردية لارتباطها بموظفين';
+                break;
+            case 'not_found':
+                echo 'الوردية غير موجودة أو تم حذفها مسبقاً';
+                break;
+            case 'delete_failed':
+                echo 'فشل حذف الوردية، حاول مرة أخرى';
+                break;
+            case 'invalid_id':
+                echo 'معرف الوردية غير صحيح';
+                break;
+            default:
+                echo 'حدث خطأ أثناء عملية الحذف';
+        }
+        ?>
+      </div>
+    <?php endif; ?>
+
     <div class="row">
       <div class="col-12">
         <div class="card">
@@ -45,7 +87,7 @@
               <tbody>
                 <?php
                 if ($conn) {
-                  $sqlshft = "SELECT * from shifts order by id desc";
+                  $sqlshft = "SELECT * FROM shifts ORDER BY id DESC";
                   $resshft = $conn->query($sqlshft);
                   $x = 0;
                   while ($rowshft = $resshft->fetch_assoc()) {

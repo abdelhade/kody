@@ -87,7 +87,7 @@
                               }
                           }
                           ?></td>
-                        <td><?= $row['salary'] ?></td>
+                        <td><?= $row['salary'] ?> (<?= $row['calc_type'] == 'daily' ? 'يومي' : 'شهري' ?>)</td>
                           <td><?= $row['info'] ?></td>
                     <td><a class="btn btn-warning" href="edit_employee.php?id=<?= $row['id'] ?>"><i class="fa fa-pen"></i></a>
                       <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delemp<?= $row['id']?>"><i class="fa fa-trash"></i></button>

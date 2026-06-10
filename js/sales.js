@@ -159,12 +159,24 @@ function fetchItemInfo(itemId, row) {
         }
 
         function addNewRow(itemId, itemName) {
-            const qty      = parseFloat($("#itmqty").val())   || 1;
-            const price    = parseFloat($("#itmprice").val()) || 0;
-            const disc     = parseFloat($("#itmdisc").val())  || 0;
-            const val      = (qty * price) - disc;
-            const unitVal  = parseFloat($("#inputUnitSelect").val()) || 1;
-            const unitName = $("#inputUnitSelect option:selected").text() || '-';
+            const qty       = parseFloat($("#itmqty").val())        || 1;
+            const price     = parseFloat($("#itmprice").val())       || 0;  // سعر الشراء
+            const disc      = parseFloat($("#itmdisc").val())        || 0;
+            const sprice    = parseFloat($("#itmsprice_stg").val())  || price; // سعر البيع الافتراضي
+            const val       = (qty * price) - disc;
+            const unitVal   = parseFloat($("#inputUnitSelect").val()) || 1;
+            const unitName  = $("#inputUnitSelect option:selected").text() || '-';
+            // نسبة الربح على أساس سعر الشراء (price)
+            const profitPct = price > 0 ? ((sprice - price) / price * 100).toFixed(1) : '0.0';
+
+            // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
+            const profitCells = window.SHOW_PROFIT_COLS ? `
+                <td>
+                    <input type="number" class="itmprofit_pct form-control form-control-sm" value="${profitPct}" style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;" step="0.1" onclick="sT(this)" title="غيّر نسبة الربح لتحديث سعر البيع">
+                </td>
+                <td>
+                    <input type="number" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="غيّر سعر البيع لتحديث نسبة الربح">
+                </td>` : '';
 
             const newRow = $(`<tr>
                 <td class="col-1">${counter++}</td>
@@ -177,12 +189,13 @@ function fetchItemInfo(itemId, row) {
                         <option value="${unitVal}">${unitName}</option>
                     </select>
                 </td>
-                <td><input type="number" name="itmqty[]"   value="${qty}"   class="itmqty  form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
-                <td><input type="number" name="itmprice[]" value="${price}" class="itmprice form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
-                <td><input type="number" name="itmdisc_pct[]" value="0.00" class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
-                <td><input type="number" name="itmdisc[]"  value="${disc}"  class="itmdisc  form-control form-control-sm" style="width:90px;" onclick="sT(this)" step="0.001"></td>
-                <td><input type="number" name="itmval[]"   value="${val.toFixed(3)}" class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
-                <td><input name="itmprofit" hidden><button type="button" class="deleteRow btn btn-danger">X</button></td>
+                <td><input type="number" name="itmqty[]"     value="${qty}"            class="itmqty     form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
+                <td><input type="number" name="itmprice[]"  value="${price}"           class="itmprice   form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
+                <td><input type="number" name="itmdisc_pct[]" value="0.00"             class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
+                <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
+                ${profitCells}
+                <td><input type="number" name="itmval[]"    value="${val.toFixed(3)}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
+                <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 
             newRow.appendTo("#itmrow");
@@ -194,29 +207,59 @@ function fetchItemInfo(itemId, row) {
             $("#itmqty").val('1.00');
             $("#itmdisc").val('0.00');
             $("#itmval").val('0.00');
+            $("#itmsprice_stg").val('0.00');
             $("#inputUnitSelect").empty().append('<option value="">اختر وحدة</option>');
             updateTotal();
         }
 
 function handleInputChanges() {
-    // استخدام debounce لتقليل عدد الحسابات
     let timeout;
-    $(document).off('input', '.itmqty, .itmprice, .itmdisc, .itmdisc_pct').on('input', '.itmqty, .itmprice, .itmdisc, .itmdisc_pct', function() {
-        clearTimeout(timeout);
-        const row = $(this).closest('tr');
+
+    const ALL_ROW_INPUTS = '.itmqty, .itmprice, .itmdisc, .itmdisc_pct, .itmsellprice, .itmprofit_pct';
+
+    // معالج واحد فقط (namespace) لتفادي تكرار الـ handlers
+    $(document).off('input.rowcalc').on('input.rowcalc', ALL_ROW_INPUTS, function() {
+        const row   = $(this).closest('tr');
         const $this = $(this);
+
+        // "ر. ربح %" → سعر البيع = سعر الشراء × (1 + النسبة/100)  | لا يغيّر سعر الشراء ولا الإجمالي
+        if ($this.hasClass('itmprofit_pct')) {
+            const price = parseFloat(row.find('.itmprice').val()) || 0;
+            const pct   = parseFloat($this.val()) || 0;
+            row.find('.itmsellprice').val((price * (1 + pct / 100)).toFixed(3));
+            return;
+        }
+
+        // "س. بيع" → نسبة الربح = (البيع - الشراء) / الشراء × 100  | لا يغيّر سعر الشراء ولا الإجمالي
+        if ($this.hasClass('itmsellprice')) {
+            calcProfitPct(row);
+            return;
+        }
+
+        // باقي الحقول (كمية/سعر/خصم) تؤثر على القيمة والإجمالي → debounce
+        clearTimeout(timeout);
         timeout = setTimeout(() => {
             if ($this.hasClass('itmdisc_pct')) {
-                // تغيير النسبة → تحديث قيمة الخصم
                 calcDiscFromPct(row);
             } else if ($this.hasClass('itmdisc')) {
-                // تغيير قيمة الخصم → تحديث النسبة
                 calcPctFromDisc(row);
+            } else if ($this.hasClass('itmprice')) {
+                // تغيّر سعر الشراء → أعد حساب نسبة الربح من سعر البيع الحالي
+                calcProfitPct(row);
             }
             calculateItemValue(row);
             updateTotal();
         }, 150);
     });
+}
+
+// نسبة الربح على أساس سعر الشراء (عمود السعر)
+function calcProfitPct(row) {
+    const price = parseFloat(row.find('.itmprice').val())     || 0; // سعر الشراء
+    const sell  = parseFloat(row.find('.itmsellprice').val()) || 0; // سعر البيع
+    if (price > 0) {
+        row.find('.itmprofit_pct').val(((sell - price) / price * 100).toFixed(1));
+    }
 }
 
         function calculateItemValue(row) {
@@ -329,7 +372,7 @@ function updateTotal() {
 
 function handleKeyboardShortcuts() {
     // ترتيب التنقل داخل صف الفاتورة بالـ Enter: كمية → سعر → خصم → بحث
-    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc_pct', '.itmdisc'];
+    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc_pct', '.itmdisc', '.itmprofit_pct', '.itmsellprice'];
 
     $(document).off('keydown').on('keydown', function(event) {
         if (event.key === 'F11') {
@@ -346,29 +389,35 @@ function handleKeyboardShortcuts() {
         if (event.key !== 'Enter') return;
         const $target = $(event.target);
         if (!$target.is('input, select')) return;
-        event.preventDefault();
 
         // هل الحقل داخل صف فاتورة في #itmrow؟
         const $row = $target.closest('#itmrow tr');
         if ($row.length) {
-            // حدد الحقل الحالي وانتقل للتالي
+            event.preventDefault();
+            // منع معالج keydown الآخر (keyboard_navigation.js) من التنقل مرتين
+            event.stopImmediatePropagation();
+
+            // حدد فهرس الحقل الحالي
             let currentIdx = -1;
             ROW_FIELDS.forEach((sel, i) => {
                 if ($target.is($row.find(sel))) currentIdx = i;
             });
 
-            const nextIdx = currentIdx + 1;
-            if (nextIdx < ROW_FIELDS.length) {
-                const $next = $row.find(ROW_FIELDS[nextIdx]);
-                if ($next.length) { $next.focus(); $next.select(); }
-            } else {
-                // آخر حقل (خصم) → ارجع للبحث
+            // انتقل لأول حقل موجود بعد الحالي (يتخطى الأعمدة المخفية مثل الربح/البيع في غير المشتريات)
+            let moved = false;
+            for (let i = currentIdx + 1; i < ROW_FIELDS.length; i++) {
+                const $next = $row.find(ROW_FIELDS[i]);
+                if ($next.length) { $next.focus(); $next.select(); moved = true; break; }
+            }
+            if (!moved) {
+                // لا يوجد حقل تالٍ → ارجع لحقل البحث لإضافة صنف جديد
                 $('#itemSearchInput').focus().select();
             }
             return;
         }
 
         // تنقل عادي في باقي الحقول
+        event.preventDefault();
         let $next = $target.closest('td').next().find('input, select');
         if ($next.length) {
             $next.focus();

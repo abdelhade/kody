@@ -258,7 +258,6 @@ if (!empty($elements['add_item_modal'])) {
 </div>
 
 <script>
-<script>
 // إظهار/إخفاء نافذة المساعدة بالضغط على الزر
 document.getElementById('showKeyboardHelp')?.addEventListener('click', function(e) {
     e.preventDefault();

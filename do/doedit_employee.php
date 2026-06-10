@@ -54,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 	`password` = '$password' , 
 	`hour_extra` = '$hour_extra' , 
 	`day_extra` = '$day_extra' , 
-	`ent_tybe` = '$ent_tybe'
+	`ent_tybe` = '$ent_tybe',
+	`calc_type` = '$calc_type'
 	WHERE id = $id";
 
 

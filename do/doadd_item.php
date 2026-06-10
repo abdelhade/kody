@@ -41,13 +41,21 @@ if ($barcode !== '') {
 if (!empty($_POST['unit_barcode'])) {
     $unitBarcodes = array_filter(array_map('trim', $_POST['unit_barcode']));
     // تحقق من التكرار داخل النموذج نفسه
-    $allBarcodes = array_merge([$barcode], $unitBarcodes);
+    // الوحدة الأولى (index 0) مسموح لها بنفس الباركود الرئيسي
+    $extraUnitBarcodes = array_slice($unitBarcodes, 1);
+    $allBarcodes = array_merge([$barcode], $extraUnitBarcodes);
     if (count($allBarcodes) !== count(array_unique($allBarcodes))) {
         header('Location: ../add_item.php?error=duplicate_barcode');
         exit;
     }
-    // تحقق من عدم الوجود في قاعدة البيانات
-    foreach ($unitBarcodes as $ub) {
+    // تحقق من عدم التكرار بين باركودات الوحدات فيما بينها
+    if (count($unitBarcodes) !== count(array_unique($unitBarcodes))) {
+        header('Location: ../add_item.php?error=duplicate_barcode');
+        exit;
+    }
+    // تحقق من عدم الوجود في قاعدة البيانات (الوحدة الأولى تم فحص باركودها ضمن الباركود الرئيسي)
+    foreach ($unitBarcodes as $idx => $ub) {
+        if ($idx === 0) continue;
         $stmtub = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? LIMIT 1");
         $stmtub->bind_param('s', $ub);
         $stmtub->execute();
@@ -67,6 +75,15 @@ if (!empty($_POST['unit_barcode'])) {
             exit;
         }
     }
+}
+
+// التحقق من وجود وحدة واحدة على الأقل
+$unitIds = isset($_POST['unit_id']) ? array_filter($_POST['unit_id'], function ($v) {
+    return trim((string) $v) !== '';
+}) : [];
+if (count($unitIds) === 0) {
+    header('Location: ../add_item.php?error=no_units');
+    exit;
 }
 
 $iname = $_POST['iname'];

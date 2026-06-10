@@ -278,6 +278,15 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
+                                    <label>طريقة احتساب الراتب</label>
+                                    <select name="calc_type" class="custom-select">
+                                        <option value="monthly" <?= $sel('calc_type', 'monthly') ?>>بالشهر / المدة</option>
+                                        <option value="daily" <?= $sel('calc_type', 'daily') ?>>باليوم</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
                                     <label><?= $lang_addemployee_shift ?></label>
                                     <select name="shift" class="custom-select">
                                         <?php

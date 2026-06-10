@@ -41,7 +41,7 @@ class InvoiceDetails extends InvoiceElementBase
         try {
             $invoiceId = intval($this->data['id'] ?? 0);
             if ($invoiceId > 0) {
-                $query = "SELECT fd.*, mi.iname 
+                $query = "SELECT fd.*, mi.iname, mi.cost_price AS item_cost, mi.price1 AS item_price1 
                          FROM fat_details fd 
                          JOIN myitems mi ON fd.item_id = mi.id 
                          WHERE fd.pro_id = ? AND fd.isdeleted = 0";
@@ -58,6 +58,9 @@ class InvoiceDetails extends InvoiceElementBase
      */
     public function render()
     {
+        // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
+        $showProfit = ((int) $this->invoiceType === 4);
+        $searchColspan = $showProfit ? 9 : 7;
         ob_start();
         ?>
         <div class="row">
@@ -73,6 +76,10 @@ class InvoiceDetails extends InvoiceElementBase
                                 <th>سعر</th>
                                 <th>نسبة %</th>
                                 <th>خصم</th>
+                                <?php if ($showProfit): ?>
+                                <th title="نسبة الربح - قابل للتعديل">ر. ربح %</th>
+                                <th title="سعر البيع - قابل للتعديل">س. بيع</th>
+                                <?php endif; ?>
                                 <th>القيمة</th>
                                 <th></th>
                             </tr>
@@ -89,7 +96,7 @@ class InvoiceDetails extends InvoiceElementBase
                                         <div class="tooltext">إضافة صنف جديد</div>
                                     </div>
                                 </td>
-                                <td colspan="7" style="position:relative; overflow:visible;">
+                                <td colspan="<?php echo $searchColspan; ?>" style="position:relative; overflow:visible;">
                                     <div style="display:flex; gap:6px;">
                                         <input type="text"
                                                id="itemSearchInput"
@@ -121,6 +128,7 @@ class InvoiceDetails extends InvoiceElementBase
         <input id="itmdisc"       type="number" hidden value="0.00" step="0.001">
         <input id="itmval"        type="number" hidden value="0.00" step="0.001">
         <input id="itmprofit"     type="number" hidden>
+        <input id="itmsprice_stg" type="number" hidden value="0.00" step="0.001">
         <select id="inputUnitSelect" hidden><option value="">اختر وحدة</option></select>
         <button type="button" id="addRow" hidden>إضافة</button>
         <!-- dropdown البحث - خارج الجدول عشان مش يتقطع بالـ overflow -->
@@ -132,6 +140,7 @@ class InvoiceDetails extends InvoiceElementBase
     }
 </style>
 <script>
+window.SHOW_PROFIT_COLS = <?php echo $showProfit ? 'true' : 'false'; ?>;
 $(document).ready(function() {
     const searchInput = document.getElementById('itemSearchInput');
     const searchResults = document.getElementById('searchResults');
@@ -330,6 +339,7 @@ $(document).ready(function() {
                 $('#itmqty').val(1);
                 $('#itmdisc').val('0.00');
                 $('#itmval').val(price || 0);
+                $('#itmsprice_stg').val(data.price1 || 0);
 
                 // تحديث حقول المعلومات
                 $('#storeqty').text(data.itmqty ? parseFloat(data.itmqty).toFixed(2) : '0');
@@ -479,7 +489,7 @@ $(document).ready(function() {
     {
         $quantity = ($detail['u_val'] > 0) ? abs($detail['qty_in'] - $detail['qty_out']) / $detail['u_val'] : abs($detail['qty_in'] - $detail['qty_out']);
         $price = $detail['price'] * ($detail['u_val'] > 0 ? $detail['u_val'] : 1);
-        
+        $showProfit = ((int) $this->invoiceType === 4);
         ?>
         <tr>
             <td class="col-1">
@@ -502,18 +512,18 @@ $(document).ready(function() {
             
             <!-- الكمية -->
             <td>
-                <input id="itmqty" value="<?php echo $quantity; ?>" type="number" 
+                <input value="<?php echo $quantity; ?>" type="number" 
                        name="itmqty[]" onclick="sT(this)" 
                        class="itmqty form-control form-control-sm" style="width:90px;">
             </td>
             
             <!-- السعر -->
             <td>
-                <input id="itmprice" type="number" name="itmprice[]" onclick="sT(this)" 
+                <input type="number" name="itmprice[]" onclick="sT(this)" 
                        class="itmprice form-control form-control-sm" style="width:90px;" 
                        value="<?php echo $price; ?>">
             </td>
-            
+
             <!-- نسبة الخصم -->
             <td>
                 <?php
@@ -532,20 +542,42 @@ $(document).ready(function() {
 
             <!-- الخصم -->
             <td>
-                <input id="itmdisc" value="<?php echo $detail['discount']; ?>" 
+                <input value="<?php echo $detail['discount']; ?>" 
                        type="number" name="itmdisc[]" onclick="sT(this)" 
                        class="itmdisc form-control form-control-sm" style="width:90px;">
             </td>
-            
+
+            <?php if ($showProfit): ?>
+            <?php
+            // الأساس = سعر الشراء (عمود السعر) | سعر البيع الافتراضي = price1 للصنف
+            $sellPrice = floatval($detail['item_price1'] ?? $price);
+            $profitPct = ($price > 0) ? round(($sellPrice - $price) / $price * 100, 1) : 0;
+            ?>
+            <!-- نسبة الربح -->
+            <td>
+                <input type="number" class="itmprofit_pct form-control form-control-sm"
+                       value="<?php echo $profitPct; ?>"
+                       style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;"
+                       step="0.1" onclick="sT(this)" title="نسبة الربح - غيّرها لتحديث سعر البيع">
+            </td>
+
+            <!-- سعر البيع -->
+            <td>
+                <input type="number" class="itmsellprice form-control form-control-sm"
+                       value="<?php echo $sellPrice; ?>"
+                       style="width:90px;" step="0.001" onclick="sT(this)"
+                       title="سعر البيع - غيّره لتحديث نسبة الربح">
+            </td>
+            <?php endif; ?>
+
             <!-- القيمة -->
             <td>
-                <input readonly id="itmval" value="<?php echo $detail['det_value']; ?>" 
+                <input readonly value="<?php echo $detail['det_value']; ?>" 
                        type="number" name="itmval[]" 
                        class="itmval bg-light form-control form-control-sm" style="width:150px;">
             </td>
             
             <td>
-                <input id="itmprofit" name="itmprofit" hidden>
                 <button type="button" class="deleteRow btn btn-danger">X</button>
             </td>
         </tr>
