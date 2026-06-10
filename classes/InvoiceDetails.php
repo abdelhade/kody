@@ -563,10 +563,10 @@ $(document).ready(function() {
 
             <!-- سعر البيع -->
             <td>
-                <input type="number" class="itmsellprice form-control form-control-sm"
+                <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm"
                        value="<?php echo $sellPrice; ?>"
                        style="width:90px;" step="0.001" onclick="sT(this)"
-                       title="سعر البيع - غيّره لتحديث نسبة الربح">
+                       title="سعر البيع - يُحفظ في سعر الصنف (price1)">
             </td>
             <?php endif; ?>
 

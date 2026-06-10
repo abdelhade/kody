@@ -751,13 +751,13 @@ try {
         }
         
         // تحضير استعلام الحصول على بيانات الصنف
-        $stmt_item = $conn->prepare("SELECT cost_price, itmqty FROM myitems WHERE id = ?");
+        $stmt_item = $conn->prepare("SELECT cost_price, itmqty, price1 FROM myitems WHERE id = ?");
         if (!$stmt_item) {
             throw new Exception('فشل في تحضير استعلام بيانات الصنف: ' . $conn->error);
         }
         
-        // تحضير استعلام تحديث بيانات الصنف
-        $stmt_update = $conn->prepare("UPDATE myitems SET last_price = ?, cost_price = ? WHERE id = ?");
+        // تحضير استعلام تحديث بيانات الصنف (يشمل سعر البيع price1)
+        $stmt_update = $conn->prepare("UPDATE myitems SET last_price = ?, cost_price = ?, price1 = ? WHERE id = ?");
         if (!$stmt_update) {
             throw new Exception('فشل في تحضير استعلام تحديث الصنف: ' . $conn->error);
         }
@@ -771,6 +771,7 @@ try {
             $itmprice = floatval($_POST['itmprice'][$index] ?? 0);
             $itmdisc  = floatval($_POST['itmdisc'][$index]  ?? 0);
             $itmdisc_pct = floatval($_POST['itmdisc_pct'][$index] ?? 0);
+            $itmsellprice = isset($_POST['itmsellprice'][$index]) ? floatval($_POST['itmsellprice'][$index]) : 0; // سعر البيع (فاتورة مشتريات)
             $u_val   = floatval($_POST['u_val'][$index]   ?? 1);
             if ($u_val <= 0) $u_val = 1; // حماية من القسمة على صفر
             
@@ -807,6 +808,7 @@ try {
             
             $oldprice = floatval($rowbl['cost_price']);
             $oldqty = intval($rowbl['itmqty']);
+            $existing_price1 = floatval($rowbl['price1']);
             $cost_price = $oldprice;
             $itmprofit = 0;
             
@@ -823,8 +825,11 @@ try {
                     $cost_price = $total_balance / $total_qty;
                 }
                 
+                // سعر البيع للوحدة الأساسية (price1) — يُحفظ فقط إذا أُدخل، وإلا يبقى كما هو
+                $sell_unit_price = ($itmsellprice > 0) ? ($itmsellprice / $u_val) : $existing_price1;
+                
                 // تحديث بيانات الصنف
-                $stmt_update->bind_param("sss", $unit_price, $cost_price, $itmname);
+                $stmt_update->bind_param("ssss", $unit_price, $cost_price, $sell_unit_price, $itmname);
                 if (!$stmt_update->execute()) {
                     throw new Exception('فشل في تحديث بيانات الصنف ' . $itmname);
                 }

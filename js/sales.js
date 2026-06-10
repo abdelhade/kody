@@ -175,7 +175,7 @@ function fetchItemInfo(itemId, row) {
                     <input type="number" class="itmprofit_pct form-control form-control-sm" value="${profitPct}" style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;" step="0.1" onclick="sT(this)" title="غيّر نسبة الربح لتحديث سعر البيع">
                 </td>
                 <td>
-                    <input type="number" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="غيّر سعر البيع لتحديث نسبة الربح">
+                    <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="يُحفظ في سعر الصنف (price1)">
                 </td>` : '';
 
             const newRow = $(`<tr>
