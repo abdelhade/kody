@@ -267,7 +267,7 @@ if ($empValid) {
                                 </div>
                                 <div class="stat-chip">
                                     <b><i class="fas fa-money-bill-wave ml-1 text-teal"></i> المرتب</b>
-                                    <span><?= number_format((float) $rowemp['salary']) ?></span>
+                                    <span><?= number_format((float) $rowemp['salary']) ?> (<?= ($rowemp['calc_type'] ?? 'monthly') === 'daily' ? 'يومي' : 'شهري' ?>)</span>
                                 </div>
                             </div>
 
@@ -374,7 +374,7 @@ if ($empValid) {
                                         <div class="detail-row"><b><?= $lang_addemployee_jobtype ?></b><span><?= htmlspecialchars($tybName) ?></span></div>
                                         <div class="detail-row"><b><?= $lang_addemployee_jobstart ?></b><span><?= htmlspecialchars($rowemp['dateofhire'] ?: '—') ?></span></div>
                                         <div class="detail-row"><b><?= $lang_addemployee_jobend ?></b><span><?= htmlspecialchars($rowemp['dateofend'] ?: '—') ?></span></div>
-                                        <div class="detail-row"><b><?= $lang_addemployee_salary ?></b><span><?= number_format((float) $rowemp['salary']) ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_salary ?></b><span><?= number_format((float) $rowemp['salary']) ?> (<?= ($rowemp['calc_type'] ?? 'monthly') === 'daily' ? 'يومي' : 'شهري' ?>)</span></div>
                                         <div class="detail-row"><b><?= $lang_addemployee_shift ?></b><span><?= htmlspecialchars($shftName) ?></span></div>
                                     </div>
                                 </div>

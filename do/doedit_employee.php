@@ -9,6 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 		$$key = $value;
 	}
 
+	if (!isset($calc_type) || !in_array($calc_type, ['monthly', 'daily'], true)) {
+		$calc_type = 'monthly';
+	}
+
 
 	if ($_FILES['imgs']['size'] !== 0) {
 

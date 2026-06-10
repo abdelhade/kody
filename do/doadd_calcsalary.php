@@ -1,5 +1,6 @@
 <?php
 include('../includes/connect.php');
+require_once('../includes/salary_rates.php');
 
 $employeeid = $_POST['employee'];
 $startdate = $_POST['startdate'];
@@ -154,8 +155,7 @@ for ($i = 0; $i < $dayscount; $i++) {
 
     // حساب المستحقات المالية
     $defhours_for_rate = $time_difference_hours > 0 ? $time_difference_hours : 1;
-    $dfh = ($rowemp['salary'] / 30) / $defhours_for_rate;
-    $dueforhour = round($dfh, 2);
+    $dueforhour = round(employee_hourly_rate($rowemp, $defhours_for_rate, $curday), 2);
     $realdue = floor($dueforhour * $time_difference_hours2);
 
 
@@ -203,9 +203,9 @@ $absdays = $rowcountabs['absdays'];
 // إنشاء ملخص الحضور
 $info = " احتساب الرواتب من يوم " . $startdate . " الي يوم " . $enddate;
 
-// اجر الساعه اليومي
-$titleperhour = $exphours > 0 ? round($rowemp['salary'] / $exphours, 2) : 0;
-// اجر الساعه اليومي
+// اجر الساعة حسب فترة الراتب (يومي / شهري)
+$shift_hours_for_rate = $time_difference_hours > 0 ? $time_difference_hours : 1;
+$titleperhour = round(employee_hourly_rate($rowemp, $shift_hours_for_rate, $startdate), 2);
 
 // exphours عدد الساعات المتوقعة
 // اجر اليوم dayhours
@@ -233,7 +233,7 @@ $titleperhour = $exphours > 0 ? round($rowemp['salary'] / $exphours, 2) : 0;
         // ايام العمل الفعلية
         $workdays = $dayscount - $holidays;
         // راتب اليوم
-        $day_hours = $workdays > 0 ? $rowemp['salary'] / $workdays : 0;
+        $day_hours = employee_daily_rate($rowemp, $startdate);
 
 
 
@@ -254,7 +254,7 @@ if ($ent_tybe == 1) {
     }
 }elseif ($ent_tybe == 4){
     $info = " احتساب الرواتب من يوم " . $startdate . " الي يوم " . $enddate . " بنظام الاستحقاق بناء علي الحضور";
-    $entitle = $workdays > 0 ? round($attdays * ($rowemp['salary'] / $workdays), 2) : 0;
+    $entitle = round($attdays * employee_daily_rate($rowemp, $startdate), 2);
 
 }elseif ($ent_tybe == 5){
     $info = " احتساب الرواتب من يوم " . $startdate . " الي يوم " . $enddate . " بنظام الاستحقاق بالانتاجية";
