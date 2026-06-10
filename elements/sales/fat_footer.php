@@ -88,7 +88,18 @@
                                 <div class="col col-md-4">
                             <label for="">الخصم<span class="text-orange-600">(F6)</span></label>
                             </div>
-                                <div class="col "><input id="headdisc" name="headdisc" type="text" class="form-control form-control-sm mid select-all hover:select-all nozero" value="<?php if(isset($_GET['e'])){echo $rowedit['fat_disc'];}else {echo 0;}?>" ></div>
+                                <div class="col ">
+                                    <div style="display:flex; gap:4px;">
+                                        <input id="headdisc_pct" name="headdisc_pct" type="number" 
+                                               class="form-control form-control-sm mid select-all hover:select-all nozero" 
+                                               placeholder="%" step="0.01" min="0" max="99"
+                                               value="<?php echo isset($_GET['e']) && isset($rowedit['fat_disc_per']) ? $rowedit['fat_disc_per'] : 0; ?>" style="width: 40%;">
+                                        <input id="headdisc" name="headdisc" type="number" 
+                                               class="form-control form-control-sm mid select-all hover:select-all nozero" 
+                                               placeholder="القيمة" step="0.01"
+                                               value="<?php if(isset($_GET['e'])){echo $rowedit['fat_disc'];}else {echo 0;}?>" style="width: 60%;">
+                                    </div>
+                                </div>
                             </div>
                             <div class="row">
                             <div class="col col-md-4">
@@ -177,7 +188,7 @@ if (!$hide_payment):
 <div class="row">
                             <div class=" col-md-4">
                               <button id="submit" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="save" onclick="this.form.submit_action.value='save';">حفظ (F12) </button>
-                              <button id="submit2" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" name="submit" value="print" onclick="this.form.submit_action.value='print';">حفظ و طباعه (F11) </button>
+                              <button id="submit2" class="btn <?php if(isset($_GET['q'])){echo  'bg-teal-500';}else{echo 'bg-red-500';}?> btn-block btn-lg dis" type="submit" formtarget="_blank" name="submit" value="print" onclick="this.form.submit_action.value='print';">حفظ و طباعه (F11) </button>
                               <input type="hidden" name="submit_action" value="save">
                           </div>                            
                         <div class="col-md-6">

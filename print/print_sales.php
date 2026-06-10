@@ -244,10 +244,12 @@ echo "<strong>" . $label . ":</strong> " . $rowacc1['aname'];?>
 <tr>
 <th style="width: 5%;">#</th>
 <th style="width: 12%;">كود</th>
-<th style="width: 35%;">الصنف</th>
-<th style="width: 10%;">الكمية</th>
-<th style="width: 10%;">الوحدة</th>
-<th style="width: 14%;">السعر</th>
+<th style="width: 25%;">الصنف</th>
+<th style="width: 8%;">الكمية</th>
+<th style="width: 8%;">الوحدة</th>
+<th style="width: 10%;">السعر</th>
+<th style="width: 8%;">خصم %</th>
+<th style="width: 10%;">خصم</th>
 <th style="width: 14%;">القيمة</th>
 </tr>
 </thead>
@@ -266,6 +268,12 @@ echo "<strong>" . $label . ":</strong> " . $rowacc1['aname'];?>
         } else {
             $qty = 0;
         } 
+        
+        $disc_pct = isset($rowdet['disc_pct']) ? $rowdet['disc_pct'] : 0;
+        if ($disc_pct == 0 && $rowdet['discount'] > 0) {
+            $pct_base = $qty * ($rowdet['price'] * $rowdet['u_val']);
+            $disc_pct = ($pct_base > 0) ? round(($rowdet['discount'] / $pct_base) * 100, 2) : 0;
+        }
     ?>
 <tr>
 <td class="text-center"><?= $x ?></td>
@@ -280,6 +288,8 @@ $unitid =$conn->query("SELECT uname from myunits where id = $itmunt[unit_id]")->
 echo $unitid['uname'];
 ?></td>
 <td class="text-center"><?= number_format($rowdet['price'] * $rowdet['u_val'], 2) ?></td>
+<td class="text-center"><?= number_format($disc_pct, 2) ?>%</td>
+<td class="text-center"><?= number_format($rowdet['discount'], 2) ?></td>
 <td class="text-center"><strong><?= number_format($rowdet['det_value'], 2)?></strong></td>
 </tr>
 <?php }?>
@@ -300,11 +310,15 @@ echo $unitid['uname'];
 <td style="width: 50%; padding: 0 !important;">
 <table class="table table-sm table-bordered summary-table" style="margin: 0;">
 <tr><th>الإجمالي:</th><td><?= number_format($rowfat['fat_total'], 2) ?></td></tr>
-<?php if ($rowfat['fat_disc'] > 0 ){?>
-<tr><th>خصم:</th><td style="color: #dc3545;">- <?= number_format($rowfat['fat_disc'], 2) ?></td></tr>
+<?php if ($rowfat['fat_disc'] > 0 ){
+    $disc_pct_head = ($rowfat['fat_total'] > 0) ? round(($rowfat['fat_disc'] / $rowfat['fat_total']) * 100, 2) : 0;
+?>
+<tr><th>خصم <?= $disc_pct_head > 0 ? '('.$disc_pct_head.'%)' : '' ?>:</th><td style="color: #dc3545;">- <?= number_format($rowfat['fat_disc'], 2) ?></td></tr>
 <?php }?>
-<?php if ($rowfat['fat_plus'] > 0 ){?>
-<tr><th>إضافي:</th><td style="color: #28a745;">+ <?= number_format($rowfat['fat_plus'], 2) ?></td></tr>
+<?php if ($rowfat['fat_plus'] > 0 ){
+    $plus_pct_head = ($rowfat['fat_total'] > 0) ? round(($rowfat['fat_plus'] / $rowfat['fat_total']) * 100, 2) : 0;
+?>
+<tr><th>إضافي <?= $plus_pct_head > 0 ? '('.$plus_pct_head.'%)' : '' ?>:</th><td style="color: #28a745;">+ <?= number_format($rowfat['fat_plus'], 2) ?></td></tr>
 <?php }?>
 <tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($rowfat['fat_net'], 2) ?></strong></td></tr>
 <?php 

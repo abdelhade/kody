@@ -367,7 +367,7 @@ try {
     die('خطأ في الحصول على أرقام العمليات: ' . $e->getMessage());
 }
 // حساب النسب المئوية للخصم والإضافي
-$fat_disc_per = ($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0;
+$fat_disc_per = isset($_POST['headdisc_pct']) ? floatval($_POST['headdisc_pct']) : (($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0);
 $fat_plus_per = ($headtotal > 0 && $headplus > 0) ? number_format($headplus/$headtotal*100, 2) : 0;
 
 // التحقق من وجود متغير الطاولة (اختياري)
@@ -742,8 +742,8 @@ try {
         $stmt_details = $conn->prepare(
             "INSERT INTO fat_details (
                 pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-                discount, det_value, fatid, fat_tybe, det_store, cost_price, profit
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt_details) {
@@ -770,6 +770,7 @@ try {
             $itmqty  = floatval($_POST['itmqty'][$index]  ?? 1);
             $itmprice = floatval($_POST['itmprice'][$index] ?? 0);
             $itmdisc  = floatval($_POST['itmdisc'][$index]  ?? 0);
+            $itmdisc_pct = floatval($_POST['itmdisc_pct'][$index] ?? 0);
             $u_val   = floatval($_POST['u_val'][$index]   ?? 1);
             if ($u_val <= 0) $u_val = 1; // حماية من القسمة على صفر
             
@@ -839,9 +840,9 @@ try {
             
             // إدخال تفاصيل الفاتورة
             $stmt_details->bind_param(
-                "ssssssssssssss",
+                "sssssssssssssss",
                 $pro_tybe, $last_op, $itmname, $u_val, $qty_in, $qty_out,
-                $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe,
+                $itmprice, $itmdisc, $itmdisc_pct, $det_value, $last_op, $pro_tybe,
                 $store_id, $cost_price, $itmprofit
             );
             

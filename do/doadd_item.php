@@ -5,13 +5,71 @@ include('../includes/connect.php');
 $usid = $_SESSION['userid'];
 
 if (isset($_POST['barcode'])) {
-    $barcode = $_POST['barcode'];
+    $barcode = trim($_POST['barcode']);
 } else {
     $last_barcode = $conn->query('SELECT barcode FROM myitems ORDER BY id DESC LIMIT 1')->fetch_assoc()['barcode'];
     $barcode = $last_barcode + 1;
-} 
+}
 
-$iname = $_POST['iname']; 
+// التحقق من أن الباركود الرئيسي فريد
+if ($barcode !== '') {
+    $stmtbc = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? LIMIT 1");
+    $stmtbc->bind_param('s', $barcode);
+    $stmtbc->execute();
+    $stmtbc->store_result();
+    if ($stmtbc->num_rows > 0) {
+        $stmtbc->close();
+        header('Location: ../add_item.php?error=duplicate_barcode');
+        exit;
+    }
+    $stmtbc->close();
+
+    // التحقق من تعارض الباركود مع باركودات الوحدات الموجودة
+    $stmtbc2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? LIMIT 1");
+    $stmtbc2->bind_param('s', $barcode);
+    $stmtbc2->execute();
+    $stmtbc2->store_result();
+    if ($stmtbc2->num_rows > 0) {
+        $stmtbc2->close();
+        header('Location: ../add_item.php?error=duplicate_barcode');
+        exit;
+    }
+    $stmtbc2->close();
+}
+
+// التحقق من أن باركودات الوحدات فريدة
+if (!empty($_POST['unit_barcode'])) {
+    $unitBarcodes = array_filter(array_map('trim', $_POST['unit_barcode']));
+    // تحقق من التكرار داخل النموذج نفسه
+    $allBarcodes = array_merge([$barcode], $unitBarcodes);
+    if (count($allBarcodes) !== count(array_unique($allBarcodes))) {
+        header('Location: ../add_item.php?error=duplicate_barcode');
+        exit;
+    }
+    // تحقق من عدم الوجود في قاعدة البيانات
+    foreach ($unitBarcodes as $ub) {
+        $stmtub = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? LIMIT 1");
+        $stmtub->bind_param('s', $ub);
+        $stmtub->execute();
+        $stmtub->store_result();
+        $existsInItems = $stmtub->num_rows > 0;
+        $stmtub->close();
+
+        $stmtub2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? LIMIT 1");
+        $stmtub2->bind_param('s', $ub);
+        $stmtub2->execute();
+        $stmtub2->store_result();
+        $existsInUnits = $stmtub2->num_rows > 0;
+        $stmtub2->close();
+
+        if ($existsInItems || $existsInUnits) {
+            header('Location: ../add_item.php?error=duplicate_barcode');
+            exit;
+        }
+    }
+}
+
+$iname = $_POST['iname'];
 $chkname = $conn->query("SELECT * FROM myitems WHERE iname = '$iname'")->fetch_assoc();
 
 if ($chkname !== null) {

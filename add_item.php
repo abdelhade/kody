@@ -54,7 +54,9 @@ if ($isEdit) {
                     <i class="fas fa-exclamation-triangle ml-1"></i>
                     <?php
                     $err = isset($_GET['error']) ? $_GET['error'] : '';
-                    if ($err === 'duplicate_name') {
+                    if ($err === 'duplicate_barcode') {
+                        echo 'الباركود مستخدم مسبقاً، يرجى إدخال باركود فريد.';
+                    } elseif ($err === 'duplicate_name') {
                         echo 'يوجد صنف بنفس الاسم، اختر اسماً مختلفاً.';
                     } elseif ($err === 'save_failed') {
                         echo 'تعذّر حفظ البيانات. حاول مرة أخرى.';

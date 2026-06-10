@@ -71,6 +71,7 @@ class InvoiceDetails extends InvoiceElementBase
                                 <th>الوحدة</th>
                                 <th>كمية</th>
                                 <th>سعر</th>
+                                <th>نسبة %</th>
                                 <th>خصم</th>
                                 <th>القيمة</th>
                                 <th></th>
@@ -116,6 +117,7 @@ class InvoiceDetails extends InvoiceElementBase
         <!-- حقول مخفية يستخدمها addNewRow() - خارج الجدول -->
         <input id="itmprice"      type="number" hidden value="0.00" step="0.001">
         <input id="itmqty"        type="number" hidden value="1.00">
+        <input id="itmdisc_pct"   type="number" hidden value="0.00" step="0.01">
         <input id="itmdisc"       type="number" hidden value="0.00" step="0.001">
         <input id="itmval"        type="number" hidden value="0.00" step="0.001">
         <input id="itmprofit"     type="number" hidden>
@@ -512,11 +514,27 @@ $(document).ready(function() {
                        value="<?php echo $price; ?>">
             </td>
             
+            <!-- نسبة الخصم -->
+            <td>
+                <?php
+                $disc_pct = isset($detail['disc_pct']) ? $detail['disc_pct'] : 0;
+                if ($disc_pct == 0 && !empty($detail['price']) && !empty($detail['qty_in']) - !empty($detail['qty_out'])) {
+                    $base = $price * $quantity;
+                    if ($base > 0) {
+                        $disc_pct = round(($detail['discount'] / $base) * 100, 2);
+                    }
+                }
+                ?>
+                <input type="number" name="itmdisc_pct[]" value="<?php echo $disc_pct; ?>"
+                       class="itmdisc_pct form-control form-control-sm" style="width:80px;"
+                       step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)">
+            </td>
+
             <!-- الخصم -->
             <td>
                 <input id="itmdisc" value="<?php echo $detail['discount']; ?>" 
                        type="number" name="itmdisc[]" onclick="sT(this)" 
-                       class="itmdisc form-control form-control-sm" style="width:120px;">
+                       class="itmdisc form-control form-control-sm" style="width:90px;">
             </td>
             
             <!-- القيمة -->

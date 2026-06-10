@@ -9,6 +9,7 @@
                     <th>الوحدة</th>
                     <th>كمية</th>
                     <th>سعر</th>
+                    <th>نسبة %</th>
                     <th>خصم</th>
                     <th>القيمة</th>
                     <th></th>
@@ -68,9 +69,21 @@
                 <input id="itmprice" type="number" name="itmprice[]" onclick=sT(this) class="itmprice form-control form-control-sm" style="width:90px;" value="<?php if(isset($_GET['e'])){echo $rowdet['price']*$rowdet['u_val'];}else{echo 0.00;}?>">
               </td>
 
+              <!-- نسبة الخصم -->
+              <td>
+                <?php 
+                $disc_pct = isset($rowdet['disc_pct']) ? $rowdet['disc_pct'] : 0;
+                if ($disc_pct == 0) {
+                    $pct_base = (abs($rowdet['qty_in'] - $rowdet['qty_out']) / $rowdet['u_val']) * ($rowdet['price'] * $rowdet['u_val']);
+                    $disc_pct = ($pct_base > 0) ? round(($rowdet['discount'] / $pct_base) * 100, 2) : 0;
+                }
+                ?>
+                <input type="number" name="itmdisc_pct[]" value="<?= $disc_pct ?>" class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)">
+              </td>
+
               <!-- الخصم -->
               <td>
-                <input id="itmdisc" value="<?php if(isset($_GET['e'])){echo $rowdet['discount'];}else{echo 0.00;}?>" type="number" name="itmdisc[]" onclick=sT(this) class="itmdisc form-control form-control-sm" style="width:120px;">
+                <input id="itmdisc" value="<?php if(isset($_GET['e'])){echo $rowdet['discount'];}else{echo 0.00;}?>" type="number" name="itmdisc[]" onclick=sT(this) class="itmdisc form-control form-control-sm" style="width:90px;">
               </td>
 
 

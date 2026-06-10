@@ -161,9 +161,16 @@ class InvoiceFooter extends InvoiceElementBase
                 <label for="">الخصم<span class="text-orange-600">(F6)</span></label>
             </div>
             <div class="col">
-                <input id="headdisc" name="headdisc" type="text" 
-                       class="form-control form-control-sm mid select-all hover:select-all nozero" 
-                       value="<?php echo $this->getFatDisc(); ?>">
+                <div style="display:flex; gap:4px;">
+                    <input id="headdisc_pct" name="headdisc_pct" type="number" 
+                           class="form-control form-control-sm mid select-all hover:select-all nozero" 
+                           placeholder="%" step="0.01" min="0" max="99"
+                           value="<?php echo $this->getFatDiscPct(); ?>" style="width: 40%;">
+                    <input id="headdisc" name="headdisc" type="number" 
+                           class="form-control form-control-sm mid select-all hover:select-all nozero" 
+                           placeholder="القيمة" step="0.01"
+                           value="<?php echo $this->getFatDisc(); ?>" style="width: 60%;">
+                </div>
             </div>
         </div>
         
@@ -255,7 +262,7 @@ class InvoiceFooter extends InvoiceElementBase
             <?php echo $saveText; ?> (F12)
         </button>
         <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
-                type="submit" name="submit" value="print">
+                type="submit" formtarget="_blank" name="submit" value="print">
             <?php echo $saveText; ?> وطباعة (F11)
         </button>
         <?php
@@ -326,6 +333,11 @@ class InvoiceFooter extends InvoiceElementBase
     private function getFatDisc()
     {
         return $this->isEditMode && $this->data ? $this->data['fat_disc'] : '0';
+    }
+
+    private function getFatDiscPct()
+    {
+        return $this->isEditMode && $this->data && isset($this->data['fat_disc_per']) ? $this->data['fat_disc_per'] : '0';
     }
 
     private function getFatPlus()

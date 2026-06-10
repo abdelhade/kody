@@ -22,6 +22,14 @@ $(document).ready(function() {
         $('#change').val('0.00');
         console.log('Event triggered - Updated paid to:', headnet.toFixed(2));
     });
+
+    // عند تغيير نسبة الخصم الإجمالية
+    $(document).on('input', '#headdisc_pct', function() {
+        const pct = parseFloat($(this).val()) || 0;
+        const total = parseFloat($('#headtotal').val()) || 0;
+        $('#headdisc').val((total * pct / 100).toFixed(2));
+        updateTotal();
+    });
     
     // تحديث المدفوع عند تحميل الصفحة
     setTimeout(function() {
@@ -171,7 +179,8 @@ function fetchItemInfo(itemId, row) {
                 </td>
                 <td><input type="number" name="itmqty[]"   value="${qty}"   class="itmqty  form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
                 <td><input type="number" name="itmprice[]" value="${price}" class="itmprice form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
-                <td><input type="number" name="itmdisc[]"  value="${disc}"  class="itmdisc  form-control form-control-sm" style="width:120px;" onclick="sT(this)" step="0.001"></td>
+                <td><input type="number" name="itmdisc_pct[]" value="0.00" class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
+                <td><input type="number" name="itmdisc[]"  value="${disc}"  class="itmdisc  form-control form-control-sm" style="width:90px;" onclick="sT(this)" step="0.001"></td>
                 <td><input type="number" name="itmval[]"   value="${val.toFixed(3)}" class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
                 <td><input name="itmprofit" hidden><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
@@ -192,10 +201,18 @@ function fetchItemInfo(itemId, row) {
 function handleInputChanges() {
     // استخدام debounce لتقليل عدد الحسابات
     let timeout;
-    $(document).off('input', '.itmqty, .itmprice, .itmdisc').on('input', '.itmqty, .itmprice, .itmdisc', function() {
+    $(document).off('input', '.itmqty, .itmprice, .itmdisc, .itmdisc_pct').on('input', '.itmqty, .itmprice, .itmdisc, .itmdisc_pct', function() {
         clearTimeout(timeout);
         const row = $(this).closest('tr');
+        const $this = $(this);
         timeout = setTimeout(() => {
+            if ($this.hasClass('itmdisc_pct')) {
+                // تغيير النسبة → تحديث قيمة الخصم
+                calcDiscFromPct(row);
+            } else if ($this.hasClass('itmdisc')) {
+                // تغيير قيمة الخصم → تحديث النسبة
+                calcPctFromDisc(row);
+            }
             calculateItemValue(row);
             updateTotal();
         }, 150);
@@ -208,6 +225,23 @@ function handleInputChanges() {
             const itmDisc = parseFloat(row.find('.itmdisc').val()) || 0;
             const itmVal = (itmQty * itmPrice) - itmDisc;
             row.find('.itmval').val(itmVal.toFixed(2) || '');
+        }
+
+        function calcDiscFromPct(row) {
+            const qty   = parseFloat(row.find('.itmqty').val())   || 0;
+            const price = parseFloat(row.find('.itmprice').val()) || 0;
+            const pct   = parseFloat(row.find('.itmdisc_pct').val()) || 0;
+            const disc  = (qty * price * pct) / 100;
+            row.find('.itmdisc').val(disc.toFixed(3));
+        }
+
+        function calcPctFromDisc(row) {
+            const qty   = parseFloat(row.find('.itmqty').val())   || 0;
+            const price = parseFloat(row.find('.itmprice').val()) || 0;
+            const disc  = parseFloat(row.find('.itmdisc').val())  || 0;
+            const base  = qty * price;
+            const pct   = base > 0 ? (disc / base) * 100 : 0;
+            row.find('.itmdisc_pct').val(pct.toFixed(2));
         }
 
         function handleRowDeletion() {
@@ -264,6 +298,12 @@ function updateTotal() {
     $('#headtotal').val(headtotal.toFixed(2));
     $("#headnet").val(headnet.toFixed(2));
     
+    if (headtotal > 0) {
+        $('#headdisc_pct').val(((headdisc / headtotal) * 100).toFixed(2));
+    } else {
+        $('#headdisc_pct').val('0.00');
+    }
+    
     // نقل الإجمالي إلى المدفوع تلقائياً - استخدام طرق متعددة
     const paidValue = headnet.toFixed(2);
     $("#paid").val(paidValue);
@@ -289,7 +329,7 @@ function updateTotal() {
 
 function handleKeyboardShortcuts() {
     // ترتيب التنقل داخل صف الفاتورة بالـ Enter: كمية → سعر → خصم → بحث
-    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc'];
+    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc_pct', '.itmdisc'];
 
     $(document).off('keydown').on('keydown', function(event) {
         if (event.key === 'F11') {

@@ -193,7 +193,7 @@ try {
     $conn->begin_transaction();
     
     // حساب النسب المئوية
-    $fat_disc_per = ($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0;
+    $fat_disc_per = isset($_POST['headdisc_pct']) ? floatval($_POST['headdisc_pct']) : (($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0);
     $fat_plus_per = ($headtotal > 0 && $headplus > 0) ? number_format($headplus/$headtotal*100, 2) : 0;
     
     // تحديث رأس الفاتورة باستخدام Prepared Statement
@@ -431,8 +431,8 @@ try {
         $stmt_details = $conn->prepare(
             "INSERT INTO fat_details (
                 pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-                discount, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         
         if (!$stmt_details) {
@@ -459,6 +459,7 @@ try {
             $itmqty = floatval($_POST['itmqty'][$index]);
             $itmprice = floatval($_POST['itmprice'][$index]);
             $itmdisc = floatval($_POST['itmdisc'][$index]);
+            $itmdisc_pct = floatval($_POST['itmdisc_pct'][$index] ?? 0);
             $u_val = floatval($_POST['u_val'][$index]);
             if ($u_val <= 0) $u_val = 1; // fallback لو الوحدة مش محددة
             
@@ -531,9 +532,9 @@ try {
             
             // إدخال تفاصيل الفاتورة
             $stmt_details->bind_param(
-                "iiiiddddiiiidds",
+                "iiiidddddiiiidds",
                 $pro_tybe, $ot_id, $itmname, $u_val, $qty_in, $qty_out,
-                $itmprice, $itmdisc, $det_value, $ot_id, $pro_tybe,
+                $itmprice, $itmdisc, $itmdisc_pct, $det_value, $ot_id, $pro_tybe,
                 $store_id, $cost_price, $itmprofit, $detcrtime
             );
             

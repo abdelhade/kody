@@ -13,7 +13,7 @@ if (!isset($usid)) {
 
 // Barcode Handling
 if (isset($_POST['barcode'])) {
-    $barcode = $_POST['barcode'];
+    $barcode = trim($_POST['barcode']);
 } else {
     // Get the last barcode from the database and generate a new one
     $last_barcode_result = $conn->query('SELECT barcode FROM myitems ORDER BY id DESC LIMIT 1');
@@ -25,8 +25,66 @@ if (isset($_POST['barcode'])) {
     }
 }
 
+// التحقق من أن الباركود الرئيسي فريد (مع استثناء الصنف الحالي)
+if ($barcode !== '') {
+    $stmtbc = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? AND id != ? LIMIT 1");
+    $stmtbc->bind_param('si', $barcode, $item_id);
+    $stmtbc->execute();
+    $stmtbc->store_result();
+    if ($stmtbc->num_rows > 0) {
+        $stmtbc->close();
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        exit;
+    }
+    $stmtbc->close();
+
+    // تحقق من باركودات الوحدات التابعة لصنوف أخرى
+    $stmtbc2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? AND item_id != ? LIMIT 1");
+    $stmtbc2->bind_param('si', $barcode, $item_id);
+    $stmtbc2->execute();
+    $stmtbc2->store_result();
+    if ($stmtbc2->num_rows > 0) {
+        $stmtbc2->close();
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        exit;
+    }
+    $stmtbc2->close();
+}
+
+// التحقق من أن باركودات الوحدات فريدة
+if (!empty($_POST['unit_barcode'])) {
+    $unitBarcodes = array_filter(array_map('trim', $_POST['unit_barcode']));
+    // تحقق من التكرار داخل النموذج
+    $allBarcodes = array_merge([$barcode], $unitBarcodes);
+    if (count($allBarcodes) !== count(array_unique($allBarcodes))) {
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        exit;
+    }
+    // تحقق من عدم الوجود في صنوف أخرى
+    foreach ($unitBarcodes as $ub) {
+        $stmtub = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? AND id != ? LIMIT 1");
+        $stmtub->bind_param('si', $ub, $item_id);
+        $stmtub->execute();
+        $stmtub->store_result();
+        $existsInItems = $stmtub->num_rows > 0;
+        $stmtub->close();
+
+        $stmtub2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? AND item_id != ? LIMIT 1");
+        $stmtub2->bind_param('si', $ub, $item_id);
+        $stmtub2->execute();
+        $stmtub2->store_result();
+        $existsInUnits = $stmtub2->num_rows > 0;
+        $stmtub2->close();
+
+        if ($existsInItems || $existsInUnits) {
+            header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+            exit;
+        }
+    }
+}
+
 // Item Name Validation (Check for duplicate names)
-$iname = $_POST['iname']; 
+$iname = $_POST['iname'];
 $sqlchkname  = "SELECT * FROM myitems WHERE iname = ? AND id != ?";
 $stmt = $conn->prepare($sqlchkname);
 $stmt->bind_param('si', $iname, $item_id);

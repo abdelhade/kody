@@ -39,7 +39,7 @@
                 </tr>
               </thead>
               <?php
-              $sql = "SELECT * FROM `departments` order by id desc";
+              $sql = "SELECT * FROM `departments` WHERE coalesce(isdeleted, 0) != 1 order by id desc";
               $res = $conn->query($sql);
 
               $x = 0;
