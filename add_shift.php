@@ -212,6 +212,25 @@
               </div>
             </div>
 
+            <div class="card card-outline card-secondary shadow-sm mb-2">
+              <div class="card-header py-2">
+                <h3 class="card-title mb-0">
+                  <i class="fas fa-fingerprint mr-1"></i>
+                  بصمة واحدة فقط
+                </h3>
+              </div>
+              <div class="card-body py-3">
+                <p class="section-hint mb-2">عند تسجيل حضور أو انصراف فقط بدون البصمتين:</p>
+                <div class="form-group mb-0">
+                  <label for="single_fp_rule">الإجراء</label>
+                  <select name="single_fp_rule" id="single_fp_rule" class="form-control form-control-sm">
+                    <option value="half" selected>احتساب نصف يوم</option>
+                    <option value="cancel">إلغاء اليوم (لا يُحسب حضور)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div class="card card-outline card-danger shadow-sm mb-2">
               <div class="card-header py-2">
                 <h3 class="card-title mb-0">

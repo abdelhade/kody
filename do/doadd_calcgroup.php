@@ -1,6 +1,10 @@
 <?php
 include('../includes/connect.php');
 require_once('../includes/salary_rates.php');
+require_once('../includes/payroll_calcs_helper.php');
+require_once('../includes/shift_attendance.php');
+ensure_payroll_calcs_schema($conn);
+ensure_shift_single_fp_schema($conn);
 
 $department = $_POST['department'];
 $sqlemps = "SELECT * FROM `employees` WHERE `department` = '$department' AND isdeleted != 1  ";
@@ -56,6 +60,7 @@ $outstart = $rowshft['outstart'];
 $outend = $rowshft['outend'];
 $workingdays = $rowshft['workingdays'];
 $wdarray = array_map('trim', explode(",", (string)$workingdays));
+$single_fp_rule = normalize_single_fp_rule($rowshft['single_fp_rule'] ?? 'half');
 
 // حلقة لمعالجة كل يوم في الفترة المحددة
 for ($i = 0; $i < $dayscount; $i++) {
@@ -75,11 +80,8 @@ for ($i = 0; $i < $dayscount; $i++) {
     $time_difference_seconds = $time_difference_in_seconds % 60;
 
     // تحديد حالة اليوم (عمل أم لا)
-    if (in_array($dayofweek, $wdarray)) {
-        $statue = 1;
-    } else {
-        $statue = 0;
-    }
+    $baseStatue = in_array($dayofweek, $wdarray) ? 1 : 0;
+    $statue = $baseStatue;
 
     $fpin = null;
     $fpout = null;
@@ -119,9 +121,6 @@ for ($i = 0; $i < $dayscount; $i++) {
 
     $has_fpin = ($fpin !== null && $fpin !== '');
     $has_fpout = ($fpout !== null && $fpout !== '');
-    if ($has_fpin || $has_fpout) {
-        $statue = 2;
-    }
        
     
 
@@ -139,6 +138,7 @@ for ($i = 0; $i < $dayscount; $i++) {
     }
     $time_difference_hours2 = 0;
     if ($has_fpin && $has_fpout) {
+        $statue = 2;
         list($hours, $minutes, $seconds) = array_pad(explode(':', (string)$fpout), 3, '00');
         $hours = (int)$hours;
         if ($hours >= 24) {
@@ -151,10 +151,16 @@ for ($i = 0; $i < $dayscount; $i++) {
         $time4 = strtotime($fpin);
         $time_difference2 = $time3 - $time4;
         $time_difference_hours2 = round(($time_difference2 / 3600), 2);
-    } elseif (!$has_fpin && !$has_fpout) {
-        $time_difference_hours2 = 0;
     } else {
-        $time_difference_hours2 = ($time_difference_hours / 2);
+        $resolved = resolve_single_fp_attendance(
+            $has_fpin,
+            $has_fpout,
+            (float) $time_difference_hours,
+            $single_fp_rule,
+            $baseStatue
+        );
+        $statue = $resolved['statue'];
+        $time_difference_hours2 = $resolved['curhours'];
     }
 
     // حساب المستحقات المالية
@@ -275,8 +281,15 @@ if ($ent_tybe == 1) {
 
 
 
+$payrollSums = payroll_sum_for_period($conn, (int) $employeeid, $rowemp['name'], $startdate, $enddate, $entitle);
+$bonus = $payrollSums['bonus'];
+$insurance = $payrollSums['insurance'];
+$tax = $payrollSums['tax'];
+$deduction = $payrollSums['deduction'];
+$netPay = payroll_net_pay($entitle, $payrollSums);
+
 $sqlattdocs = "INSERT INTO attdocs 
-(empid,fromdate,todate,alldays, workdays, exphours, accualhours, attdays, absdays, holidays, earlyminits, info , entitle) VALUES ('$employeeid','$startdate','$enddate','$dayscount','$workdays','$exphours','$accualhours','$attdays','$absdays','$holidays','0','$info' , '$entitle')";
+(empid,fromdate,todate,alldays, workdays, exphours, accualhours, attdays, absdays, holidays, earlyminits, info , entitle, bonus, insurance, tax, deduction, net_pay) VALUES ('$employeeid','$startdate','$enddate','$dayscount','$workdays','$exphours','$accualhours','$attdays','$absdays','$holidays','0','$info' , '$entitle', '$bonus', '$insurance', '$tax', '$deduction', '$netPay')";
 
 
 $conn->query($sqlattdocs);

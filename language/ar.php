@@ -157,7 +157,12 @@ $lang_kpi_weight = "وزن KPI";
 // Productivity
 $lang_productivity = "الانتاجية";
 $lang_daily_production = "الانتاج اليومي";
+$lang_add_daily_production = "إضافة انتاجية";
 $lang_period_production = "احتساب الانتاج لمدة";
+$lang_payroll_calcs = "احتسابات الرواتب";
+$lang_payroll_calcs_list = "قائمة الاحتسابات";
+$lang_add_payroll_calc = "إضافة احتساب";
+$lang_attendance_processing = "معالجة الحضور";
 
 // CVs
 $lang_drugs = "الادويه";

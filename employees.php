@@ -33,7 +33,6 @@
               <thead>
                 <tr>
                   <th>م</th>
-                  <th>id</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
                   <th><?= $lang_pbholder_phone ?></th>
@@ -42,6 +41,7 @@
                   <th><?= $lang_addemployee_shift ?></th>
                   <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
+                  <th><?= $lang_addemployee_basmaid ?? 'رقم البصمة' ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
               </thead>
@@ -55,8 +55,7 @@
                 $x++;
               ?>
                   <tr>
-                    <td><?php echo $x ?></td>
-                    <td><?= $row['id']?></td>
+                    <td><?= $x ?></td>
                     <td class=""><a class='btn btn-outline-dark btn-edged font-thin' href="emprofile.php?id=<?= $row['id'] ?>"><?= $row['name'] ?></a></td>
                     <td><?php 
                     echo ($rowjop = $conn->query("SELECT name FROM jops WHERE id = '".$row['jop']."'")->fetch_assoc())
@@ -89,6 +88,7 @@
                           ?></td>
                         <td><?= $row['salary'] ?> (<?= $row['calc_type'] == 'daily' ? 'يومي' : 'شهري' ?>)</td>
                           <td><?= $row['info'] ?></td>
+                    <td><?= htmlspecialchars($row['basma_id'] ?? '—') ?></td>
                     <td><a class="btn btn-warning" href="edit_employee.php?id=<?= $row['id'] ?>"><i class="fa fa-pen"></i></a>
                       <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delemp<?= $row['id']?>"><i class="fa fa-trash"></i></button>
 
@@ -126,7 +126,6 @@
                 <tfoot>
                 <tr>
                   <th>م</th>
-                  <th>id</th>
                   <th><?= $lang_publicname ?></th>
                   <th><?= $lang_publicjob ?></th>
                   <th><?= $lang_pbholder_phone ?></th>
@@ -135,6 +134,7 @@
                   <th><?= $lang_addemployee_shift ?></th>
                   <th><?= $lang_addemployee_salary ?></th>
                   <th><?= $lang_publicinfo ?></th>
+                  <th><?= $lang_addemployee_basmaid ?? 'رقم البصمة' ?></th>
                   <th><?= $lang_publicoperations ?></th>
                 </tr>
                 </tfoot>

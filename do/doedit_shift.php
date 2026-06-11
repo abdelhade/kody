@@ -4,6 +4,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
     $id = $_GET['id'];
     include('../includes/connect.php');
+    require_once('../includes/shift_attendance.php');
+    ensure_shift_single_fp_schema($conn);
     foreach ($_POST as $key => $value) {
         $$key = $value;
     }
@@ -47,6 +49,8 @@ $hours = $timeDiffInSeconds / 3600;
 
 
 
+    $single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
+
     $sqlshft ="UPDATE shifts
      SET 
      name = '$name' ,
@@ -59,7 +63,8 @@ $hours = $timeDiffInSeconds / 3600;
     latelimit = '$latelimit',
     earlylimit = '$earlylimit',
     workingdays = '$workingdays',
-    hours = '$hours' 
+    hours = '$hours',
+    single_fp_rule = '$single_fp_rule'
     WHERE id = '$id'";
     $conn->query($sqlshft);
     header('location:../shifts.php');

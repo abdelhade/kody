@@ -30,6 +30,7 @@ include('includes/sidebar.php');?>
                                 <th>بيان</th>
                                 <th>ملاحظات</th>
                                 <th><span class="fa fa-pen"></span></th>
+                                <th>نسخ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -52,6 +53,9 @@ include('includes/sidebar.php');?>
                                 <td class="p-1 "><?= $row['info2'] ?></td>
                                 <td class="p-1 ">
                                     <a href="edit_production.php?edit=<?= $row['snd_id'] ?>" class="btn btn-sm bg-yellow-300"><span class="fa fa-pen "></span></a>
+                                </td>
+                                <td class="p-1 ">
+                                    <a href="add_production.php?copy=<?= $row['snd_id'] ?>" class="btn btn-sm btn-info" title="نسخ العملية"><span class="fa fa-copy"></span></a>
                                 </td>
                             </tr>
                             <?php }?>

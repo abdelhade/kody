@@ -2,6 +2,8 @@
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
 <?php include('includes/connect.php');
+require_once('includes/shift_attendance.php');
+ensure_shift_single_fp_schema($conn);
 
 $id = $_GET['id'];
 $sqlshift = "SELECT * FROM shifts WHERE id = '$id'";
@@ -175,6 +177,19 @@ hr {
                                 <div class="form-group">
                                     <label><?= $lang_addsh_endout ?></label>
                                     <input value="<?= $rowshift['outend'] ?>" name="outend" type="time" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>بصمة واحدة فقط (حضور أو انصراف بدون الأخرى)</label>
+                                    <?php $singleFpRule = normalize_single_fp_rule($rowshift['single_fp_rule'] ?? 'half'); ?>
+                                    <select name="single_fp_rule" class="form-control">
+                                        <option value="half" <?= $singleFpRule === 'half' ? 'selected' : '' ?>>احتساب نصف يوم</option>
+                                        <option value="cancel" <?= $singleFpRule === 'cancel' ? 'selected' : '' ?>>إلغاء اليوم (لا يُحسب حضور)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>

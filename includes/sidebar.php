@@ -848,6 +848,61 @@
                     <p><?= $lang_sideshiftmanagement ?></p>
                   </a>
                 </li>
+
+                <li class="nav-item">
+                  <a href="add_calcsalary.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-calculator"></i> </i>
+                    <p><?= $lang_attendance_processing ?? 'معالجة الحضور' ?></p>
+                  </a>
+                </li>
+
+                <li class="nav-item has-treeview">
+                  <a href="#" class="nav-link nav-link-basic">
+                    <i class="nav-icon fas fa-industry"></i>
+                    <p>
+                      <?= $lang_productivity ?>
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
+                  </a>
+                  <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+                    <li class="nav-item">
+                      <a href="production.php" class="nav-link">
+                        <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                        <p><?= $lang_daily_production ?></p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="add_production.php" class="nav-link">
+                        <i class="far "> <i class="nav-icon fas fa-plus"></i> </i>
+                        <p><?= $lang_add_daily_production ?? 'إضافة انتاجية' ?></p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+
+                <li class="nav-item has-treeview">
+                  <a href="#" class="nav-link nav-link-basic">
+                    <i class="nav-icon fas fa-coins"></i>
+                    <p>
+                      <?= $lang_payroll_calcs ?? 'احتسابات الرواتب' ?>
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
+                  </a>
+                  <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+                    <li class="nav-item">
+                      <a href="payroll_calcs.php" class="nav-link">
+                        <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                        <p><?= $lang_payroll_calcs_list ?? 'قائمة الاحتسابات' ?></p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="add_payroll_calc.php" class="nav-link">
+                        <i class="far "> <i class="nav-icon fas fa-plus"></i> </i>
+                        <p><?= $lang_add_payroll_calc ?? 'إضافة احتساب' ?></p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
               </ul>
             <?php }
         } ?>
@@ -990,36 +1045,6 @@
                   </li>
 
 
-
-
-                  <li class="nav-item has-treeview  shadow-inner ">
-                    <a href="#" class="nav-link">
-                      <i class="nav-icon fas fa-list"></i>
-                      <p>
-                        <?= $lang_productivity ?>
-                        <i class="fas fa-angle-left right"></i>
-                      </p>
-                    </a>
-                    <ul class="nav nav-treeview shadow-inner shadow-inner " style="display: none;">
-
-
-                      <li class="nav-item">
-                        <a href="production.php" class="nav-link">
-                          <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p><?= $lang_daily_production ?></p>
-                        </a>
-                      </li>
-
-                      <li class="nav-item">
-                        <a href="hiringcontracts.php" class="nav-link">
-                          <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                          <p><?= $lang_period_production ?></p>
-                        </a>
-                      </li>
-
-
-                    </ul>
-                  </li>
 
 
 

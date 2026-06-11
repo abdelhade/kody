@@ -1,5 +1,7 @@
 <?php
 include('../includes/connect.php');
+require_once('../includes/shift_attendance.php');
+ensure_shift_single_fp_schema($conn);
 $name = $_POST['name'];
     $shiftstart = $_POST['shiftstart'];
     $shiftend = $_POST['shiftend'];
@@ -32,7 +34,9 @@ if (isset($_POST['thur'])) {array_push($day,'4');}
 if (isset($_POST['fri'])) {array_push($day,'5');}
 $workingdays = implode(",",$day);
 
-$sqlshft = "INSERT INTO shifts (name, shiftstart, shiftend, hours , instart, inend, outstart, outend, latelimit, earlylimit, workingdays) VALUES ('$name','$shiftstart','$shiftend','$hours','$instart','$inend','$outstart','$outend','$latelimit','$earlylimit','$workingdays')";
+$single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
+
+$sqlshft = "INSERT INTO shifts (name, shiftstart, shiftend, hours , instart, inend, outstart, outend, latelimit, earlylimit, workingdays, single_fp_rule) VALUES ('$name','$shiftstart','$shiftend','$hours','$instart','$inend','$outstart','$outend','$latelimit','$earlylimit','$workingdays','$single_fp_rule')";
 $conn->query($sqlshft);
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add shift')");
 

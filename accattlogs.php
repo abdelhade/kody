@@ -1,6 +1,10 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php
+include('includes/header.php');
+include('includes/navbar.php');
+include('includes/sidebar.php');
+require_once('includes/payroll_calcs_helper.php');
+ensure_payroll_calcs_schema($conn);
+?>
 
 <?php
 $daysAr = [
@@ -100,7 +104,22 @@ if ($hasData) {
                                         ?>
                                         <td class="<?= $pdClass ?>"><strong><?= $periodDiff > 0 ? '+' : '' ?><?= number_format($periodDiff, 2) ?></strong> س</td>
                                     </tr>
-                                    <tr><th>المستحق الإجمالي</th><td class="bg-light"><strong><?= number_format((float)$rowdoc['entitle'], 2) ?></strong></td></tr>
+                                    <tr><th>المستحق الأساسي</th><td><strong><?= number_format((float)$rowdoc['entitle'], 2) ?></strong></td></tr>
+                                    <tr><th>مكافأة</th><td class="text-success">+ <?= number_format((float)($rowdoc['bonus'] ?? 0), 2) ?></td></tr>
+                                    <tr><th>تأمين</th><td class="text-danger">- <?= number_format((float)($rowdoc['insurance'] ?? 0), 2) ?></td></tr>
+                                    <tr><th>ضريبة دخل</th><td class="text-danger">- <?= number_format((float)($rowdoc['tax'] ?? 0), 2) ?></td></tr>
+                                    <tr><th>خصم</th><td class="text-danger">- <?= number_format((float)($rowdoc['deduction'] ?? 0), 2) ?></td></tr>
+                                    <?php
+                                    $netDisplay = isset($rowdoc['net_pay']) && (float)$rowdoc['net_pay'] != 0
+                                        ? (float)$rowdoc['net_pay']
+                                        : payroll_net_pay((float)$rowdoc['entitle'], [
+                                            'bonus' => (float)($rowdoc['bonus'] ?? 0),
+                                            'insurance' => (float)($rowdoc['insurance'] ?? 0),
+                                            'tax' => (float)($rowdoc['tax'] ?? 0),
+                                            'deduction' => (float)($rowdoc['deduction'] ?? 0),
+                                        ]);
+                                    ?>
+                                    <tr><th>الصافي</th><td class="bg-light"><strong><?= number_format($netDisplay, 2) ?></strong></td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -187,6 +206,87 @@ if ($hasData) {
                                     </th>
                                 </tr>
                             </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- احتسابات الرواتب -->
+            <div class="card attdoc-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">احتسابات الرواتب (مكافأة / تأمين / ضريبة / خصم)</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>م</th>
+                                    <th>التاريخ</th>
+                                    <th>اليوم</th>
+                                    <th>النوع</th>
+                                    <th>مبلغ ثابت</th>
+                                    <th>نسبة %</th>
+                                    <th>القيمة المحتسبة</th>
+                                    <th>بيان</th>
+                                    <th>ملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $sqlPc = "SELECT * FROM payroll_calcs WHERE isdeleted = 0 AND (emp_id = $empid OR emp_name = '$empname') AND date >= '$startdate' AND date <= '$enddate' ORDER BY date ASC";
+                                $resultPc = $conn->query($sqlPc);
+                                $pcIdx = 0;
+                                $pcBonus = 0;
+                                $pcInsurance = 0;
+                                $pcTax = 0;
+                                $pcDeduction = 0;
+                                $baseEnt = (float) $rowdoc['entitle'];
+                                if ($resultPc && $resultPc->num_rows > 0) {
+                                    while ($rowPc = $resultPc->fetch_assoc()) {
+                                        $pcIdx++;
+                                        $lineVal = payroll_calc_line_amount($rowPc, $baseEnt);
+                                        $tybe = (int) $rowPc['calc_tybe'];
+                                        if ($tybe === 1) $pcBonus += $lineVal;
+                                        elseif ($tybe === 2) $pcInsurance += $lineVal;
+                                        elseif ($tybe === 3) $pcTax += $lineVal;
+                                        elseif ($tybe === 4) $pcDeduction += $lineVal;
+                                ?>
+                                <tr>
+                                    <td><?= $pcIdx ?></td>
+                                    <td><?= $rowPc['date'] ?></td>
+                                    <td><?= day_name_ar($rowPc['date'], $daysAr) ?></td>
+                                    <td class="<?= payroll_calc_is_addition($tybe) ? 'text-success' : 'text-danger' ?>">
+                                        <?= payroll_calc_type_label($tybe, true) ?>
+                                    </td>
+                                    <td><?= (float)$rowPc['percent'] > 0 ? '—' : number_format((float)$rowPc['amount'], 2) ?></td>
+                                    <td><?= (float)$rowPc['percent'] > 0 ? number_format((float)$rowPc['percent'], 2) . '%' : '—' ?></td>
+                                    <td class="<?= payroll_calc_is_addition($tybe) ? 'text-success' : 'text-danger' ?>">
+                                        <?= payroll_calc_is_addition($tybe) ? '+' : '−' ?><?= number_format($lineVal, 2) ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($rowPc['info'] ?? '') ?></td>
+                                    <td><?= htmlspecialchars($rowPc['info2'] ?? '') ?></td>
+                                </tr>
+                                <?php
+                                    }
+                                } else {
+                                ?>
+                                <tr><td colspan="9" class="text-center text-muted">لا توجد احتسابات في هذه الفترة</td></tr>
+                                <?php } ?>
+                            </tbody>
+                            <?php if ($pcIdx > 0) { ?>
+                            <tfoot>
+                                <tr class="font-weight-bold">
+                                    <th colspan="6" class="text-left">الإجمالي</th>
+                                    <th colspan="3">
+                                        مكافأة: <?= number_format($pcBonus, 2) ?> —
+                                        تأمين: <?= number_format($pcInsurance, 2) ?> —
+                                        ضريبة: <?= number_format($pcTax, 2) ?> —
+                                        خصم: <?= number_format($pcDeduction, 2) ?>
+                                    </th>
+                                </tr>
+                            </tfoot>
+                            <?php } ?>
                         </table>
                     </div>
                 </div>
