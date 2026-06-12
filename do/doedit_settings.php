@@ -46,6 +46,20 @@ if (empty($companyname)) {
     die("Error: Company name is required");
 }
 
+// إضافة أعمدة العمولة إذا لم تكن موجودة (تحديث قاعدة البيانات)
+$col_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'emp_commission'");
+if ($col_check && $col_check->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings`
+            ADD COLUMN `emp_commission` DOUBLE NOT NULL DEFAULT 0,
+            ADD COLUMN `user_commission` DOUBLE NOT NULL DEFAULT 0");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding commission columns: ' . $e->getMessage());
+        }
+    }
+}
+
 // استخدام prepared statement لتحديث الإعدادات
 $sql = "UPDATE settings 
 SET company_name = ?, 
