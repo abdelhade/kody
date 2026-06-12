@@ -1,6 +1,6 @@
 <?php
 /**
- * Database update runner — migrations 009–011 + disc_pct
+ * Database update runner — migrations 009–012 + disc_pct
  * Open: run_db_update.php?confirm=yes
  */
 
@@ -18,6 +18,7 @@ $files = [
     'update/009_add_calc_type_to_employees.sql' => 'نوع حساب الراتب (employees.calc_type)',
     'update/010_add_payroll_calcs.sql'          => 'حسابات الرواتب + أعمدة attdocs',
     'update/011_add_single_fp_rule_to_shifts.sql' => 'قاعدة البصمة الواحدة (shifts)',
+    'update/012_add_commission_to_settings.sql'   => 'عمولة الموظفين والمستخدمين (settings)',
 ];
 
 $success = 0;
