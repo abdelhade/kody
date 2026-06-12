@@ -10,6 +10,27 @@ if (!isset($_GET['confirm']) || $_GET['confirm'] !== 'yes') {
 
 include('includes/connect.php');
 
+function run_migration_query(mysqli $conn, string $query): array
+{
+    try {
+        if ($conn->query($query)) {
+            return ['ok' => true, 'skipped' => false, 'error' => ''];
+        }
+        $error = $conn->error;
+    } catch (mysqli_sql_exception $e) {
+        $error = $e->getMessage();
+    }
+
+    if (
+        stripos($error, 'Duplicate column') !== false ||
+        stripos($error, 'already exists') !== false
+    ) {
+        return ['ok' => true, 'skipped' => true, 'error' => $error];
+    }
+
+    return ['ok' => false, 'skipped' => false, 'error' => $error];
+}
+
 header('Content-Type: text/html; charset=utf-8');
 echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>DB Update</title></head><body style="font-family:sans-serif;padding:20px;">';
 echo '<h2>تحديث قاعدة البيانات</h2>';
@@ -43,16 +64,14 @@ foreach ($files as $file => $label) {
             continue;
         }
 
-        if ($conn->query($query)) {
-            $executed++;
-        } elseif (
-            strpos($conn->error, 'Duplicate column') !== false ||
-            strpos($conn->error, 'already exists') !== false
-        ) {
-            echo "<p style='color:orange'>⚠️ موجود مسبقاً: " . htmlspecialchars($conn->error) . "</p>";
+        $result = run_migration_query($conn, $query);
+        if ($result['ok']) {
+            if ($result['skipped']) {
+                echo "<p style='color:orange'>⚠️ موجود مسبقاً: " . htmlspecialchars($result['error']) . "</p>";
+            }
             $executed++;
         } else {
-            echo "<p style='color:red'>❌ " . htmlspecialchars($conn->error) . "</p>";
+            echo "<p style='color:red'>❌ " . htmlspecialchars($result['error']) . "</p>";
             $failed++;
         }
     }
@@ -66,14 +85,19 @@ foreach ($files as $file => $label) {
 }
 
 echo '<h3>خصم النسبة على بنود الفاتورة (fat_details.disc_pct)</h3>';
-$disc_sql = "ALTER TABLE fat_details ADD COLUMN disc_pct DECIMAL(10,2) DEFAULT 0.00 AFTER discount";
-if ($conn->query($disc_sql)) {
-    echo "<p style='color:green'>✅ تم</p>";
+$disc_result = run_migration_query(
+    $conn,
+    "ALTER TABLE fat_details ADD COLUMN disc_pct DECIMAL(10,2) DEFAULT 0.00 AFTER discount"
+);
+if ($disc_result['ok']) {
+    if ($disc_result['skipped']) {
+        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
+    } else {
+        echo "<p style='color:green'>✅ تم</p>";
+    }
     $success++;
-} elseif (strpos($conn->error, 'Duplicate column') !== false) {
-    echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
 } else {
-    echo "<p style='color:red'>❌ " . htmlspecialchars($conn->error) . "</p>";
+    echo "<p style='color:red'>❌ " . htmlspecialchars($disc_result['error']) . "</p>";
     $errors++;
 }
 
