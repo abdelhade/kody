@@ -6,18 +6,31 @@ require_once('../includes/shift_attendance.php');
 ensure_shift_single_fp_schema($conn);
 ensure_payroll_calcs_schema($conn);
 
-$employeeid = $_POST['employee'];
+$employeeid = (int) $_POST['employee'];
 $startdate = $_POST['startdate'];
 $startnum = new DateTime($startdate);
 $enddate = $_POST['enddate'];
 $endnum = new DateTime($enddate);
 
+$rowempCheck = $conn->query("SELECT name FROM employees WHERE id = $employeeid")->fetch_assoc();
+$employeeName = $rowempCheck['name'] ?? ('موظف #' . $employeeid);
+
 // التحقق من وجود سجلات في الفترة المحددة
 $sqlchkdur = "SELECT * FROM attlog WHERE employee = $employeeid AND day >= '$startdate' AND day < '$enddate'";
 $rowchkdur = $conn->query($sqlchkdur)->fetch_assoc();
 if (isset($rowchkdur)) {
-    echo "<h1> يوجد سجلات في الفتره المحدده من فضلك تأكد من الفتره<button style='font-size:40px'><a href='../add_calcsalary.php'>رجوع</a></button></h1> ";
-    die;
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'danger',
+        'title' => 'لم تتم المعالجة',
+        'source' => 'معالجة البصمة — موظف واحد',
+        'lines' => [
+            'الموظف: ' . $employeeName,
+            'الفترة: من ' . $startdate . ' إلى ' . $enddate,
+            'يوجد سجلات محسوبة مسبقاً في هذه الفترة. احذف المعالجة القديمة أو اختر فترة أخرى.',
+        ],
+    ];
+    header('Location: ../add_calcsalary.php');
+    exit;
 }
 
 // حساب عدد الأيام في الفترة المحددة
@@ -43,8 +56,17 @@ if (!$rowshft) {
     $rowshft = $conn->query("SELECT * FROM shifts WHERE (isdeleted = 0 OR isdeleted IS NULL) ORDER BY id ASC LIMIT 1")->fetch_assoc();
 }
 if (!$rowshft) {
-    echo "<h1>لا توجد وردية معرّفة في النظام. أضف وردية من إعدادات الورديات ثم أعد المحاولة.<button style='font-size:40px'><a href='../add_calcsalary.php'>رجوع</a></button></h1>";
-    die;
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'danger',
+        'title' => 'لم تتم المعالجة',
+        'source' => 'معالجة البصمة — موظف واحد',
+        'lines' => [
+            'الموظف: ' . ($rowemp['name'] ?? $employeeName),
+            'لا توجد وردية معرّفة في النظام. أضف وردية من إعدادات الورديات ثم أعد المحاولة.',
+        ],
+    ];
+    header('Location: ../add_calcsalary.php');
+    exit;
 }
 
 $shiftstart = $rowshft['shiftstart'];
@@ -304,7 +326,21 @@ if ($titleperhour > 0) {
 // تسجيل العملية
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add calcsalary')");
 
-// إعادة التوجيه إلى صفحة حساب الرواتب
-header('location:../calcsalary.php');
+$_SESSION['calcsalary_flash'] = [
+    'type' => 'success',
+    'title' => 'تمت المعالجة بنجاح',
+    'source' => 'معالجة البصمة — موظف واحد',
+    'lines' => [
+        'الموظف: ' . $rowemp['name'],
+        'الفترة: من ' . $startdate . ' إلى ' . $enddate,
+        'عدد أيام الفترة: ' . $dayscount,
+        'أيام الحضور الفعلي: ' . $attdays,
+        'إجمالي الساعات المحتسبة: ' . $accualhours,
+        'الاستحقاق: ' . number_format((float) $entitle, 2) . ' — الصافي: ' . number_format((float) $netPay, 2),
+        'رقم مستند المعالجة: #' . $docid,
+    ],
+    'link' => 'calcsalary.php?emp=' . $employeeid . '&from=' . urlencode($startdate) . '&to=' . urlencode($enddate),
+];
 
-include('../includes/footer.php');
+header('Location: ../add_calcsalary.php');
+exit;

@@ -6,23 +6,44 @@ require_once('../includes/shift_attendance.php');
 ensure_payroll_calcs_schema($conn);
 ensure_shift_single_fp_schema($conn);
 
-$department = $_POST['department'];
-$sqlemps = "SELECT * FROM `employees` WHERE `department` = '$department' AND isdeleted != 1  ";
+$department = (int) $_POST['department'];
+$startdate = $_POST['startdate'];
+$enddate = $_POST['enddate'];
+
+$rowDept = $conn->query("SELECT name FROM departments WHERE id = $department")->fetch_assoc();
+$departmentName = $rowDept['name'] ?? ('إدارة #' . $department);
+
+$processedEmployees = [];
+
+$sqlemps = "SELECT * FROM `employees` WHERE `department` = '$department' AND isdeleted != 1 ORDER BY name";
 $resemps = $conn->query($sqlemps);
 while ($rowemps = $resemps->fetch_assoc()) {
   
 $employeeid = $rowemps['id'];
-$startdate = $_POST['startdate'];
 $startnum = new DateTime($startdate);
-$enddate = $_POST['enddate'];
 $endnum = new DateTime($enddate);
 
 // التحقق من وجود سجلات في الفترة المحددة
 $sqlchkdur = "SELECT * FROM attlog WHERE employee = $employeeid AND day >= '$startdate' AND day < '$enddate'";
 $rowchkdur = $conn->query($sqlchkdur)->fetch_assoc();
 if (isset($rowchkdur)) {
-    echo "<h1> يوجد سجلات في الفتره المحدده من فضلك تأكد من الفتره<button style='font-size:40px'><a href='../add_calcsalary.php'>رجوع</a></button></h1> ";
-    die;
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'danger',
+        'title' => 'توقفت المعالجة',
+        'source' => 'معالجة البصمة — حسب الإدارة',
+        'lines' => [
+            'الإدارة: ' . $departmentName,
+            'الفترة: من ' . $startdate . ' إلى ' . $enddate,
+            'الموظف المتوقف: ' . $rowemps['name'],
+            'يوجد سجلات محسوبة مسبقاً لهذا الموظف في الفترة المحددة.',
+        ],
+    ];
+    if (!empty($processedEmployees)) {
+        $_SESSION['calcsalary_flash']['lines'][] = 'تم احتساب ' . count($processedEmployees) . ' موظف قبل التوقف.';
+        $_SESSION['calcsalary_flash']['employees'] = $processedEmployees;
+    }
+    header('Location: ../add_calcsalary.php');
+    exit;
 }
 
 // حساب عدد الأيام في الفترة المحددة
@@ -48,8 +69,18 @@ if (!$rowshft) {
     $rowshft = $conn->query("SELECT * FROM shifts WHERE (isdeleted = 0 OR isdeleted IS NULL) ORDER BY id ASC LIMIT 1")->fetch_assoc();
 }
 if (!$rowshft) {
-    echo "<h1>لا توجد وردية معرّفة في النظام. أضف وردية من إعدادات الورديات ثم أعد المحاولة.<button style='font-size:40px'><a href='../add_calcsalary.php'>رجوع</a></button></h1>";
-    die;
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'danger',
+        'title' => 'توقفت المعالجة',
+        'source' => 'معالجة البصمة — حسب الإدارة',
+        'lines' => [
+            'الإدارة: ' . $departmentName,
+            'الموظف المتوقف: ' . $rowemps['name'],
+            'لا توجد وردية معرّفة في النظام.',
+        ],
+    ];
+    header('Location: ../add_calcsalary.php');
+    exit;
 }
 
 $shiftstart = $rowshft['shiftstart'];
@@ -306,12 +337,43 @@ if ($titleperhour > 0) {
 // تسجيل العملية
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add calcsalary')");
 
+$processedEmployees[] = [
+    'name' => $rowemp['name'],
+    'attdays' => $attdays,
+    'hours' => $accualhours,
+    'entitle' => $entitle,
+    'net_pay' => $netPay,
+    'docid' => $docid,
+];
 
-    // تسجيل العملية
 }    
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add calcgroup')");
 
-header('location:../calcsalary.php');
-    
-    include('../includes/footer.php') ;  
-?>
+if (empty($processedEmployees)) {
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'warning',
+        'title' => 'لم يتم احتساب أي موظف',
+        'source' => 'معالجة البصمة — حسب الإدارة',
+        'lines' => [
+            'الإدارة: ' . $departmentName,
+            'الفترة: من ' . $startdate . ' إلى ' . $enddate,
+            'لا يوجد موظفون نشطون في هذه الإدارة.',
+        ],
+    ];
+} else {
+    $_SESSION['calcsalary_flash'] = [
+        'type' => 'success',
+        'title' => 'تمت المعالجة بنجاح',
+        'source' => 'معالجة البصمة — حسب الإدارة',
+        'lines' => [
+            'الإدارة: ' . $departmentName,
+            'الفترة: من ' . $startdate . ' إلى ' . $enddate,
+            'عدد الموظفين المحتسبين: ' . count($processedEmployees),
+        ],
+        'employees' => $processedEmployees,
+        'link' => 'calcsalary.php?from=' . urlencode($startdate) . '&to=' . urlencode($enddate),
+    ];
+}
+
+header('Location: ../add_calcsalary.php');
+exit;

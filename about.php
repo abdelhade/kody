@@ -38,6 +38,7 @@ if ($lc_hadi = $rowstg['lic']) {
         <br>
         <?= print_r($_SESSION) ?>
                <br>
+                <a href="run_db_update.php?confirm=yes" class="btn btn-success">تحديث قاعدة البيانات</a>
                 <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#TurncateModal">مسح الداتا</button>
                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#FinishModal">انهاء المدة و بداية مدة جديدة</button>
 
