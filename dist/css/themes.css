@@ -1,0 +1,160 @@
+/* Core Custom CSS Variables based on Theme */
+body.theme-solarized-white {
+  --bg-main: #ebdcb9;
+  --bg-sidebar: #faf8f2;
+  --bg-navbar: #decfa4;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --text-main: #586e75;
+  --text-muted: #93a1a1;
+  --border-color: #cbbd9b;
+  --accent-color: #268bd2;
+  --card-header-bg: #decfa4;
+  --card-header-text: #586e75;
+}
+
+body.theme-monokai {
+  --bg-main: #272822;
+  --bg-sidebar: #1e1f1c;
+  --bg-navbar: #1e1f1c;
+  --bg-card: #2d2e2b;
+  --bg-input: #3e3d32;
+  --text-main: #f8f8f2;
+  --text-muted: #75715e;
+  --border-color: #49483e;
+  --accent-color: #a6e22e;
+  --card-header-bg: #1e1f1c;
+  --card-header-text: #a6e22e;
+}
+
+body.theme-tokyo-night {
+  --bg-main: #1a1b26;
+  --bg-sidebar: #16161e;
+  --bg-navbar: #16161e;
+  --bg-card: #24283c;
+  --bg-input: #1f2335;
+  --text-main: #a9b1d6;
+  --text-muted: #565f89;
+  --border-color: #3b4261;
+  --accent-color: #7aa2f7;
+  --card-header-bg: #1f2335;
+  --card-header-text: #7aa2f7;
+}
+
+/* Applying variables dynamically */
+body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+.content-wrapper {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+.main-sidebar, 
+.main-sidebar .sidebar, 
+.main-sidebar .brand-link, 
+.main-sidebar .user-panel, 
+.main-sidebar .nav-sidebar, 
+.main-sidebar .nav-treeview {
+  background-color: var(--bg-sidebar) !important;
+}
+body.theme-solarized-white .main-sidebar {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.08) !important;
+  border-left: 1px solid var(--border-color) !important;
+}
+
+.main-header.navbar {
+  background-color: var(--bg-navbar) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.card {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+}
+
+.card-header {
+  background-color: var(--card-header-bg) !important;
+  color: var(--card-header-text) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.card-title {
+  color: var(--card-header-text) !important;
+}
+
+.table {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+}
+
+.table th, .table td {
+  border-top: 1px solid var(--border-color) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+body.theme-solarized-white .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+.form-control, select.form-control, textarea.form-control {
+  background-color: var(--bg-input) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+body.theme-monokai .text-dark,
+body.theme-tokyo-night .text-dark,
+body.theme-monokai h1, body.theme-monokai h2, body.theme-monokai h3, body.theme-monokai h4, body.theme-monokai h5, body.theme-monokai h6,
+body.theme-tokyo-night h1, body.theme-tokyo-night h2, body.theme-tokyo-night h3, body.theme-tokyo-night h4, body.theme-tokyo-night h5, body.theme-tokyo-night h6,
+body.theme-monokai label, body.theme-tokyo-night label,
+body.theme-monokai p, body.theme-tokyo-night p,
+body.theme-monokai span:not(.badge), body.theme-tokyo-night span:not(.badge) {
+  color: var(--text-main) !important;
+}
+
+.nav-sidebar .nav-link {
+  color: var(--text-main) !important;
+}
+
+body.theme-monokai .nav-sidebar .nav-link:hover,
+body.theme-tokyo-night .nav-sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--accent-color) !important;
+}
+
+.brand-link, .user-panel {
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.breadcrumb-item a {
+  color: var(--accent-color) !important;
+}
+.breadcrumb-item.active {
+  color: var(--text-muted) !important;
+}
+
+.select2-container--default .select2-selection--single {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--text-main) !important;
+}
+.select2-dropdown {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+.nav-link {
+  color: var(--text-main) !important;
+}

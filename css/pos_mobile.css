@@ -1,0 +1,115 @@
+/* Mobile POS Theme Styles */
+body.mobile-theme {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa !important;
+}
+
+/* Navbar */
+.mobile-navbar {
+    z-index: 1030;
+    position: sticky;
+    top: 0;
+}
+
+/* Accordion Settings */
+.mobile-settings-accordion .accordion-button {
+    font-size: 0.9rem;
+    box-shadow: none !important;
+}
+.mobile-settings-accordion .accordion-button::after {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+/* Cart Container */
+#cartContainer {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 80px; /* Space for FAB */
+}
+
+/* Item Card in Cart */
+.item-card-order {
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+.item-card-order .quantityInput {
+    background: transparent;
+    font-size: 1rem;
+    min-width: 40px;
+}
+.item-card-order .btn-light {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+.item-card-order .display-subtotal {
+    font-size: 1.1rem;
+}
+
+/* Floating Action Button */
+.fab-add-item {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1020;
+    transition: transform 0.2s ease;
+}
+.fab-add-item:active {
+    transform: scale(0.95);
+}
+
+/* Search Modal */
+#searchItemModal .modal-header {
+    border-bottom: 0;
+    padding: 10px 15px;
+}
+#searchItemModal .input-group-text {
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+#searchItemModal .form-control {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    font-size: 1rem;
+}
+#searchItemModal .form-control:focus {
+    box-shadow: none;
+}
+
+/* Search Results Items */
+.search-result-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.search-result-item:active {
+    background: #e9ecef;
+}
+.search-result-item .item-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.search-result-item .item-price {
+    font-size: 1.2rem;
+    color: #198754;
+    font-weight: bold;
+}
+.search-result-item .item-barcode {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Payment Bottom Bar */
+.bottom-payment-bar {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
