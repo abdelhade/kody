@@ -52,9 +52,9 @@
         <div class="card-body py-2">
           <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
             <div class="row align-items-end">
-              <div class="col-12 col-sm-6 col-lg-4 form-group mb-2 mb-lg-0">
+              <div class="col-12 col-sm-6 col-lg-3 form-group mb-2 mb-lg-0">
                 <label for="attEmployee">الاسم</label>
-                <select required class="form-control form-control-sm" name="employee" id="attEmployee">
+                <select class="form-control form-control-sm" name="employee" id="attEmployee">
                   <option value="0">كل الموظفين</option>
                   <?php
                   $sqlemp = "SELECT * FROM employees WHERE isdeleted != 1";
@@ -70,6 +70,46 @@
                 </select>
               </div>
               <div class="col-6 col-sm-3 col-lg-2 form-group mb-2 mb-lg-0">
+                <label for="attDepartment">القسم</label>
+                <select class="form-control form-control-sm" name="department" id="attDepartment">
+                  <option value="0">الكل</option>
+                  <?php
+                  $sqldept = "SELECT * FROM departments";
+                  $resdept = $conn->query($sqldept);
+                  if($resdept) {
+                      while ($rowdept = $resdept->fetch_assoc()) {
+                      ?>
+                      <option <?php
+                        if (isset($_POST['department']) && $_POST['department'] == $rowdept['id']) {
+                          echo 'selected';
+                        }
+                      ?> value="<?= $rowdept['id'] ?>"><?= htmlspecialchars($rowdept['name']) ?></option>
+                      <?php 
+                      }
+                  } ?>
+                </select>
+              </div>
+              <div class="col-6 col-sm-3 col-lg-2 form-group mb-2 mb-lg-0">
+                <label for="attType">النوع</label>
+                <select class="form-control form-control-sm" name="fptybe" id="attType">
+                  <option value="0">الكل</option>
+                  <?php
+                  $sqltype = "SELECT * FROM fptybes";
+                  $restype = $conn->query($sqltype);
+                  if($restype) {
+                      while ($rowtype = $restype->fetch_assoc()) {
+                      ?>
+                      <option <?php
+                        if (isset($_POST['fptybe']) && $_POST['fptybe'] == $rowtype['id']) {
+                          echo 'selected';
+                        }
+                      ?> value="<?= $rowtype['id'] ?>"><?= htmlspecialchars($rowtype['name']) ?></option>
+                      <?php 
+                      }
+                  } ?>
+                </select>
+              </div>
+              <div class="col-6 col-sm-3 col-lg-2 form-group mb-2 mb-lg-0">
                 <label for="attFrom">من</label>
                 <input required name="fromdate" id="attFrom" class="form-control form-control-sm" type="date"
                   <?php if (isset($_POST['fromdate'])) { echo 'value="' . htmlspecialchars($_POST['fromdate']) . '"'; } ?>>
@@ -79,9 +119,9 @@
                 <input required name="todate" id="attTo" class="form-control form-control-sm" type="date"
                   <?php if (isset($_POST['todate'])) { echo 'value="' . htmlspecialchars($_POST['todate']) . '"'; } ?>>
               </div>
-              <div class="col-12 col-sm-12 col-lg-2 form-group mb-0">
-                <button class="btn btn-primary btn-sm btn-block" type="submit">
-                  <i class="fas fa-search mr-1"></i> بحث
+              <div class="col-12 col-sm-12 col-lg-1 form-group mb-0">
+                <button class="btn btn-primary btn-sm btn-block h-100" type="submit" style="min-height: 29px; display: flex; align-items: center; justify-content: center;">
+                  <i class="fas fa-search"></i>
                 </button>
               </div>
             </div>
@@ -91,14 +131,28 @@
 
       <?php
       if (isset($_POST['fromdate'])) {
-        $t1 = $_POST['employee'];
+        $t1 = $_POST['employee'] ?? 0;
         $t2 = $_POST['fromdate'];
         $t3 = $_POST['todate'];
-        if ($t1 == 0) {
-          $sql = "SELECT * FROM `attandance` WHERE fpdate BETWEEN '$t2' and '$t3' AND isdeleted != 1 ORDER BY fpdate ASC";
-        } else {
-          $sql = "SELECT * FROM `attandance` WHERE employee = '$t1' AND fpdate BETWEEN '$t2' and '$t3' AND isdeleted != 1 ORDER BY fpdate ASC";
+        $dept = $_POST['department'] ?? 0;
+        $fptybe = $_POST['fptybe'] ?? 0;
+
+        $sql = "SELECT a.* FROM `attandance` a ";
+        if ($dept != 0) {
+            $sql .= " LEFT JOIN `employees` e ON a.employee = e.id ";
         }
+        $sql .= " WHERE a.fpdate BETWEEN '$t2' AND '$t3' AND a.isdeleted != 1 ";
+        
+        if ($t1 != 0) {
+            $sql .= " AND a.employee = '$t1' ";
+        }
+        if ($dept != 0) {
+            $sql .= " AND e.department = '$dept' ";
+        }
+        if ($fptybe != 0) {
+            $sql .= " AND a.fptybe = '$fptybe' ";
+        }
+        $sql .= " ORDER BY a.fpdate ASC";
       } else {
         $today = date('Y-m-d');
         $sql = "SELECT * FROM `attandance` WHERE fpdate BETWEEN '$today' and '$today' AND isdeleted != 1 ORDER BY id DESC LIMIT 60";

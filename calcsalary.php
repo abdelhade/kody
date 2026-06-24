@@ -26,6 +26,9 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
           <button type="button" class="btn btn-primary" onclick="printCalcsalary()">
             <i class="fas fa-print"></i> طباعة
           </button>
+          <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteAllModal">
+            <i class="fas fa-trash"></i> حذف الكل
+          </button>
           <a href="add_calcsalary.php" class="btn btn-success"><?= $lang_add_new ?></a>
         </div>
       </div>
@@ -271,6 +274,33 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
   .calcsalary-page a { color: #000 !important; text-decoration: none; }
 }
 </style>
+
+<!-- Delete All Modal -->
+<div class="modal fade" id="deleteAllModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form action="do/dodel_all_attdocs.php" method="POST">
+        <div class="modal-header bg-danger text-white py-2">
+          <h5 class="modal-title" id="deleteAllModalLabel">تأكيد الحذف الشامل</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="text-danger font-weight-bold">تحذير: سيتم حذف جميع معالجات الحضور والرواتب الحالية ولن يمكن التراجع عن هذه العملية.</p>
+          <div class="form-group">
+            <label for="admin_pass">كلمة المرور لتأكيد الحذف</label>
+            <input type="password" class="form-control" name="admin_pass" id="admin_pass" required placeholder="أدخل كلمة المرور الخاصة بالتعديلات">
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-danger">تأكيد الحذف</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
 var calcsalaryDt = null;

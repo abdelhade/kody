@@ -92,7 +92,7 @@ for ($i = 0; $i < $dayscount; $i++) {
     if ($time_difference_in_seconds <= 0) {
         $time_difference_in_seconds += 24 * 3600;
     }
-    $time_difference_hours = floor($time_difference_in_seconds / 3600);
+    $time_difference_hours = round($time_difference_in_seconds / 3600, 2);
     $time_difference_minutes = floor(($time_difference_in_seconds % 3600) / 60);
     $time_difference_seconds = $time_difference_in_seconds % 60;
 
@@ -167,6 +167,33 @@ for ($i = 0; $i < $dayscount; $i++) {
             $time3 = strtotime($fpout);
         }
         $time4 = strtotime($fpin);
+        
+        // تطبيق فترات السماح للتأخير والتبكير
+        $latelimit_sec = (int)($rowshft['latelimit'] ?? 0) * 60;
+        $earlylimit_sec = (int)($rowshft['earlylimit'] ?? 0) * 60;
+        
+        $expected_start = $time2;
+        $expected_end = $time1;
+        if ($expected_end <= $expected_start) {
+            $expected_end += 86400;
+        }
+
+        // معالجة بصمة الدخول
+        $diff_in = $time4 - $expected_start;
+        if ($diff_in > 0 && $diff_in <= $latelimit_sec) {
+            $time4 = $expected_start; // جاء متأخراً ضمن المسموح
+        } elseif ($diff_in < 0 && abs($diff_in) <= $earlylimit_sec) {
+            $time4 = $expected_start; // جاء مبكراً ضمن المسموح
+        }
+
+        // معالجة بصمة الخروج
+        $diff_out = $expected_end - $time3;
+        if ($diff_out > 0 && $diff_out <= $earlylimit_sec) {
+            $time3 = $expected_end; // انصرف مبكراً ضمن المسموح
+        } elseif ($diff_out < 0 && abs($diff_out) <= $latelimit_sec) {
+            $time3 = $expected_end; // انصرف متأخراً ضمن المسموح
+        }
+
         $time_difference2 = $time3 - $time4;
         $time_difference_hours2 = round(($time_difference2 / 3600), 2);
     } else {
@@ -190,10 +217,11 @@ for ($i = 0; $i < $dayscount; $i++) {
 
 
     // إدخال البيانات في جدول سجلات الحضور
+    $day_defhours = ($baseStatue == 0) ? 0 : $time_difference_hours;
     $sqllog = ("INSERT INTO attlog 
     (employee, day, starttime, endtime, fpin, fpout, defhours, curhours, dueforhour, realdue, statue)
      VALUES 
-     ('$employeeid','$curday','$shiftstart','$shiftend','$fpin','$fpout','$time_difference_hours ','$time_difference_hours2','$dueforhour','$realdue','$statue')");
+     ('$employeeid','$curday','$shiftstart','$shiftend','$fpin','$fpout','$day_defhours','$time_difference_hours2','$dueforhour','$realdue','$statue')");
     $startnum->add(new DateInterval('P1D'));
 
 
