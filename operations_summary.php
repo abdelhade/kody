@@ -5,6 +5,7 @@ include('includes/sidebar.php');
 
 
 $q = isset($_GET['q']) ? $_GET['q'] : "all";  // استقبال قيمة q من GET
+$today = date('Y-m-d'); // تعريف اليوم الحالي
 $strtdate = isset($_GET['strtdate']) ? $_GET['strtdate'] : null;
 $enddate = isset($_GET['enddate']) ? $_GET['enddate'] : null;
 $search = isset($_GET['search']) ? $_GET['search'] : null;
@@ -38,8 +39,8 @@ switch ($q) {
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     case "buy":
-        $report_name = "مبيعات";
-        $where_clause = "(pro_tybe = 2 OR pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter $searchFilter";
+        $report_name = "مبيعات وكاشير ومردودات";
+        $where_clause = "(pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
@@ -170,7 +171,7 @@ switch ($q) {
                                         <td><?= $x ?></td>
                                         <td><?= $rowop['crtime'] ?></td>
                                         <td>
-                                            <a class="btn btn-block btn-light border" href="print/<?= ($tybe == 4 || $tybe == 3) ? 'print_sales' : 'receipt' ?>.php?id=<?= $proid ?>" target="_blank">
+                                            <a class="btn btn-block btn-light border" href="print/<?= ($tybe == 4 || $tybe == 3 || $tybe == 2) ? 'print_sales' : 'receipt' ?>.php?id=<?= $proid ?>" target="_blank">
                                                 <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?>
                                             </a>
                                         </td>
@@ -214,7 +215,7 @@ switch ($q) {
                                             <?php $proid = $rowop['id']?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4, 9])) { // مبيعات، مشتريات، كاشير ?>
+                                            <?php if(in_array($tybe, [3, 4])) { // مبيعات، مشتريات فقط (الكاشير tybe=9 ليس له صفحة تعديل) ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>

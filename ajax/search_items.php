@@ -17,11 +17,14 @@ try {
         throw new Exception('Database connection failed');
     }
     
+    $store_id = isset($_GET['store_id']) ? intval($_GET['store_id']) : 0;
+    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id), 0)" : "0";
+
     if (empty($search)) {
-        $query = "SELECT id, iname as name, price1 as price, barcode FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT 200";
+        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT 200";
     } else {
         $s = $conn->real_escape_string($search);
-        $query = "SELECT id, iname as name, price1 as price, barcode FROM myitems 
+        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems 
                   WHERE (iname LIKE '%$s%' OR barcode LIKE '%$s%' OR id = '$s') 
                   AND isdeleted = 0 
                   ORDER BY iname LIMIT 100";
@@ -37,7 +40,8 @@ try {
         $items[] = [
             'id' => (int)$row['id'],
             'name' => $row['name'],
-            'price' => (float)$row['price']
+            'price' => (float)$row['price'],
+            'balance' => (float)($row['balance'] ?? 0)
         ];
     }
     

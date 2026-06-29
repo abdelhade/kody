@@ -22,8 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
     // البحث بالباركود أو ID أو اسم الصنف
     // محاولة تحويل الباركود لرقم للبحث بالـ ID
     $numericBarcode = is_numeric($barcode) ? intval($barcode) : 0;
+    $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
     
-    $sql = "SELECT * FROM myitems WHERE (barcode = ? OR id = ? OR id = ? OR iname LIKE ?) AND isdeleted = 0 LIMIT 1";
+    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id), 0)" : "0";
+
+    $sql = "SELECT *, $balance_subquery as balance FROM myitems WHERE (barcode = ? OR id = ? OR id = ? OR iname LIKE ?) AND isdeleted = 0 LIMIT 1";
     $stmt = $conn->prepare($sql);
     $searchLike = "%{$barcode}%";
     $stmt->bind_param("siss", $barcode, $numericBarcode, $barcode, $searchLike);
@@ -47,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
                 'id' => $item['id'],
                 'name' => $item['iname'],
                 'price' => $price,
-                'barcode' => $item['barcode']
+                'barcode' => $item['barcode'],
+                'balance' => floatval($item['balance'] ?? 0)
             ]
         ]);
     } else {

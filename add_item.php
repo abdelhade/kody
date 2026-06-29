@@ -121,7 +121,8 @@ if ($isEdit) {
                             <div class="col-md-2">
                                 <div class="form-group mb-md-0">
                                     <label class="text-muted small mb-1">الباركود</label>
-                                    <input required value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" class="form-control" type="text" name="barcode">
+                                    <input id="barcode" required value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" class="form-control" type="text" name="barcode" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                    <small class="text-danger d-none" id="barcodeError"></small>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -129,7 +130,8 @@ if ($isEdit) {
                                     <label for="iname">اسم الصنف <span class="frst text-danger">*</span></label>
                                     <input id="iname" required class="form-control" type="text" name="iname"
                                            value="<?= $isEdit ? htmlspecialchars($rowitm['iname'], ENT_QUOTES, 'UTF-8') : '' ?>"
-                                           placeholder="اسم الصنف كما يظهر في الفواتير">
+                                           placeholder="اسم الصنف كما يظهر في الفواتير" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                    <small class="text-danger d-none" id="inameError"></small>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -229,7 +231,10 @@ if ($isEdit) {
                                             </select>
                                         </td>
                                         <td><input class="form-control form-control-sm text-center" type="number" readonly name="u_val[]" value="1" step="0.001"></td>
-                                        <td><input class="form-control form-control-sm" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>"></td>
+                                        <td>
+                                            <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                            <small class="text-danger d-none unit-barcode-error" style="font-size:0.65rem;">مستخدم</small>
+                                        </td>
                                         <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
                                         <td><input type="number" name="price1[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
                                         <td><input type="number" name="price2[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
@@ -252,7 +257,10 @@ if ($isEdit) {
                                                 </select>
                                             </td>
                                             <td><input class="form-control form-control-sm text-center" type="number" name="u_val[]" value="<?= htmlspecialchars((string) $rowunt['u_val'], ENT_QUOTES, 'UTF-8') ?>" step="0.001"></td>
-                                            <td><input class="form-control form-control-sm" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $rowunt['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>"></td>
+                                            <td>
+                                                <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $rowunt['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                                <small class="text-danger d-none unit-barcode-error" style="font-size:0.65rem;">مستخدم</small>
+                                            </td>
                                             <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['cost_price'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
                                             <td><input type="number" name="price1[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['price1'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
                                             <td><input type="number" name="price2[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['price2'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>

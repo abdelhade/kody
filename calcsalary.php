@@ -105,24 +105,24 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
               <table id="calcsalaryTable" class="table table-bordered table-hover mb-0">
                 <thead class="bg-light text-sm">
                   <tr>
-                    <th>م</th>
+                    <th class="no-print">م</th>
                     <th><?= $lang_publicname ?></th>
                     <th>من</th>
                     <th>إلى</th>
                     <th>الراتب</th>
                     <th>ايام الحضور</th>
-                    <th>أجر اليوم</th>
-                    <th>أجر الساعة</th>
+                    <th class="no-print">أجر اليوم</th>
+                    <th class="no-print">أجر الساعة</th>
                     <th>س ع المستحقه</th>
                     <th>س ع الفعليه</th>
-                    <th>س الاضافي</th>
-                    <th>المستحق الأساسي</th>
-                    <th>مكافأة (+)</th>
-                    <th>تأمين (−)</th>
-                    <th>ضريبة (−)</th>
-                    <th>خصم (−)</th>
+                    <th class="no-print">س الاضافي</th>
+                    <th class="no-print">المستحق الأساسي</th>
+                    <th class="no-print">مكافأة (+)</th>
+                    <th class="no-print">تأمين (−)</th>
+                    <th class="no-print">ضريبة (−)</th>
+                    <th class="no-print">خصم (−)</th>
                     <th>الراتب الصافي</th>
-                    <th>الانتاجية</th>
+                    <th class="no-print">الانتاجية</th>
                     <th class="no-print"><?= $lang_publicoperations ?></th>
                   </tr>
                 </thead>
@@ -184,7 +184,7 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                     $sumProd += $prodVal;
                 ?>
                   <tr>
-                    <td><?= $x ?></td>
+                    <td class="no-print"><?= $x ?></td>
                     <td>
                       <a href="accattlogs.php?id=<?= (int)$rowdoc['id'] ?>">
                         <?= (int)$rowdoc['id'] ?># <?= htmlspecialchars($rowemp['name']) ?>
@@ -194,18 +194,18 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                     <td><?= $rowdoc['todate'] ?></td>
                     <td><?= number_format((float)$rowemp['salary'], 2) ?></td>
                     <td><?= (int)$rowdoc['workdays'] ?> / <?= (int)$rowdoc['alldays'] ?></td>
-                    <td><?= $rowdoc['workdays'] > 0 ? number_format($rowemp['salary'] / $rowdoc['workdays'], 2) : '0.00' ?></td>
-                    <td><?= $rowdoc['exphours'] > 0 ? number_format($rowemp['salary'] / $rowdoc['exphours'], 2) : '0.00' ?></td>
+                    <td class="no-print"><?= $rowdoc['workdays'] > 0 ? number_format($rowemp['salary'] / $rowdoc['workdays'], 2) : '0.00' ?></td>
+                    <td class="no-print"><?= $rowdoc['exphours'] > 0 ? number_format($rowemp['salary'] / $rowdoc['exphours'], 2) : '0.00' ?></td>
                     <td><?= $rowdoc['exphours'] ?></td>
                     <td><?= $rowdoc['accualhours'] ?>h</td>
-                    <td><?= number_format((float)($rowsh['diffrence'] ?? 0), 2) ?> / <?= number_format((float)($rowsh1['diffrence'] ?? 0), 2) ?></td>
-                    <td class="bg-sky-100 font-weight-bold"><?= number_format($entitle, 2) ?></td>
-                    <td class="text-success font-weight-bold"><?= $bonus > 0 ? '+' : '' ?><?= number_format($bonus, 2) ?></td>
-                    <td class="text-danger"><?= $insurance > 0 ? '−' : '' ?><?= number_format($insurance, 2) ?></td>
-                    <td class="text-danger"><?= $tax > 0 ? '−' : '' ?><?= number_format($tax, 2) ?></td>
-                    <td class="text-danger font-weight-bold"><?= $deduction > 0 ? '−' : '' ?><?= number_format($deduction, 2) ?></td>
+                    <td class="no-print"><?= number_format((float)($rowsh['diffrence'] ?? 0), 2) ?> / <?= number_format((float)($rowsh1['diffrence'] ?? 0), 2) ?></td>
+                    <td class="bg-sky-100 font-weight-bold no-print"><?= number_format($entitle, 2) ?></td>
+                    <td class="text-success font-weight-bold no-print"><?= $bonus > 0 ? '+' : '' ?><?= number_format($bonus, 2) ?></td>
+                    <td class="text-danger no-print"><?= $insurance > 0 ? '−' : '' ?><?= number_format($insurance, 2) ?></td>
+                    <td class="text-danger no-print"><?= $tax > 0 ? '−' : '' ?><?= number_format($tax, 2) ?></td>
+                    <td class="text-danger font-weight-bold no-print"><?= $deduction > 0 ? '−' : '' ?><?= number_format($deduction, 2) ?></td>
                     <td class="bg-green-100 font-weight-bold"><?= number_format($netPay, 2) ?></td>
-                    <td class="bg-sky-100"><?= number_format($prodVal, 2) ?></td>
+                    <td class="bg-sky-100 no-print"><?= number_format($prodVal, 2) ?></td>
                     <td class="no-print">
                       <a href="do/dodel_attdoc.php?doc=<?= (int)$rowdoc['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('حذف هذه المعالجة؟')">X</a>
                       <?php if (!empty($rowdoc['info'])) { ?>
@@ -216,7 +216,7 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                 <?php } ?>
                 </tbody>
                 <?php if ($x > 0) { ?>
-                <tfoot>
+                <tfoot class="no-print">
                   <tr class="font-weight-bold totals-row">
                     <th colspan="11" class="text-left">الإجمالي (<?= $x ?> معالجة)</th>
                     <th><?= number_format($sumEntitle, 2) ?></th>
@@ -233,6 +233,22 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
               </table>
             </div>
           </div>
+          
+          <?php if ($x > 0) { ?>
+          <div class="print-only mt-4" style="page-break-inside: avoid;">
+            <h4 style="font-weight:bold; margin-bottom: 10px; border-bottom: 2px solid #000; display: inline-block;">ملخص إجماليات الكشف</h4>
+            <table class="table table-bordered mt-2" style="width: 60% !important; font-size: 10pt;">
+              <tr><th style="width: 50%; background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي المستحق الأساسي</th><td><?= number_format($sumEntitle, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي المكافآت (+)</th><td class="text-success font-weight-bold"><?= number_format($sumBonus, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي التأمينات (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumInsurance, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الضرائب (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumTax, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الخصومات (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumDeduction, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الانتاجية</th><td class="font-weight-bold"><?= number_format($sumProd, 2) ?></td></tr>
+              <tr><th style="background: #ddd !important; font-size: 12pt; -webkit-print-color-adjust: exact; print-color-adjust: exact;">صافي الرواتب المستحقة</th><td style="background: #ddd !important; font-size: 12pt; font-weight:bold; -webkit-print-color-adjust: exact; print-color-adjust: exact;"><?= number_format($sumNet, 2) ?></td></tr>
+            </table>
+          </div>
+          <?php } ?>
+
         </div>
       </div>
 
@@ -246,30 +262,36 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
 <style>
 .calcsalary-page .print-only { display: none; }
 @media print {
-  @page { size: A4 landscape; margin: 10mm; }
-  body { background: #fff !important; font-size: 10pt; direction: rtl; }
+  @page { size: A4 landscape; margin: 5mm; }
+  html, body { background: #fff !important; font-size: 10pt; direction: rtl; width: 100% !important; height: auto !important; min-height: auto !important; }
+  .wrapper { width: 100% !important; min-height: auto !important; overflow: visible !important; }
   .main-header, .main-sidebar, .content-header, .no-print, .main-footer,
   .dataTables_filter, .dataTables_length, .dataTables_info, .dataTables_paginate { display: none !important; }
   .content-wrapper { margin: 0 !important; padding: 0 !important; background: #fff !important; min-height: auto !important; }
   .calcsalary-page .content { padding: 0 !important; }
   .calcsalary-page .card { border: none !important; box-shadow: none !important; }
-  .calcsalary-page .table { font-size: 9pt; color: #000 !important; }
+  .calcsalary-page .table { font-size: 8pt; color: #000 !important; width: 100% !important; max-width: 100% !important; table-layout: auto !important; }
   .calcsalary-page .table th, .calcsalary-page .table td {
-    border: 1px solid #333 !important;
-    padding: 3px 5px !important;
+    border: 1px solid #000 !important;
+    padding: 2px 4px !important;
+    word-wrap: break-word;
   }
-  .calcsalary-page .bg-light, .calcsalary-page .bg-sky-100 {
-    background: #eee !important;
+  .calcsalary-page .bg-light, .calcsalary-page .bg-sky-100, .calcsalary-page .bg-green-100 {
+    background: #f5f5f5 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  .calcsalary-page .text-success { color: #28a745 !important; }
+  .calcsalary-page .text-danger { color: #dc3545 !important; }
   .calcsalary-page .totals-row th, .calcsalary-page .totals-row td {
-    background: #ddd !important;
+    background: #e9ecef !important;
     font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .print-only { display: block !important; }
   .print-header { text-align: center; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 6px; }
-  .print-header h2 { margin: 0; font-size: 16pt; }
+  .print-header h2 { margin: 0; font-size: 16pt; font-weight: bold; }
   .print-header p { margin: 2px 0; font-size: 10pt; }
   .calcsalary-page a { color: #000 !important; text-decoration: none; }
 }
@@ -331,8 +353,10 @@ function printCalcsalary() {
   if (calcsalaryDt) {
     var oldLen = calcsalaryDt.page.len();
     calcsalaryDt.page.len(-1).draw(false);
-    window.print();
-    calcsalaryDt.page.len(oldLen).draw(false);
+    setTimeout(function() {
+      window.print();
+      calcsalaryDt.page.len(oldLen).draw(false);
+    }, 500);
   } else {
     window.print();
   }

@@ -2,6 +2,7 @@ let selectedItems = [];
 let allItems = [];
 let searchTimeout;
 let barcodeTimeout;
+let isSubmitting = false;
 
 // بحث بالباركود
 function searchByBarcode() {
@@ -13,16 +14,18 @@ function searchByBarcode() {
     
     clearTimeout(barcodeTimeout);
     barcodeTimeout = setTimeout(function() {
+        const storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+        
         $.ajax({
             url: 'ajax/search_item.php',
             type: 'POST',
-            data: { barcode: barcode },
+            data: { barcode: barcode, store_id: storeId },
             dataType: 'json',
             success: function(data) {
                 console.log('Barcode response:', data);
                 if (data.success && data.item) {
                     const item = data.item;
-                    addItemToOrder(item.id, item.name, item.price);
+                    addItemToOrder(item.id, item.name, item.price, item.balance);
                     document.getElementById('barcodeSearch').value = '';
                     document.getElementById('barcodeSearch').focus();
                 } else {
@@ -68,10 +71,12 @@ function loadAllItems() {
     document.getElementById('itemsContainer').classList.add('show');
     document.getElementById('noItemsMessage').style.display = 'none';
 
+    const storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+    
     $.ajax({
         url: 'ajax/search_items.php',
         type: 'GET',
-        data: { search: '' },
+        data: { search: '', store_id: storeId },
         dataType: 'json',
         success: function(data) {
             if (data.success && data.items.length > 0) {
@@ -123,10 +128,12 @@ function searchItems() {
         document.getElementById('itemsContainer').classList.add('show');
         document.getElementById('noItemsMessage').style.display = 'none';
         
+        const storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+        
         $.ajax({
             url: 'ajax/search_items.php',
             type: 'GET',
-            data: { search: searchTerm },
+            data: { search: searchTerm, store_id: storeId },
             dataType: 'json',
             success: function(data) {
                 if (data.success && data.items.length > 0) {
@@ -184,7 +191,9 @@ function loadCategoryItems(categoryId) {
     document.getElementById('itemsContainer').classList.add('show');
     document.getElementById('noItemsMessage').style.display = 'none';
     
-    fetch(`ajax/get_category_items.php?category_id=${categoryId}`)
+    const storeId = document.querySelector('input[name="store_id"]')?.value || 0;
+    
+    fetch(`ajax/get_category_items.php?category_id=${categoryId}&store_id=${storeId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -227,13 +236,14 @@ function displayItems(items) {
     items.forEach(item => {
         html += `
             <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-2">
-                <div class="item-card" onclick="addItemToOrder(${item.id}, '${item.name}', ${item.price})">
+                <div class="item-card" onclick="addItemToOrder(${item.id}, \`${item.name}\`, ${item.price}, ${item.balance})">
                     <div class="item-image">
                         <i class="fas fa-tshirt" style="color: var(--soft-gray);"></i>
                     </div>
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
+                        <div class="item-balance text-muted" style="font-size: 0.7rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
                     </div>
                 </div>
             </div>
@@ -244,7 +254,7 @@ function displayItems(items) {
 }
 
 // إضافة صنف للطلب
-function addItemToOrder(itemId, itemName, itemPrice) {
+function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0) {
     const existingItemIndex = selectedItems.findIndex(item => item.id === itemId);
     
     if (existingItemIndex !== -1) {
@@ -254,7 +264,8 @@ function addItemToOrder(itemId, itemName, itemPrice) {
             id: itemId,
             name: itemName,
             price: parseFloat(itemPrice),
-            quantity: 1
+            quantity: 1,
+            balance: parseFloat(itemBalance) || 0
         });
     }
     
@@ -290,7 +301,10 @@ function updateOrderDisplay() {
             <div class="order-item">
                 <div class="flex-grow-1">
                     <div class="fw-bold" style="font-size: 0.75rem;">${item.name}</div>
-                    <small class="text-muted" style="font-size: 0.65rem;">${item.price.toFixed(2)} × ${item.quantity}</small>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <small class="text-muted" style="font-size: 0.65rem;">${item.price.toFixed(2)} × ${item.quantity}</small>
+                        <span class="badge bg-light text-dark border" style="font-size: 0.6rem;">الرصيد: ${item.balance}</span>
+                    </div>
                 </div>
                 <div class="text-end">
                     <div class="fw-bold" style="color: var(--primary-violet); font-size: 0.75rem;">${subtotal.toFixed(2)}</div>
@@ -413,6 +427,33 @@ function submitPOS(action) {
         alert('يجب إضافة صنف واحد على الأقل');
         return false;
     }
+    
+    const clientId = document.querySelector('select[name="acc2_id"]')?.value;
+    if (!clientId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يجب اختيار العميل أو إضافة عميل جديد أولاً',
+            confirmButtonText: 'حسناً'
+        });
+        $('#paymentModal').modal('hide');
+        return false;
+    }
+    
+    if (isSubmitting) {
+        return false;
+    }
+    isSubmitting = true;
+    
+    // Disable buttons and show spinner
+    const buttons = document.querySelectorAll('#paymentModal .btn-navy, #paymentModal .btn-violet');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.innerHTML;
+        }
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>جاري الحفظ...';
+    });
     
     const form = document.getElementById('posForm');
     
