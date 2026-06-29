@@ -35,8 +35,10 @@ if (isset($_POST['fri'])) {array_push($day,'5');}
 $workingdays = implode(",",$day);
 
 $single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
+$ignore_early_in = isset($_POST['ignore_early_in']) ? 1 : 0;
+$ignore_late_out = isset($_POST['ignore_late_out']) ? 1 : 0;
 
-$sqlshft = "INSERT INTO shifts (name, shiftstart, shiftend, hours , instart, inend, outstart, outend, latelimit, earlylimit, workingdays, single_fp_rule) VALUES ('$name','$shiftstart','$shiftend','$hours','$instart','$inend','$outstart','$outend','$latelimit','$earlylimit','$workingdays','$single_fp_rule')";
+$sqlshft = "INSERT INTO shifts (name, shiftstart, shiftend, hours , instart, inend, outstart, outend, latelimit, earlylimit, workingdays, single_fp_rule, ignore_early_in, ignore_late_out) VALUES ('$name','$shiftstart','$shiftend','$hours','$instart','$inend','$outstart','$outend','$latelimit','$earlylimit','$workingdays','$single_fp_rule','$ignore_early_in','$ignore_late_out')";
 $conn->query($sqlshft);
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add shift')");
 

@@ -193,18 +193,26 @@ for ($i = 0; $i < $dayscount; $i++) {
 
         // معالجة بصمة الدخول
         $diff_in = $time4 - $expected_start;
+        $ignore_early = !empty($rowshft['ignore_early_in']);
         if ($diff_in > 0 && $diff_in <= $latelimit_sec) {
             $time4 = $expected_start; // جاء متأخراً ضمن المسموح
-        } elseif ($diff_in < 0 && abs($diff_in) <= $earlylimit_sec) {
-            $time4 = $expected_start; // جاء مبكراً ضمن المسموح
+        } elseif ($diff_in < 0) {
+            // إذا كان التبكير ضمن المسموح، أو إذا كان خيار تجاهل التبكير مفعلاً
+            if ($ignore_early || abs($diff_in) <= $earlylimit_sec) {
+                $time4 = $expected_start; 
+            }
         }
 
         // معالجة بصمة الخروج
         $diff_out = $expected_end - $time3;
+        $ignore_late = !empty($rowshft['ignore_late_out']);
         if ($diff_out > 0 && $diff_out <= $earlylimit_sec) {
             $time3 = $expected_end; // انصرف مبكراً ضمن المسموح
-        } elseif ($diff_out < 0 && abs($diff_out) <= $latelimit_sec) {
-            $time3 = $expected_end; // انصرف متأخراً ضمن المسموح
+        } elseif ($diff_out < 0) {
+            // إذا كان التأخير في الانصراف مسموحاً به كـ late limit، أو خيار تجاهل التأخير مفعلاً
+            if ($ignore_late || abs($diff_out) <= $latelimit_sec) {
+                $time3 = $expected_end;
+            }
         }
 
         $time_difference2 = $time3 - $time4;

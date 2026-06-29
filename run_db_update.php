@@ -101,6 +101,40 @@ if ($disc_result['ok']) {
     $errors++;
 }
 
+echo '<h3>تجاهل دقائق التبكير (shifts.ignore_early_in)</h3>';
+$ignore_early_in_result = run_migration_query(
+    $conn,
+    "ALTER TABLE shifts ADD COLUMN ignore_early_in TINYINT(1) DEFAULT 0 AFTER earlylimit"
+);
+if ($ignore_early_in_result['ok']) {
+    if ($ignore_early_in_result['skipped']) {
+        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
+    } else {
+        echo "<p style='color:green'>✅ تم</p>";
+    }
+    $success++;
+} else {
+    echo "<p style='color:red'>❌ " . htmlspecialchars($ignore_early_in_result['error']) . "</p>";
+    $errors++;
+}
+
+echo '<h3>تجاهل دقائق التأخير في الانصراف (shifts.ignore_late_out)</h3>';
+$ignore_late_out_result = run_migration_query(
+    $conn,
+    "ALTER TABLE shifts ADD COLUMN ignore_late_out TINYINT(1) DEFAULT 0 AFTER ignore_early_in"
+);
+if ($ignore_late_out_result['ok']) {
+    if ($ignore_late_out_result['skipped']) {
+        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
+    } else {
+        echo "<p style='color:green'>✅ تم</p>";
+    }
+    $success++;
+} else {
+    echo "<p style='color:red'>❌ " . htmlspecialchars($ignore_late_out_result['error']) . "</p>";
+    $errors++;
+}
+
 echo "<hr><p><strong>النتيجة:</strong> {$success} ناجح، {$errors} فاشل</p>";
 echo "<p><a href='dashboard.php'>الرئيسية</a></p>";
 echo '</body></html>';

@@ -50,6 +50,8 @@ $hours = $timeDiffInSeconds / 3600;
 
 
     $single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
+    $ignore_early_in = isset($_POST['ignore_early_in']) ? 1 : 0;
+    $ignore_late_out = isset($_POST['ignore_late_out']) ? 1 : 0;
 
     $sqlshft ="UPDATE shifts
      SET 
@@ -64,7 +66,9 @@ $hours = $timeDiffInSeconds / 3600;
     earlylimit = '$earlylimit',
     workingdays = '$workingdays',
     hours = '$hours',
-    single_fp_rule = '$single_fp_rule'
+    single_fp_rule = '$single_fp_rule',
+    ignore_early_in = '$ignore_early_in',
+    ignore_late_out = '$ignore_late_out'
     WHERE id = '$id'";
     $conn->query($sqlshft);
     header('location:../shifts.php');

@@ -249,6 +249,21 @@
                     <input name="earlylimit" type="number" min="0" class="form-control form-control-sm" placeholder="0">
                   </div>
                 </div>
+                <hr>
+                <div class="row mt-2">
+                  <div class="col-12 col-md-6 mb-2 mb-md-0">
+                    <div class="custom-control custom-switch">
+                      <input name="ignore_early_in" class="custom-control-input" type="checkbox" id="ignore_early_in" value="1">
+                      <label class="custom-control-label" for="ignore_early_in">تجاهل التبكير (عدم احتساب الدقائق قبل بداية الوردية)</label>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="custom-control custom-switch">
+                      <input name="ignore_late_out" class="custom-control-input" type="checkbox" id="ignore_late_out" value="1">
+                      <label class="custom-control-label" for="ignore_late_out">تجاهل التأخير في الانصراف (عدم احتساب الدقائق بعد نهاية الوردية)</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
