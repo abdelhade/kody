@@ -91,7 +91,7 @@
                     <p class="stat-label" style="color: var(--primary-dark) !important;">المبيعات</p>
                 </div>
                 <div class="card-footer-det" style="border-top: 1px solid rgba(17, 24, 68, 0.15) !important;">
-                    <a href="operations_summary.php?q=buy" class="card-link" style="color: var(--primary-dark) !important;">
+                    <a href="operations_summary.php?q=sale" class="card-link" style="color: var(--primary-dark) !important;">
                         <span>عرض التفاصيل</span>
                         <i class="fas fa-chevron-left" style="color: var(--primary-dark) !important;"></i>
                     </a>

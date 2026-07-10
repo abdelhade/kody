@@ -232,7 +232,7 @@ class InvoiceFooter extends InvoiceElementBase
             </div>
             <div class="col-md-8">
                 <input id="change" type="text" class="form-control form-control-sm" 
-                       readonly value="0.00">
+                       readonly value="0">
             </div>
         </div>
         

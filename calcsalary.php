@@ -8,10 +8,11 @@ ensure_payroll_calcs_schema($conn);
 
 <?php
 $filterEmp = isset($_GET['emp']) ? (int)$_GET['emp'] : 0;
+$filterDept = isset($_GET['dept']) ? (int)$_GET['dept'] : 0;
 $filterFrom = isset($_GET['from']) ? $conn->real_escape_string($_GET['from']) : '';
 $filterTo = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : '';
 $companyName = $rowstg['company_name'] ?? 'FOCUS';
-$hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
+$hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterTo !== '';
 ?>
 
 <div class="content-wrapper calcsalary-page">
@@ -46,9 +47,22 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
         </div>
         <div class="card-body">
           <form method="get" action="calcsalary.php" class="form-row align-items-end">
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-3">
+              <label>القسم / الإدارة</label>
+              <select name="dept" class="form-control select2">
+                <option value="">— الكل —</option>
+                <?php
+                $resDeptList = $conn->query("SELECT id, name FROM departments WHERE isdeleted != 1 OR isdeleted IS NULL ORDER BY name");
+                while ($d = $resDeptList->fetch_assoc()) {
+                    $selDept = ($filterDept === (int)$d['id']) ? 'selected' : '';
+                    echo '<option value="' . (int)$d['id'] . '" ' . $selDept . '>' . htmlspecialchars($d['name']) . '</option>';
+                }
+                ?>
+              </select>
+            </div>
+            <div class="form-group col-md-3">
               <label>الموظف</label>
-              <select name="emp" class="form-control">
+              <select name="emp" class="form-control select2">
                 <option value="">— الكل —</option>
                 <?php
                 $resEmpList = $conn->query("SELECT id, name FROM employees WHERE isdeleted != 1 OR isdeleted IS NULL ORDER BY name");
@@ -59,11 +73,11 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                 ?>
               </select>
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-2">
               <label>من تاريخ</label>
               <input type="date" name="from" class="form-control" value="<?= htmlspecialchars($filterFrom) ?>">
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-2">
               <label>إلى تاريخ</label>
               <input type="date" name="to" class="form-control" value="<?= htmlspecialchars($filterTo) ?>">
             </div>
@@ -83,6 +97,10 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
         <?php if ($hasFilter) { ?>
         <p class="print-filters">
           <?php
+          if ($filterDept > 0) {
+              $dn = $conn->query("SELECT name FROM departments WHERE id = $filterDept")->fetch_assoc();
+              echo 'القسم: ' . htmlspecialchars($dn['name'] ?? '') . ' — ';
+          }
           if ($filterEmp > 0) {
               $fn = $conn->query("SELECT name FROM employees WHERE id = $filterEmp")->fetch_assoc();
               echo 'الموظف: ' . htmlspecialchars($fn['name'] ?? '') . ' — ';
@@ -131,6 +149,9 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
                 $where = "isdeleted != 1";
                 if ($filterEmp > 0) {
                     $where .= " AND empid = $filterEmp";
+                }
+                if ($filterDept > 0) {
+                    $where .= " AND empid IN (SELECT id FROM employees WHERE department = $filterDept)";
                 }
                 if ($filterFrom !== '') {
                     $where .= " AND todate >= '$filterFrom'";
@@ -327,6 +348,13 @@ $hasFilter = $filterEmp > 0 || $filterFrom !== '' || $filterTo !== '';
 <script>
 var calcsalaryDt = null;
 $(function () {
+  if ($.fn.select2) {
+    $('.select2').select2({
+      theme: 'bootstrap4',
+      width: '100%'
+    });
+  }
+
   if ($.fn.DataTable && $('#calcsalaryTable tbody tr td[colspan]').length === 0) {
     calcsalaryDt = $('#calcsalaryTable').DataTable({
       paging: true,

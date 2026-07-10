@@ -410,6 +410,8 @@ $lang_multi_journal = "Multi Journal Entry";
 $lang_daily_journals = "Daily Journals";
 $lang_chart_of_accounts = "Chart of Accounts";
 $lang_accounts_list = "Accounts List with Balances";
+$lang_balance_sheet = "Balance Sheet";
+$lang_profit_loss = "Profit & Loss";
 
 // System
 $lang_system = "System";

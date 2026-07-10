@@ -122,13 +122,13 @@ class InvoiceDetails extends InvoiceElementBase
         </div>
 
         <!-- حقول مخفية يستخدمها addNewRow() - خارج الجدول -->
-        <input id="itmprice"      type="number" hidden value="0.00" step="0.001">
-        <input id="itmqty"        type="number" hidden value="1.00">
-        <input id="itmdisc_pct"   type="number" hidden value="0.00" step="0.01">
-        <input id="itmdisc"       type="number" hidden value="0.00" step="0.001">
-        <input id="itmval"        type="number" hidden value="0.00" step="0.001">
+        <input id="itmprice"      type="number" hidden value="0" step="0.001">
+        <input id="itmqty"        type="number" hidden value="1">
+        <input id="itmdisc_pct"   type="number" hidden value="0" step="0.01">
+        <input id="itmdisc"       type="number" hidden value="0" step="0.001">
+        <input id="itmval"        type="number" hidden value="0" step="0.001">
         <input id="itmprofit"     type="number" hidden>
-        <input id="itmsprice_stg" type="number" hidden value="0.00" step="0.001">
+        <input id="itmsprice_stg" type="number" hidden value="0" step="0.001">
         <select id="inputUnitSelect" hidden><option value="">اختر وحدة</option></select>
         <button type="button" id="addRow" hidden>إضافة</button>
         <!-- dropdown البحث - خارج الجدول عشان مش يتقطع بالـ overflow -->
@@ -320,7 +320,7 @@ $(document).ready(function() {
         clearHighlight();
 
         // جلب بيانات الصنف الكاملة وتحديث الحقول مباشرة
-        const isSale = window.location.href.indexOf('q=sale') !== -1;
+        const isSale = window.location.href.indexOf('q=purchase') !== -1;
 
         $.ajax({
             url: 'get/get_iteminfo.php?id=' + item.id,
@@ -337,7 +337,7 @@ $(document).ready(function() {
                 // تحديث حقول صف الإدخال
                 $('#itmprice').val(price || 0);
                 $('#itmqty').val(1);
-                $('#itmdisc').val('0.00');
+                $('#itmdisc').val('0');
                 $('#itmval').val(price || 0);
                 $('#itmsprice_stg').val(data.price1 || 0);
 
@@ -512,7 +512,7 @@ $(document).ready(function() {
             
             <!-- الكمية -->
             <td>
-                <input value="<?php echo $quantity; ?>" type="number" 
+                <input value="<?php echo floatval($quantity); ?>" type="number" 
                        name="itmqty[]" onclick="sT(this)" 
                        class="itmqty form-control form-control-sm" style="width:90px;">
             </td>
@@ -521,7 +521,7 @@ $(document).ready(function() {
             <td>
                 <input type="number" name="itmprice[]" onclick="sT(this)" 
                        class="itmprice form-control form-control-sm" style="width:90px;" 
-                       value="<?php echo $price; ?>">
+                       value="<?php echo floatval($price); ?>">
             </td>
 
             <!-- نسبة الخصم -->
@@ -542,7 +542,7 @@ $(document).ready(function() {
 
             <!-- الخصم -->
             <td>
-                <input value="<?php echo $detail['discount']; ?>" 
+                <input value="<?php echo floatval($detail['discount']); ?>" 
                        type="number" name="itmdisc[]" onclick="sT(this)" 
                        class="itmdisc form-control form-control-sm" style="width:90px;">
             </td>
@@ -572,7 +572,7 @@ $(document).ready(function() {
 
             <!-- القيمة -->
             <td>
-                <input readonly value="<?php echo $detail['det_value']; ?>" 
+                <input readonly value="<?php echo floatval($detail['det_value']); ?>" 
                        type="number" name="itmval[]" 
                        class="itmval bg-light form-control form-control-sm" style="width:150px;">
             </td>
@@ -689,28 +689,28 @@ $(document).ready(function() {
                             <!-- الكمية -->
                             <td>
                                 <input type="number" hidden>
-                                <input id="itmqty" value="1.00" type="number"
+                                <input id="itmqty" value="1" type="number"
                                        onclick="sT(this)" class="itmqty form-control form-control-sm nozero" 
                                        style="width:90px;">
                             </td>
                             
                             <!-- السعر -->
                             <td>
-                                <input id="itmprice" value="0.00" type="number"
+                                <input id="itmprice" value="0" type="number"
                                        onclick="sT(this)" class="itmprice form-control form-control-sm nozero" 
                                        style="width:90px;" step="0.001">
                             </td>
                             
                             <!-- الخصم -->
                             <td>
-                                <input id="itmdisc" value="0.00" type="number"
+                                <input id="itmdisc" value="0" type="number"
                                        onclick="sT(this)" class="itmdisc form-control form-control-sm nozero" 
                                        style="width:120px;" step="0.001">
                             </td>
                             
                             <!-- القيمة -->
                             <td>
-                                <input readonly id="itmval" value="0.00" type="number"
+                                <input readonly id="itmval" value="0" type="number"
                                        class="itmval bg-light form-control form-control-sm nozero" 
                                        style="width:150px;" step="0.001">
                             </td>

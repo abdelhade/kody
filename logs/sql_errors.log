@@ -179,3 +179,15 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-06-09 20:28:41] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
 [2026-06-09 20:28:41] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
 [2026-06-09 20:28:41] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\focus\get\get_accinfo.php:11
+[2026-07-10 20:28:16] mysqli_sql_exception: Unknown column 'je.date' in 'where clause' in C:\xampp\htdocs\kody\balance_sheet.php:32
+[2026-07-10 20:28:18] mysqli_sql_exception: Unknown column 'je.date' in 'where clause' in C:\xampp\htdocs\kody\profit_loss.php:18
+[2026-07-10 20:38:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:38] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:38] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:38:38] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-10 20:41:22] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\do\doadd_invoice.php:309

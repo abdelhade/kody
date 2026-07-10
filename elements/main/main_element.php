@@ -51,7 +51,7 @@
             <div class="action-card-group">
                 <!-- فاتورة مبيعات -->
                 <div class="action-card-main">
-                    <a href="sales.php?q=buy" class="action-btn" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
+                    <a href="sales.php?q=sale" class="action-btn" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
                         <div class="btn-icon" style="color: var(--primary-dark) !important;">
                             <i class="fas fa-receipt"></i>
                         </div>
@@ -97,7 +97,7 @@
             <div class="action-card-group">
                 <!-- فاتورة مشتريات -->
                 <div class="action-card-main">
-                    <a href="sales.php?q=sale" class="action-btn" style="background: var(--primary-light) !important;">
+                    <a href="sales.php?q=purchase" class="action-btn" style="background: var(--primary-light) !important;">
                         <div class="btn-icon">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>

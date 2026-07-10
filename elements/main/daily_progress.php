@@ -1,12 +1,12 @@
 <div class="row">
     <div class="p-1 pt-20 col-sm-2">
-        <a class="btn btn-block p-3 rounded-0 text-center btn" style="background: var(--primary-dark); color:#fff;" href="sales.php?q=sale">
+        <a class="btn btn-block p-3 rounded-0 text-center btn" style="background: var(--primary-dark); color:#fff;" href="sales.php?q=purchase">
             <i class="fa fa-file-invoice text-md"></i>
         <br>
         فاتورة مبيعات</a>
     </div>
     <div class="p-1 pt-20 col-sm-2">
-        <a class="btn btn-block p-3 rounded-0 text-center btn" style="background: var(--primary-color); color:#fff;" href="sales.php?q=buy">
+        <a class="btn btn-block p-3 rounded-0 text-center btn" style="background: var(--primary-color); color:#fff;" href="sales.php?q=sale">
             <i class="fa fa-file-invoice text-md"></i>
         <br>
         فاتورة مشتريات</a>

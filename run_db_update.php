@@ -55,12 +55,19 @@ foreach ($files as $file => $label) {
     }
 
     $sql      = file_get_contents($file);
-    $queries  = array_filter(array_map('trim', explode(';', $sql)));
+    // إزالة الأسطر التي تبدأ بتعليقات
+    $lines = explode("\n", $sql);
+    $clean_lines = array_filter($lines, function($line) {
+        return strpos(ltrim($line), '--') !== 0;
+    });
+    $clean_sql = implode("\n", $clean_lines);
+    
+    $queries  = array_filter(array_map('trim', explode(';', $clean_sql)));
     $executed = 0;
     $failed   = 0;
 
     foreach ($queries as $query) {
-        if ($query === '' || strpos($query, '--') === 0) {
+        if ($query === '') {
             continue;
         }
 

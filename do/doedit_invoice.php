@@ -24,26 +24,13 @@ $usid = $_SESSION['userid'];
 
 // تضمين فئات النظام الجديد
 require_once('../classes/InvoiceElementFactory.php');
+require_once('../classes/InvoiceProcessor.php');
 
 // تعريف ثوابت أنواع الفواتير
-define('INVOICE_TYPES', [
-    'PURCHASE' => 4,           // مشتريات
-    'SALES' => 3,              // مبيعات  
-    'POS' => 9,                // كاشير
-    'PURCHASE_RETURN' => 10,   // مردود مشتريات
-    'SALES_RETURN' => 11,      // مردود مبيعات
-    'PURCHASE_ORDER' => 12,    // أمر شراء
-    'SALES_ORDER' => 13,       // أمر بيع
-    'OFFER' => 14              // عرض سعر
-]);
+
 
 // تعريف أنواع العمليات المحاسبية
-define('ACCOUNTING_TYPES', [
-    'RECEIPT' => 1,     // سند قبض
-    'PAYMENT' => 2,     // سند دفع
-    'SALES_DISC' => 7,  // خصم مبيعات
-    'PURCHASE_DISC' => 6 // خصم مشتريات
-]);
+
 
 // استخراج وتنظيف البيانات المدخلة
 $ot_id = isset($_POST['ot_id']) ? intval($_POST['ot_id']) : 0;
@@ -59,12 +46,7 @@ $headdisc = isset($_POST['headdisc']) ? floatval($_POST['headdisc']) : 0;
 $headplus = isset($_POST['headplus']) ? floatval($_POST['headplus']) : 0;
 $headnet = isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0;
 
-// تحديد المبلغ المدفوع - أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
-if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
-    $paid = 0;
-} else {
-    $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
-}
+// ملاحظة: تحديد المبلغ المدفوع يتم بعد جلب $pro_tybe من الفاتورة الأصلية (انظر أسفل)
 
 $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
@@ -107,86 +89,27 @@ if (!$rowop) {
 
 $pro_tybe = intval($rowop['pro_tybe']);
 
-/**
- * دالة الحصول على إعدادات نوع الفاتورة
- * Get invoice type configuration
- */
-function getInvoiceConfig($pro_tybe) {
-    $configs = [
-        INVOICE_TYPES['PURCHASE'] => [
-            'note' => 'فاتورة مشتريات',
-            'paid_note' => 'سند دفع',
-            'disc_type' => ACCOUNTING_TYPES['PURCHASE_DISC'],
-            'paid_type' => ACCOUNTING_TYPES['PAYMENT'],
-            'cost_account' => 97
-        ],
-        INVOICE_TYPES['SALES'] => [
-            'note' => 'فاتورة مبيعات',
-            'paid_note' => 'سند قبض',
-            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
-            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
-            'cost_account' => 91
-        ],
-        INVOICE_TYPES['POS'] => [
-            'note' => 'فاتورة ريسيت',
-            'paid_note' => 'سند قبض',
-            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
-            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
-            'cost_account' => 91
-        ],
-        INVOICE_TYPES['OFFER'] => [
-            'note' => 'عرض سعر',
-            'paid_note' => 'سند قبض',
-            'disc_type' => ACCOUNTING_TYPES['SALES_DISC'],
-            'paid_type' => ACCOUNTING_TYPES['RECEIPT'],
-            'cost_account' => 91
-        ]
-    ];
-    
-    return isset($configs[$pro_tybe]) ? $configs[$pro_tybe] : null;
+// تحديد المبلغ المدفوع - أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
+if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    $paid = 0;
+} else {
+    $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 }
 
-/**
- * دالة تحديد الحسابات المحاسبية
- * Get accounting accounts based on invoice type
- */
-function getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id) {
-    switch($pro_tybe) {
-        case INVOICE_TYPES['PURCHASE']:
-            return [
-                'acc1' => $store_id,
-                'acc2' => $acc2_id,
-                'acc3' => $acc2_id,
-                'acc4' => 97,
-                'acc5' => $acc2_id,
-                'acc6' => $fund_id
-            ];
-            
-        case INVOICE_TYPES['SALES']:
-        case INVOICE_TYPES['POS']:
-        case INVOICE_TYPES['OFFER']:
-            return [
-                'acc1' => $acc2_id,
-                'acc2' => $store_id,
-                'acc3' => 91,
-                'acc4' => $acc2_id,
-                'acc5' => $fund_id,
-                'acc6' => $acc2_id
-            ];
-            
-        default:
-            throw new InvalidArgumentException('نوع فاتورة غير مدعوم');
-    }
-}
+
+
+
+
+
 
 // الحصول على إعدادات الفاتورة
-$config = getInvoiceConfig($pro_tybe);
+$config = InvoiceProcessor::getInvoiceConfig($pro_tybe);
 if (!$config) {
     die('خطأ: نوع فاتورة غير صحيح');
 }
 
 // تحديد الحسابات المحاسبية
-$accounts = getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+$accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
 
 // بدء المعاملة لضمان تماسك البيانات
 try {
@@ -221,8 +144,8 @@ try {
         throw new Exception('فشل في تحديث الفاتورة: ' . $stmt->error);
     }
     $stmt->close();
-    // تحديث القيود المحاسبية إذا لزم الأمر
-    if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES']])) {
+    // تحديث القيود المحاسبية لجميع الفواتير الفعلية (ليس الأوامر أو العروض)
+    if(!in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         // تحديث رأس القيد
         $stmt = $conn->prepare(
             "UPDATE journal_heads SET total = ?, jdate = ?, details = ? WHERE op_id = ?"
@@ -237,7 +160,7 @@ try {
         $stmt->close();
         
         // الحصول على معرف القيد
-        $stmt = $conn->prepare("SELECT id FROM journal_heads WHERE op_id = ?");
+        $stmt = $conn->prepare("SELECT id FROM journal_heads WHERE op_id = ? AND isdeleted = 0");
         $stmt->bind_param("i", $ot_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -247,12 +170,23 @@ try {
         if ($row_journal) {
             $op_journal = $row_journal['id'];
             
+            // تحديد الحسابات حسب نوع الفاتورة للقيد
+            if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS']])) {
+                // فاتورة مبيعات: مدين العميل / دائن المبيعات
+                $debit_account = $acc2_id;
+                $credit_account = 91;
+            } else {
+                // فواتير أخرى (مشتريات، مردودات)
+                $debit_account = $accounts['acc1'];
+                $credit_account = $accounts['acc2'];
+            }
+            
             // تحديث قيد المدين
             $stmt = $conn->prepare(
                 "UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 
                  WHERE journal_id = ? AND tybe = 0"
             );
-            $stmt->bind_param("idi", $accounts['acc1'], $headnet, $op_journal);
+            $stmt->bind_param("idi", $debit_account, $headnet, $op_journal);
             $stmt->execute();
             $stmt->close();
             
@@ -261,7 +195,7 @@ try {
                 "UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? 
                  WHERE journal_id = ? AND tybe = 1"
             );
-            $stmt->bind_param("idi", $accounts['acc2'], $headnet, $op_journal);
+            $stmt->bind_param("idi", $credit_account, $headnet, $op_journal);
             $stmt->execute();
             $stmt->close();
         }
@@ -283,7 +217,7 @@ try {
     $stmt->close();
     
     // تحديد نوع الدفع حسب نوع الفاتورة
-    $paid_type = ($pro_tybe == INVOICE_TYPES['SALES']) ? ACCOUNTING_TYPES['RECEIPT'] : ACCOUNTING_TYPES['PAYMENT'];
+    $paid_type = ($pro_tybe == InvoiceProcessor::INVOICE_TYPES['SALES']) ? InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'] : InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'];
     
     if ($paid > 0 && $rowpaid == null) {
         // إضافة دفعة جديدة
@@ -466,15 +400,15 @@ try {
             
             // تحديد الكميات حسب نوع الفاتورة
             // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون
-            if(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE_ORDER'], INVOICE_TYPES['SALES_ORDER'], INVOICE_TYPES['OFFER']])) {
+            if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
                 // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
                 $qty_in = 0;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['PURCHASE'], INVOICE_TYPES['SALES_RETURN']])) {
+            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']])) {
                 // مشتريات، مردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['PURCHASE_RETURN']])) {
+            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']])) {
                 // مبيعات، كاشير، مردود مشتريات → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
@@ -502,7 +436,7 @@ try {
             $itmprofit = 0;
             
             // حساب التكلفة والربح
-            if($pro_tybe == INVOICE_TYPES['PURCHASE']) {
+            if($pro_tybe == InvoiceProcessor::INVOICE_TYPES['PURCHASE']) {
                 // حساب سعر التكلفة المتوسط
                 $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
                 $oldbalance = $oldprice * $oldqty;
@@ -525,7 +459,7 @@ try {
                 
                 $itmprice = $unit_price;
                 
-            } elseif (in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
+            } elseif (in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
                 // حساب الربح للمبيعات
                 $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
                 $itmprofit = $itmqty * $u_val * ($unit_price - $oldprice);
@@ -555,7 +489,7 @@ try {
     }
     
     // تحديث إجمالي الأرباح للمبيعات
-    if(in_array($pro_tybe, [INVOICE_TYPES['SALES'], INVOICE_TYPES['POS'], INVOICE_TYPES['OFFER']])) {
+    if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         $stmt = $conn->prepare("SELECT SUM(profit) AS tprofit FROM fat_details WHERE fatid = ?");
         $stmt->bind_param("i", $ot_id);
         $stmt->execute();
@@ -576,9 +510,9 @@ try {
     
     // تسجيل العملية
     $process_types = [
-        INVOICE_TYPES['PURCHASE'] => 'edit buy',
-        INVOICE_TYPES['SALES'] => 'edit sales',
-        INVOICE_TYPES['POS'] => 'edit cash'
+        InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => 'edit buy',
+        InvoiceProcessor::INVOICE_TYPES['SALES'] => 'edit sales',
+        InvoiceProcessor::INVOICE_TYPES['POS'] => 'edit cash'
     ];
     
     $process_type = $process_types[$pro_tybe] ?? 'edit invoice';
@@ -596,9 +530,9 @@ try {
 
 // إعادة التوجيه حسب نوع العملية
 $redirects = [
-    INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=sale&success=1',
-    INVOICE_TYPES['SALES'] => '../operations_summary.php?q=buy&success=1',
-    INVOICE_TYPES['POS'] => '../pos_barcode.php?success=1'
+    InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=purchase&success=1',
+    InvoiceProcessor::INVOICE_TYPES['SALES'] => '../operations_summary.php?q=sale&success=1',
+    InvoiceProcessor::INVOICE_TYPES['POS'] => '../pos_barcode.php?success=1'
 ];
 
 $redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?success=1';

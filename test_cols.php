@@ -1,6 +1,7 @@
 <?php
-include 'includes/connect.php';
-$res = $conn->query("SHOW COLUMNS FROM employees");
+require_once 'includes/connect.php';
+$res = $conn->query('DESCRIBE journal_entries');
 while($row = $res->fetch_assoc()) {
-    print_r($row);
+    echo $row['Field'] . "\n";
 }
+?>

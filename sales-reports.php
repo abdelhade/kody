@@ -109,7 +109,7 @@
 
                         <!-- المبيعات اليومية -->
                         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                            <a href="operations_summary.php?q=buy" class="report-card" style="--card-color: #4B5694; --card-bg-light: rgba(75, 86, 148, 0.12);">
+                            <a href="operations_summary.php?q=sale" class="report-card" style="--card-color: #4B5694; --card-bg-light: rgba(75, 86, 148, 0.12);">
                                 <div class="report-icon-wrapper">
                                     <i class="fa fa-calendar-day"></i>
                                 </div>

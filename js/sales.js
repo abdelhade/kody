@@ -18,16 +18,16 @@ $(document).ready(function() {
         }
         
         const headnet = parseFloat($('#headnet').val()) || 0;
-        $('#paid').val(headnet.toFixed(2));
-        $('#change').val('0.00');
-        console.log('Event triggered - Updated paid to:', headnet.toFixed(2));
+        $('#paid').val(parseFloat(headnet.toFixed(2)));
+        $('#change').val('0');
+        console.log('Event triggered - Updated paid to:', parseFloat(headnet.toFixed(2)));
     });
 
     // عند تغيير نسبة الخصم الإجمالية
     $(document).on('input', '#headdisc_pct', function() {
         const pct = parseFloat($(this).val()) || 0;
         const total = parseFloat($('#headtotal').val()) || 0;
-        $('#headdisc').val((total * pct / 100).toFixed(2));
+        $('#headdisc').val(parseFloat((total * pct / 100).toFixed(2)));
         updateTotal();
     });
     
@@ -35,9 +35,9 @@ $(document).ready(function() {
     setTimeout(function() {
         const headnet = parseFloat($('#headnet').val()) || 0;
         if (headnet > 0) {
-            $('#paid').val(headnet.toFixed(2));
-            $('#change').val('0.00');
-            console.log('Page load - Updated paid to:', headnet.toFixed(2));
+            $('#paid').val(parseFloat(headnet.toFixed(2)));
+            $('#change').val('0');
+            console.log('Page load - Updated paid to:', parseFloat(headnet.toFixed(2)));
         }
     }, 500);
     
@@ -45,8 +45,8 @@ $(document).ready(function() {
     $(document).on('input', '.itmqty, .itmprice, .itmdisc', function() {
         setTimeout(function() {
             const headnet = parseFloat($('#headnet').val()) || 0;
-            $('#paid').val(headnet.toFixed(2));
-            $('#change').val('0.00');
+            $('#paid').val(parseFloat(headnet.toFixed(2)));
+            $('#change').val('0');
         }, 200);
     });
 });
@@ -99,7 +99,7 @@ function fetchItemInfo(itemId, row) {
             
             // تحديث العناصر بدون استخدام .html() المتكرر
             const updates = {
-                '#storeqty': data.itmqty?.toFixed(2) || '0',
+                '#storeqty': data.itmqty ? parseFloat(data.itmqty.toFixed(2)) : '0',
                 '#price1': data.price1 || '0',
                 '#market_price': data.market_price || '0',
                 '#storemdtime': data.mdtime || '',
@@ -128,7 +128,7 @@ function fetchItemInfo(itemId, row) {
                         row.find("#itmprice").val(newPrice);
                         row.find("#itmqty").val(1);
                         
-                        $('#storeqty').text((data.itmqty/selectedUnit.unit_value).toFixed(2) + " (" + selectedUnit.unit_value + ")");
+                        $('#storeqty').text(parseFloat((data.itmqty/selectedUnit.unit_value).toFixed(2)) + " (" + selectedUnit.unit_value + ")");
                         $('#price1').text(selectedUnit.uprice1);
                         $('#market_price').text(selectedUnit.uprice3);
                         $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
@@ -167,7 +167,7 @@ function fetchItemInfo(itemId, row) {
             const unitVal   = parseFloat($("#inputUnitSelect").val()) || 1;
             const unitName  = $("#inputUnitSelect option:selected").text() || '-';
             // نسبة الربح على أساس سعر الشراء (price)
-            const profitPct = price > 0 ? ((sprice - price) / price * 100).toFixed(1) : '0.0';
+            const profitPct = price > 0 ? parseFloat(((sprice - price) / price * 100).toFixed(1)) : 0;
 
             // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
             const profitCells = window.SHOW_PROFIT_COLS ? `
@@ -194,7 +194,7 @@ function fetchItemInfo(itemId, row) {
                 <td><input type="number" name="itmdisc_pct[]" value="0.00"             class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
                 <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
                 ${profitCells}
-                <td><input type="number" name="itmval[]"    value="${val.toFixed(3)}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
+                <td><input type="number" name="itmval[]"    value="${parseFloat(val.toFixed(3))}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
                 <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 
@@ -203,11 +203,11 @@ function fetchItemInfo(itemId, row) {
             // مسح حقول الإدخال
             $("#itemSearchInput").val('');
             $("#selectedItemId").val('');
-            $("#itmprice").val('0.00');
-            $("#itmqty").val('1.00');
-            $("#itmdisc").val('0.00');
-            $("#itmval").val('0.00');
-            $("#itmsprice_stg").val('0.00');
+            $("#itmprice").val('0');
+            $("#itmqty").val('1');
+            $("#itmdisc").val('0');
+            $("#itmval").val('0');
+            $("#itmsprice_stg").val('0');
             $("#inputUnitSelect").empty().append('<option value="">اختر وحدة</option>');
             updateTotal();
         }
@@ -226,7 +226,7 @@ function handleInputChanges() {
         if ($this.hasClass('itmprofit_pct')) {
             const price = parseFloat(row.find('.itmprice').val()) || 0;
             const pct   = parseFloat($this.val()) || 0;
-            row.find('.itmsellprice').val((price * (1 + pct / 100)).toFixed(3));
+            row.find('.itmsellprice').val(parseFloat((price * (1 + pct / 100)).toFixed(3)));
             return;
         }
 
@@ -258,7 +258,7 @@ function calcProfitPct(row) {
     const price = parseFloat(row.find('.itmprice').val())     || 0; // سعر الشراء
     const sell  = parseFloat(row.find('.itmsellprice').val()) || 0; // سعر البيع
     if (price > 0) {
-        row.find('.itmprofit_pct').val(((sell - price) / price * 100).toFixed(1));
+        row.find('.itmprofit_pct').val(parseFloat(((sell - price) / price * 100).toFixed(1)));
     }
 }
 
@@ -267,7 +267,7 @@ function calcProfitPct(row) {
             const itmPrice = parseFloat(row.find('.itmprice').val()) || 0;
             const itmDisc = parseFloat(row.find('.itmdisc').val()) || 0;
             const itmVal = (itmQty * itmPrice) - itmDisc;
-            row.find('.itmval').val(itmVal.toFixed(2) || '');
+            row.find('.itmval').val(parseFloat(itmVal.toFixed(3)));
         }
 
         function calcDiscFromPct(row) {
@@ -275,7 +275,7 @@ function calcProfitPct(row) {
             const price = parseFloat(row.find('.itmprice').val()) || 0;
             const pct   = parseFloat(row.find('.itmdisc_pct').val()) || 0;
             const disc  = (qty * price * pct) / 100;
-            row.find('.itmdisc').val(disc.toFixed(3));
+            row.find('.itmdisc').val(parseFloat(disc.toFixed(3)));
         }
 
         function calcPctFromDisc(row) {
@@ -284,7 +284,7 @@ function calcProfitPct(row) {
             const disc  = parseFloat(row.find('.itmdisc').val())  || 0;
             const base  = qty * price;
             const pct   = base > 0 ? (disc / base) * 100 : 0;
-            row.find('.itmdisc_pct').val(pct.toFixed(2));
+            row.find('.itmdisc_pct').val(parseFloat(pct.toFixed(2)));
         }
 
         function handleRowDeletion() {
@@ -338,17 +338,17 @@ function updateTotal() {
     const headplus = parseFloat($("#headplus").val()) || 0;
     const headnet = headtotal - headdisc + headplus;
     
-    $('#headtotal').val(headtotal.toFixed(2));
-    $("#headnet").val(headnet.toFixed(2));
+    $('#headtotal').val(parseFloat(headtotal.toFixed(2)));
+    $("#headnet").val(parseFloat(headnet.toFixed(2)));
     
     if (headtotal > 0) {
-        $('#headdisc_pct').val(((headdisc / headtotal) * 100).toFixed(2));
+        $('#headdisc_pct').val(parseFloat(((headdisc / headtotal) * 100).toFixed(2)));
     } else {
-        $('#headdisc_pct').val('0.00');
+        $('#headdisc_pct').val('0');
     }
     
     // نقل الإجمالي إلى المدفوع تلقائياً - استخدام طرق متعددة
-    const paidValue = headnet.toFixed(2);
+    const paidValue = parseFloat(headnet.toFixed(2));
     $("#paid").val(paidValue);
     $("input[name='paid']").val(paidValue);
     $("input#paid").val(paidValue);
@@ -362,7 +362,7 @@ function updateTotal() {
     console.log('Updated paid to:', paidValue, 'Element found:', !!paidInput);
     
     // حساب الباقي
-    $("#change").val("0.00");
+    $("#change").val("0");
 }
 
 

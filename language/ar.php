@@ -213,6 +213,8 @@ $lang_multi_journal = "انشاء قيد متعدد";
 $lang_daily_journals = "القيود اليوميه";
 $lang_chart_of_accounts = "شجرة الحسابات";
 $lang_accounts_list = "قائمة الحسابات مع الارصدة";
+$lang_balance_sheet = "تقرير الميزانية";
+$lang_profit_loss = "الأرباح والخسائر";
 
 // System
 $lang_system = "النظام";

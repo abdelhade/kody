@@ -48,7 +48,7 @@ if ($rowfat == null) {
 }
 #printed .table th, #printed .table td {
     padding: 2px !important;
-    font-size: 9px !important;
+    font-size: 14px !important;
     font-weight: normal !important;
     vertical-align: middle;
     border: 1px solid #000 !important;

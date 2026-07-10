@@ -13,7 +13,9 @@ require_once 'classes/InvoiceElementFactory.php';
 // تعريف ثوابت أنواع الفواتير (Cached)
 if (!defined('INVOICE_TYPES')) {
     define('INVOICE_TYPES', [
-        'sale' => 4, 'buy' => 3, 'resale' => 10, 'rebuy' => 11,
+        'purchase' => 4, 'sale' => 3, 'purchase_return' => 10, 'sale_return' => 11,
+        // توافق مع الروابط القديمة
+        'sale_legacy' => 4, 'buy_legacy' => 3, 'resale' => 10, 'rebuy' => 11,
         'po' => 12, 'so' => 13, 'offer' => 14
     ]);
     
@@ -281,6 +283,27 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
     $page_end_time = microtime(true);
     $page_load_time = ($page_end_time - $page_start_time) * 1000;
     error_log("Sales page load time: " . number_format($page_load_time, 2) . " ms");
+}
+
+if (isset($_GET['success']) && $_GET['success'] == '1') {
+    echo "<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'تم بنجاح',
+                text: 'تم الحفظ بنجاح',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            
+            // تنظيف الرابط من البارامترات
+            const url = new URL(window.location);
+            url.searchParams.delete('success');
+            window.history.replaceState({}, '', url);
+        }
+    });
+    </script>";
 }
 
 // إنهاء Output Buffering وإرسال المحتوى

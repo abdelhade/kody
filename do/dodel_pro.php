@@ -46,7 +46,7 @@ $conn->query("INSERT INTO process(type) VALUES ('$process')");
 
 if ($pro_tybe == 1) {header('location:../operations_summary.php?q=receipt');}
 if ($pro_tybe == 2) {header('location:../operations_summary.php?q=payment');}
-if ($pro_tybe == 3) {header('location:../operations_summary.php?q=sale');}
-if ($pro_tybe == 4) {header('location:../operations_summary.php?q=buy');}
-if ($pro_tybe == 9) {header('location:../operations_summary.php?q=buy');}
+if ($pro_tybe == 3) {header('location:../operations_summary.php?q=purchase');}
+if ($pro_tybe == 4) {header('location:../operations_summary.php?q=sale');}
+if ($pro_tybe == 9) {header('location:../operations_summary.php?q=sale');}
 

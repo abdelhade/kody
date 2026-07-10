@@ -6,9 +6,13 @@ include('includes/sidebar.php');
 
 $q = isset($_GET['q']) ? $_GET['q'] : "all";  // استقبال قيمة q من GET
 $today = date('Y-m-d'); // تعريف اليوم الحالي
-$strtdate = isset($_GET['strtdate']) ? $_GET['strtdate'] : null;
-$enddate = isset($_GET['enddate']) ? $_GET['enddate'] : null;
+$strtdate = isset($_GET['strtdate']) ? $conn->real_escape_string($_GET['strtdate']) : null;
+$enddate = isset($_GET['enddate']) ? $conn->real_escape_string($_GET['enddate']) : null;
 $search = isset($_GET['search']) ? $_GET['search'] : null;
+
+// التحقق من صيغة التاريخ
+if ($strtdate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $strtdate)) $strtdate = null;
+if ($enddate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $enddate)) $enddate = null;
 
 $dateFilter = "";
 if ($strtdate && $enddate) {
@@ -33,12 +37,14 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
 switch ($q) {
-    case "sale":
+    case "purchase":
+    case "sale_legacy": // للتوافقية
         $report_name = "مشتريات";
         $where_clause = "pro_tybe = 4 AND isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
         break;
-    case "buy":
+    case "sale":
+    case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
         $where_clause = "(pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter $searchFilter";
         $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");

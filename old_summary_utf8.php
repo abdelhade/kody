@@ -1,4 +1,4 @@
-<?php include('includes/header.php') ?>
+﻿<?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
 <?php if ($_POST) {
@@ -19,9 +19,9 @@
             <div class="row align-items-end">
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>اختر حساب</label>
+                        <label>╪º╪«╪¬╪▒ ╪¡╪│╪º╪¿</label>
                         <select class="select2 frst form-control" name="acc_id" id="acc" required>
-                            <option value="0">اختر حساب</option>
+                            <option value="0">╪º╪«╪¬╪▒ ╪¡╪│╪º╪¿</option>
                             <?php
                                 $resacc = $conn->query("SELECT * FROM `acc_head` WHERE is_basic = 0 ORDER BY aname");
                             while ($rowacc = $resacc->fetch_assoc()) { ?>
@@ -35,21 +35,21 @@
                 
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label>من تاريخ</label>
+                        <label>┘à┘å ╪¬╪º╪▒┘è╪«</label>
                         <input type="date" class="form-control" value="<?= isset($_POST['startdate']) ? $_POST['startdate'] : date('Y-m-01') ?>" name="startdate" required>
                     </div>
                 </div>
                 
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label>إلى تاريخ</label>
+                        <label>╪Ñ┘ä┘ë ╪¬╪º╪▒┘è╪«</label>
                         <input type="date" class="form-control" value="<?= isset($_POST['enddate']) ? $_POST['enddate'] : date('Y-m-d') ?>" name="enddate" required>
                     </div>
                 </div>
                 
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label>رصيد الحساب</label>
+                        <label>╪▒╪╡┘è╪» ╪º┘ä╪¡╪│╪º╪¿</label>
                         <input type="text" class="form-control" readonly value="<?php 
                         if(isset($_POST['acc_id'])){
                             $ac_id = $_POST['acc_id'];
@@ -68,14 +68,14 @@
                 
                 <div class="col-md-1">
                     <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-block">عرض</button>
+                        <button type="submit" class="btn btn-primary btn-block">╪╣╪▒╪╢</button>
                     </div>
                 </div>
                 
                 <div class="col-md-2">
                     <div class="form-group">
                         <button type="button" class="btn btn-outline-secondary btn-sm btn-block mb-1" id="printBtn">
-                            <i class="fa fa-print"></i> طباعة
+                            <i class="fa fa-print"></i> ╪╖╪¿╪º╪╣╪⌐
                         </button>
                         <button type="button" class="btn btn-outline-success btn-sm btn-block" id="exportExcel">
                             <i class="fa fa-table"></i> Excel
@@ -93,7 +93,7 @@
                 <p><?= $rowstg['company_add']?></p>
                 
             <center>
-            <h3 class='hazaz'>كشف حساب <?php if(isset($_POST['acc_id'])){
+            <h3 class='hazaz'>┘â╪┤┘ü ╪¡╪│╪º╪¿ <?php if(isset($_POST['acc_id'])){
                 $ac_id = $_POST['acc_id'];
                 if ($ac_id != null) { 
                 $rowaccname = $conn->query("SELECT aname from acc_head where id = $ac_id")->fetch_assoc();
@@ -104,14 +104,14 @@
                 <table class="table table-bordered" id="summaryTable" style="text-align:center">
                     <thead>
                         <tr>
-                            <th>م</th>
-                            <th>التاريخ</th>
-                            <th>اسم العملية</th>
-                            <th>مدين</th>
-                            <th>دائن</th>
-                            <th>رصيد متحرك</th>
-                            <th>الحساب المقابل</th>
-                            <th>ملاحظات</th>
+                            <th>┘à</th>
+                            <th>╪º┘ä╪¬╪º╪▒┘è╪«</th>
+                            <th>╪º╪│┘à ╪º┘ä╪╣┘à┘ä┘è╪⌐</th>
+                            <th>┘à╪»┘è┘å</th>
+                            <th>╪»╪º╪ª┘å</th>
+                            <th>╪▒╪╡┘è╪» ┘à╪¬╪¡╪▒┘â</th>
+                            <th>╪º┘ä╪¡╪│╪º╪¿ ╪º┘ä┘à┘é╪º╪¿┘ä</th>
+                            <th>┘à┘ä╪º╪¡╪╕╪º╪¬</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,6 +121,7 @@
                 $startdate = isset($_POST['startdate']) && !empty($_POST['startdate']) ? $_POST['startdate'] : '1970-01-01';
                 $enddate = isset($_POST['enddate']) && !empty($_POST['enddate']) ? $_POST['enddate'] : date('Y-m-d');
                 
+                // ╪º╪│╪¬╪╣┘ä╪º┘à ┘ê╪º╪¡╪» ┘à╪¡╪│┘æ┘å ╪¿╪»┘ä ╪º╪│╪¬╪╣┘ä╪º┘à╪º╪¬ ┘à╪¬╪╣╪»╪»╪⌐
                 $sqlacc = "SELECT 
                             oh.id,
                             oh.pro_date,
@@ -131,13 +132,29 @@
                             pt.pname as pro_type_name,
                             a1.aname as acc1_name,
                             a2.aname as acc2_name,
-                            oh.pro_value
+                            COALESCE((SELECT SUM(je.debit) 
+                                     FROM journal_entries je 
+                                     WHERE je.account_id = $acc 
+                                     AND je.isdeleted = 0
+                                     AND (je.op_id = oh.id OR je.op2 = oh.id)
+                                     ), 0) as my_debit,
+                            COALESCE((SELECT SUM(je.credit) 
+                                     FROM journal_entries je 
+                                     WHERE je.account_id = $acc 
+                                     AND je.isdeleted = 0
+                                     AND (je.op_id = oh.id OR je.op2 = oh.id)
+                                     ), 0) as my_credit
                         FROM ot_head oh
                         LEFT JOIN pro_tybes pt ON oh.pro_tybe = pt.id
                         LEFT JOIN acc_head a1 ON oh.acc1 = a1.id
                         LEFT JOIN acc_head a2 ON oh.acc2 = a2.id
-                        WHERE oh.isdeleted = 0 
-                        AND (oh.acc1 = $acc OR oh.acc2 = $acc)
+                        WHERE EXISTS (
+                            SELECT 1 FROM journal_entries je2 
+                            WHERE je2.account_id = $acc 
+                            AND je2.isdeleted = 0
+                            AND (je2.op_id = oh.id OR je2.op2 = oh.id)
+                        )
+                        AND oh.isdeleted = 0
                         AND oh.pro_date BETWEEN '$startdate' AND '$enddate'
                         ORDER BY oh.pro_date, oh.id";
                 
@@ -149,19 +166,14 @@
                     while ($rowacc = $resacc->fetch_assoc()) {
                         $x++;
                         
-                        // استرجاع المنطق الأصلي في حساب المدين والدائن
-                        if ($rowacc['acc1'] == $acc){
-                            $debit = 0;
-                            $credit = floatval($rowacc['pro_value']);
-                        }else{
-                            $credit = 0;
-                            $debit = floatval($rowacc['pro_value']);
-                        }
+                        // ╪º╪│╪¬╪«╪»╪º┘à ╪º┘ä┘é┘è┘à ╪º┘ä┘à╪¡╪│┘ê╪¿╪⌐ ┘à╪¿╪º╪┤╪▒╪⌐ ┘à┘å journal_entries
+                        $debit = floatval($rowacc['my_debit']);
+                        $credit = floatval($rowacc['my_credit']);
                         
-                        // حساب الرصيد المتحرك
+                        // ╪¡╪│╪º╪¿ ╪º┘ä╪▒╪╡┘è╪» ╪º┘ä┘à╪¬╪¡╪▒┘â
                         $running_balance += ($debit - $credit);
                         
-                        // تحديد الحساب المقابل
+                        // ╪¬╪¡╪»┘è╪» ╪º┘ä╪¡╪│╪º╪¿ ╪º┘ä┘à┘é╪º╪¿┘ä
                         $opposite_acc = ($rowacc['acc2'] == $acc) ? $rowacc['acc1_name'] : $rowacc['acc2_name'];
                 ?>
                         <tr>
@@ -172,15 +184,15 @@
                             <td class="td5"><?= $credit > 0 ? number_format($credit, 2) : '0.00' ?></td>
                             <td class="td6"><?= number_format($running_balance, 2) ?></td>
                             <td><?= htmlspecialchars($opposite_acc ?? '') ?></td>
-                            <td><?= htmlspecialchars($rowacc['info'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($rowacc['info']) ?></td>
                         </tr>
                 <?php 
                     }
                 } else {
-                    echo "<tr><td colspan='8' style='text-align:center'>لا توجد حركات في هذه الفترة</td></tr>";
+                    echo "<tr><td colspan='8' style='text-align:center'>┘ä╪º ╪¬┘ê╪¼╪» ╪¡╪▒┘â╪º╪¬ ┘ü┘è ┘ç╪░┘ç ╪º┘ä┘ü╪¬╪▒╪⌐</td></tr>";
                 }
             } else {
-                echo "<tr><td colspan='8' style='text-align:center'><b>ابدأ اختيار الحساب و حدد التاريخ</b></td></tr>";
+                echo "<tr><td colspan='8' style='text-align:center'><b>╪º╪¿╪»╪ú ╪º╪«╪¬┘è╪º╪▒ ╪º┘ä╪¡╪│╪º╪¿ ┘ê ╪¡╪»╪» ╪º┘ä╪¬╪º╪▒┘è╪«</b></td></tr>";
             } 
             ?>
                         
@@ -189,11 +201,11 @@
                         <tr class="bg-sky-100" style="font-size:20px">
                             <th></th>
                             <th></th>
-                            <th>اجمالي مدين</th>
+                            <th>╪º╪¼┘à╪º┘ä┘è ┘à╪»┘è┘å</th>
                             <th class="sumth4"></th>
-                            <th>اجمالي دائن</th>
+                            <th>╪º╪¼┘à╪º┘ä┘è ╪»╪º╪ª┘å</th>
                             <th class="sumth5"></th>
-                            <th>صافي الحركة</th>
+                            <th>╪╡╪º┘ü┘è ╪º┘ä╪¡╪▒┘â╪⌐</th>
                             <th class="net"></th>
                         </tr>
                     </tfoot>
@@ -215,15 +227,15 @@
   $(document).ready(function() {
     $('#acc').select2();
     
-    // تفعيل DataTables مع pagination
+    // ╪¬┘ü╪╣┘è┘ä DataTables ┘à╪╣ pagination
     $('#summaryTable').DataTable({
         "pageLength": 50,
         "language": {
             "url": "/focus/plugins/datatables-bs4/i18n/Arabic.json"
         },
-        "order": [], // عدم الترتيب الافتراضي
+        "order": [], // ╪╣╪»┘à ╪º┘ä╪¬╪▒╪¬┘è╪¿ ╪º┘ä╪º┘ü╪¬╪▒╪º╪╢┘è
         "columnDefs": [
-            { "orderable": false, "targets": [0, 7] } // تعطيل الترتيب للعمود الأول والأخير
+            { "orderable": false, "targets": [0, 7] } // ╪¬╪╣╪╖┘è┘ä ╪º┘ä╪¬╪▒╪¬┘è╪¿ ┘ä┘ä╪╣┘à┘ê╪» ╪º┘ä╪ú┘ê┘ä ┘ê╪º┘ä╪ú╪«┘è╪▒
         ]
     });
 });
@@ -232,7 +244,7 @@
     document.getElementById("myForm").addEventListener("submit", function(event) {
         var selectedValue = document.getElementById("acc").value;
         if (selectedValue === "0") {
-            alert("من فضلك اختار حساب");
+            alert("┘à┘å ┘ü╪╢┘ä┘â ╪º╪«╪¬╪º╪▒ ╪¡╪│╪º╪¿");
             event.preventDefault(); // Prevent form submission
         }
     });
@@ -240,7 +252,7 @@
 
 <script>
 $(document).ready(function() {
-    // حساب الرصيد المتحرك
+    // ╪¡╪│╪º╪¿ ╪º┘ä╪▒╪╡┘è╪» ╪º┘ä┘à╪¬╪¡╪▒┘â
     var cumulativeSum = 0;
     $('#summaryTable tbody tr').each(function() {
         var td4Text = $(this).find('.td4').text().replace(/,/g, '');
@@ -254,7 +266,7 @@ $(document).ready(function() {
         }
     });
 
-    // حساب الإجماليات
+    // ╪¡╪│╪º╪¿ ╪º┘ä╪Ñ╪¼┘à╪º┘ä┘è╪º╪¬
     var sum4 = 0;
     $(".td4").each(function() { 
         var val = $(this).text().replace(/,/g, '');

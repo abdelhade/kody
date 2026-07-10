@@ -195,7 +195,7 @@
         // Check if Ctrl+O is pressed
         if (event.ctrlKey && event.key === 'o') {
             event.preventDefault();
-            window.location.href = "sales.php?q=sale"; // Replace "https://example.com" with your desired URL
+            window.location.href = "sales.php?q=purchase"; // Replace "https://example.com" with your desired URL
         }
     });
 
@@ -204,7 +204,7 @@
 
         if (event.ctrlKey && event.key === 'l') {
             event.preventDefault();
-            window.location.href = "sales.php?q=buy";
+            window.location.href = "sales.php?q=sale";
         }
     });
 

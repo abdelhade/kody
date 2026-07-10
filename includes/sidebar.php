@@ -416,7 +416,7 @@
 
 
               <li class="nav-item">
-                <a href="sales.php?q=sale" class="nav-link">
+                <a href="sales.php?q=purchase" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
                     <?= $lang_purchase_invoice ?>
@@ -465,7 +465,7 @@
 
 
                 <li class="nav-item">
-                  <a href="sales.php?q=buy" class="nav-link">
+                  <a href="sales.php?q=sale" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
                     <p>
                       <?= $lang_sales_invoice ?>
@@ -1239,6 +1239,19 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="balance_sheet.php" class="nav-link">
+                  <i class="nav-icon fas fa-balance-scale"></i>
+                  <p><?= $lang_balance_sheet ?? 'تقرير الميزانية' ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="profit_loss.php" class="nav-link">
+                  <i class="nav-icon fas fa-chart-line"></i>
+                  <p><?= $lang_profit_loss ?? 'الأرباح والخسائر' ?></p>
+                </a>
+              </li>
 
 
             </ul>
@@ -1384,7 +1397,7 @@
               </li>
 
               <li class="nav-item">
-                <a href="operations_summary.php?q=sale" class="nav-link">
+                <a href="operations_summary.php?q=purchase" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
                     <?= $lang_purchase_invoices_report ?>
