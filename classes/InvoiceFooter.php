@@ -241,11 +241,38 @@ class InvoiceFooter extends InvoiceElementBase
                 <label for="">الصندوق</label>
             </div>
             <div class="col col-md-8">
-                <select name="fund_id" class="form-control form-control-sm">
+                <select name="fund_id" id="fund_id" class="form-control form-control-sm">
                     <?php $this->renderFundOptions(); ?>
                 </select>
             </div>
         </div>
+
+        <!-- hidden inputs مطلوبة بـ doadd_invoice.php -->
+        <input type="hidden" name="paid_cash"       id="paid_cash"       value="0">
+        <input type="hidden" name="paid_bank"        id="paid_bank"        value="0">
+        <input type="hidden" name="payment_fund_id"  id="payment_fund_id"  value="">
+        <input type="hidden" name="payment_bank_id"  id="payment_bank_id"  value="0">
+
+        <script>
+        (function() {
+            function syncPaymentFields(form) {
+                var paid          = form.querySelector('#paid');
+                var fundSelect    = form.querySelector('#fund_id');
+                var paidCash      = form.querySelector('#paid_cash');
+                var paymentFundId = form.querySelector('#payment_fund_id');
+                if (paid && paidCash)            paidCash.value      = parseFloat(paid.value) || 0;
+                if (fundSelect && paymentFundId) paymentFundId.value = fundSelect.value || 0;
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('#submit, #submit2').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var form = btn.closest('form');
+                        if (form) syncPaymentFields(form);
+                    });
+                });
+            });
+        })();
+        </script>
         <?php
     }
 
@@ -355,15 +382,15 @@ class InvoiceFooter extends InvoiceElementBase
         if ($this->isEditMode && $this->data) {
             try {
                 $invoiceId = intval($this->data['id']);
-                $query = "SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = ? AND (pro_tybe = 1 OR pro_tybe = 2)";
+                $query = "SELECT COALESCE(SUM(pro_value), 0) as paid FROM ot_head WHERE op2 = ? AND (pro_tybe = 1 OR pro_tybe = 2)";
                 $result = $this->executeSecureQuery($query, [$invoiceId], 'i');
                 $row = $result->fetch_assoc();
-                return $row ? $row['paid'] : '0';
+                return $row ? floatval($row['paid']) : 0;
             } catch (Exception $e) {
-                return '0';
+                return 0;
             }
         }
-        return '0';
+        return 0;
     }
 
     private function getInfo()

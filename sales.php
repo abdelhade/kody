@@ -311,13 +311,13 @@ ob_end_flush();
 ?>
 
 <!-- Preload JavaScript Files -->
-<link rel="preload" href="js/sales.js" as="script">
-<link rel="preload" href="js/sales0.js" as="script">
+<link rel="preload" href="js/sales.js?v=<?php echo filemtime('js/sales.js'); ?>" as="script">
+<link rel="preload" href="js/sales0.js?v=<?php echo filemtime('js/sales0.js'); ?>" as="script">
 <link rel="preload" href="js/keyboard_navigation.js" as="script">
 
 <!-- Load JavaScript Async with defer -->
-<script src="js/sales.js" defer></script>
-<script src="js/sales0.js" defer></script>
+<script src="js/sales.js?v=<?php echo filemtime('js/sales.js'); ?>" defer></script>
+<script src="js/sales0.js?v=<?php echo filemtime('js/sales0.js'); ?>" defer></script>
 <script src="js/keyboard_navigation.js" defer></script>
 
 <!-- Prefetch للصفحات المحتملة -->

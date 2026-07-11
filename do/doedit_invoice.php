@@ -233,7 +233,9 @@ try {
     $paid_type = ($pro_tybe == InvoiceProcessor::INVOICE_TYPES['SALES']) ? InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'] : InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'];
     
     if ($paid > 0 && $rowpaid == null) {
-        // إضافة دفعة جديدة
+        // إضافة دفعة جديدة - جلب رقم الدفعة التالي
+        $new_paid_op_id = InvoiceProcessor::getNextInvoiceNumber($conn, $paid_type);
+
         $stmt = $conn->prepare(
             "INSERT INTO ot_head (
                 pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
@@ -243,7 +245,7 @@ try {
         
         $stmt->bind_param(
             "iiissiiidii", 
-            $paid_type, $paid_type, $paid_type, $info, $pro_date, $emp_id,
+            $new_paid_op_id, $paid_type, $paid_type, $info, $pro_date, $emp_id,
             $accounts['acc5'], $accounts['acc6'], $paid, $usid, $ot_id
         );
         

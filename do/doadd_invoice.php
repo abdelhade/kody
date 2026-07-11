@@ -306,12 +306,17 @@ try {
             throw new Exception('فشل في تحضير استعلام إدخال الفاتورة: ' . $conn->error);
         }
         
+        // bind_param يتطلب references - تحويل NULL إلى قيم فارغة لتجنب ArgumentCountError
+        $bind_jal_name   = $jal_name   ?? '';
+        $bind_jal_notes  = $jal_notes  ?? '';
+        $bind_jal_amount = $jal_amount ?? 0;
+
         $stmt->bind_param(
             "sssssssssssssssssssssss",
             $pro_id, $pro_tybe, $pro_tybe, $info, $pro_date, $accural_date, 
             $pro_serial, $store_id, $emp_id, $emp_id, $accounts['acc1'], 
             $accounts['acc2'], $headtotal, $headtotal, $headdisc, 
-            $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid, $jal_name, $jal_notes, $jal_amount
+            $fat_disc_per, $headplus, $fat_plus_per, $headnet, $usid, $bind_jal_name, $bind_jal_notes, $bind_jal_amount
         );
         
         error_log('Executing order header insert');

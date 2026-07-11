@@ -320,7 +320,7 @@ $(document).ready(function() {
         clearHighlight();
 
         // جلب بيانات الصنف الكاملة وتحديث الحقول مباشرة
-        const isSale = window.location.href.indexOf('q=purchase') !== -1;
+        const isPurchase = window.location.href.indexOf('q=purchase') !== -1;
 
         $.ajax({
             url: 'get/get_iteminfo.php?id=' + item.id,
@@ -332,13 +332,17 @@ $(document).ready(function() {
                     console.error('get_iteminfo error:', data.error, '| item id:', item.id);
                     return;
                 }
-                const price = isSale ? (data.last_price || data.price1) : data.price1;
+                // في المشتريات: ucost من الوحدة الأولى | في المبيعات: price1
+                const defaultUnitCost = (data.units && data.units.length) ? (parseFloat(data.units[0].ucost) || 0) : 0;
+                const price = isPurchase
+                    ? (defaultUnitCost || parseFloat(data.cost_price) || 0)
+                    : (parseFloat(data.price1) || 0);
 
                 // تحديث حقول صف الإدخال
-                $('#itmprice').val(price || 0);
+                $('#itmprice').val(price);
                 $('#itmqty').val(1);
                 $('#itmdisc').val('0');
-                $('#itmval').val(price || 0);
+                $('#itmval').val(price);
                 $('#itmsprice_stg').val(data.price1 || 0);
 
                 // تحديث حقول المعلومات
@@ -360,9 +364,9 @@ $(document).ready(function() {
                     unitSelect.off('change').on('change', function() {
                         const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
                         if (selectedUnit) {
-                            const newPrice = isSale
-                                ? (data.last_price * selectedUnit.unit_value)
-                                : selectedUnit.uprice1;
+                            const newPrice = isPurchase
+                                ? (parseFloat(selectedUnit.ucost) || 0)
+                                : (parseFloat(selectedUnit.uprice1) || 0);
                             $('#itmprice').val(newPrice);
                             $('#itmqty').val(1);
                             $('#itmval').val(newPrice);
@@ -372,6 +376,9 @@ $(document).ready(function() {
                             $('#market_price').text(selectedUnit.uprice3);
                             $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
                             $('#last_price').text(data.last_price * selectedUnit.unit_value);
+                            if (isPurchase) {
+                                $('#itmsprice_stg').val(parseFloat(selectedUnit.uprice1) || 0);
+                            }
                         }
                     });
                 } else {

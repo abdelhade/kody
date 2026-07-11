@@ -9,18 +9,31 @@ $(document).ready(function() {
     handleRowDeletion();
     handleFormSubmission();
     handleKeyboardShortcuts();
+
+    // دالة مساعدة لحساب وتحديث الباقي
+    function updateChange() {
+        const paid = parseFloat($('#paid').val()) || 0;
+        const net  = parseFloat($('#headnet').val()) || 0;
+        $('#change').val(parseFloat((net - paid).toFixed(2)));
+    }
     
     // تحديث المدفوع عند تغيير الخصم أو الإضافات أو الإجمالي
     $(document).on('input change', '#headdisc, #headplus, #headtotal, #headnet', function() {
-        // إعادة حساب الإجمالي عند تغيير الخصم أو الإضافات
         if ($(this).attr('id') === 'headdisc' || $(this).attr('id') === 'headplus') {
             updateTotal();
         }
-        
-        const headnet = parseFloat($('#headnet').val()) || 0;
-        $('#paid').val(parseFloat(headnet.toFixed(2)));
-        $('#change').val('0');
-        console.log('Event triggered - Updated paid to:', parseFloat(headnet.toFixed(2)));
+        // في التعديل: لا تكتب فوق المدفوع المجلوب من DB
+        const isEditMode = window.location.href.indexOf('edit_id') !== -1;
+        if (!isEditMode) {
+            const headnet = parseFloat($('#headnet').val()) || 0;
+            $('#paid').val(parseFloat(headnet.toFixed(2)));
+        }
+        updateChange();
+    });
+
+    // عند تغيير المدفوع يدوياً → حساب الباقي
+    $(document).on('input', '#paid', function() {
+        updateChange();
     });
 
     // عند تغيير نسبة الخصم الإجمالية
@@ -31,22 +44,26 @@ $(document).ready(function() {
         updateTotal();
     });
     
-    // تحديث المدفوع عند تحميل الصفحة
+    // تحديث المدفوع عند تحميل الصفحة - فقط لو مش في وضع التعديل
     setTimeout(function() {
+        const isEditMode = window.location.href.indexOf('edit_id') !== -1;
+        if (isEditMode) {
+            // في التعديل: احسب الباقي فقط بدون تغيير المدفوع
+            updateChange();
+            return;
+        }
+
         const headnet = parseFloat($('#headnet').val()) || 0;
         if (headnet > 0) {
             $('#paid').val(parseFloat(headnet.toFixed(2)));
-            $('#change').val('0');
-            console.log('Page load - Updated paid to:', parseFloat(headnet.toFixed(2)));
+            updateChange();
         }
     }, 500);
     
     // تحديث فوري عند أي تغيير في الصفوف
     $(document).on('input', '.itmqty, .itmprice, .itmdisc', function() {
         setTimeout(function() {
-            const headnet = parseFloat($('#headnet').val()) || 0;
-            $('#paid').val(parseFloat(headnet.toFixed(2)));
-            $('#change').val('0');
+            updateTotal();
         }, 200);
     });
 });
@@ -91,7 +108,6 @@ function fetchItemInfo(itemId, row) {
         success: function(data) {
             const isSale = getParameterByName('q') === 'sale';
             const price = isSale ? data.last_price : data.price1;
-            
             // تحديث الحقول دفعة واحدة
             row.find("#itmprice").val(price);
             row.find("#itmval").val(price);
@@ -347,22 +363,25 @@ function updateTotal() {
         $('#headdisc_pct').val('0');
     }
     
-    // نقل الإجمالي إلى المدفوع تلقائياً - استخدام طرق متعددة
-    const paidValue = parseFloat(headnet.toFixed(2));
-    $("#paid").val(paidValue);
-    $("input[name='paid']").val(paidValue);
-    $("input#paid").val(paidValue);
-    
-    // استخدام vanilla JS كمان
-    const paidInput = document.getElementById('paid');
-    if (paidInput) {
-        paidInput.value = paidValue;
+    // نقل الإجمالي إلى المدفوع تلقائياً - فقط لو مش في وضع التعديل أو المدفوع لم يُعدَّل يدوياً
+    const isEditMode  = window.location.href.indexOf('edit_id') !== -1;
+    const currentPaid = parseFloat($("#paid").val()) || 0;
+    const currentNet  = parseFloat($("#headnet").val()) || 0;
+    const paidValue   = parseFloat(headnet.toFixed(2));
+
+    // حدّث المدفوع فقط لو:
+    // 1- مش في وضع التعديل، أو
+    // 2- المدفوع كان يساوي الصافي القديم (لم يُعدَّل يدوياً)
+    if (!isEditMode && (currentPaid === currentNet || currentNet === 0)) {
+        $("#paid").val(paidValue);
+        $("input[name='paid']").val(paidValue);
+        const paidInput = document.getElementById('paid');
+        if (paidInput) paidInput.value = paidValue;
     }
     
-    console.log('Updated paid to:', paidValue, 'Element found:', !!paidInput);
-    
     // حساب الباقي
-    $("#change").val("0");
+    const finalPaid = parseFloat($("#paid").val()) || 0;
+    $("#change").val(parseFloat((headnet-finalPaid).toFixed(2)));
 }
 
 
