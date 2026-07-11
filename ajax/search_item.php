@@ -24,12 +24,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
     $numericBarcode = is_numeric($barcode) ? intval($barcode) : 0;
     $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
     
-    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id), 0)" : "0";
+    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id AND isdeleted = 0), 0)" : "0";
 
-    $sql = "SELECT *, $balance_subquery as balance FROM myitems WHERE (barcode = ? OR id = ? OR id = ? OR iname LIKE ?) AND isdeleted = 0 LIMIT 1";
+    $sql = "SELECT *, $balance_subquery as balance FROM myitems 
+            WHERE (barcode = ? OR code = ? OR id = ?) AND isdeleted = 0 
+            ORDER BY 
+                CASE 
+                    WHEN barcode = ? THEN 1 
+                    WHEN code = ? THEN 2 
+                    WHEN id = ? THEN 3 
+                    ELSE 4 
+                END 
+            LIMIT 1";
     $stmt = $conn->prepare($sql);
-    $searchLike = "%{$barcode}%";
-    $stmt->bind_param("siss", $barcode, $numericBarcode, $barcode, $searchLike);
+    $stmt->bind_param("ssissi", $barcode, $barcode, $numericBarcode, $barcode, $barcode, $numericBarcode);
     $stmt->execute();
     $result = $stmt->get_result();
     

@@ -49,6 +49,20 @@ $headnet = isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0;
 // ملاحظة: تحديد المبلغ المدفوع يتم بعد جلب $pro_tybe من الفاتورة الأصلية (انظر أسفل)
 
 $fund_id = isset($_POST['fund_id']) ? intval($_POST['fund_id']) : 0;
+
+if ($fund_id == 0) {
+    // محاولة استرجاع الصندوق الافتراضي إذا كان مفقوداً
+    $stmt_def = $conn->prepare("SELECT cur_value FROM myoptions WHERE oname = 'def_fund'");
+    if ($stmt_def) {
+        $stmt_def->execute();
+        $res_def = $stmt_def->get_result();
+        if ($row_def = $res_def->fetch_assoc()) {
+            $fund_id = intval($row_def['cur_value']);
+        }
+        $stmt_def->close();
+    }
+}
+
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
 
@@ -96,12 +110,6 @@ if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], Invoi
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 }
 
-
-
-
-
-
-
 // الحصول على إعدادات الفاتورة
 $config = InvoiceProcessor::getInvoiceConfig($pro_tybe);
 if (!$config) {
@@ -110,6 +118,11 @@ if (!$config) {
 
 // تحديد الحسابات المحاسبية
 $accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+
+// تحقق من أن الصندوق محدد إذا كان هناك مبلغ مدفوع
+if ($paid > 0 && $fund_id == 0) {
+    die('خطأ: الصندوق المطلوب لمعالجة المدفوعات غير محدد. الرجاء التأكد من اختيار الصندوق.');
+}
 
 // بدء المعاملة لضمان تماسك البيانات
 try {
@@ -524,8 +537,21 @@ try {
 } catch (Exception $e) {
     // إلغاء المعاملة في حالة الخطأ
     $conn->rollback();
-    error_log('خطأ في تعديل الفاتورة: ' . $e->getMessage());
-    die('حدث خطأ أثناء تعديل الفاتورة: ' . $e->getMessage());
+    
+    // تسجيل تفاصيل إضافية لتشخيص الخطأ
+    $debug_info = [
+        'error' => $e->getMessage(),
+        'paid' => $paid,
+        'fund_id' => $fund_id,
+        'store_id' => $store_id,
+        'acc2_id' => $acc2_id,
+        'accounts' => $accounts ?? [],
+        'post_data' => $_POST
+    ];
+    error_log('=== INVOICE EDIT ERROR ===');
+    error_log(print_r($debug_info, true));
+    
+    die('حدث خطأ أثناء تعديل الفاتورة: ' . $e->getMessage() . ' | ' . json_encode(['fund_id' => $fund_id, 'acc1' => ($accounts['acc1'] ?? 'null'), 'acc2' => ($accounts['acc2'] ?? 'null'), 'acc5' => ($accounts['acc5'] ?? 'null'), 'acc6' => ($accounts['acc6'] ?? 'null')]));
 }
 
 // إعادة التوجيه حسب نوع العملية

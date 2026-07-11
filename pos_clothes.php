@@ -65,31 +65,5 @@ if(isset($_SESSION['success_message'])){
     <script src="plugins/select2/js/select2.full.min.js"></script>
     <script src="components/pos_clothes/scripts.js"></script>
 </body>
-<style>
-      input:focus {
-    background-color: #eef0fa !important;
-    border-color: #4B5694 !important;
-    box-shadow: 0 0 0 0.2rem rgba(75, 86, 148, 0.25) !important;
-    outline: none !important;
-    transition: all 0.3s ease !important;
-  }
-  /* Customizing select2 heights and styles to look like form-control-sm */
-  .select2-container .select2-selection--single {
-    height: 31px !important;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1.5;
-  }
-  .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: 23px !important;
-    padding-right: 0px !important;
-    padding-left: 20px !important;
-    text-align: right;
-  }
-  .select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 29px !important;
-    left: 3px !important;
-    right: auto !important;
-  }
-</style>
+
 </html>

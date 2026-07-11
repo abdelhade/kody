@@ -18,7 +18,7 @@ try {
     }
     
     $store_id = isset($_GET['store_id']) ? intval($_GET['store_id']) : 0;
-    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id), 0)" : "0";
+    $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id AND isdeleted = 0), 0)" : "0";
 
     if (empty($search)) {
         $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT 200";
