@@ -10,6 +10,11 @@ $(document).ready(function() {
     handleFormSubmission();
     handleKeyboardShortcuts();
 
+    // عند تغيير المورد → أعد حساب paid/change
+    $(document).on('change', '#mySelectEmp', function() {
+        updateTotal();
+    });
+
     // دالة مساعدة لحساب وتحديث الباقي
     function updateChange() {
         const paid = parseFloat($('#paid').val()) || 0;
@@ -17,23 +22,27 @@ $(document).ready(function() {
         $('#change').val(parseFloat((net - paid).toFixed(2)));
     }
     
-    // تحديث المدفوع عند تغيير الخصم أو الإضافات أو الإجمالي
+    // تحديث المدفوع عند تغيير الخصم أو الإضافات
     $(document).on('input change', '#headdisc, #headplus, #headtotal, #headnet', function() {
         if ($(this).attr('id') === 'headdisc' || $(this).attr('id') === 'headplus') {
-            updateTotal();
+            updateTotal(); // updateTotal هتتكفل بـ paid و change حسب المورد
         }
-        // في التعديل: لا تكتب فوق المدفوع المجلوب من DB
-        const isEditMode = window.location.href.indexOf('edit_id') !== -1;
-        if (!isEditMode) {
-            const headnet = parseFloat($('#headnet').val()) || 0;
-            $('#paid').val(parseFloat(headnet.toFixed(2)));
-        }
-        updateChange();
     });
 
-    // عند تغيير المدفوع يدوياً → حساب الباقي
+    // عند تغيير المدفوع يدوياً → حساب الباقي (فقط لو مش مورد افتراضي)
     $(document).on('input', '#paid', function() {
-        updateChange();
+        const supplierSel = document.getElementById('mySelectEmp');
+        const isDefault = supplierSel &&
+                          supplierSel.options.length > 0 &&
+                          supplierSel.value === supplierSel.options[0].value;
+        if (isDefault) {
+            // المورد الافتراضي → أعد المدفوع للصافي
+            const net = parseFloat($('#headnet').val()) || 0;
+            $(this).val(net.toFixed(2));
+            $('#change').val('0.00');
+        } else {
+            updateChange();
+        }
     });
 
     // عند تغيير نسبة الخصم الإجمالية
@@ -44,20 +53,9 @@ $(document).ready(function() {
         updateTotal();
     });
     
-    // تحديث المدفوع عند تحميل الصفحة - فقط لو مش في وضع التعديل
+    // تحديث المدفوع عند تحميل الصفحة
     setTimeout(function() {
-        const isEditMode = window.location.href.indexOf('edit_id') !== -1;
-        if (isEditMode) {
-            // في التعديل: احسب الباقي فقط بدون تغيير المدفوع
-            updateChange();
-            return;
-        }
-
-        const headnet = parseFloat($('#headnet').val()) || 0;
-        if (headnet > 0) {
-            $('#paid').val(parseFloat(headnet.toFixed(2)));
-            updateChange();
-        }
+        updateTotal();
     }, 500);
     
     // تحديث فوري عند أي تغيير في الصفوف
@@ -233,6 +231,16 @@ function handleInputChanges() {
 
     const ALL_ROW_INPUTS = '.itmqty, .itmprice, .itmdisc, .itmdisc_pct, .itmsellprice, .itmprofit_pct';
 
+    // تعطيل تغيير القيمة بالسكرول وأسهم الكيبورد في صفوف الفاتورة
+    $(document).on('wheel', '#itmrow input[type="number"]', function(e) {
+        e.preventDefault();
+    });
+    $(document).on('keydown', '#itmrow input[type="number"]', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
+
     // معالج واحد فقط (namespace) لتفادي تكرار الـ handlers
     $(document).off('input.rowcalc').on('input.rowcalc', ALL_ROW_INPUTS, function() {
         const row   = $(this).closest('tr');
@@ -363,25 +371,29 @@ function updateTotal() {
         $('#headdisc_pct').val('0');
     }
     
-    // نقل الإجمالي إلى المدفوع تلقائياً - فقط لو مش في وضع التعديل أو المدفوع لم يُعدَّل يدوياً
-    const isEditMode  = window.location.href.indexOf('edit_id') !== -1;
-    const currentPaid = parseFloat($("#paid").val()) || 0;
-    const currentNet  = parseFloat($("#headnet").val()) || 0;
-    const paidValue   = parseFloat(headnet.toFixed(2));
+    // هل المورد المختار هو المورد الافتراضي (أول option في القائمة)؟
+    const supplierSel = document.getElementById('mySelectEmp');
+    const isDefaultSupplier = supplierSel &&
+                              supplierSel.options.length > 0 &&
+                              supplierSel.value === supplierSel.options[0].value;
 
-    // حدّث المدفوع فقط لو:
-    // 1- مش في وضع التعديل، أو
-    // 2- المدفوع كان يساوي الصافي القديم (لم يُعدَّل يدوياً)
-    if (!isEditMode && (currentPaid === currentNet || currentNet === 0)) {
+    const isEditMode = window.location.href.indexOf('edit_id') !== -1;
+    const paidValue  = parseFloat(headnet.toFixed(2));
+
+    if (isDefaultSupplier) {
+        // المورد الافتراضي → paid = net دايماً، change = 0
         $("#paid").val(paidValue);
-        $("input[name='paid']").val(paidValue);
-        const paidInput = document.getElementById('paid');
-        if (paidInput) paidInput.value = paidValue;
+        $("#change").val('0.00');
+    } else {
+        // مورد تاني → لا تكتب فوق المدفوع لو اتعدّل يدوياً
+        const currentPaid = parseFloat($("#paid").val()) || 0;
+        const currentNet  = parseFloat($("#headnet").val()) || 0;
+        if (!isEditMode && (currentPaid === currentNet || currentNet === 0)) {
+            $("#paid").val(paidValue);
+        }
+        const finalPaid = parseFloat($("#paid").val()) || 0;
+        $("#change").val(parseFloat((headnet - finalPaid).toFixed(2)));
     }
-    
-    // حساب الباقي
-    const finalPaid = parseFloat($("#paid").val()) || 0;
-    $("#change").val(parseFloat((headnet-finalPaid).toFixed(2)));
 }
 
 

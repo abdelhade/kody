@@ -91,8 +91,8 @@ class InvoiceDetails extends InvoiceElementBase
                             <tr>
                                 <td class="col-1">
                                     <div class="tool">
-                                        <a id="addNewElement" class="btn bg-lime-200 btn-sm hadi-white-flash"
-                                           href="add_item.php" target="_blank">+</a>
+                                        <button type="button" id="addNewElement" class="btn bg-lime-200 btn-sm hadi-white-flash"
+                                           data-toggle="modal" data-target="#addItemInlineModal">+</button>
                                         <div class="tooltext">إضافة صنف جديد</div>
                                     </div>
                                 </td>
@@ -469,6 +469,185 @@ $(document).ready(function() {
             });
     });
 }); // end document.ready
+</script>
+
+<!-- Modal إضافة صنف - يفتح من زر + -->
+<div class="modal fade" id="addItemInlineModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white py-2">
+        <h5 class="modal-title mb-0"><i class="fas fa-plus-circle ml-2"></i> إضافة صنف جديد</h5>
+        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <div class="modal-body p-3">
+        <div id="addItemInlineMsg"></div>
+          <!-- بدون form tag عشان موجود جوا form رئيسية -->
+          <div class="row">
+            <div class="col-md-3 form-group">
+              <label class="small text-muted">الباركود <span class="text-danger">*</span></label>
+              <input type="text" data-field="barcode" id="inlineBarcode" class="form-control form-control-sm" placeholder="باركود">
+            </div>
+            <div class="col-md-5 form-group">
+              <label class="small text-muted">اسم الصنف <span class="text-danger">*</span></label>
+              <input type="text" data-field="iname" id="inlineIname" class="form-control form-control-sm" placeholder="اسم الصنف">
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="small text-muted">الاسم الثاني</label>
+              <input type="text" data-field="name2" class="form-control form-control-sm" placeholder="اختياري">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 form-group">
+              <label class="small text-muted">المجموعة</label>
+              <select data-field="group1" class="form-control form-control-sm">
+                <option value="">— اختر —</option>
+                <?php
+                if ($this->conn) {
+                    $rg1 = $this->conn->query('SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname');
+                    while ($rg1 && $g1 = $rg1->fetch_assoc()) {
+                        echo '<option value="' . (int)$g1['id'] . '">' . htmlspecialchars($g1['gname'], ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                }
+                ?>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="small text-muted">التصنيف</label>
+              <select data-field="group2" class="form-control form-control-sm">
+                <option value="">— اختر —</option>
+                <?php
+                if ($this->conn) {
+                    $rg2 = $this->conn->query('SELECT * FROM item_group2 WHERE isdeleted = 0 ORDER BY gname');
+                    while ($rg2 && $g2 = $rg2->fetch_assoc()) {
+                        echo '<option value="' . (int)$g2['id'] . '">' . htmlspecialchars($g2['gname'], ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                }
+                ?>
+              </select>
+            </div>
+            <div class="col-md-4 form-group">
+              <label class="small text-muted">ملاحظات</label>
+              <input type="text" data-field="info" class="form-control form-control-sm" placeholder="اختياري">
+            </div>
+          </div>
+          <hr class="mt-1 mb-2">
+          <div class="row align-items-end">
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">الوحدة <span class="text-danger">*</span></label>
+              <select data-field="unit_id" class="form-control form-control-sm">
+                <?php
+                if ($this->conn) {
+                    $ru = $this->conn->query('SELECT * FROM myunits ORDER BY uname');
+                    while ($ru && $u = $ru->fetch_assoc()) {
+                        echo '<option value="' . (int)$u['id'] . '">' . htmlspecialchars($u['uname'], ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                }
+                ?>
+              </select>
+            </div>
+            <input type="hidden" data-field="u_val" value="1">
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">التكلفة</label>
+              <input type="number" data-field="cost_price" value="0" step="0.001" min="0" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">سعر البيع</label>
+              <input type="number" data-field="price1" value="0" step="0.001" min="0" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">جملة</label>
+              <input type="number" data-field="price2" value="0" step="0.001" min="0" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">السوق</label>
+              <input type="number" data-field="market_price" value="0" step="0.001" min="0" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-2 form-group">
+              <label class="small text-muted">باركود الوحدة</label>
+              <input type="text" data-field="unit_barcode" id="inlineUnitBarcode" class="form-control form-control-sm">
+            </div>
+          </div>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-primary btn-sm" id="saveItemInlineBtn">
+          <i class="fas fa-save ml-1"></i> حفظ الصنف
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // مزامنة باركود الوحدة مع الباركود الرئيسي
+    $('#inlineBarcode').on('input', function() {
+        $('#inlineUnitBarcode').val(this.value);
+    });
+
+    // عند فتح المودال: جلب باركود تلقائي
+    $('#addItemInlineModal').on('show.bs.modal', function() {
+        $('#addItemInlineMsg').html('');
+        fetch('ajax/load_items_lazy.php?action=next_barcode')
+            .then(r => r.json())
+            .then(d => {
+                if (d.barcode) {
+                    $('#inlineBarcode').val(d.barcode);
+                    $('#inlineUnitBarcode').val(d.barcode);
+                }
+            }).catch(() => {});
+    });
+
+    // حفظ الصنف
+    $('#saveItemInlineBtn').off('click').on('click', function() {
+        const $btn = $(this);
+        const $modal = $('#addItemInlineModal');
+        const iname   = $('#inlineIname').val().trim();
+        const barcode = $('#inlineBarcode').val().trim();
+        if (!iname || !barcode) {
+            $('#addItemInlineMsg').html('<div class="alert alert-danger py-1 mb-1">الاسم والباركود مطلوبان</div>');
+            return;
+        }
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحفظ...');
+
+        // بناء FormData يدوياً من data-field (عشان مفيش form حقيقية - nested forms ممنوعة)
+        const formData = new FormData();
+        $modal.find('[data-field]').each(function() {
+            formData.append($(this).data('field'), $(this).val() || '');
+        });
+
+        fetch('ajax/modal_add_item.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    $('#addItemInlineMsg').html('<div class="alert alert-success py-1 mb-1">✓ تم حفظ الصنف: <strong>' + res.iname + '</strong></div>');
+                    // مسح الحقول
+                    $modal.find('[data-field]').not('[type="hidden"]').val('').filter('input[type="number"]').val('0');
+                    // اختر الصنف الجديد في حقل البحث وأضف صفه تلقائياً
+                    setTimeout(() => {
+                        $('#addItemInlineModal').modal('hide');
+                        $('#itemSearchInput').val(res.iname);
+                        $('#selectedItemId').val(res.id);
+                        $('#itmprice').val(res.price || 0);
+                        $('#addRow').click();
+                    }, 700);
+                } else {
+                    $('#addItemInlineMsg').html('<div class="alert alert-danger py-1 mb-1">' + (res.error || 'حدث خطأ') + '</div>');
+                }
+            })
+            .catch(() => {
+                $('#addItemInlineMsg').html('<div class="alert alert-danger py-1 mb-1">خطأ في الاتصال</div>');
+            })
+            .finally(() => {
+                $btn.prop('disabled', false).html('<i class="fas fa-save ml-1"></i> حفظ الصنف');
+            });
+    });
+
+    // مسح الرسائل عند إغلاق المودال
+    $('#addItemInlineModal').on('hidden.bs.modal', function() {
+        $('#addItemInlineMsg').html('');
+    });
+});
 </script>
         <?php
         return ob_get_clean();

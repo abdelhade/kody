@@ -208,14 +208,100 @@ if (!$hide_payment):
         }
     }
 
+    // التحقق من أن المدفوع مكتمل لو المورد افتراضي
+    function validatePayment(form) {
+        var supplierSelect = document.getElementById('mySelectEmp');
+        if (!supplierSelect) return true; // مفيش مورد → اعمل submit عادي
+
+        // الـ option الأول في القائمة هو المورد الافتراضي
+        var firstOption = supplierSelect.options[0];
+        if (!firstOption) return true;
+
+        var selectedVal = supplierSelect.value;
+        var defaultVal  = firstOption.value;
+
+        // لو المختار مش المورد الافتراضي → مفيش قيود
+        if (selectedVal !== defaultVal) return true;
+
+        var paid = parseFloat(document.getElementById('paid') ? document.getElementById('paid').value : 0) || 0;
+        var net  = parseFloat(document.getElementById('headnet') ? document.getElementById('headnet').value : 0) || 0;
+
+        if (paid < net) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'المورد الافتراضي لا يقبل الآجل، يجب أن يكون المدفوع مساوياً للصافي (' + net + ')',
+                confirmButtonText: 'حسناً'
+            }).then(function() {
+                // انقل التركيز لحقل المدفوع
+                var paidField = document.getElementById('paid');
+                if (paidField) { paidField.focus(); paidField.select(); }
+            });
+            return false;
+        }
+
+        return true;
+    }
+
+    // تحديث المدفوع تلقائياً لو المورد افتراضي
+    window.syncPaidIfDefault = function() {
+        var supplierSelect = document.getElementById('mySelectEmp');
+        if (!supplierSelect) return;
+        var firstOption = supplierSelect.options[0];
+        if (!firstOption) return;
+        if (supplierSelect.value !== firstOption.value) return;
+
+        var net = parseFloat(document.getElementById('headnet') ? document.getElementById('headnet').value : 0) || 0;
+        var paidField = document.getElementById('paid');
+        var changeField = document.getElementById('change');
+        if (paidField) paidField.value = net.toFixed(2);
+        if (changeField) changeField.value = '0.00';
+    };
+
     document.addEventListener('DOMContentLoaded', function() {
+        // عند تغيير المورد
+        var supplierSelect = document.getElementById('mySelectEmp');
+        if (supplierSelect) {
+            supplierSelect.addEventListener('change', function() {
+                syncPaidIfDefault();
+            });
+        }
+
+        // عند تغيير الصافي (headnet) - لو المورد افتراضي يحدث المدفوع
+        var headnetField = document.getElementById('headnet');
+        if (headnetField) {
+            var observer = new MutationObserver(function() { syncPaidIfDefault(); });
+            observer.observe(headnetField, { attributes: true, attributeFilter: ['value'] });
+            headnetField.addEventListener('input', syncPaidIfDefault);
+            headnetField.addEventListener('change', syncPaidIfDefault);
+        }
+
+        // تشغيل عند التحميل
+        setTimeout(syncPaidIfDefault, 600);
+
         var submitBtns = document.querySelectorAll('#submit, #submit2');
         submitBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function(e) {
                 var form = btn.closest('form');
+                if (!validatePayment(form)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
                 if (form) syncPaymentFields(form);
             });
         });
+
+        // تأمين إضافي: منع submit الفورم نفسه لو لم يمر على validation
+        var form = document.getElementById('myForm2');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validatePayment(form)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
     });
 })();
 </script>

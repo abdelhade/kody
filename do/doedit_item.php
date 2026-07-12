@@ -27,25 +27,32 @@ if (isset($_POST['barcode'])) {
 
 // التحقق من أن الباركود الرئيسي فريد (مع استثناء الصنف الحالي)
 if ($barcode !== '') {
+    // تحقق من myitems (باركود صنف آخر)
     $stmtbc = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? AND id != ? LIMIT 1");
     $stmtbc->bind_param('si', $barcode, $item_id);
     $stmtbc->execute();
     $stmtbc->store_result();
     if ($stmtbc->num_rows > 0) {
         $stmtbc->close();
-        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode&bc=' . urlencode($barcode));
         exit;
     }
     $stmtbc->close();
 
-    // تحقق من باركودات الوحدات التابعة لصنوف أخرى
-    $stmtbc2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? AND item_id != ? LIMIT 1");
+    // تحقق من item_units: باركود موجود في وحدة تابعة لصنف آخر
+    // نستثني الوحدات ذات u_val=1 التابعة لنفس الصنف لأنها قد تحمل نفس باركود الصنف الرئيسي
+    $stmtbc2 = $conn->prepare(
+        "SELECT id FROM item_units 
+         WHERE unit_barcode = ? 
+           AND item_id != ? 
+         LIMIT 1"
+    );
     $stmtbc2->bind_param('si', $barcode, $item_id);
     $stmtbc2->execute();
     $stmtbc2->store_result();
     if ($stmtbc2->num_rows > 0) {
         $stmtbc2->close();
-        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode&bc=' . urlencode($barcode));
         exit;
     }
     $stmtbc2->close();
@@ -54,14 +61,26 @@ if ($barcode !== '') {
 // التحقق من أن باركودات الوحدات فريدة
 if (!empty($_POST['unit_barcode'])) {
     $unitBarcodes = array_filter(array_map('trim', $_POST['unit_barcode']));
-    // تحقق من التكرار داخل النموذج
-    $allBarcodes = array_merge([$barcode], $unitBarcodes);
+
+    // استثناء باركود الوحدة الأولى (u_val=1) لأنه قد يطابق باركود الصنف الرئيسي عمداً
+    $unitBarcodesForCheck = $unitBarcodes;
+    if (isset($_POST['u_val'][0]) && floatval($_POST['u_val'][0]) == 1) {
+        array_shift($unitBarcodesForCheck);
+    }
+
+    // تحقق من التكرار داخل النموذج (بين الوحدات نفسها + الباركود الرئيسي مقابل الوحدات غير الأساسية)
+    $allBarcodes = array_merge([$barcode], array_values($unitBarcodesForCheck));
     if (count($allBarcodes) !== count(array_unique($allBarcodes))) {
-        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
+        header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode&bc=internal');
         exit;
     }
-    // تحقق من عدم الوجود في صنوف أخرى
-    foreach ($unitBarcodes as $ub) {
+
+    // تحقق من عدم الوجود في صنوف أخرى (كل الوحدات بما فيها الأولى)
+    foreach ($unitBarcodes as $idx => $ub) {
+        // تخطي لو الوحدة الأولى بنفس باركود الصنف الرئيسي (مسموح)
+        if ($idx == 0 && $ub === $barcode) {
+            continue;
+        }
         $stmtub = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? AND id != ? LIMIT 1");
         $stmtub->bind_param('si', $ub, $item_id);
         $stmtub->execute();
@@ -77,9 +96,9 @@ if (!empty($_POST['unit_barcode'])) {
         $stmtub2->close();
 
         if ($existsInItems || $existsInUnits) {
-            header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode');
-            exit;
-        }
+                header('Location: ../add_item.php?edit=' . (int)$item_id . '&error=duplicate_barcode&bc=' . urlencode($ub));
+                exit;
+            }
     }
 }
 

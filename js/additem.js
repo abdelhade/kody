@@ -1,4 +1,16 @@
 $(document).ready(function() {
+
+    // ── تعطيل السكرول والكيبورد على جميع حقول الأرقام في جدول الوحدات ──────
+    $(document).on('wheel', '#unitsContainer input[type="number"]', function(e) {
+        e.preventDefault();
+    });
+    $(document).on('keydown', '#unitsContainer input[type="number"]', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            e.preventDefault();
+        }
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Add new row
     $('#addUnit').click(function() {
         // Clone the first row

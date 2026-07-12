@@ -88,24 +88,21 @@
             return;
         }
         
-        // الحصول على جميع الحقول في الصف (من اليمين لليسار)
         const inputs = Array.from(currentRow.querySelectorAll('input:not([readonly]):not([hidden]):not([type="hidden"]), select:not([disabled]), button'));
         const currentIndex = inputs.indexOf(activeElement);
         
         if (currentIndex > 0) {
-            inputs[currentIndex - 1].focus();
-            if (inputs[currentIndex - 1].select) {
-                inputs[currentIndex - 1].select();
-            }
+            const el = inputs[currentIndex - 1];
+            el.focus();
+            if (el.select) setTimeout(() => { try { el.select(); } catch(ex) {} }, 0);
         } else {
-            // إذا وصلنا لأول عنصر، ننتقل للصف السابق
             const prevRow = currentRow.previousElementSibling;
             if (prevRow) {
                 const prevInputs = Array.from(prevRow.querySelectorAll('input:not([readonly]):not([hidden]):not([type="hidden"]), select:not([disabled]), button'));
                 if (prevInputs.length > 0) {
                     const lastInput = prevInputs[prevInputs.length - 1];
                     lastInput.focus();
-                    if (lastInput.select) lastInput.select();
+                    if (lastInput.select) setTimeout(() => { try { lastInput.select(); } catch(ex) {} }, 0);
                 }
             }
         }
@@ -123,23 +120,21 @@
             return;
         }
         
-        // الحصول على جميع الحقول في الصف (من اليمين لليسار)
         const inputs = Array.from(currentRow.querySelectorAll('input:not([readonly]):not([hidden]):not([type="hidden"]), select:not([disabled]), button'));
         const currentIndex = inputs.indexOf(activeElement);
         
         if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
-            inputs[currentIndex + 1].focus();
-            if (inputs[currentIndex + 1].select) {
-                inputs[currentIndex + 1].select();
-            }
+            const el = inputs[currentIndex + 1];
+            el.focus();
+            if (el.select) setTimeout(() => { try { el.select(); } catch(ex) {} }, 0);
         } else {
-            // إذا وصلنا لآخر عنصر، ننتقل للصف التالي
             const nextRow = currentRow.nextElementSibling;
             if (nextRow) {
                 const nextInputs = Array.from(nextRow.querySelectorAll('input:not([readonly]):not([hidden]):not([type="hidden"]), select:not([disabled]), button'));
                 if (nextInputs.length > 0) {
-                    nextInputs[0].focus();
-                    if (nextInputs[0].select) nextInputs[0].select();
+                    const el = nextInputs[0];
+                    el.focus();
+                    if (el.select) setTimeout(() => { try { el.select(); } catch(ex) {} }, 0);
                 }
             }
         }
@@ -153,28 +148,52 @@
             const element = navigableElements[index];
             element.focus();
             
-            // تحديد النص في حقول الإدخال
-            if (element.tagName === 'INPUT' && element.type === 'text' || element.type === 'number') {
-                element.select();
+            // تحديد النص في حقول الإدخال - بـ setTimeout لتجنب الـ loop
+            if (element.tagName === 'INPUT' && (element.type === 'text' || element.type === 'number')) {
+                setTimeout(() => { try { element.select(); } catch(ex) {} }, 0);
             }
         }
     }
     
+    let _isHandling = false;
+
     /**
      * معالج الأحداث الرئيسي للكيبورد
      */
     function handleKeyDown(e) {
+        // منع الـ recursive calls
+        if (_isHandling) return;
+
         const activeElement = document.activeElement;
         const tagName = activeElement.tagName;
         
-        // تجاهل إذا كان في textarea أو في وضع التعديل
-        if (tagName === 'TEXTAREA') {
-            return;
-        }
+        // تجاهل إذا كان في textarea
+        if (tagName === 'TEXTAREA') return;
+        
+        // تجاهل إذا كان الـ modal مفتوح
+        if (document.querySelector('.modal.show') || document.querySelector('.modal[style*="display: block"]')) return;
+
+        // تجاهل الـ simulated events من Bootstrap
+        if (e.originalEvent === undefined && e.isTrigger) return;
+
+        _isHandling = true;
+        try {
         
         // معالجة الأسهم
         switch(e.key) {
+            case 'ArrowDown':
+                // منع تغيير قيمة حقول الأرقام في صفوف الفاتورة وجدول الوحدات
+                if (activeElement.type === 'number' && (activeElement.closest('#itmrow') || activeElement.closest('#unitsContainer'))) {
+                    e.preventDefault();
+                }
+                break;
+
             case 'ArrowUp':
+                // منع تغيير قيمة حقول الأرقام في صفوف الفاتورة وجدول الوحدات
+                if (activeElement.type === 'number' && (activeElement.closest('#itmrow') || activeElement.closest('#unitsContainer'))) {
+                    e.preventDefault();
+                    break;
+                }
                 e.preventDefault();
                 navigateUp();
                 break;
@@ -316,6 +335,9 @@
                 e.stopPropagation();
                 return false;
             }
+        }
+        } finally {
+            _isHandling = false;
         }
     }
     

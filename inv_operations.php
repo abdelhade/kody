@@ -156,6 +156,7 @@
                 <th>سعر الشراء الاخير</th>
                 <th>سعر الشراء المتوسط</th>
                 <th>سعر البيع <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
+                <th>الكمية</th>
                 <th>العدد المطلوب طباعته</th>
             </tr>
         </thead>
@@ -175,6 +176,7 @@
                 <th><input readonly type="text" value="<?= (float)$rowop2['last_price'] ?>" name="last_price[]" class="form-control form-control-sm border-0 bg-transparent base-last-price"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['cost_price'] ?>" name="cost_price[]" class="form-control form-control-sm border-0 bg-transparent base-cost-price"></th>
                 <th><input type="number" step="0.01" value="<?= (float)$rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price"></th>
+                <th><input readonly type="text" value="<?= (float)$rowop2['itmqty'] ?>" class="form-control form-control-sm border-0 bg-transparent text-center"></th>
                 <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]" class="form-control form-control-sm"></th>
             </tr>
             <?php endforeach; ?>
