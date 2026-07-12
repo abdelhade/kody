@@ -275,6 +275,18 @@ document.getElementById('showKeyboardHelp')?.addEventListener('click', function(
 // تم نقل معالج Alt+H إلى keyboard_navigation.js
 </script>
 
+<style>
+/* تعطيل أسهم spinner على حقول الأرقام في صفوف الفاتورة */
+#itmrow input[type="number"]::-webkit-inner-spin-button,
+#itmrow input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#itmrow input[type="number"] {
+    -moz-appearance: textfield;
+}
+</style>
+
 <?php 
 include('includes/footer.php');
 

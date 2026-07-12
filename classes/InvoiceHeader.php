@@ -65,7 +65,9 @@ class InvoiceHeader extends InvoiceElementBase
                 <div class="tool">
                     <label for="">
                         <?php echo $clientLabel; ?>
-                        <a class="btn bg-lime-200 btn-sm" href="<?php echo $addAccountLink; ?>" target="_blank">+</a>
+                        <button type="button" class="btn bg-lime-200 btn-sm"
+                            data-toggle="modal"
+                            data-target="<?php echo (in_array((int)$this->invoiceType, [4,10,11,12])) ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
                     </label>
                     <div class="tooltext">إضافة جديد</div>
                 </div>
@@ -118,6 +120,142 @@ class InvoiceHeader extends InvoiceElementBase
                        value="<?php echo $this->getProSerial(); ?>">
             </div>
         </div>
+
+        <!-- Modal إضافة مورد -->
+        <div class="modal fade" id="addSupplierInlineModal" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-success text-white py-2">
+                <h5 class="modal-title mb-0"><i class="fas fa-user-plus ml-2"></i> إضافة مورد جديد</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+              </div>
+              <div class="modal-body">
+                <div id="addSupplierInlineMsg"></div>
+                  <input type="hidden" data-field="parent_code" value="211">
+                  <div class="form-group">
+                    <label class="small">اسم المورد <span class="text-danger">*</span></label>
+                    <input type="text" data-field="aname" class="form-control form-control-sm" placeholder="اسم المورد">
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label class="small">رقم الهاتف</label>
+                      <input type="text" data-field="phone" class="form-control form-control-sm" placeholder="اختياري">
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label class="small">العنوان</label>
+                      <input type="text" data-field="address" class="form-control form-control-sm" placeholder="اختياري">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="small">ملاحظات</label>
+                    <input type="text" data-field="info" class="form-control form-control-sm" placeholder="اختياري">
+                  </div>
+              </div>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success btn-sm" id="saveSupplierInlineBtn">
+                  <i class="fas fa-save ml-1"></i> حفظ المورد
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal إضافة عميل -->
+        <div class="modal fade" id="addClientInlineModal" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title mb-0"><i class="fas fa-user-plus ml-2"></i> إضافة عميل جديد</h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+              </div>
+              <div class="modal-body">
+                <div id="addClientInlineMsg"></div>
+                  <input type="hidden" data-field="parent_code" value="122">
+                  <div class="form-group">
+                    <label class="small">اسم العميل <span class="text-danger">*</span></label>
+                    <input type="text" data-field="aname" class="form-control form-control-sm" placeholder="اسم العميل">
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label class="small">رقم الهاتف</label>
+                      <input type="text" data-field="phone" class="form-control form-control-sm" placeholder="اختياري">
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label class="small">العنوان</label>
+                      <input type="text" data-field="address" class="form-control form-control-sm" placeholder="اختياري">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="small">ملاحظات</label>
+                    <input type="text" data-field="info" class="form-control form-control-sm" placeholder="اختياري">
+                  </div>
+              </div>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary btn-sm" id="saveClientInlineBtn">
+                  <i class="fas fa-save ml-1"></i> حفظ العميل
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        $(document).ready(function() {
+            function saveAccountInline(formSel, btnId, msgId, modalId) {
+                $('#' + btnId).off('click').on('click', function() {
+                    const $btn = $(this);
+                    // نجيب الـ aname من الـ modal مباشرة (مش من form عشان nested form ممنوعة)
+                    const $modal = $(modalId);
+                    const aname = $modal.find('[data-field="aname"]').val();
+                    if (!aname || !aname.trim()) {
+                        $('#' + msgId).html('<div class="alert alert-danger py-1 mb-1">الاسم مطلوب</div>');
+                        return;
+                    }
+                    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحفظ...');
+                    
+                    // بناء البيانات يدوياً بدون form
+                    const formData = new FormData();
+                    $modal.find('[data-field]').each(function() {
+                        formData.append($(this).data('field'), $(this).val() || '');
+                    });
+
+                    fetch('ajax/modal_add_account.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            $('#' + msgId).html('<div class="alert alert-success py-1 mb-1">✓ تم الحفظ: <strong>' + res.aname + '</strong></div>');
+                            // إضافة الخيار لقائمة المورد/العميل واختياره
+                            const $sel = $('#mySelectEmp');
+                            $sel.append(new Option(res.aname, res.id, true, true)).trigger('change');
+                            // مسح الحقول
+                            $modal.find('[data-field]').not('[type="hidden"]').val('');
+                            setTimeout(() => $(modalId).modal('hide'), 700);
+                        } else {
+                            $('#' + msgId).html('<div class="alert alert-danger py-1 mb-1">' + (res.error || 'حدث خطأ') + '</div>');
+                        }
+                    })
+                    .catch(() => {
+                        $('#' + msgId).html('<div class="alert alert-danger py-1 mb-1">خطأ في الاتصال</div>');
+                    })
+                    .finally(() => {
+                        $btn.prop('disabled', false).html('<i class="fas fa-save ml-1"></i> حفظ');
+                    });
+                });
+            }
+
+            saveAccountInline(null, 'saveSupplierInlineBtn', 'addSupplierInlineMsg', '#addSupplierInlineModal');
+            saveAccountInline(null, 'saveClientInlineBtn',   'addClientInlineMsg',   '#addClientInlineModal');
+
+            $('#addSupplierInlineModal, #addClientInlineModal').on('hidden.bs.modal', function() {
+                $(this).find('[id$="Msg"]').html('');
+            });
+        });
+        </script>
         <?php
         return ob_get_clean();
     }

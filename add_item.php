@@ -388,5 +388,16 @@ $(document).ready(function() {
 });
 </script>
 
+<style>
+/* تعطيل أسهم spinner على جميع حقول الأرقام في جدول الوحدات */
+#unitsContainer input[type="number"]::-webkit-inner-spin-button,
+#unitsContainer input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#unitsContainer input[type="number"] {
+    -moz-appearance: textfield;
+}
+</style>
 <script src="js/additem.js"></script>
 <?php include('includes/footer.php') ?>
