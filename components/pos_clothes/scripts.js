@@ -365,7 +365,7 @@ function displayItems(items) {
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
-                        <div class="item-balance text-muted" style="font-size: 0.7rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
+                        <div class="item-balance text-muted" style="font-size: 0.85rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
                     </div>
                 </div>
             </div>
@@ -424,24 +424,24 @@ function updateOrderDisplay() {
         html += `
             <div class="order-item p-2 mb-2" style="border-color: ${currentStyle.orderItemBorder};">
                 <div class="flex-grow-1">
-                    <div class="fw-bold text-dark" style="font-size: 0.95rem;">${item.name}</div>
+                    <div class="fw-bold text-dark" style="font-size: 1.8rem;">${item.name}</div>
                     <div class="d-flex align-items-center gap-2 mt-2">
-                        <div class="fw-bold" style="font-size: 0.9rem; color: var(--primary-navy);">
-                            ${item.price.toFixed(2)} <span class="text-muted mx-1">×</span> <span style="font-size: 1rem; color: var(--primary-violet);">${item.quantity}</span>
+                        <div class="fw-bold" style="font-size: 1.5rem; color: var(--primary-navy);">
+                            ${item.price.toFixed(2)} <span class="text-muted mx-1">×</span> <span style="font-size: 1.5rem; color: var(--primary-violet);">${item.quantity}</span>
                         </div>
-                        <span class="badge bg-light text-dark border ms-2" style="font-size: 0.7rem;">الرصيد: ${item.balance}</span>
+                        <span class="badge bg-light text-dark border ms-2" style="font-size: 1.5rem; padding: 0.35rem 0.6rem;">الرصيد: ${item.balance}</span>
                     </div>
                 </div>
                 <div class="text-end d-flex flex-column align-items-end justify-content-between h-100">
-                    <div class="fw-bold mb-2" style="color: var(--primary-violet); font-size: 1.1rem;">${subtotal.toFixed(2)}</div>
+                    <div class="fw-bold mb-2" style="color: var(--primary-violet); font-size: 1.4rem;">${subtotal.toFixed(2)}</div>
                     <div class="btn-group btn-group-sm mt-1">
-                        <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger" onclick="removeItem(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-danger" onclick="removeItem(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
