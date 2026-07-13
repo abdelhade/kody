@@ -667,12 +667,63 @@ function updateFullscreenIcon() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // تفعيل select2 للعملاء والموظفين لجعلهم قابلين للبحث
+    // تفعيل select2 للموظفين وغيرهم
     if (typeof $.fn.select2 !== 'undefined') {
         $('.select2-select').select2({
             theme: 'bootstrap4',
             width: '100%',
             dir: 'rtl'
+        });
+
+        // تفعيل select2 للعملاء مع دعم البحث بالاسم أو رقم الهاتف
+        function clientMatcher(params, data) {
+            if (!params.term || params.term.trim() === '') {
+                return data;
+            }
+            if (!data) {
+                return null;
+            }
+            const term = params.term.trim().toLowerCase();
+            const name = (data.text || '').toLowerCase();
+            
+            let phone = '';
+            if (data.element) {
+                phone = ($(data.element).data('phone') || '').toString().toLowerCase();
+            }
+
+            if (name.indexOf(term) > -1 || phone.indexOf(term) > -1) {
+                return data;
+            }
+            
+            // دعم المجموعات (optgroups) في حال وجودها
+            if (data.children && data.children.length > 0) {
+                const matchedChildren = [];
+                for (let i = 0; i < data.children.length; i++) {
+                    const matchedChild = clientMatcher(params, data.children[i]);
+                    if (matchedChild !== null) {
+                        matchedChildren.push(matchedChild);
+                    }
+                }
+                if (matchedChildren.length > 0) {
+                    const clonedData = $.extend({}, data, true);
+                    clonedData.children = matchedChildren;
+                    return clonedData;
+                }
+            }
+            return null;
+        }
+
+        $('#clientSelect').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            dir: 'rtl',
+            matcher: clientMatcher,
+            placeholder: 'ابحث بالاسم أو الهاتف...',
+            allowClear: false,
+            language: {
+                noResults: function() { return 'لا يوجد عملاء'; },
+                searching: function() { return 'جاري البحث...'; }
+            }
         });
     }
 
@@ -760,9 +811,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         showConfirmButton: false
                     });
 
-                    // إضافة العميل الجديد لقائمة الاختيار وتحديده
-                    const newOption = new Option(response.name, response.id, true, true);
-                    $('#clientSelect').append(newOption).trigger('change');
+                    // إضافة العميل الجديد لقائمة الاختيار وتحديده مع بيانات الهاتف للبحث
+                    const displayPhone = response.phone ? response.phone : '';
+                    const displayText = displayPhone ? response.name + ' - ' + displayPhone : response.name;
+                    const $newOption = $('<option>', {
+                        value: response.id,
+                        text: displayText,
+                        selected: true
+                    }).attr('data-phone', displayPhone);
+                    
+                    $('#clientSelect').append($newOption).trigger('change');
 
                     // إغلاق المودال وتصفير الفورم
                     $('#addClientModal').modal('hide');

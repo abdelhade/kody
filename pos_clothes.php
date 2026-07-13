@@ -18,12 +18,29 @@ if(isset($_SESSION['success_message'])){
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام نقاط البيع - الملابس</title>
     
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            var formData = new FormData();
+            formData.append('error', message);
+            formData.append('url', source);
+            formData.append('line', lineno);
+            formData.append('col', colno);
+            formData.append('stack', error ? error.stack : '');
+            navigator.sendBeacon('ajax/save_js_error.php', formData);
+            return false;
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            var formData = new FormData();
+            formData.append('error', 'Unhandled Promise Rejection: ' + event.reason);
+            navigator.sendBeacon('ajax/save_js_error.php', formData);
+        });
+    </script>
     <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
     <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
     <link href="plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet">
     <link href="plugins/select2/css/select2.min.css" rel="stylesheet">
     <link href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css" rel="stylesheet">
-    <link href="components/pos_clothes/styles.css" rel="stylesheet">
+    <link href="components/pos_clothes/styles.css?v=<?= time() ?>" rel="stylesheet">
 </head>
 
 <body>
@@ -63,7 +80,7 @@ if(isset($_SESSION['success_message'])){
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="plugins/select2/js/select2.full.min.js"></script>
-    <script src="components/pos_clothes/scripts.js"></script>
+    <script src="components/pos_clothes/scripts.js?v=<?= time() ?>"></script>
 </body>
 
 </html>

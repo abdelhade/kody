@@ -90,9 +90,9 @@ if (!empty($rowstg['def_pos_store'])) {
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                    <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-select" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
+                    <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-client" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
-                        $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%' AND is_basic = 0 AND isdeleted = 0;");
+                        $resclient = $conn->query("SELECT id, aname, phone FROM `acc_head` WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
                         $first_client = true;
                         while ($rowclient = $resclient->fetch_assoc()) { 
                             $selected = '';
@@ -102,8 +102,10 @@ if (!empty($rowstg['def_pos_store'])) {
                                 $selected = "selected";
                             }
                             $first_client = false;
+                            $phone = htmlspecialchars($rowclient['phone'] ?? '');
+                            $displayName = htmlspecialchars($rowclient['aname']);
                         ?>
-                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-phone="<?= $phone ?>"><?= $displayName ?><?= $phone ? ' - ' . $phone : '' ?></option>
                         <?php } ?>
                     </select>
                 </div>
