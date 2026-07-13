@@ -761,6 +761,14 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#paymentModal').on('show.bs.modal', function() {
         updateTotals();
     });
+
+    // تحديد كل المحتوى عند الضغط على أي input داخل مودال الدفع
+    $('#paymentModal').on('shown.bs.modal', function() {
+        $('#paymentModal input[type="number"], #paymentModal input[type="text"]').off('click.selectAll focus.selectAll').on('click.selectAll focus.selectAll', function() {
+            const el = this;
+            setTimeout(function() { el.select(); }, 0);
+        });
+    });
     
     // تحديث أيقونة الشاشة الكاملة
     document.addEventListener('fullscreenchange', updateFullscreenIcon);

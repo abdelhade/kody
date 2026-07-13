@@ -164,11 +164,23 @@
         });
     }
 
-    // ربط الحدث عند تغيير طريقة الدفع
     document.addEventListener('DOMContentLoaded', function() {
+        // ربط الحدث عند تغيير طريقة الدفع
         $('input[name="payment_method"]').on('change', updatePaymentOptions);
         
         // تشغيل مبدئي لتعبئة الخيارات
         updatePaymentOptions();
+    });
+
+    // تحديد كل المحتوى عند الضغط أو التركيز على أي input داخل المودال
+    document.addEventListener('focusin', function(e) {
+        const target = e.target;
+        if (
+            target.closest('#paymentModal') &&
+            target.tagName === 'INPUT' &&
+            (target.type === 'number' || target.type === 'text')
+        ) {
+            setTimeout(function() { target.select(); }, 0);
+        }
     });
 </script>
