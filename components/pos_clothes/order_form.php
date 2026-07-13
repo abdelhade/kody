@@ -27,8 +27,8 @@ if (!empty($rowstg['def_pos_store'])) {
             <input type="hidden" name="pro_id" value="1">
             
             <div class="mb-2">
-                <div class="input-group input-group-sm" style="border: 2px solid var(--primary-violet); border-radius: 4px; overflow: hidden;">
-                    <span class="input-group-text fw-bold" style="background-color: var(--primary-violet); color: white; border: none;">
+                <div class="input-group input-group-sm barcode-wrapper" style="border: 2px solid var(--primary-violet); border-radius: 4px; overflow: hidden;">
+                    <span class="input-group-text fw-bold barcode-header-span" style="background-color: var(--primary-violet); color: white; border: none;">
                         <i class="fas fa-barcode me-1"></i>باركود
                     </span>
                     <input type="text" class="frst form-control" id="barcodeSearch" placeholder="امسح أو اكتب الباركود..." autocomplete="off" style="border: none;">
@@ -141,7 +141,7 @@ if (!empty($rowstg['def_pos_store'])) {
             </div>
 
             <div class="d-grid gap-1">
-                <button type="button" class="btn btn-violet btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                <button type="button" id="payBtn" class="btn btn-violet btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
                     <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
                     <div style="font-size: 0.75rem;" id="total_display_btn">0.00 ج.م</div>
                 </button>
