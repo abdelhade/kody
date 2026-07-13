@@ -127,25 +127,25 @@ if (!empty($rowstg['def_pos_store'])) {
 
             <div class="row mb-2">
                 <div class="col-6 text-center">
-                    <small class="text-muted" style="font-size: 0.7rem;">الإجمالي</small>
-                    <h6 class="mb-0" style="color: var(--primary-navy); font-size: 1rem;" id="total_display">0.00 ج.م</h6>
+                    <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الإجمالي</small>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-navy); font-size: 1.35rem; font-weight: 800;" id="total_display">0.00 ج.م</h6>
                     <input type="hidden" name="headtotal" id="total" value="0.00">
                     <input name="headplus" type="hidden" value="0">
                 </div>
                 <div class="col-6 text-center">
-                    <small class="text-muted" style="font-size: 0.7rem;">الصافي</small>
-                    <h6 class="mb-0" style="color: var(--primary-violet); font-size: 1rem;" id="net_display">0.00 ج.م</h6>
+                    <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الصافي</small>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-violet); font-size: 1.35rem; font-weight: 800;" id="net_display">0.00 ج.م</h6>
                     <input type="hidden" name="headnet" id="net_val" value="0">
                     <input type="hidden" name="headdisc" id="discount" value="0">
                 </div>
             </div>
 
             <div class="d-grid gap-1">
-                <button type="button" id="payBtn" class="btn btn-violet btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                <button type="button" id="payBtn" class="btn btn-violet py-2" data-bs-toggle="modal" data-bs-target="#paymentModal" style="font-size: 1.15rem; font-weight: bold;">
                     <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
-                    <div style="font-size: 0.75rem;" id="total_display_btn">0.00 ج.م</div>
+                    <div style="font-size: 0.95rem; font-weight: bold;" id="total_display_btn">0.00 ج.م</div>
                 </button>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearItems();" style="font-size: 0.75rem; padding: 0.25rem;">
+                <button type="button" class="btn btn-outline-danger py-2" onclick="clearItems();" style="font-size: 0.95rem; font-weight: bold;">
                     <i class="fas fa-eraser me-1"></i>مسح الكل
                 </button>
             </div>
