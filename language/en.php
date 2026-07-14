@@ -320,6 +320,7 @@ $lang_groups = "Groups";
 $lang_categories = "Categories";
 $lang_item_price = "Item Price";
 $lang_opening_balances_stores = "Opening Store Balances";
+$lang_inventory_audit = "Inventory Audit";
 
 // POS
 $lang_pos = "Point of Sale";
