@@ -11,6 +11,7 @@ ob_end_clean();
 header('Content-Type: application/json; charset=utf-8');
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : 0;
 
 try {
     if (!$conn) {
@@ -20,13 +21,16 @@ try {
     $store_id = isset($_GET['store_id']) ? intval($_GET['store_id']) : 0;
     $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id AND isdeleted = 0), 0)" : "0";
 
+    $category_cond = $category_id > 0 ? " AND group1 = $category_id" : "";
+
     if (empty($search)) {
-        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT 200";
+        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 $category_cond ORDER BY id DESC LIMIT 200";
     } else {
         $s = $conn->real_escape_string($search);
         $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems 
                   WHERE (iname LIKE '%$s%' OR barcode LIKE '%$s%' OR id = '$s') 
                   AND isdeleted = 0 
+                  $category_cond
                   ORDER BY iname LIMIT 100";
     }
     $result = $conn->query($query);
