@@ -228,8 +228,16 @@ function loadAllItems() {
 function searchItems() {
     const searchTerm = document.getElementById('searchItems').value.trim().toLowerCase();
     
+    // الحصول على معرف المجموعة النشطة
+    const activeCategoryCard = document.querySelector('.category-card.active');
+    const categoryId = activeCategoryCard ? activeCategoryCard.getAttribute('data-category') : null;
+    
     if (searchTerm === '') {
-        loadAllItems();
+        if (categoryId) {
+            loadCategoryItems(categoryId);
+        } else {
+            loadAllItems();
+        }
         return;
     }
     
@@ -255,7 +263,7 @@ function searchItems() {
         $.ajax({
             url: 'ajax/search_items.php',
             type: 'GET',
-            data: { search: searchTerm, store_id: storeId },
+            data: { search: searchTerm, store_id: storeId, category_id: categoryId || 0 },
             dataType: 'json',
             success: function(data) {
                 if (data.success && data.items.length > 0) {
@@ -300,6 +308,12 @@ function loadCategoryItems(categoryId) {
     });
     
     document.querySelector(`[data-category="${categoryId}"]`).classList.add('active');
+    
+    // تفريغ مربع البحث لتفادي اللبس عند تغيير المجموعة
+    const searchInput = document.getElementById('searchItems');
+    if (searchInput) {
+        searchInput.value = '';
+    }
     
     document.getElementById('itemsGrid').innerHTML = `
         <div class="col-12 text-center py-5">
