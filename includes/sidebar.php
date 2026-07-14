@@ -271,6 +271,12 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="inventory_audit.php" class="nav-link">
+                  <i class="nav-icon fas fa-clipboard-check"></i>
+                  <p><?= $lang_inventory_audit ?></p>
+                </a>
+              </li>
 
 
             </ul>
