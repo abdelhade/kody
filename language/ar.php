@@ -87,6 +87,7 @@ $lang_groups = "المجموعات";
 $lang_categories = "التصنيفات";
 $lang_item_price = "عرض سعر الصنف";
 $lang_opening_balances_stores = "ضبط الارصدة الافتتاحية للمخازن";
+$lang_inventory_audit = "جرد المخزون";
 
 // POS
 $lang_pos = "نقاط البيع";

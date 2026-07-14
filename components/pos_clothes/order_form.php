@@ -27,8 +27,8 @@ if (!empty($rowstg['def_pos_store'])) {
             <input type="hidden" name="pro_id" value="1">
             
             <div class="mb-2">
-                <div class="input-group input-group-sm" style="border: 2px solid var(--primary-violet); border-radius: 4px; overflow: hidden;">
-                    <span class="input-group-text fw-bold" style="background-color: var(--primary-violet); color: white; border: none;">
+                <div class="input-group input-group-sm barcode-wrapper" style="border: 2px solid var(--primary-violet); border-radius: 4px; overflow: hidden;">
+                    <span class="input-group-text fw-bold barcode-header-span" style="background-color: var(--primary-violet); color: white; border: none;">
                         <i class="fas fa-barcode me-1"></i>باركود
                     </span>
                     <input type="text" class="frst form-control" id="barcodeSearch" placeholder="امسح أو اكتب الباركود..." autocomplete="off" style="border: none;">
@@ -90,9 +90,9 @@ if (!empty($rowstg['def_pos_store'])) {
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                    <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-select" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
+                    <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-client" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
-                        $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%' AND is_basic = 0 AND isdeleted = 0;");
+                        $resclient = $conn->query("SELECT id, aname, phone FROM `acc_head` WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
                         $first_client = true;
                         while ($rowclient = $resclient->fetch_assoc()) { 
                             $selected = '';
@@ -102,8 +102,10 @@ if (!empty($rowstg['def_pos_store'])) {
                                 $selected = "selected";
                             }
                             $first_client = false;
+                            $phone = htmlspecialchars($rowclient['phone'] ?? '');
+                            $displayName = htmlspecialchars($rowclient['aname']);
                         ?>
-                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-phone="<?= $phone ?>"><?= $displayName ?><?= $phone ? ' - ' . $phone : '' ?></option>
                         <?php } ?>
                     </select>
                 </div>
@@ -127,25 +129,25 @@ if (!empty($rowstg['def_pos_store'])) {
 
             <div class="row mb-2">
                 <div class="col-6 text-center">
-                    <small class="text-muted" style="font-size: 0.7rem;">الإجمالي</small>
-                    <h6 class="mb-0" style="color: var(--primary-navy); font-size: 1rem;" id="total_display">0.00 ج.م</h6>
+                    <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الإجمالي</small>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-navy); font-size: 1.35rem; font-weight: 800;" id="total_display">0.00 ج.م</h6>
                     <input type="hidden" name="headtotal" id="total" value="0.00">
                     <input name="headplus" type="hidden" value="0">
                 </div>
                 <div class="col-6 text-center">
-                    <small class="text-muted" style="font-size: 0.7rem;">الصافي</small>
-                    <h6 class="mb-0" style="color: var(--primary-violet); font-size: 1rem;" id="net_display">0.00 ج.م</h6>
+                    <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الصافي</small>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-violet); font-size: 1.35rem; font-weight: 800;" id="net_display">0.00 ج.م</h6>
                     <input type="hidden" name="headnet" id="net_val" value="0">
                     <input type="hidden" name="headdisc" id="discount" value="0">
                 </div>
             </div>
 
             <div class="d-grid gap-1">
-                <button type="button" class="btn btn-violet btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                <button type="button" id="payBtn" class="btn btn-violet py-2" data-bs-toggle="modal" data-bs-target="#paymentModal" style="font-size: 1.15rem; font-weight: bold;">
                     <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
-                    <div style="font-size: 0.75rem;" id="total_display_btn">0.00 ج.م</div>
+                    <div style="font-size: 0.95rem; font-weight: bold;" id="total_display_btn">0.00 ج.م</div>
                 </button>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearItems();" style="font-size: 0.75rem; padding: 0.25rem;">
+                <button type="button" class="btn btn-outline-danger py-2" onclick="clearItems();" style="font-size: 0.95rem; font-weight: bold;">
                     <i class="fas fa-eraser me-1"></i>مسح الكل
                 </button>
             </div>

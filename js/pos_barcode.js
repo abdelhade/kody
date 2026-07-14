@@ -13,11 +13,35 @@ $(document).ready(function() {
     }
     
     // ========================================
-    // Category Filter
+    // Category Filter & Search Logic
     // ========================================
+    function filterItems() {
+        const activeCategory = ($('.category-btn.active').data('category') || 'all').toString();
+        const searchText = $('#itemFilterInput').val().toLowerCase().trim();
+        
+        $('.item-wrapper').each(function() {
+            const $this = $(this);
+            const itemCategory = ($this.attr('data-category') || $this.data('category') || '').toString();
+            const $card = $this.find('.item-card');
+            const itemName = ($card.data('item-name') || '').toString().toLowerCase();
+            const itemBarcode = ($card.data('item-barcode') || '').toString().toLowerCase();
+            
+            // 1. Check Category Match (use string conversion for type-safety)
+            const categoryMatch = (activeCategory === 'all' || itemCategory === activeCategory);
+            
+            // 2. Check Search Match
+            const searchMatch = (searchText === '' || itemName.includes(searchText) || itemBarcode.includes(searchText));
+            
+            if (categoryMatch && searchMatch) {
+                $this.removeClass('hidden');
+            } else {
+                $this.addClass('hidden');
+            }
+        });
+    }
+
     $('.category-btn').on('click', function() {
         const $this = $(this);
-        const categoryId = $this.data('category');
         
         // تحديث الأزرار
         $('.category-btn').removeClass('active btn-primary').addClass('btn-outline-primary');
@@ -27,13 +51,7 @@ $(document).ready(function() {
         $('#itemFilterInput').val('');
         
         // فلترة الأصناف
-        const $items = $('.item-wrapper');
-        if (categoryId === 'all') {
-            $items.removeClass('hidden');
-        } else {
-            $items.addClass('hidden');
-            $(`.item-wrapper[data-category="${categoryId}"]`).removeClass('hidden');
-        }
+        filterItems();
     });
 
     // ========================================
@@ -73,36 +91,21 @@ $(document).ready(function() {
         clearTimeout(searchTimeout);
         const searchText = $(this).val().toLowerCase().trim();
         
-        // لو فاضي، اعرض كل الأصناف فوراً
+        // لو فاضي، فلتر الأصناف حسب المجموعة المختارة فوراً
         if (searchText === '') {
-            $('.item-wrapper').removeClass('hidden');
+            filterItems();
             return;
         }
         
         // انتظر 200ms قبل البحث (debouncing)
         searchTimeout = setTimeout(function() {
-            const $items = $('.item-wrapper');
-            
-            // استخدم CSS classes للأداء الأفضل
-            $items.each(function() {
-                const $this = $(this);
-                const $card = $this.find('.item-card');
-                const itemName = ($card.data('item-name') || '').toString().toLowerCase();
-                const itemBarcode = ($card.data('item-barcode') || '').toString().toLowerCase();
-                
-                // اعرض أو اخفي حسب النتيجة
-                if (itemName.includes(searchText) || itemBarcode.includes(searchText)) {
-                    $this.removeClass('hidden');
-                } else {
-                    $this.addClass('hidden');
-                }
-            });
+            filterItems();
         }, 200);
     });
     
     $('#clearFilter').click(function() {
         $('#itemFilterInput').val('');
-        $('.item-wrapper').removeClass('hidden');
+        filterItems();
     });
 
     // ========================================

@@ -4,6 +4,128 @@ let searchTimeout;
 let barcodeTimeout;
 let isSubmitting = false;
 
+// إعدادات الستايل لكل تاب
+const TAB_STYLES = {
+    '1': { // بيع
+        name: 'بيع',
+        headerBg: 'linear-gradient(135deg, var(--primary-navy) 0%, #2A3356 100%)',
+        barcodeBorder: 'var(--primary-violet)',
+        barcodeHeaderBg: 'var(--primary-violet)',
+        payBtnBg: 'linear-gradient(135deg, #635BFF 0%, #4A41E1 100%)',
+        payBtnShadow: '0 4px 12px rgba(99, 91, 255, 0.3)',
+        payBtnHoverBg: 'linear-gradient(135deg, #4A41E1 0%, #3A31D1 100%)',
+        orderItemBorder: 'rgba(99, 91, 255, 0.2)',
+        footerBg: 'rgba(255,255,255,0.95)',
+        totalColor: 'var(--primary-navy)',
+        netColor: 'var(--primary-violet)',
+        headerIcon: 'fa-shopping-cart',
+        headerText: 'معلومات الطلب',
+    },
+    '2': { // حجز
+        name: 'حجز',
+        headerBg: 'linear-gradient(135deg, #1a6b3a 0%, #145c31 100%)',
+        barcodeBorder: '#198754',
+        barcodeHeaderBg: '#198754',
+        payBtnBg: 'linear-gradient(135deg, #198754 0%, #145c31 100%)',
+        payBtnShadow: '0 4px 12px rgba(25, 135, 84, 0.3)',
+        payBtnHoverBg: 'linear-gradient(135deg, #145c31 0%, #0f4a27 100%)',
+        orderItemBorder: 'rgba(25, 135, 84, 0.2)',
+        footerBg: 'rgba(240,255,248,0.97)',
+        totalColor: '#145c31',
+        netColor: '#198754',
+        headerIcon: 'fa-bookmark',
+        headerText: 'معلومات الحجز',
+    },
+    '3': { // توصيل
+        name: 'توصيل',
+        headerBg: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%)',
+        barcodeBorder: '#0d6efd',
+        barcodeHeaderBg: '#0d6efd',
+        payBtnBg: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%)',
+        payBtnShadow: '0 4px 12px rgba(13, 110, 253, 0.3)',
+        payBtnHoverBg: 'linear-gradient(135deg, #0a58ca 0%, #084298 100%)',
+        orderItemBorder: 'rgba(13, 110, 253, 0.2)',
+        footerBg: 'rgba(240,245,255,0.97)',
+        totalColor: '#0a58ca',
+        netColor: '#0d6efd',
+        headerIcon: 'fa-truck',
+        headerText: 'معلومات التوصيل',
+    },
+    '4': { // مردود
+        name: 'مردود',
+        headerBg: 'linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)',
+        barcodeBorder: '#dc3545',
+        barcodeHeaderBg: '#dc3545',
+        payBtnBg: 'linear-gradient(135deg, #dc3545 0%, #b91c1c 100%)',
+        payBtnShadow: '0 4px 12px rgba(220, 53, 69, 0.3)',
+        payBtnHoverBg: 'linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)',
+        orderItemBorder: 'rgba(220, 53, 69, 0.2)',
+        footerBg: 'rgba(255,242,242,0.97)',
+        totalColor: '#991b1b',
+        netColor: '#dc3545',
+        headerIcon: 'fa-undo',
+        headerText: 'معلومات المردود',
+    }
+};
+
+function applyTabStyle(tabVal) {
+    const style = TAB_STYLES[tabVal] || TAB_STYLES['1'];
+
+    // 1. تغيير header الطلب (اللون والأيقونة والنص)
+    const orderHeader = document.querySelector('.order-header');
+    if (orderHeader) {
+        orderHeader.style.background = style.headerBg;
+        const icon = orderHeader.querySelector('i');
+        if (icon) icon.className = `fas ${style.headerIcon} me-2`;
+        const h6 = orderHeader.querySelector('h6');
+        if (h6) {
+            // النص الموجود بعد الأيقونة مباشرة (TextNode)
+            const textNodes = Array.from(h6.childNodes).filter(n => n.nodeType === 3);
+            if (textNodes.length > 0) {
+                textNodes[0].textContent = style.headerText;
+            } else {
+                // fallback: استبدال النص بالكامل مع الحفاظ على الأيقونة
+                h6.innerHTML = `<i class="fas ${style.headerIcon} me-2"></i>${style.headerText}`;
+            }
+        }
+    }
+
+    // 2. تغيير إطار ولون حقل الباركود
+    const barcodeWrapper = document.querySelector('.barcode-wrapper');
+    if (barcodeWrapper) {
+        barcodeWrapper.style.borderColor = style.barcodeBorder;
+        const barcodeSpan = barcodeWrapper.querySelector('.barcode-header-span');
+        if (barcodeSpan) barcodeSpan.style.backgroundColor = style.barcodeHeaderBg;
+    }
+
+    // 3. تغيير زر الدفع - استخدام inline style لتجنب مشاكل CSS specificity
+    const payBtn = document.getElementById('payBtn');
+    if (payBtn) {
+        payBtn.style.background = style.payBtnBg;
+        payBtn.style.boxShadow = style.payBtnShadow;
+        payBtn.style.border = 'none';
+        payBtn.style.color = 'white';
+    }
+
+    // 4. تغيير ألوان إجمالي وصافي
+    const totalDisplay = document.getElementById('total_display');
+    const netDisplay = document.getElementById('net_display');
+    if (totalDisplay) totalDisplay.style.color = style.totalColor;
+    if (netDisplay) netDisplay.style.color = style.netColor;
+
+    // 5. تغيير خلفية footer
+    const orderFooter = document.querySelector('.order-footer');
+    if (orderFooter) orderFooter.style.background = style.footerBg;
+
+    // 6. تغيير لون border الأصناف المختارة
+    document.querySelectorAll('.order-item').forEach(el => {
+        el.style.borderColor = style.orderItemBorder;
+    });
+
+    // 7. حفظ الستايل الحالي ليُطبَّق على الأصناف الجديدة لاحقاً
+    window._currentTabStyle = style;
+}
+
 // بحث بالباركود
 function searchByBarcode() {
     const barcode = document.getElementById('barcodeSearch').value.trim();
@@ -106,8 +228,16 @@ function loadAllItems() {
 function searchItems() {
     const searchTerm = document.getElementById('searchItems').value.trim().toLowerCase();
     
+    // الحصول على معرف المجموعة النشطة
+    const activeCategoryCard = document.querySelector('.category-card.active');
+    const categoryId = activeCategoryCard ? activeCategoryCard.getAttribute('data-category') : null;
+    
     if (searchTerm === '') {
-        loadAllItems();
+        if (categoryId) {
+            loadCategoryItems(categoryId);
+        } else {
+            loadAllItems();
+        }
         return;
     }
     
@@ -133,7 +263,7 @@ function searchItems() {
         $.ajax({
             url: 'ajax/search_items.php',
             type: 'GET',
-            data: { search: searchTerm, store_id: storeId },
+            data: { search: searchTerm, store_id: storeId, category_id: categoryId || 0 },
             dataType: 'json',
             success: function(data) {
                 if (data.success && data.items.length > 0) {
@@ -178,6 +308,12 @@ function loadCategoryItems(categoryId) {
     });
     
     document.querySelector(`[data-category="${categoryId}"]`).classList.add('active');
+    
+    // تفريغ مربع البحث لتفادي اللبس عند تغيير المجموعة
+    const searchInput = document.getElementById('searchItems');
+    if (searchInput) {
+        searchInput.value = '';
+    }
     
     document.getElementById('itemsGrid').innerHTML = `
         <div class="col-12 text-center py-5">
@@ -243,7 +379,7 @@ function displayItems(items) {
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
-                        <div class="item-balance text-muted" style="font-size: 0.7rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
+                        <div class="item-balance text-muted" style="font-size: 0.85rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
                     </div>
                 </div>
             </div>
@@ -294,30 +430,32 @@ function updateOrderDisplay() {
         return;
     }
     
+    const currentStyle = window._currentTabStyle || TAB_STYLES['1'];
+
     let html = '';
     selectedItems.forEach((item, index) => {
         const subtotal = item.quantity * item.price;
         html += `
-            <div class="order-item p-2 mb-2">
+            <div class="order-item p-2 mb-2" style="border-color: ${currentStyle.orderItemBorder};">
                 <div class="flex-grow-1">
-                    <div class="fw-bold text-dark" style="font-size: 0.95rem;">${item.name}</div>
+                    <div class="fw-bold text-dark" style="font-size: 1.8rem;">${item.name}</div>
                     <div class="d-flex align-items-center gap-2 mt-2">
-                        <div class="fw-bold" style="font-size: 0.9rem; color: var(--primary-navy);">
-                            ${item.price.toFixed(2)} <span class="text-muted mx-1">×</span> <span style="font-size: 1rem; color: var(--primary-violet);">${item.quantity}</span>
+                        <div class="fw-bold" style="font-size: 1.5rem; color: var(--primary-navy);">
+                            ${item.price.toFixed(2)} <span class="text-muted mx-1">×</span> <span style="font-size: 1.5rem; color: var(--primary-violet);">${item.quantity}</span>
                         </div>
-                        <span class="badge bg-light text-dark border ms-2" style="font-size: 0.7rem;">الرصيد: ${item.balance}</span>
+                        <span class="badge bg-light text-dark border ms-2" style="font-size: 1.5rem; padding: 0.35rem 0.6rem;">الرصيد: ${item.balance}</span>
                     </div>
                 </div>
                 <div class="text-end d-flex flex-column align-items-end justify-content-between h-100">
-                    <div class="fw-bold mb-2" style="color: var(--primary-violet); font-size: 1.1rem;">${subtotal.toFixed(2)}</div>
+                    <div class="fw-bold mb-2" style="color: var(--primary-violet); font-size: 1.4rem;">${subtotal.toFixed(2)}</div>
                     <div class="btn-group btn-group-sm mt-1">
-                        <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger" onclick="removeItem(${index})" style="padding: 0.2rem 0.6rem; font-size: 0.9rem;">
+                        <button type="button" class="btn btn-outline-danger" onclick="removeItem(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -543,12 +681,63 @@ function updateFullscreenIcon() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // تفعيل select2 للعملاء والموظفين لجعلهم قابلين للبحث
+    // تفعيل select2 للموظفين وغيرهم
     if (typeof $.fn.select2 !== 'undefined') {
         $('.select2-select').select2({
             theme: 'bootstrap4',
             width: '100%',
             dir: 'rtl'
+        });
+
+        // تفعيل select2 للعملاء مع دعم البحث بالاسم أو رقم الهاتف
+        function clientMatcher(params, data) {
+            if (!params.term || params.term.trim() === '') {
+                return data;
+            }
+            if (!data) {
+                return null;
+            }
+            const term = params.term.trim().toLowerCase();
+            const name = (data.text || '').toLowerCase();
+            
+            let phone = '';
+            if (data.element) {
+                phone = ($(data.element).data('phone') || '').toString().toLowerCase();
+            }
+
+            if (name.indexOf(term) > -1 || phone.indexOf(term) > -1) {
+                return data;
+            }
+            
+            // دعم المجموعات (optgroups) في حال وجودها
+            if (data.children && data.children.length > 0) {
+                const matchedChildren = [];
+                for (let i = 0; i < data.children.length; i++) {
+                    const matchedChild = clientMatcher(params, data.children[i]);
+                    if (matchedChild !== null) {
+                        matchedChildren.push(matchedChild);
+                    }
+                }
+                if (matchedChildren.length > 0) {
+                    const clonedData = $.extend({}, data, true);
+                    clonedData.children = matchedChildren;
+                    return clonedData;
+                }
+            }
+            return null;
+        }
+
+        $('#clientSelect').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            dir: 'rtl',
+            matcher: clientMatcher,
+            placeholder: 'ابحث بالاسم أو الهاتف...',
+            allowClear: false,
+            language: {
+                noResults: function() { return 'لا يوجد عملاء'; },
+                searching: function() { return 'جاري البحث...'; }
+            }
         });
     }
 
@@ -586,6 +775,14 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#paymentModal').on('show.bs.modal', function() {
         updateTotals();
     });
+
+    // تحديد كل المحتوى عند الضغط على أي input داخل مودال الدفع
+    $('#paymentModal').on('shown.bs.modal', function() {
+        $('#paymentModal input[type="number"], #paymentModal input[type="text"]').off('click.selectAll focus.selectAll').on('click.selectAll focus.selectAll', function() {
+            const el = this;
+            setTimeout(function() { el.select(); }, 0);
+        });
+    });
     
     // تحديث أيقونة الشاشة الكاملة
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
@@ -593,16 +790,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
     document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
 
-    // تغيير لون زر الدفع عند اختيار مردود
+    // تغيير ستايل الصفحة كاملاً حسب نوع التاب المختار
     $('input[name="age"]').on('change', function() {
-        const isReturn = $(this).val() == '4';
-        const payBtn = $('.btn-violet[data-bs-target="#paymentModal"]');
-        if (isReturn) {
-            payBtn.removeClass('btn-violet').addClass('btn-danger');
-        } else {
-            payBtn.removeClass('btn-danger').addClass('btn-violet');
-        }
+        applyTabStyle($(this).val());
     });
+
+    // تطبيق الستايل الافتراضي عند تحميل الصفحة (بيع)
+    applyTabStyle($('input[name="age"]:checked').val() || '1');
 
     // حفظ العميل الجديد عبر AJAX
     $('#saveAjaxClientBtn').on('click', function() {
@@ -639,9 +833,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         showConfirmButton: false
                     });
 
-                    // إضافة العميل الجديد لقائمة الاختيار وتحديده
-                    const newOption = new Option(response.name, response.id, true, true);
-                    $('#clientSelect').append(newOption).trigger('change');
+                    // إضافة العميل الجديد لقائمة الاختيار وتحديده مع بيانات الهاتف للبحث
+                    const displayPhone = response.phone ? response.phone : '';
+                    const displayText = displayPhone ? response.name + ' - ' + displayPhone : response.name;
+                    const $newOption = $('<option>', {
+                        value: response.id,
+                        text: displayText,
+                        selected: true
+                    }).attr('data-phone', displayPhone);
+                    
+                    $('#clientSelect').append($newOption).trigger('change');
 
                     // إغلاق المودال وتصفير الفورم
                     $('#addClientModal').modal('hide');

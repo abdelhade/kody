@@ -26,20 +26,17 @@ if ($result->num_rows > 0) {
     exit;
 }
 
-// حساب كود العميل الجديد
-$parent = '122';
-$sqllst = "SELECT code FROM acc_head WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY code DESC LIMIT 1";
-$reslast = $conn->query($sqllst);
-if ($reslast && $reslast->num_rows > 0) {
-    $rowlast = $reslast->fetch_assoc();
-    // استخراج الجزء الأخير بعد 122
-    $lstacc = substr($rowlast['code'], 3);
-    $lstacc_int = (int)$lstacc;
-    $lstacc_int++;
-    $lstacc_new = sprintf("%03d", $lstacc_int);
-    $last_id = $parent . $lstacc_new;
+// حساب كود العميل الجديد بشكل صحيح لتجنب التكرار حتى مع الحسابات المحذوفة
+$reslast = $conn->query("SELECT MAX(CAST(code AS UNSIGNED)) AS max_code FROM acc_head WHERE code LIKE '122%' AND code != '122'");
+if ($reslast && $rowlast = $reslast->fetch_assoc()) {
+    $max_code = $rowlast['max_code'];
+    if ($max_code) {
+        $last_id = (string)($max_code + 1);
+    } else {
+        $last_id = "122001";
+    }
 } else {
-    $last_id = $parent . "001";
+    $last_id = "122001";
 }
 
 // جلب تفاصيل الحساب الأب
@@ -84,6 +81,7 @@ try {
         'success' => true,
         'id' => $new_acc_id,
         'name' => $aname,
+        'phone' => $phone,
         'code' => $last_id,
         'message' => 'تم إضافة العميل "' . $aname . '" بنجاح بكود: ' . $last_id
     ]);
