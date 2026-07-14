@@ -137,8 +137,11 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="commissions-tab" data-toggle="pill" href="#tab-commissions" role="tab" aria-controls="tab-commissions" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-percent ml-3" style="font-size: 1.1rem; width: 20px;"></i> إعدادات العمولات
                   </a>
-                  <a class="nav-link py-3 px-4 d-flex align-items-center" id="sidebar-tab" data-toggle="pill" href="#tab-sidebar" role="tab" aria-controls="tab-sidebar" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="sidebar-tab" data-toggle="pill" href="#tab-sidebar" role="tab" aria-controls="tab-sidebar" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-eye ml-3" style="font-size: 1.1rem; width: 20px;"></i> الشريط الجانبي
+                  </a>
+                  <a class="nav-link py-3 px-4 d-flex align-items-center" id="print-tab" data-toggle="pill" href="#tab-print" role="tab" aria-controls="tab-print" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fas fa-print ml-3" style="font-size: 1.1rem; width: 20px;"></i> إعدادات الطباعة
                   </a>
                 </div>
               </div>
@@ -385,6 +388,63 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                           </tr>
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 6. إعدادات الطباعة -->
+              <div class="tab-pane fade" id="tab-print" role="tabpanel" aria-labelledby="print-tab">
+                <div class="card card-outline card-dark shadow-sm border-0" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-dark font-weight-bold mb-0"><i class="fas fa-print ml-2"></i> إعدادات الطباعة للفواتير</h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label class="d-block">إظهار اللوجو (الشعار)</label>
+                          <div class="custom-control custom-switch pt-1">
+                            <input type="checkbox" class="custom-control-input" id="receipt_show_logo" name="receipt_show_logo" value="1"
+                                   <?= (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])) ? 'checked' : '' ?>>
+                            <label class="custom-control-label" for="receipt_show_logo">عرض شعار الشركة في الفاتورة المطبوعة</label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label class="d-block">إظهار بيانات العميل</label>
+                          <div class="custom-control custom-switch pt-1">
+                            <input type="checkbox" class="custom-control-input" id="receipt_show_client" name="receipt_show_client" value="1"
+                                   <?= (!isset($rowstg['receipt_show_client']) || !empty($rowstg['receipt_show_client'])) ? 'checked' : '' ?>>
+                            <label class="custom-control-label" for="receipt_show_client">عرض بيانات العميل في الفواتير (دليفري/آجل)</label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="receipt_paper_width">عرض ورقة الطباعة</label>
+                          <select class="form-control" id="receipt_paper_width" name="receipt_paper_width">
+                            <option value="78mm" <?= (($rowstg['receipt_paper_width'] ?? '78mm') === '78mm') ? 'selected' : '' ?>>80mm (الافتراضي 78mm)</option>
+                            <option value="58mm" <?= (($rowstg['receipt_paper_width'] ?? '') === '58mm') ? 'selected' : '' ?>>58mm (طابعة صغيرة)</option>
+                            <option value="100%" <?= (($rowstg['receipt_paper_width'] ?? '') === '100%') ? 'selected' : '' ?>>100% (كامل الشاشة / A4)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="receipt_font_size">حجم الخط الأساسي (px)</label>
+                          <input type="number" class="form-control" id="receipt_font_size" name="receipt_font_size"
+                                 value="<?= htmlspecialchars((string)($rowstg['receipt_font_size'] ?? '14'), ENT_QUOTES, 'UTF-8') ?>" min="8" max="24">
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="form-group">
+                          <label for="receipt_footer_text">نص أسفل الفاتورة (الفوتر)</label>
+                          <textarea class="form-control" id="receipt_footer_text" name="receipt_footer_text" rows="2" placeholder="❤ perfect place to grow"><?= htmlspecialchars((string)($rowstg['receipt_footer_text'] ?? '❤ perfect place to grow'), ENT_QUOTES, 'UTF-8') ?></textarea>
+                          <small class="form-text text-muted">يمكن كتابة سياسة الاسترجاع أو رسالة شكر للعميل.</small>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

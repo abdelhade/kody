@@ -121,53 +121,110 @@
                 $startdate = isset($_POST['startdate']) && !empty($_POST['startdate']) ? $_POST['startdate'] : '1970-01-01';
                 $enddate = isset($_POST['enddate']) && !empty($_POST['enddate']) ? $_POST['enddate'] : date('Y-m-d');
                 
+                // حساب الرصيد الافتتاحي (الرصيد السابق قبل تاريخ البداية)
+                $sql_open = "SELECT SUM(je.debit) - SUM(je.credit) as opening_balance 
+                             FROM journal_entries je
+                             JOIN journal_heads jh ON je.journal_id = jh.id
+                             WHERE je.isdeleted = 0 AND jh.isdeleted = 0
+                             AND je.account_id = $acc
+                             AND jh.jdate < '$startdate'";
+                $res_open = $conn->query($sql_open);
+                $row_open = $res_open->fetch_assoc();
+                $opening_balance = $row_open['opening_balance'] ? floatval($row_open['opening_balance']) : 0;
+                
                 $sqlacc = "SELECT 
-                            oh.id,
-                            oh.pro_date,
+                            je.id as je_id,
+                            jh.jdate as pro_date,
+                            je.debit,
+                            je.credit,
+                            jh.details as info,
                             oh.pro_tybe,
-                            oh.acc1,
-                            oh.acc2,
-                            oh.info,
+                            oh.id as edit_id,
                             pt.pname as pro_type_name,
-                            a1.aname as acc1_name,
-                            a2.aname as acc2_name,
-                            oh.pro_value
-                        FROM ot_head oh
+                            (SELECT a.aname FROM journal_entries je2 
+                             JOIN acc_head a ON je2.account_id = a.id 
+                             WHERE je2.journal_id = je.journal_id AND je2.id != je.id AND je2.isdeleted = 0 LIMIT 1) as opposite_acc_name
+                        FROM journal_entries je
+                        JOIN journal_heads jh ON je.journal_id = jh.id
+                        LEFT JOIN ot_head oh ON oh.id = COALESCE(NULLIF(jh.op_id, 0), NULLIF(je.op_id, 0), NULLIF(jh.op2, 0), NULLIF(je.op2, 0))
                         LEFT JOIN pro_tybes pt ON oh.pro_tybe = pt.id
-                        LEFT JOIN acc_head a1 ON oh.acc1 = a1.id
-                        LEFT JOIN acc_head a2 ON oh.acc2 = a2.id
-                        WHERE oh.isdeleted = 0 
-                        AND (oh.acc1 = $acc OR oh.acc2 = $acc)
-                        AND oh.pro_date BETWEEN '$startdate' AND '$enddate'
-                        ORDER BY oh.pro_date, oh.id";
+                        WHERE je.isdeleted = 0 AND jh.isdeleted = 0
+                        AND je.account_id = $acc
+                        AND jh.jdate BETWEEN '$startdate' AND '$enddate'
+                        ORDER BY jh.jdate ASC, jh.id ASC, je.id ASC";
                 
                 $resacc = $conn->query($sqlacc);
                 
+                $x = 0;
+                $running_balance = $opening_balance;
+                
+                // عرض صف الرصيد الافتتاحي إذا كان موجوداً
+                if ($opening_balance != 0) {
+                    $op_debit = $opening_balance > 0 ? $opening_balance : 0;
+                    $op_credit = $opening_balance < 0 ? abs($opening_balance) : 0;
+                    echo "<tr class='bg-light'>
+                            <td>-</td>
+                            <td>$startdate</td>
+                            <td><b>رصيد افتتاحي (ما قبل الفترة)</b></td>
+                            <td class='td4'>" . ($op_debit > 0 ? number_format($op_debit, 2) : '0.00') . "</td>
+                            <td class='td5'>" . ($op_credit > 0 ? number_format($op_credit, 2) : '0.00') . "</td>
+                            <td class='td6'>" . number_format($running_balance, 2) . "</td>
+                            <td>-</td>
+                            <td>-</td>
+                          </tr>";
+                }
+                
                 if ($resacc && $resacc->num_rows > 0) {
-                    $x = 0;
-                    $running_balance = 0;
                     while ($rowacc = $resacc->fetch_assoc()) {
                         $x++;
                         
-                        // استرجاع المنطق الأصلي في حساب المدين والدائن
-                        if ($rowacc['acc1'] == $acc){
-                            $debit = 0;
-                            $credit = floatval($rowacc['pro_value']);
-                        }else{
-                            $credit = 0;
-                            $debit = floatval($rowacc['pro_value']);
-                        }
+                        $debit = floatval($rowacc['debit']);
+                        $credit = floatval($rowacc['credit']);
                         
                         // حساب الرصيد المتحرك
                         $running_balance += ($debit - $credit);
                         
                         // تحديد الحساب المقابل
-                        $opposite_acc = ($rowacc['acc2'] == $acc) ? $rowacc['acc1_name'] : $rowacc['acc2_name'];
+                        $opposite_acc = $rowacc['opposite_acc_name'];
+                        
+                        // تحديد رابط التعديل
+                        $edit_link = "#";
+                        $edit_id = $rowacc['edit_id'];
+                        if ($edit_id) {
+                            switch ($rowacc['pro_tybe']) {
+                                case 1:
+                                    $edit_link = "add_voucher.php?t=recive&edit=" . $edit_id;
+                                    break;
+                                case 2:
+                                    $edit_link = "add_voucher.php?t=payment&edit=" . $edit_id;
+                                    break;
+                                case 3:
+                                case 4:
+                                case 10:
+                                case 11:
+                                case 12:
+                                case 13:
+                                case 14:
+                                    $edit_link = "sales.php?edit_id=" . $edit_id;
+                                    break;
+                                case 9:
+                                    $edit_link = "pos_barcode.php?edit=" . $edit_id;
+                                    break;
+                            }
+                        }
                 ?>
                         <tr>
                             <td><?= $x ?></td>
                             <td><?= $rowacc['pro_date'] ?></td>
-                            <td><?= htmlspecialchars($rowacc['pro_type_name'] ?? '') ?></td>
+                            <td>
+                                <?php if($edit_link !== "#"): ?>
+                                    <a href="<?= $edit_link ?>" title="تعديل">
+                                        <?= htmlspecialchars($rowacc['pro_type_name'] ?? 'قيد محاسبي') ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($rowacc['pro_type_name'] ?? 'قيد محاسبي') ?>
+                                <?php endif; ?>
+                            </td>
                             <td class="td4"><?= $debit > 0 ? number_format($debit, 2) : '0.00' ?></td>
                             <td class="td5"><?= $credit > 0 ? number_format($credit, 2) : '0.00' ?></td>
                             <td class="td6"><?= number_format($running_balance, 2) ?></td>
@@ -177,7 +234,9 @@
                 <?php 
                     }
                 } else {
-                    echo "<tr><td colspan='8' style='text-align:center'>لا توجد حركات في هذه الفترة</td></tr>";
+                    if ($opening_balance == 0) {
+                        echo "<tr><td colspan='8' style='text-align:center'>لا توجد حركات في هذه الفترة</td></tr>";
+                    }
                 }
             } else {
                 echo "<tr><td colspan='8' style='text-align:center'><b>ابدأ اختيار الحساب و حدد التاريخ</b></td></tr>";

@@ -48,7 +48,7 @@ if ($rowfat == null) {
 }
 #printed .table th, #printed .table td {
     padding: 2px !important;
-    font-size: 14px !important;
+    font-size: <?= (int)($rowstg['receipt_font_size'] ?? 14) ?>px !important;
     font-weight: normal !important;
     vertical-align: middle;
     border: 1px solid #000 !important;
@@ -64,7 +64,7 @@ if ($rowfat == null) {
 }
 #printed p, #printed address {
     margin-bottom: 2px !important;
-    font-size: 12px !important;
+    font-size: <?= max(10, (int)($rowstg['receipt_font_size'] ?? 14) - 2) ?>px !important;
 }
 .dashed-separator {
     border-top: 2px dashed #000;
@@ -72,15 +72,17 @@ if ($rowfat == null) {
 }
 </style>
 
-<div class="card shadow-sm" id="printed" style="width: 78mm; margin: 0; border: 1px solid #eee;">
+<div class="card shadow-sm" id="printed" style="width: <?= htmlspecialchars($rowstg['receipt_paper_width'] ?? '78mm', ENT_QUOTES, 'UTF-8') ?>; margin: 0 auto; border: 1px solid #eee;">
 <div class="card-body" style="padding: 8px !important;">
 
 <?php 
-$logo_path = '../assets/logo/logo.jpg';
-if (file_exists($logo_path)) {
-    echo '<img src="' . $logo_path . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
-} else {
-    echo '<div class="text-center p-2">لوجو الشركة</div>';
+if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])) {
+    $logo_path = '../assets/logo/logo.jpg';
+    if (file_exists($logo_path)) {
+        echo '<img src="' . $logo_path . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
+    } else {
+        echo '<div class="text-center p-2">لوجو الشركة</div>';
+    }
 }
 ?>
 <h1 class="text-center font-bold">
@@ -122,7 +124,7 @@ $accid = $rowfat['acc1'];
 $rowacc1= $conn->query("SELECT aname,info from acc_head where id = $accid")->fetch_assoc();
 $is_delivery = strpos($rowfat['info'], 'دليفري') !== false;
 
-if ($is_delivery) {
+if ($is_delivery && (!isset($rowstg['receipt_show_client']) || !empty($rowstg['receipt_show_client']))) {
     $info = $rowfat['info'];
     preg_match('/العميل: ([^-]+)/', $info, $name_match);
     preg_match('/الهاتف: ([^-]+)/', $info, $phone_match);
@@ -206,9 +208,8 @@ if ($is_delivery) {
 <div class="row">
 <div class="col">
     <p style="font-size:12px;text-align:center"><?= $rowfat['crtime'] ?></p>
-    <div style="text-align: center; direction: ltr; font-size: 12px; font-weight: bold;">
-    
-        <p>❤ perfect place to grow</p>
+    <div style="text-align: center; font-size: 12px; font-weight: bold; margin-top: 10px;">
+        <p><?= nl2br(htmlspecialchars($rowstg['receipt_footer_text'] ?? '❤ perfect place to grow', ENT_QUOTES, 'UTF-8')) ?></p>
     </div>
     
     <div style="text-align: center; margin-top: 15px;">
