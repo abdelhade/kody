@@ -375,6 +375,4 @@ $(document).ready(function() {
     console.log('🔄 Initializing POS Offline Adapter...');
     window.posOfflineAdapter = new POSOfflineAdapter();
     console.log('✅ POS Offline Adapter initialized');
-    
-});
 });
