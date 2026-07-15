@@ -89,6 +89,20 @@
         color: white;
         text-decoration: none;
     }
+    
+    /* إصلاح مشكلة التظليل */
+    .modal-backdrop {
+        display: none !important;
+    }
+    .modal {
+        background-color: transparent !important;
+    }
+    body {
+        background-color: #f4f4f5 !important;
+    }
+    .content-wrapper {
+        background-color: #f4f4f5 !important;
+    }
 </style>
 
 <?php
@@ -170,7 +184,15 @@ if ($tables_count == 0) {
                             
                             <div class="form-group mb-2">
                                 <label>الطاولة</label>
-                                <input type="text" class="form-control" id="table_name" readonly>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="table_name" readonly placeholder="اختر طاولة">
+                                    <button class="btn btn-primary" type="button" onclick="showTableSelector()" title="اختر طاولة">
+                                        <i class="fas fa-chair"></i>
+                                    </button>
+                                    <button class="btn btn-danger" type="button" onclick="clearTableSelection()" title="مسح اختيار الطاولة">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             <div class="form-group mb-2">
@@ -314,6 +336,36 @@ if ($tables_count == 0) {
 
 <!-- تضمين مودال السداد -->
 <?php include('elements/pos/payment_modal.php'); ?>
+
+<!-- مودال اختيار الطاولة -->
+<div class="modal fade" id="tableSelectorModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">اختر الطاولة</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row" id="modal-tables-container">
+                    <!-- سيتم تحميل الطاولات هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// إلغاء تسجيل Service Worker لتجنب الأخطاء
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            registration.unregister();
+        }
+    });
+}
+</script>
 
 <script src="js/pos_tables.js"></script>
 

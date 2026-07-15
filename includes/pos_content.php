@@ -3,6 +3,21 @@ if (!isset($action_url)) {
     $action_url = "do/doadd_invoice.php";
 }
 ?>
+<style>
+/* إصلاح مشكلة التظليل في صفحة POS */
+.modal-backdrop {
+    display: none !important;
+}
+.modal {
+    background-color: transparent !important;
+}
+body {
+    background-color: #f5f7fa !important;
+}
+.content-wrapper {
+    background-color: #f5f7fa !important;
+}
+</style>
 <!-- Main Content -->
 <form action="<?= $action_url ?>" method="post" id="posForm">
         <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
@@ -1006,6 +1021,18 @@ if (!isset($action_url)) {
         }
     </script>
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
+    
+    <!-- إصلاح مشكلة Service Worker -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+            }
+        });
+    }
+    </script>
+    
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
     <script src="js/pos_barcode.js?v=<?= time() ?>"></script>

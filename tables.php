@@ -1,8 +1,7 @@
 <?php 
-include('includes/header.php');
-
-// معالجة تسجيل الخروج
+// معالجة تسجيل الخروج - يجب أن يكون قبل أي إخراج
 if (isset($_GET['logout'])) {
+    session_start();
     unset($_SESSION['pos_authenticated']);
     unset($_SESSION['pos_user_id']);
     unset($_SESSION['pos_user_name']);
@@ -10,13 +9,15 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
+include('includes/header.php');
+
 // جلب الإعدادات
 $rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
 
-// نظام الحماية البسيط
+// نظام الحماية البسيط - استخدام JavaScript بدلاً من header
 if (isset($rowstg['pos_has_password']) && $rowstg['pos_has_password'] == 1) {
     if (!isset($_SESSION['pos_authenticated']) || $_SESSION['pos_authenticated'] !== true) {
-        header('Location: pos_barcode.php');
+        echo '<script>window.location.href = "pos_barcode.php";</script>';
         exit();
     }
 }
@@ -447,8 +448,13 @@ if ($selected_table) {
                                 </button>
                             </div>
                             <div class="col-6">
-                                <div class="btn-group w-100 h-100 dropdown">
-                                    <button type="button" class="btn btn-danger w-100 py-2 dropdown-toggle h-100 d-flex flex-column justify-content-center align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-info w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center" onclick="showTransferTableModal(<?= $selected_table ?>, <?= $order_data['id'] ?>)">
+                                    <i class="fas fa-exchange-alt mb-1"></i><small class="fw-bold">نقل الطاولة</small>
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <div class="btn-group w-100 dropdown">
+                                    <button type="button" class="btn btn-danger w-100 py-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-trash-alt mb-1"></i><small class="fw-bold">إفراغ</small>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-2" style="z-index: 1060; min-width: 200px;">
@@ -658,6 +664,32 @@ if ($selected_table) {
                 <button type="button" class="btn btn-success" onclick="confirmSplitPayment()">
                     <i class="fas fa-money-bill-wave me-1"></i> سداد وطباعة
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Table Modal -->
+<div class="modal fade" id="transferTableModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-exchange-alt me-2"></i>نقل الطلب لطاولة أخرى</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="transferCurrentTableId">
+                <input type="hidden" id="transferCurrentOrderId">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    اختر الطاولة الجديدة لنقل الطلب إليها
+                </div>
+                <div class="row g-3" id="transferTablesGrid">
+                    <!-- سيتم تحميل الطاولات هنا -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>
@@ -1010,6 +1042,95 @@ function activateTable(tableId) {
             alert('حدث خطأ: ' + error);
         }
     });
+}
+
+// دوال نقل الطاولة
+function showTransferTableModal(currentTableId, currentOrderId) {
+    $('#transferCurrentTableId').val(currentTableId);
+    $('#transferCurrentOrderId').val(currentOrderId);
+    loadTransferTables(currentTableId);
+    $('#transferTableModal').modal('show');
+}
+
+function loadTransferTables(currentTableId) {
+    $.ajax({
+        url: 'ajax/get_tables.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                displayTransferTables(response.tables, currentTableId);
+            } else {
+                alert('خطأ في تحميل الطاولات');
+            }
+        },
+        error: function() {
+            alert('خطأ في الاتصال بالخادم');
+        }
+    });
+}
+
+function displayTransferTables(tables, currentTableId) {
+    let html = '';
+    tables.forEach(function(table) {
+        // استبعاد الطاولة الحالية
+        if (table.id == currentTableId) return;
+        
+        const statusClass = table.table_case == 0 ? 'bg-success' : 'bg-danger';
+        const statusText = table.table_case == 0 ? 'متاحة' : 'مشغولة';
+        const disabled = table.table_case == 1 ? 'disabled' : '';
+        
+        html += `
+            <div class="col-md-3 col-sm-4">
+                <button class="btn table-btn ${statusClass} w-100 ${disabled}" 
+                        onclick="transferTable(${table.id}, '${table.tname}')" 
+                        ${disabled}>
+                    <div class="text-center">
+                        <i class="fas fa-chair fa-2x mb-2"></i>
+                        <h6 class="fw-bold">${table.tname}</h6>
+                        <small>${statusText}</small>
+                    </div>
+                </button>
+            </div>
+        `;
+    });
+    $('#transferTablesGrid').html(html);
+}
+
+function transferTable(newTableId, newTableName) {
+    const currentTableId = $('#transferCurrentTableId').val();
+    const currentOrderId = $('#transferCurrentOrderId').val();
+    
+    if (confirm(`هل تريد نقل الطلب من الطاولة الحالية إلى ${newTableName}؟`)) {
+        $.ajax({
+            url: 'ajax/transfer_order_table.php',
+            method: 'POST',
+            data: {
+                order_id: currentOrderId,
+                old_table_id: currentTableId,
+                new_table_id: newTableId,
+                new_table_name: newTableName
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    console.log('تفاصيل النقل:', response);
+                    alert('تم نقل الطلب للطاولة الجديدة بنجاح\n' +
+                          '- الطاولة القديمة أصبحت متاحة\n' +
+                          '- الطاولة الجديدة أصبحت مشغولة');
+                    $('#transferTableModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('خطأ في النقل:', error);
+                console.error('الاستجابة:', xhr.responseText);
+                alert('خطأ في نقل الطلب: ' + error);
+            }
+        });
+    }
 }
 </script>
 

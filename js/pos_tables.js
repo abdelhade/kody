@@ -75,6 +75,20 @@ function displayTables(tables) {
         `;
     });
     $('#tables-container').html(html);
+    
+    // استعادة الطاولة المختارة من localStorage بعد تحميل الطاولات
+    const savedTableId = localStorage.getItem('selected_table_id');
+    const savedTableName = localStorage.getItem('selected_table_name');
+    if (savedTableId && savedTableName) {
+        // تحديث الواجهة مباشرة
+        $('#selected_table_id').val(savedTableId);
+        $('#table_name').val(savedTableName);
+        $(`.table-btn[data-table-id="${savedTableId}"]`).addClass('table-selected');
+        // تحميل بيانات الطلب
+        loadTableOrder(savedTableId, savedTableName);
+        // تمكين الأزرار
+        $('#save-order, #payment-btn, #print-order, #cancel-order').prop('disabled', false);
+    }
 }
 
 // اختيار طاولة
@@ -86,11 +100,17 @@ function selectTable(tableId, tableName) {
     $('#selected_table_id').val(tableId);
     $('#table_name').val(tableName);
     
+    // حفظ اختيار الطاولة في localStorage
+    localStorage.setItem('selected_table_id', tableId);
+    localStorage.setItem('selected_table_name', tableName);
+    
     // تحميل بيانات الطلب إن وجد
     loadTableOrder(tableId, tableName);
     
-    // تمكين أزرار العمليات
+    // تمكين أزرار العمليات فوراً
     $('#save-order, #payment-btn, #print-order, #cancel-order').prop('disabled', false);
+    
+    console.log('تم اختيار الطاولة:', tableName, 'ID:', tableId);
 }
 
 // تحميل طلب الطاولة
@@ -152,6 +172,13 @@ function displayItems(items) {
 
 // إضافة صنف للطلب
 function addItemToOrder(itemId, itemName, price, barcode) {
+    // التحقق من اختيار طاولة أولاً
+    const tableId = $('#selected_table_id').val();
+    if (!tableId) {
+        alert('يرجى اختيار طاولة أولاً');
+        return;
+    }
+    
     // التحقق من وجود الصنف
     const existingItem = currentOrder.items.find(item => item.id == itemId);
     
@@ -396,6 +423,20 @@ function cancelOrder() {
     }
 }
 
+// مسح اختيار الطاولة
+function clearTableSelection() {
+    localStorage.removeItem('selected_table_id');
+    localStorage.removeItem('selected_table_name');
+    $('#selected_table_id').val('');
+    $('#table_name').val('');
+    $('.table-btn').removeClass('table-selected');
+    currentOrder.items = [];
+    $('#current_order_id').val('');
+    displayOrderItems();
+    calculateTotal();
+    $('#save-order, #payment-btn, #print-order, #cancel-order').prop('disabled', true);
+}
+
 // البحث عن الأصناف
 function searchItems() {
     const query = $('#item-search').val().toLowerCase();
@@ -457,3 +498,95 @@ function clearOrder() {
     calculateTotal();
 }
 
+// عرض مودال اختيار الطاولة
+function showTableSelector() {
+    $('#tableSelectorModal').modal('show');
+    loadModalTables();
+}
+
+// تحميل الطاولات في المودال
+function loadModalTables() {
+    $.ajax({
+        url: 'ajax/get_tables.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                displayModalTables(response.tables);
+            } else {
+                alert('خطأ في تحميل الطاولات');
+            }
+        },
+        error: function() {
+            alert('خطأ في الاتصال بالخادم');
+        }
+    });
+}
+
+// عرض الطاولات في المودال
+function displayModalTables(tables) {
+    let html = '';
+    tables.forEach(function(table) {
+        const statusClass = table.table_case == 0 ? 'table-available' : 'table-occupied';
+        const statusText = table.table_case == 0 ? 'متاحة' : 'مشغولة';
+        html += `
+            <div class="col-md-3 mb-3">
+                <button class="btn table-btn ${statusClass} w-100" 
+                        data-table-id="${table.id}" 
+                        data-table-name="${table.tname}" 
+                        onclick="selectTableFromModal(${table.id}, '${table.tname}')">
+                    <div class="text-center">
+                        <i class="fas fa-chair fa-2x mb-2"></i>
+                        <div>${table.tname}</div>
+                        <small>${statusText}</small>
+                    </div>
+                </button>
+            </div>
+        `;
+    });
+    $('#modal-tables-container').html(html);
+}
+
+// اختيار طاولة من المودال
+function selectTableFromModal(tableId, tableName) {
+    // إغلاق المودال
+    $('#tableSelectorModal').modal('hide');
+    
+    // التحقق من وجود طلب حالي
+    const currentOrderId = $('#current_order_id').val();
+    const currentTableId = $('#selected_table_id').val();
+    
+    if (currentOrderId && currentTableId && currentTableId != tableId) {
+        // يوجد طلب ويريد تغيير الطاولة
+        if (confirm(`هل تريد نقل الطلب من الطاولة الحالية إلى ${tableName}؟`)) {
+            // تحديث الطاولة في الطلب
+            $.ajax({
+                url: 'ajax/update_order_table.php',
+                method: 'POST',
+                data: {
+                    order_id: currentOrderId,
+                    old_table_id: currentTableId,
+                    new_table_id: tableId,
+                    new_table_name: tableName
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // تحديث واجهة المستخدم
+                        selectTable(tableId, tableName);
+                        loadTables(); // تحديث حالة الطاولات
+                        alert('تم نقل الطلب للطاولة الجديدة بنجاح');
+                    } else {
+                        alert('خطأ: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطأ في نقل الطلب');
+                }
+            });
+        }
+    } else {
+        // اختيار طاولة جديدة مباشرة
+        selectTable(tableId, tableName);
+    }
+}
