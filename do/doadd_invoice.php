@@ -625,12 +625,12 @@ try {
                 // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
                 $qty_in = 0;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']])) {
-                // مشتريات، مردود مبيعات → كمية واردة
+            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'], InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']])) {
+                // مشتريات، مردود مبيعات، مردود مشتريات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']])) {
-                // مبيعات، كاشير، مردود مشتريات → كمية منصرفة
+            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS']])) {
+                // مبيعات، كاشير → كمية منصرفة
                 $qty_in = 0;
                 $qty_out = $itmqty * $u_val;
             } else {
@@ -726,6 +726,29 @@ try {
     error_log('Committing transaction');
     $conn->commit();
     error_log('Transaction committed successfully');
+    
+    // تحديث كميات الأصناف في جدول myitems بعد المعاملة
+    error_log('Updating item quantities in myitems table');
+    $update_qty_query = "
+        UPDATE myitems mi
+        SET itmqty = (
+            SELECT COALESCE(SUM(qty_in) - SUM(qty_out), 0)
+            FROM fat_details fd
+            WHERE fd.item_id = mi.id AND fd.isdeleted = 0
+        )
+        WHERE mi.id IN (
+            SELECT DISTINCT item_id
+            FROM fat_details
+            WHERE fatid = ? AND isdeleted = 0
+        )
+    ";
+    $stmt_qty = $conn->prepare($update_qty_query);
+    if ($stmt_qty) {
+        $stmt_qty->bind_param("i", $last_op);
+        $stmt_qty->execute();
+        $stmt_qty->close();
+        error_log('Item quantities updated successfully');
+    }
     
     // تسجيل العملية
     $process_types = [
