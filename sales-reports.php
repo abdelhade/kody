@@ -177,6 +177,16 @@
                             </a>
                         </div>
 
+                        <!-- مردود المبيعات -->
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <a href="sales_returns_report.php" class="report-card" style="--card-color: #E74C3C; --card-bg-light: rgba(231, 76, 60, 0.12);">
+                                <div class="report-icon-wrapper">
+                                    <i class="fa fa-undo"></i>
+                                </div>
+                                <h3>مردود المبيعات</h3>
+                            </a>
+                        </div>
+
                         <!-- تحليلي مبيعات -->
                         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
                             <a href="top_products_report.php" class="report-card" style="--card-color: #7288AE; --card-bg-light: rgba(114, 136, 174, 0.12);">

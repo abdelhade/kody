@@ -625,10 +625,14 @@ try {
                 // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
                 $qty_in = 0;
                 $qty_out = 0;
-            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'], InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']])) {
-                // مشتريات، مردود مبيعات، مردود مشتريات → كمية واردة
+            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']])) {
+                // مشتريات ومردود مبيعات → كمية واردة
                 $qty_in = $itmqty * $u_val;
                 $qty_out = 0;
+            } elseif($pro_tybe === InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']) {
+                // مردود مشتريات → كمية منصرفة
+                $qty_in = 0;
+                $qty_out = $itmqty * $u_val;
             } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS']])) {
                 // مبيعات، كاشير → كمية منصرفة
                 $qty_in = 0;

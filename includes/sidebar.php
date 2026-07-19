@@ -1411,7 +1411,21 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="purchase_returns_report.php" class="nav-link">
+                  <i class="nav-icon fas fa-undo-alt"></i>
+                  <p>
+                    <?= $lang_purchase_return ?? 'فاتورة مردود مشتريات' ?>
+                  </p>
+                </a>
+              </li>
 
+              <li class="nav-item">
+                <a href="sales_returns_report.php" class="nav-link">
+                  <i class="nav-icon fas fa-undo"></i>
+                  <p>فاتورة مردود مبيعات</p>
+                </a>
+              </li>
 
               <li class="nav-item">
                 <a href="items_summery.php" class="nav-link">
