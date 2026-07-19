@@ -82,6 +82,11 @@ if (isset($_GET['t'])) {
                                     📊 تقرير الأصناف الأكثر مبيعًا
                                 </a>
                             </div>
+                            <div class="col-md-4 col-lg-3 report-item">
+                                <a class="btn btn-outline-warning btn-block btn-sm w-100" href="purchase_returns_report.php">
+                                    📦 تقرير مردود المشتريات
+                                </a>
+                            </div>
                         </div>
                     </div>
 
