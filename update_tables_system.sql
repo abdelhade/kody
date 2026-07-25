@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS `tables` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `tname` varchar(255) NOT NULL,
   `table_case` int(11) NOT NULL DEFAULT 0,
+  `parent_table_id` int(11) DEFAULT NULL COMMENT 'الطاولة الرئيسية في حالة الدمج',
+  `is_merged` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل الطاولة مدمجة',
   `crtime` datetime DEFAULT current_timestamp(),
   `mdtime` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `isdeleted` tinyint(1) NOT NULL DEFAULT 0,
@@ -15,6 +17,10 @@ CREATE TABLE IF NOT EXISTS `tables` (
   `tatnet` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- أعمدة دمج الطاولات لجدول tables (في حالة وجود الجدول مسبقاً)
+ALTER TABLE `tables` ADD COLUMN `parent_table_id` int(11) DEFAULT NULL COMMENT 'الطاولة الرئيسية في حالة الدمج';
+ALTER TABLE `tables` ADD COLUMN `is_merged` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل الطاولة مدمجة';
 
 -- أعمدة ot_head المطلوبة لنظام الطاولات والسداد
 ALTER TABLE `ot_head` ADD COLUMN `table_id` int(11) DEFAULT NULL COMMENT 'رقم الطاولة';

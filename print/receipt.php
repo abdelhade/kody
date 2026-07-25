@@ -55,21 +55,14 @@ if ($rowfat == null) {
     border-bottom: 2px dashed var(--teal);
     margin-bottom: 8px;
 }
-<<<<<<< HEAD
+
 #printed .table th, #printed .table td {
     padding: 2px !important;
     font-size: <?= (int)($rowstg['receipt_font_size'] ?? 14) ?>px !important;
     font-weight: normal !important;
     vertical-align: middle;
     border: 1px solid #000 !important;
-=======
-.rcpt-header img {
-    width: 75px; height: 75px;
-    object-fit: contain;
-    border-radius: 50%;
-    border: 3px solid var(--teal);
-    margin-bottom: 4px;
->>>>>>> d8a717cf2c788c6e6655209a175a3e850a509161
+
 }
 .rcpt-header .company-name {
     font-size: 15px;
@@ -89,19 +82,11 @@ if ($rowfat == null) {
     font-weight: 600;
     margin-top: 3px;
 }
-<<<<<<< HEAD
+
 #printed p, #printed address {
     margin-bottom: 2px !important;
     font-size: <?= max(10, (int)($rowstg['receipt_font_size'] ?? 14) - 2) ?>px !important;
-=======
-.rcpt-customer {
-    background: var(--teal-light);
-    border-radius: 8px;
-    padding: 7px 10px;
-    margin-bottom: 8px;
-    font-size: 12px;
-    direction: rtl;
->>>>>>> d8a717cf2c788c6e6655209a175a3e850a509161
+
 }
 .rcpt-customer .info-row {
     display: flex;
@@ -232,7 +217,6 @@ if ($rowfat == null) {
 }
 </style>
 
-<<<<<<< HEAD
 <div class="card shadow-sm" id="printed" style="width: <?= htmlspecialchars($rowstg['receipt_paper_width'] ?? '78mm', ENT_QUOTES, 'UTF-8') ?>; margin: 0 auto; border: 1px solid #eee;">
 <div class="card-body" style="padding: 8px !important;">
 
@@ -244,21 +228,7 @@ if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])
     } else {
         echo '<div class="text-center p-2">لوجو الشركة</div>';
     }
-=======
-<div class="card shadow" id="printed" style="width: 78mm; margin: 0; border: none; background: #fff;">
-<div class="card-body" style="padding: 8px !important;">
 
-<?php if($is_return): ?>
-<div class="return-badge">↩ مردود مبيعات</div>
-<?php endif; ?>
-
-<!-- HEADER -->
-<div class="rcpt-header">
-<?php
-$logo_path = '../assets/logo/logo.jpg';
-if (file_exists($logo_path)) {
-    echo '<img src="' . $logo_path . '" alt="logo">';
->>>>>>> d8a717cf2c788c6e6655209a175a3e850a509161
 }
 ?>
 <div class="company-name"><?= $rowstg['company_name'] ?></div>
@@ -323,7 +293,7 @@ if ($customer_name || $customer_phone || $customer_address || $employee_name):
 </div>
 <?php endif; ?>
 
-<<<<<<< HEAD
+
 <?php
 $prodate = date('md', strtotime($rowfat['pro_date']));
 ?>
@@ -378,11 +348,9 @@ if ($is_delivery && (!isset($rowstg['receipt_show_client']) || !empty($rowstg['r
 
 
 
-<table class="table table-bordered text-center mb-1" style="border: 1px solid #000; width: 100%;">
-=======
 <!-- ITEMS TABLE -->
 <table class="rcpt-items">
->>>>>>> d8a717cf2c788c6e6655209a175a3e850a509161
+
 <thead>
 <tr>
     <th style="width:38%;">الصنف</th>
@@ -453,7 +421,7 @@ $change_amount = $paid_amount - floatval($rowfat['fat_net']);
 <?php endif; ?>
 </table>
 
-<<<<<<< HEAD
+
 </div>
 
 
@@ -469,12 +437,7 @@ $change_amount = $paid_amount - floatval($rowfat['fat_net']);
         </div>
     </div>
 </div>
-=======
-<!-- FOOTER -->
-<div class="rcpt-footer">
-    <div class="datetime"><i class="fas fa-calendar-alt me-1"></i><?= $rowfat['crtime'] ?></div>
-    <div class="tagline">❤ perfect place to grow</div>
->>>>>>> d8a717cf2c788c6e6655209a175a3e850a509161
+
 </div>
 
 </div>

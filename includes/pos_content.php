@@ -17,6 +17,17 @@ body {
 .content-wrapper {
     background-color: #f5f7fa !important;
 }
+
+/* Tables Modal - scrollable body with proper sizing */
+#tablesModal .modal-dialog {
+    width: 90% !important;
+    max-width: 900px !important;
+    margin: 1.75rem auto !important;
+}
+#tablesModal .modal-body {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+}
 </style>
 <!-- Main Content -->
 <form action="<?= $action_url ?>" method="post" id="posForm">
@@ -727,94 +738,44 @@ body {
     <div class="modal fade" id="tablesModal" tabindex="-1" aria-labelledby="tablesModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="modal-title" id="tablesModalLabel">
                         <i class="fas fa-th-large me-2"></i>اختر الطاولة
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-warning btn-sm me-3 fw-bold shadow-sm" id="btnToggleMergeMode" onclick="toggleTableMergeMode()">
+                            <i class="fas fa-object-group me-1"></i> دمج الطاولات
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="row g-3" id="tablesGrid">
-                        <?php
-                        // Get all tables
-                        $restables = $conn->query("SELECT t.*, 
-                            (SELECT COUNT(*) FROM ot_head o 
-                             WHERE o.info LIKE CONCAT('%', t.tname, '%') 
-                             AND o.pro_tybe = 9 
-                             AND o.isdeleted = 0 
-                             AND o.fat_net > 0) as has_active_order
-                        FROM tables t 
-                        WHERE t.isdeleted = 0 
-                        ORDER BY t.tname");
-                        
-                        if ($restables && $restables->num_rows > 0) {
-                            while ($rowtable = $restables->fetch_assoc()) {
-                                $tableId = $rowtable['id'];
-                                $tableName = htmlspecialchars($rowtable['tname']);
-                                $hasActiveOrder = $rowtable['has_active_order'] > 0;
-                                $tableCase = $hasActiveOrder ? 1 : 0; // 1 for occupied, 0 for available
-                                
-                                // Update table status in database if needed
-                                if ($tableCase != $rowtable['table_case']) {
-                                    $conn->query("UPDATE tables SET table_case = $tableCase WHERE id = $tableId");
-                                }
-                                
-                                // Set status class and text
-                                $statusClass = $hasActiveOrder ? 'btn-danger' : 'btn-success';
-                                $statusIcon = $hasActiveOrder ? 'fa-utensils' : 'fa-check-circle';
-                                $statusText = $hasActiveOrder ? 'مشغولة' : 'متاحة';
-                                
-                                // Get order details if table is occupied
-                                $orderTotal = 0;
-                                $orderId = null;
-                                if ($hasActiveOrder) {
-                                    $orderQuery = $conn->query("
-                                        SELECT id, fat_net 
-                                        FROM ot_head 
-                                        WHERE info LIKE '%$tableName%' 
-                                        AND pro_tybe = 9 
-                                        AND isdeleted = 0
-                                        AND fat_net > 0
-                                        ORDER BY id DESC 
-                                        LIMIT 1");
-                                    if ($orderQuery && $orderQuery->num_rows > 0) {
-                                        $orderData = $orderQuery->fetch_assoc();
-                                        $orderId = $orderData['id'];
-                                        $orderTotal = floatval($orderData['fat_net']);
-                                    }
-                                }
-                        ?>
-                        <div class="col-md-4 col-sm-6">
-                            <button type="button"
-                                class="btn <?= $statusClass ?> w-100 table-select-btn position-relative"
-                                data-table-id="<?= $tableId ?>" data-table-name="<?= $tableName ?>"
-                                data-table-case="<?= $tableCase ?>" data-order-id="<?= $orderId ?>"
-                                style="min-height: 120px; font-size: 1.1rem;">
-                                <div class="d-flex flex-column align-items-center justify-content-center">
-                                    <i class="fas fa-utensils fa-2x mb-2"></i>
-                                    <h6 class="mb-1"><?= $tableName ?></h6>
-                                    <small class="d-flex align-items-center">
-                                        <i class="fas <?= $statusIcon ?> me-1"></i>
-                                        <?= $statusText ?>
-                                    </small>
-                                    <?php if ($tableCase != 0 && $orderTotal > 0): ?>
-                                    <div class="mt-2 badge bg-white text-dark">
-                                        <?= number_format($orderTotal, 2) ?> ج.م
-                                    </div>
-                                    <?php endif; ?>
+                    <!-- الشريط العلوي لنمط الدمج -->
+                    <div id="mergeControlsBar" class="alert alert-warning d-none mb-3 p-3 shadow-sm border-warning">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle me-2 text-warning fs-5"></i>
+                                <div>
+                                    <span class="fw-bold fs-6 d-block">نمط دمج الطاولات (Merge Mode):</span>
+                                    <span class="small text-muted">قم بتحديد الطاولات المراد دمجها باستخدام خيارات التحديد (Checkbox) ثم اضغط تأكيد الدمج.</span>
                                 </div>
-                            </button>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-success fw-bold px-3" onclick="confirmMergeTables()">
+                                    <i class="fas fa-link me-1"></i> تأكيد الدمج
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger fw-bold px-3" onclick="unmergeSelectedTables()">
+                                    <i class="fas fa-unlink me-1"></i> فك دمج المحدد
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary px-2" onclick="toggleTableMergeMode(false)">
+                                    <i class="fas fa-times me-1"></i> إلغاء
+                                </button>
+                            </div>
                         </div>
-                        <?php
-                            }
-                        } else {
-                            echo '<div class="col-12 text-center text-muted">
-                                    <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
-                                    <p>لا توجد طاولات متاحة</p>
-                                  </div>';
-                        }
-                        ?>
+                    </div>
+
+                    <div class="row g-3" id="tablesGrid">
+                        <?php include('includes/tables_grid_render.php'); ?>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1914,5 +1875,7 @@ body {
                 });
             };
         });
+    </script>
+
     </script>
 
