@@ -363,7 +363,201 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('click', '.table-select-btn', function() {
+    // ==========================================
+    // Table Merging System Functions (نظام دمج الطاولات)
+    // ==========================================
+    window.isMergeMode = false;
+
+    window.toggleTableMergeMode = function(forceState) {
+        if (typeof forceState !== 'undefined') {
+            window.isMergeMode = forceState;
+        } else {
+            window.isMergeMode = !window.isMergeMode;
+        }
+
+        if (window.isMergeMode) {
+            $('#mergeControlsBar').removeClass('d-none');
+            $('.merge-checkbox-wrapper').show();
+            $('#btnToggleMergeMode')
+                .removeClass('btn-warning')
+                .addClass('btn-dark')
+                .html('<i class="fas fa-times me-1"></i> إغلاق النمط');
+        } else {
+            $('#mergeControlsBar').addClass('d-none');
+            $('.merge-checkbox-wrapper').hide();
+            $('.table-merge-checkbox').prop('checked', false);
+            $('.table-card-box').removeClass('border-primary bg-light shadow');
+            $('#btnToggleMergeMode')
+                .removeClass('btn-dark')
+                .addClass('btn-warning')
+                .html('<i class="fas fa-object-group me-1"></i> دمج الطاولات');
+        }
+    };
+
+    window.confirmMergeTables = function() {
+        let selectedIds = $('.table-merge-checkbox:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        if (selectedIds.length < 2) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يرجى اختيار طاولتين على الأقل (Checkbox) لدمجهما معاً'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'تأكيد دمج الطاولات',
+            text: 'هل أنت تأكد من دمج ' + selectedIds.length + ' طاولات معاً؟',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، دمج',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'ajax/merge_tables.php',
+                    method: 'POST',
+                    data: { action: 'merge', table_ids: selectedIds },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم الدمج',
+                                text: res.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            refreshTablesGrid();
+                            toggleTableMergeMode(false);
+                        } else {
+                            Swal.fire('خطأ', res.message || 'حدث خطأ أثناء الدمج', 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('خطأ', 'تعذر الاتصال بالخادم لدمج الطاولات', 'error');
+                    }
+                });
+            }
+        });
+    };
+
+    window.unmergeSelectedTables = function() {
+        let selectedIds = $('.table-merge-checkbox:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        Swal.fire({
+            title: 'تأكيد فك الدمج',
+            text: selectedIds.length > 0 ? 
+                'هل أنت متاكد من فك دمج الطاولات المحددة وتحويلها إلى متاحة؟' : 
+                'هل تريد فك دمج كافة الطاولات المدمجة وتحويلها إلى متاحة؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'نعم، فك الدمج',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'ajax/merge_tables.php',
+                    method: 'POST',
+                    data: { action: 'unmerge', table_ids: selectedIds },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم فك الدمج',
+                                text: res.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            refreshTablesGrid();
+                            toggleTableMergeMode(false);
+                        } else {
+                            Swal.fire('خطأ', res.message || 'حدث خطأ أثناء فك الدمج', 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('خطأ', 'تعذر الاتصال بالخادم لفك الدمج', 'error');
+                    }
+                });
+            }
+        });
+    };
+
+    window.unmergeSingleTable = function(tableId) {
+        $.ajax({
+            url: 'ajax/merge_tables.php',
+            method: 'POST',
+            data: { action: 'unmerge', table_ids: [tableId] },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم فك الدمج',
+                        text: 'تم فك دمج الطاولة وتحويلها إلى متاحة',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    refreshTablesGrid();
+                } else {
+                    Swal.fire('خطأ', res.message || 'حدث خطأ في عملية فك الدمج', 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('خطأ', 'تعذر الاتصال بالخادم لفك الدمج', 'error');
+            }
+        });
+    };
+
+    window.refreshTablesGrid = function() {
+        $.ajax({
+            url: 'ajax/merge_tables.php',
+            method: 'POST',
+            data: { action: 'get_grid_html' },
+            dataType: 'json',
+            success: function(res) {
+                if (res.success && res.html) {
+                    $('#tablesGrid').html(res.html);
+                    if (window.isMergeMode) {
+                        $('.merge-checkbox-wrapper').show();
+                    }
+                }
+            }
+        });
+    };
+
+    $(document).on('click', '.table-merge-checkbox', function(e) {
+        e.stopPropagation();
+        const wrapper = $(this).closest('.table-card-wrapper');
+        if ($(this).prop('checked')) {
+            wrapper.find('.table-card-box').addClass('border-primary bg-light shadow');
+        } else {
+            wrapper.find('.table-card-box').removeClass('border-primary bg-light shadow');
+        }
+    });
+
+    $(document).on('click', '.table-select-btn', function(e) {
+        if (window.isMergeMode) {
+            e.preventDefault();
+            e.stopPropagation();
+            const wrapper = $(this).closest('.table-card-wrapper');
+            const chk = wrapper.find('.table-merge-checkbox');
+            const newState = !chk.prop('checked');
+            chk.prop('checked', newState);
+            if (newState) {
+                wrapper.find('.table-card-box').addClass('border-primary bg-light shadow');
+            } else {
+                wrapper.find('.table-card-box').removeClass('border-primary bg-light shadow');
+            }
+            return false;
+        }
+
         const tableId = $(this).data('table-id');
         const tableName = $(this).data('table-name');
         const tableCase = $(this).data('table-case');

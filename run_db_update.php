@@ -142,6 +142,28 @@ if ($ignore_late_out_result['ok']) {
     $errors++;
 }
 
+echo '<h3>أعمدة دمج الطاولات (tables.parent_table_id & tables.is_merged)</h3>';
+$parent_table_result = run_migration_query(
+    $conn,
+    "ALTER TABLE tables ADD COLUMN parent_table_id INT DEFAULT NULL COMMENT 'الطاولة الرئيسية في حالة الدمج'"
+);
+$is_merged_result = run_migration_query(
+    $conn,
+    "ALTER TABLE tables ADD COLUMN is_merged TINYINT(1) DEFAULT 0 COMMENT 'هل الطاولة مدمجة'"
+);
+
+if ($parent_table_result['ok'] && $is_merged_result['ok']) {
+    if ($parent_table_result['skipped'] && $is_merged_result['skipped']) {
+        echo "<p style='color:orange'>⚠️ الأعمدة موجودة مسبقاً</p>";
+    } else {
+        echo "<p style='color:green'>✅ تم تحديث أعمدة دمج الطاولات بنجاح</p>";
+    }
+    $success++;
+} else {
+    echo "<p style='color:red'>❌ " . htmlspecialchars($parent_table_result['error'] . ' ' . $is_merged_result['error']) . "</p>";
+    $errors++;
+}
+
 echo "<hr><p><strong>النتيجة:</strong> {$success} ناجح، {$errors} فاشل</p>";
 echo "<p><a href='dashboard.php'>الرئيسية</a></p>";
 echo '</body></html>';

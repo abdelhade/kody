@@ -12,7 +12,7 @@
     --primary-orange: #ff8c42;
     --soft-navy: #2d4a7c;
     --soft-orange: #ffb380;
-    
+
     --bs-primary: #1a2f5a;
     --bs-primary-rgb: 26, 47, 90;
     --bs-secondary: #ff8c42;
@@ -22,7 +22,7 @@
     --bs-info: #2d4a7c;
     --bs-light: #f8f9fa;
     --bs-dark: #1a2f5a;
-    
+
     --bg-main: #f5f7fa;
     --card-bg: #ffffff;
     --border-radius: 12px;
@@ -99,7 +99,7 @@ body {
 }
 
 /* Fix Active Button Text Color */
-.btn-check:checked + .btn-outline-primary {
+.btn-check:checked+.btn-outline-primary {
     background: linear-gradient(135deg, #1a2f5a 0%, #2d4a7c 100%) !important;
     border-color: transparent !important;
     color: white !important;
@@ -148,7 +148,8 @@ body {
 }
 
 /* --- Inputs --- */
-.form-control, .form-select {
+.form-control,
+.form-select {
     border-radius: 8px;
     border: 1px solid #e0e0e0;
     padding: 0.4rem 0.8rem;
@@ -156,7 +157,8 @@ body {
     transition: var(--transition);
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
     border-color: #ff8c42;
     box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.15);
 }
@@ -187,7 +189,8 @@ body {
 }
 
 .category-btn {
-    border-radius: 50px; /* Pill shape */
+    border-radius: 50px;
+    /* Pill shape */
     padding: 0.3rem 1rem !important;
     margin: 2px;
 }

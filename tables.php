@@ -285,8 +285,19 @@ if ($tables_count == 0) {
     }
 }
 
-// جلب الطاولات من قاعدة البيانات
-$tables_query = "SELECT * FROM tables WHERE isdeleted = 0 ORDER BY id ASC";
+// جلب الطاولات من قاعدة البيانات مع حالة الدمج والطلبات النشطة
+$tables_query = "SELECT t.*, 
+    p.tname as parent_tname,
+    (SELECT COUNT(*) FROM ot_head o 
+     WHERE (o.info LIKE CONCAT('%', t.tname, '%') 
+            OR (p.tname IS NOT NULL AND o.info LIKE CONCAT('%', p.tname, '%')))
+     AND o.pro_tybe = 9 
+     AND o.isdeleted = 0 
+     AND o.fat_net > 0) as has_active_order
+FROM tables t 
+LEFT JOIN tables p ON t.parent_table_id = p.id
+WHERE t.isdeleted = 0 
+ORDER BY CAST(SUBSTRING_INDEX(t.tname, ' ', -1) AS UNSIGNED), t.tname";
 $tables_result = $conn->query($tables_query);
 
 // الطاولة المختارة
@@ -311,37 +322,70 @@ if ($selected_table) {
     if ($table_name_result && $table_name_result->num_rows > 0) {
         $selected_table_name = $table_name_result->fetch_assoc()['tname'];
     }
-    
-    // جلب الطلب النشط للطاولة (يتم البحث باستخدام حقل info الذي يحتوي على اسم الطاولة)
-    // ملاحظة: يمكن تحسين هذا لاحقاً بإضافة عمود table_id لجدول ot_head
-    $order_query = "SELECT * FROM ot_head WHERE info LIKE '%$selected_table_name%' AND pro_tybe = 9 ORDER BY id DESC LIMIT 1";
+
+    // التحقق من وجود عمود table_id
+    $has_table_id_col = false;
+    $col_chk = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'table_id'");
+    if ($col_chk && $col_chk->num_rows > 0) $has_table_id_col = true;
+
+    // جلب جميع الطلبات النشطة للطاولة (بدون LIMIT)
+    $selected_table_int = intval($selected_table);
+    $conds = [];
+    if ($has_table_id_col) {
+        $conds[] = "table_id = $selected_table_int";
+    }
+    $conds[] = "info LIKE '%طاولة $selected_table_int%'";
+    $conds[] = "info LIKE '%طاولة رقم $selected_table_int%'";
+    $conds[] = "info LIKE '%table $selected_table_int%'";
+    if ($selected_table_name) {
+        $clean_tname = $conn->real_escape_string($selected_table_name);
+        $conds[] = "info LIKE '%$clean_tname%'";
+    }
+    $where_tables_sql = "(" . implode(" OR ", $conds) . ")";
+
+    $order_query = "SELECT * FROM ot_head
+                    WHERE $where_tables_sql
+                      AND pro_tybe = 9 AND isdeleted = 0
+                    ORDER BY id DESC";
     $order_result = $conn->query($order_query);
-    
+
     if ($order_result && $order_result->num_rows > 0) {
-        $order_data = $order_result->fetch_assoc();
-        $order_id = $order_data['id'];
-        
-        // جلب أصناف الطلب من fat_details
+        $all_orders = [];
+        while ($o = $order_result->fetch_assoc()) {
+            $all_orders[] = $o;
+        }
+
+        // أول طلب (الأحدث) هو المرجع للعمليات
+        $order_data = $all_orders[0];
+
+        // جمع كل IDs الطلبات
+        $all_order_ids = array_column($all_orders, 'id');
+        $ids_str = implode(',', array_map('intval', $all_order_ids));
+
+        // جلب أصناف كل الطلبات
         $items_query = "SELECT fd.*, i.iname, i.price1 as sprice,
                        (fd.qty_out - fd.qty_in) as actual_qty
-                       FROM fat_details fd 
-                       LEFT JOIN myitems i ON fd.item_id = i.id 
-                       WHERE fd.pro_id = $order_id AND fd.isdeleted = 0";
+                       FROM fat_details fd
+                       LEFT JOIN myitems i ON fd.item_id = i.id
+                       WHERE fd.pro_id IN ($ids_str) AND fd.isdeleted = 0
+                       ORDER BY fd.pro_id ASC, fd.id ASC";
         $items_result = $conn->query($items_query);
-        
+
         if ($items_result) {
             while ($item = $items_result->fetch_assoc()) {
                 $order_items[] = $item;
             }
         }
-        
-        // حساب الإجماليات
-        $order_totals['total'] = floatval($order_data['fat_total'] ?? 0);
-        $order_totals['discount'] = floatval($order_data['fat_disc'] ?? 0);
-        $order_totals['extra'] = floatval($order_data['fat_plus'] ?? 0);
+
+        // حساب الإجماليات من كل الطلبات
+        foreach ($all_orders as $o) {
+            $order_totals['total']    += floatval($o['fat_total'] ?? 0);
+            $order_totals['discount'] += floatval($o['fat_disc']  ?? 0);
+            $order_totals['extra']    += floatval($o['fat_plus']  ?? 0);
+        }
         $net = $order_totals['total'] - $order_totals['discount'] + $order_totals['extra'];
-        $order_totals['net'] = $net;
-        $order_totals['paid'] = 0; // يمكن إضافة حقل للمدفوع لاحقاً
+        $order_totals['net']       = $net;
+        $order_totals['paid']      = 0;
         $order_totals['remaining'] = $net;
     }
 }
@@ -372,18 +416,40 @@ if ($selected_table) {
                                 $table_id = $table['id'];
                                 $table_name = $table['tname'];
                                 $table_case = $table['table_case'];
+                                $is_merged = isset($table['is_merged']) && intval($table['is_merged']) == 1;
+                                $has_order = isset($table['has_active_order']) && intval($table['has_active_order']) > 0;
+                                $parent_name = htmlspecialchars($table['parent_tname'] ?? '');
                                 
-                                $bg_color = ($table_case == 0) ? 'bg-white border-success text-success' : 'bg-white border-danger text-danger';
-                                $icon = ($table_case == 0) ? 'fas fa-check-circle' : 'fas fa-clock';
-                                $status = ($table_case == 0) ? 'فارغة' : 'محجوزة';
+                                if ($is_merged && $has_order) {
+                                    $border_color = '#dc3545';
+                                    $text_color = '#dc3545';
+                                    $icon = 'fas fa-object-group';
+                                    $status = 'محجوزة ومدمجة';
+                                } elseif ($is_merged) {
+                                    $border_color = '#ffc107';
+                                    $text_color = '#856404';
+                                    $icon = 'fas fa-object-group';
+                                    $status = 'مدمجة';
+                                } elseif ($has_order || $table_case != 0) {
+                                    $border_color = '#dc3545';
+                                    $text_color = '#dc3545';
+                                    $icon = 'fas fa-clock';
+                                    $status = 'محجوزة';
+                                } else {
+                                    $border_color = '#198754';
+                                    $text_color = '#198754';
+                                    $icon = 'fas fa-check-circle';
+                                    $status = 'فارغة';
+                                }
+
                                 $selected_class = ($selected_table == $table_id) ? 'ring-4 ring-primary' : '';
                                 
                                 // Simplified Button Style
-                                echo '<a href="tables.php?table_id=' . $table_id . '" class="btn table-btn ' . $selected_class . '" style="border: 2px solid ' . ($table_case == 0 ? '#198754' : '#dc3545') . '; color: ' . ($table_case == 0 ? '#198754' : '#dc3545') . '; background: white;">';
+                                echo '<a href="tables.php?table_id=' . $table_id . '" class="btn table-btn ' . $selected_class . '" style="border: 2px solid ' . $border_color . '; color: ' . $text_color . '; background: white;">';
                                 echo '<div class="text-center">';
                                 echo '<i class="' . $icon . ' fa-2x mb-2"></i><br>';
                                 echo '<h6 class="fw-bold mb-1">' . htmlspecialchars($table_name) . '</h6>';
-                                echo '<small>' . $status . '</small>';
+                                echo '<small class="fw-bold">' . $status . '</small>';
                                 echo '</div>';
                                 echo '</a>';
                             }
@@ -674,16 +740,80 @@ if ($selected_table) {
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="fas fa-exchange-alt me-2"></i>نقل الطلب لطاولة أخرى</h5>
+                <h5 class="modal-title"><i class="fas fa-exchange-alt me-2"></i>نقل الطاولة</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="transferCurrentTableId">
                 <input type="hidden" id="transferCurrentOrderId">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    اختر الطاولة الجديدة لنقل الطلب إليها
+
+                <!-- خيار نوع النقل -->
+                <div class="mb-3">
+                    <h6 class="fw-bold text-dark mb-3"><i class="fas fa-sliders-h me-2 text-info"></i>نوع النقل</h6>
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <label class="d-block" style="cursor:pointer;">
+                                <input type="radio" name="transferType" id="transferTypeAll" value="all" checked class="d-none">
+                                <div class="card border-2 text-center p-3" id="cardAll" style="border-color:#dc3545; background:#fff5f5; border-radius:12px;">
+                                    <i class="fas fa-layer-group fa-2x mb-2 text-danger"></i>
+                                    <div class="fw-bold text-danger" style="font-size:0.9rem;">نقل جميع الطلبات</div>
+                                    <small class="text-muted" style="font-size:0.75rem;">تفريغ الطاولة بالكامل</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-4">
+                            <label class="d-block" style="cursor:pointer;">
+                                <input type="radio" name="transferType" id="transferTypeSingle" value="single" class="d-none">
+                                <div class="card border-2 text-center p-3" id="cardSingle" style="border-color:#dee2e6; background:#fff; border-radius:12px;">
+                                    <i class="fas fa-file-alt fa-2x mb-2 text-secondary"></i>
+                                    <div class="fw-bold text-secondary" style="font-size:0.9rem;">نقل طلب كامل</div>
+                                    <small class="text-muted" style="font-size:0.75rem;">نقل فاتورة كاملة</small>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-4">
+                            <label class="d-block" style="cursor:pointer;">
+                                <input type="radio" name="transferType" id="transferTypeItems" value="items" class="d-none">
+                                <div class="card border-2 text-center p-3" id="cardItems" style="border-color:#dee2e6; background:#fff; border-radius:12px;">
+                                    <i class="fas fa-tasks fa-2x mb-2 text-secondary"></i>
+                                    <div class="fw-bold text-secondary" style="font-size:0.9rem;">نقل أصناف محددة</div>
+                                    <small class="text-muted" style="font-size:0.75rem;">اختيار أصناف معينة</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- التنبيه -->
+                <div class="alert alert-danger mb-3" id="transferTypeAlert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>تنبيه:</strong> سيتم نقل جميع الطلبات. الطاولة الحالية ستصبح <span class="fw-bold">فارغة</span> والجديدة <span class="fw-bold">محجوزة</span>.
+                </div>
+
+                <!-- اختيار الطلب (يظهر فقط عند اختيار طلب كامل) -->
+                <div id="orderPickerSection" style="display:none;" class="mb-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-list me-2 text-info"></i>اختر الطلب المطلوب نقله</h6>
+                    <div id="orderPickerList" class="row g-2">
+                        <div class="col-12 text-center text-muted py-3">
+                            <div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الطلبات...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اختيار أصناف معينة (يظهر فقط عند اختيار نقل أصناف محددة) -->
+                <div id="itemPickerSection" style="display:none;" class="mb-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-check-square me-2 text-info"></i>حدد الأصناف المراد نقلها من الطاولة</h6>
+                    <div class="card border p-3 shadow-sm" style="border-radius:12px; max-height:250px; overflow-y:auto;">
+                        <div id="itemPickerList" class="row g-2">
+                            <div class="col-12 text-center text-muted py-3">
+                                <div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الأصناف...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- شبكة الطاولات الجديدة -->
+                <h6 class="fw-bold text-dark mb-2"><i class="fas fa-chair me-2 text-info"></i>اختر الطاولة الجديدة</h6>
                 <div class="row g-3" id="transferTablesGrid">
                     <!-- سيتم تحميل الطاولات هنا -->
                 </div>
@@ -1045,12 +1175,218 @@ function activateTable(tableId) {
 }
 
 // دوال نقل الطاولة
+let transferSelectedOrderId = null; // الطلب المختار عند نقل طلب واحد
+
 function showTransferTableModal(currentTableId, currentOrderId) {
     $('#transferCurrentTableId').val(currentTableId);
     $('#transferCurrentOrderId').val(currentOrderId);
+    transferSelectedOrderId = null;
+
+    // الافتراضي: نقل جميع الطلبات
+    $('#transferTypeAll').prop('checked', true);
+    updateTransferTypeUI('all');
+
     loadTransferTables(currentTableId);
     $('#transferTableModal').modal('show');
 }
+
+// تحديث مظهر بطاقات نوع النقل
+function updateTransferTypeUI(selectedType) {
+    // إعادة ضبط كل البطاقات للشكل الافتراضي (غير محددة)
+    $('#cardAll').css({'border-color':'#dee2e6','background':'#fff'});
+    $('#cardAll .fa-layer-group').removeClass('text-danger').addClass('text-secondary');
+    $('#cardAll .fw-bold').removeClass('text-danger').addClass('text-secondary');
+
+    $('#cardSingle').css({'border-color':'#dee2e6','background':'#fff'});
+    $('#cardSingle .fa-file-alt').removeClass('text-info').addClass('text-secondary');
+    $('#cardSingle .fw-bold').removeClass('text-info').addClass('text-secondary');
+
+    $('#cardItems').css({'border-color':'#dee2e6','background':'#fff'});
+    $('#cardItems .fa-tasks').removeClass('text-warning').addClass('text-secondary');
+    $('#cardItems .fw-bold').removeClass('text-warning').addClass('text-secondary');
+
+    // إخفاء كل أقسام الاختيار الإضافية
+    $('#orderPickerSection').hide();
+    $('#itemPickerSection').hide();
+
+    if (selectedType === 'all') {
+        // بطاقة جميع الطلبات = مختارة (danger)
+        $('#cardAll').css({'border-color':'#dc3545','background':'#fff5f5'});
+        $('#cardAll .fa-layer-group').removeClass('text-secondary').addClass('text-danger');
+        $('#cardAll .fw-bold').removeClass('text-secondary').addClass('text-danger');
+        
+        $('#transferTypeAlert')
+            .removeClass('alert-info alert-warning').addClass('alert-danger')
+            .html('<i class="fas fa-exclamation-triangle me-2"></i><strong>تنبيه:</strong> سيتم نقل جميع الطلبات. الطاولة الحالية ستصبح <span class="fw-bold">فارغة</span> والجديدة <span class="fw-bold">محجوزة</span>.');
+        
+        transferSelectedOrderId = null;
+    } else if (selectedType === 'single') {
+        // بطاقة طلب كامل = مختارة (info)
+        $('#cardSingle').css({'border-color':'#0dcaf0','background':'#e8f8fc'});
+        $('#cardSingle .fa-file-alt').removeClass('text-secondary').addClass('text-info');
+        $('#cardSingle .fw-bold').removeClass('text-secondary').addClass('text-info');
+        
+        $('#transferTypeAlert')
+            .removeClass('alert-danger alert-warning').addClass('alert-info')
+            .html('<i class="fas fa-info-circle me-2"></i>اختر الطلب المطلوب نقله بالكامل ثم اختر الطاولة الجديدة.');
+        
+        $('#orderPickerSection').show();
+        transferSelectedOrderId = null;
+        loadTableOrders($('#transferCurrentTableId').val());
+    } else if (selectedType === 'items') {
+        // بطاقة نقل أصناف محددة = مختارة (warning)
+        $('#cardItems').css({'border-color':'#ffc107','background':'#fffbeb'});
+        $('#cardItems .fa-tasks').removeClass('text-secondary').addClass('text-warning');
+        $('#cardItems .fw-bold').removeClass('text-secondary').addClass('text-warning');
+        
+        $('#transferTypeAlert')
+            .removeClass('alert-danger alert-info').addClass('alert-warning')
+            .html('<i class="fas fa-list-ul me-2"></i>حدد الأصناف المطلوب نقلها من القائمة بالأسفل ثم اختر الطاولة الجديدة.');
+        
+        $('#itemPickerSection').show();
+        loadTableItemsForTransfer($('#transferCurrentTableId').val());
+    }
+}
+
+// جلب أصناف الطاولة للاختيار الفردي
+function loadTableItemsForTransfer(tableId) {
+    $('#itemPickerList').html('<div class="col-12 text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الأصناف...</div>');
+    $.ajax({
+        url: 'ajax/get_table_orders.php',
+        method: 'GET',
+        data: { table_id: tableId },
+        dataType: 'json',
+        success: function(resp) {
+            if (!resp.success) {
+                $('#itemPickerList').html('<div class="col-12"><div class="alert alert-warning mb-0">خطأ في جلب الأصناف</div></div>');
+                return;
+            }
+            let html = '';
+            let totalItemsLoaded = 0;
+            if (resp.orders && resp.orders.length > 0) {
+                resp.orders.forEach(function(order) {
+                    if (order.items && order.items.length > 0) {
+                        order.items.forEach(function(it) {
+                            html += `
+                                <div class="col-12">
+                                    <label class="d-flex align-items-center p-2 rounded border mb-1" style="cursor:pointer; background:#fff; transition:all 0.2s;">
+                                        <input type="checkbox" name="transferItems" value="${it.detail_id}" class="form-check-input me-3" style="width:1.3em; height:1.3em; cursor:pointer;" checked>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold text-dark" style="font-size:0.95rem;">${it.name}</div>
+                                            <small class="text-muted">الطلب #${order.id} | الكمية: ${it.qty} | سعر: ${it.price.toFixed(2)} ج.م</small>
+                                        </div>
+                                        <span class="badge bg-success fs-6">${(it.qty * it.price).toFixed(2)} ج.م</span>
+                                    </label>
+                                </div>
+                            `;
+                            totalItemsLoaded++;
+                        });
+                    }
+                });
+            }
+            if (totalItemsLoaded === 0) {
+                $('#itemPickerList').html('<div class="col-12"><div class="alert alert-warning mb-0">لا توجد أصناف نشطة على هذه الطاولة</div></div>');
+                return;
+            }
+            $('#itemPickerList').html(html);
+        },
+        error: function() {
+            $('#itemPickerList').html('<div class="col-12"><div class="alert alert-danger mb-0">خطأ في الاتصال</div></div>');
+        }
+    });
+}
+
+// جلب طلبات الطاولة للاختيار
+function loadTableOrders(tableId) {
+    $('#orderPickerList').html('<div class="col-12 text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الطلبات...</div>');
+    $.ajax({
+        url: 'ajax/get_table_orders.php',
+        method: 'GET',
+        data: { table_id: tableId },
+        dataType: 'json',
+        success: function(resp) {
+            if (!resp.success) {
+                $('#orderPickerList').html('<div class="col-12"><div class="alert alert-warning mb-0">خطأ في جلب الطلبات</div></div>');
+                return;
+            }
+            if (!resp.orders || resp.orders.length === 0) {
+                $('#orderPickerList').html('<div class="col-12"><div class="alert alert-warning mb-0">لا توجد طلبات على هذه الطاولة</div></div>');
+                return;
+            }
+            let html = '';
+            resp.orders.forEach(function(order, index) {
+                const timeStr = order.crtime ? order.crtime.slice(11, 16) : '--:--';
+                
+                let itemsListHtml = '';
+                if (order.items && order.items.length > 0) {
+                    itemsListHtml = '<div class="mt-2 pt-2 border-top d-flex flex-wrap gap-1">';
+                    order.items.forEach(function(it) {
+                        itemsListHtml += `<span class="badge bg-light text-dark border fw-normal" style="font-size: 0.82rem;"><i class="fas fa-check-circle text-success me-1"></i>${it.name} <strong class="text-primary">(x${it.qty})</strong></span>`;
+                    });
+                    itemsListHtml += '</div>';
+                }
+
+                const isFirst = index === 0;
+                const checkedAttr = isFirst ? 'checked' : '';
+
+                html += `
+                    <div class="col-12">
+                        <label class="d-block w-100 mb-0" style="cursor:pointer;">
+                            <div class="order-pick-card card border-2 p-3 ${isFirst ? 'border-info bg-light-info' : ''}" 
+                                 data-order-id="${order.id}"
+                                 style="border-color:${isFirst ? '#0dcaf0' : '#dee2e6'}; background:${isFirst ? '#e8f8fc' : '#fff'}; transition:all 0.2s; border-radius:12px;"
+                                 onclick="selectTransferOrder(${order.id}, this)">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="d-flex align-items-center">
+                                        <input type="radio" name="selectedTransferOrder" value="${order.id}" ${checkedAttr} class="form-check-input me-2" style="width:1.2em; height:1.2em; cursor:pointer;">
+                                        <span class="badge bg-secondary me-2">طلب #${order.id}</span>
+                                        <span class="text-muted small me-2"><i class="fas fa-clock me-1"></i>${timeStr}</span>
+                                        <span class="badge bg-info text-dark"><i class="fas fa-boxes me-1"></i>${order.items_count} صنف</span>
+                                    </div>
+                                    <div class="fw-bold text-success fs-6">${parseFloat(order.net).toFixed(2)} ج.م</div>
+                                </div>
+                                ${itemsListHtml}
+                            </div>
+                        </label>
+                    </div>
+                `;
+            });
+            $('#orderPickerList').html(html);
+            // تعيين الطلب الأول افتراضياً
+            if (resp.orders.length > 0) {
+                transferSelectedOrderId = resp.orders[0].id;
+            }
+        },
+        error: function() {
+            $('#orderPickerList').html('<div class="col-12"><div class="alert alert-danger mb-0">خطأ في الاتصال</div></div>');
+        }
+    });
+}
+
+// تحديد طلب للنقل
+function selectTransferOrder(orderId, el) {
+    transferSelectedOrderId = orderId;
+    $('.order-pick-card').css({'border-color':'#dee2e6','background':'#fff'});
+    const card = $(el).closest('.order-pick-card');
+    card.css({'border-color':'#0dcaf0','background':'#e8f8fc'});
+    card.find('input[name="selectedTransferOrder"]').prop('checked', true);
+}
+
+// الاستماع لتغيير نوع النقل
+$(document).on('change', 'input[name="transferType"]', function() {
+    updateTransferTypeUI($(this).val());
+});
+
+// الضغط على البطاقة نفسها للاختيار
+$(document).on('click', '#cardAll', function() {
+    $('#transferTypeAll').prop('checked', true).trigger('change');
+});
+$(document).on('click', '#cardSingle', function() {
+    $('#transferTypeSingle').prop('checked', true).trigger('change');
+});
+$(document).on('click', '#cardItems', function() {
+    $('#transferTypeItems').prop('checked', true).trigger('change');
+});
 
 function loadTransferTables(currentTableId) {
     $.ajax({
@@ -1075,20 +1411,24 @@ function displayTransferTables(tables, currentTableId) {
     tables.forEach(function(table) {
         // استبعاد الطاولة الحالية
         if (table.id == currentTableId) return;
-        
-        const statusClass = table.table_case == 0 ? 'bg-success' : 'bg-danger';
-        const statusText = table.table_case == 0 ? 'متاحة' : 'مشغولة';
-        const disabled = table.table_case == 1 ? 'disabled' : '';
-        
+
+        const isAvailable = table.table_case == 0;
+        const statusText = isAvailable ? 'متاحة' : 'مشغولة';
+        const borderColor = isAvailable ? '#10b981' : '#ef4444';
+        const iconColor   = isAvailable ? '#10b981' : '#ef4444';
+        const bgColor     = isAvailable ? '#ecfdf5' : '#fef2f2';
+        const disabled    = isAvailable ? '' : 'disabled';
+
         html += `
             <div class="col-md-3 col-sm-4">
-                <button class="btn table-btn ${statusClass} w-100 ${disabled}" 
-                        onclick="transferTable(${table.id}, '${table.tname}')" 
+                <button class="btn w-100 py-3 ${disabled}"
+                        style="border:2px solid ${borderColor}; background:${bgColor}; border-radius:16px; transition:all 0.2s;"
+                        onclick="transferTable(${table.id}, '${table.tname}')"
                         ${disabled}>
                     <div class="text-center">
-                        <i class="fas fa-chair fa-2x mb-2"></i>
-                        <h6 class="fw-bold">${table.tname}</h6>
-                        <small>${statusText}</small>
+                        <i class="fas fa-chair fa-2x mb-2" style="color:${iconColor};"></i>
+                        <h6 class="fw-bold mb-1" style="color:${iconColor};">${table.tname}</h6>
+                        <small class="fw-bold" style="color:${iconColor};">${statusText}</small>
                     </div>
                 </button>
             </div>
@@ -1100,24 +1440,56 @@ function displayTransferTables(tables, currentTableId) {
 function transferTable(newTableId, newTableName) {
     const currentTableId = $('#transferCurrentTableId').val();
     const currentOrderId = $('#transferCurrentOrderId').val();
-    
-    if (confirm(`هل تريد نقل الطلب من الطاولة الحالية إلى ${newTableName}؟`)) {
+    const transferType   = $('input[name="transferType"]:checked').val() || 'all';
+
+    let usedOrderId = currentOrderId;
+    let selectedItemIds = [];
+
+    if (transferType === 'single') {
+        usedOrderId = $('input[name="selectedTransferOrder"]:checked').val() || transferSelectedOrderId;
+        if (!usedOrderId) {
+            alert('يرجى اختيار الطلب المطلوب نقله أولاً من القائمة أعلاه');
+            return;
+        }
+    } else if (transferType === 'items') {
+        $('input[name="transferItems"]:checked').each(function() {
+            selectedItemIds.push($(this).val());
+        });
+        if (selectedItemIds.length === 0) {
+            alert('يرجى تحديد صنف واحد على الأقل لنقله');
+            return;
+        }
+    }
+
+    let msgConfirm = '';
+    if (transferType === 'all') {
+        msgConfirm = `هل تريد نقل جميع الطلبات إلى ${newTableName}؟\nالطاولة الحالية ستصبح فارغة.`;
+    } else if (transferType === 'single') {
+        msgConfirm = `هل تريد نقل الطلب #${usedOrderId} بالكامل إلى ${newTableName}؟`;
+    } else if (transferType === 'items') {
+        msgConfirm = `هل تريد نقل الأصناف المحددة (${selectedItemIds.length} صنف) إلى ${newTableName}؟`;
+    }
+
+    if (confirm(msgConfirm)) {
         $.ajax({
             url: 'ajax/transfer_order_table.php',
             method: 'POST',
             data: {
-                order_id: currentOrderId,
-                old_table_id: currentTableId,
-                new_table_id: newTableId,
-                new_table_name: newTableName
+                order_id:       usedOrderId,
+                old_table_id:   currentTableId,
+                new_table_id:   newTableId,
+                new_table_name: newTableName,
+                transfer_type:  transferType,
+                item_ids:       selectedItemIds.join(',')
             },
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    console.log('تفاصيل النقل:', response);
-                    alert('تم نقل الطلب للطاولة الجديدة بنجاح\n' +
-                          '- الطاولة القديمة أصبحت متاحة\n' +
-                          '- الطاولة الجديدة أصبحت مشغولة');
+                    let msg = 'تم نقل البيانات بنجاح';
+                    if (transferType === 'all')    msg = 'تم نقل جميع الطلبات بنجاح\n✔ الطاولة القديمة أصبحت فارغة\n✔ الطاولة الجديدة أصبحت محجوزة';
+                    if (transferType === 'single') msg = 'تم نقل الطلب بنجاح\n✔ الطاولة الجديدة أصبحت محجوزة';
+                    if (transferType === 'items')  msg = 'تم نقل الأصناف المحددة بنجاح\n✔ الطاولة الجديدة أصبحت محجوزة';
+                    alert(msg);
                     $('#transferTableModal').modal('hide');
                     location.reload();
                 } else {
@@ -1126,7 +1498,6 @@ function transferTable(newTableId, newTableName) {
             },
             error: function(xhr, status, error) {
                 console.error('خطأ في النقل:', error);
-                console.error('الاستجابة:', xhr.responseText);
                 alert('خطأ في نقل الطلب: ' + error);
             }
         });
