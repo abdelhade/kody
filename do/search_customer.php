@@ -35,7 +35,7 @@ if ($stmt) {
 
 // البحث في جدول العملاء الرئيسي (acc_head)
 $stmt = $conn->prepare(
-    "SELECT aname, mobile, address FROM acc_head WHERE code LIKE '122%' AND isdeleted = 0 AND (mobile = ? OR aname LIKE ?) LIMIT 1"
+    "SELECT aname, phone, address FROM acc_head WHERE code LIKE '122%' AND isdeleted = 0 AND (phone = ? OR aname LIKE ?) LIMIT 1"
 );
 
 if ($stmt) {

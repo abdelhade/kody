@@ -160,6 +160,15 @@ if ($hash_id !== $hash) {
                     </tr>
 
                     <tr class="tr1">
+                        <td>ديليفري</td>
+                        <td><input type="checkbox" class="user-checkbox" name="show_delivery" id="" <?php if( $rowrol['show_delivery'] == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="add_delivery" id="" <?php if( $rowrol['add_delivery'] == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="edit_delivery" id="" <?php if( $rowrol['edit_delivery'] == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="delete_delivery" id="" <?php if( $rowrol['delete_delivery'] == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="is_fav_delivery" id="" <?php if( $rowrol['is_fav_delivery'] == 1){echo "checked"; }?>></td>
+                    </tr>
+
+                    <tr class="tr1">
                         <td>الشركاء</td>
                         <td><input type="checkbox" class="user-checkbox" name="show_partners" id="" <?php if( $rowrol['show_partners'] == 1){echo "checked"; }?>></td>
                         <td><input type="checkbox" class="user-checkbox" name="add_partners" id="" <?php if( $rowrol['add_partners'] == 1){echo "checked"; }?>></td>

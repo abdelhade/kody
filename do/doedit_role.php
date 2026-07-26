@@ -76,6 +76,12 @@ if ($rollname === null) {
     $edit_depits = isset($_POST['edit_depits']) ? 1 : 0; 
     $delete_depits = isset($_POST['delete_depits']) ? 1 : 0; 
     $is_fav_depits = isset($_POST['is_fav_depits']) ? 1 : 0; 
+
+    $show_delivery = isset($_POST['show_delivery']) ? 1 : 0;
+    $add_delivery = isset($_POST['add_delivery']) ? 1 : 0;
+    $edit_delivery = isset($_POST['edit_delivery']) ? 1 : 0;
+    $delete_delivery = isset($_POST['delete_delivery']) ? 1 : 0;
+    $is_fav_delivery = isset($_POST['is_fav_delivery']) ? 1 : 0;
     
     $show_partners = isset($_POST['show_partners']) ? 1 : 0;
     $add_partners = isset($_POST['add_partners']) ? 1 : 0;
@@ -302,6 +308,11 @@ SET
 `add_depits`= '$add_depits',
 `edit_depits`= '$edit_depits',
 `delete_depits`= '$delete_depits',
+`is_fav_delivery`= '$is_fav_delivery',
+`show_delivery`= '$show_delivery',
+`add_delivery`= '$add_delivery',
+`edit_delivery`= '$edit_delivery',
+`delete_delivery`= '$delete_delivery',
 `is_fav_partners`= '$is_fav_partners',
 `show_partners`= '$show_partners',
 `add_partners`= '$add_partners',

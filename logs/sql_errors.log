@@ -205,3 +205,32 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-07-11 16:30:03] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
 [2026-07-12 13:57:45] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\ajax\modal_add_account.php:59
 [2026-07-12 14:34:42] mysqli_sql_exception: MySQL server has gone away in C:\xampp\htdocs\kody\do\doadd_invoice.php:750
+[2026-07-26 17:14:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:24] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:14:25] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:15:11] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:15:12] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:31] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:32] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:32] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:33] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:33] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:33] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:35] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:36] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:40:38] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-07-26 17:49:22] mysqli_sql_exception: Unknown column 'mobile' in 'field list' in C:\xampp\htdocs\kody\do\search_customer.php:37
+[2026-07-26 17:51:39] mysqli_sql_exception: Unknown column 'mobile' in 'field list' in C:\xampp\htdocs\kody\do\search_customer.php:37
+[2026-07-26 17:51:41] mysqli_sql_exception: Unknown column 'mobile' in 'field list' in C:\xampp\htdocs\kody\do\search_customer.php:37
+[2026-07-26 17:51:44] mysqli_sql_exception: Unknown column 'mobile' in 'field list' in C:\xampp\htdocs\kody\do\search_customer.php:37
+[2026-07-26 17:51:46] mysqli_sql_exception: Unknown column 'mobile' in 'field list' in C:\xampp\htdocs\kody\do\search_customer.php:37

@@ -150,6 +150,15 @@
                                     </tr>
 
                                     <tr class="tr1">
+                                        <td class="font-weight-bold">ديليفري</td>
+                                        <td class="text-center"><input type="checkbox" class="user-checkbox" name="show_delivery" checked></td>
+                                        <td class="text-center"><input type="checkbox" class="user-checkbox" name="add_delivery" checked></td>
+                                        <td class="text-center"><input type="checkbox" class="user-checkbox" name="edit_delivery" checked></td>
+                                        <td class="text-center"><input type="checkbox" class="user-checkbox" name="delete_delivery" checked></td>
+                                        <td class="text-center"><input type="checkbox" class="user-checkbox" name="is_fav_delivery"></td>
+                                    </tr>
+
+                                    <tr class="tr1">
                                         <td class="font-weight-bold">الشركاء</td>
                                         <td class="text-center"><input type="checkbox" class="user-checkbox" name="show_partners" checked></td>
                                         <td class="text-center"><input type="checkbox" class="user-checkbox" name="add_partners" checked></td>

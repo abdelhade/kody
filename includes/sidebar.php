@@ -163,6 +163,13 @@
                   <p><?= $lang_sideemployees ?></p>
                 </a>
               </li>
+
+              <li class="nav-item">
+                <a href="acc_report.php?acc=delivery" class="nav-link">
+                  <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
+                  <p>ديليفري</p>
+                </a>
+              </li>
             </ul>
           </li>
         <?php } ?>
@@ -595,6 +602,13 @@
                   <a href="employees.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                     <p><?= $lang_sideemployees ?></p>
+                  </a>
+                </li>
+
+                <li class="nav-item">
+                  <a href="acc_report.php?acc=delivery" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
+                    <p>ديليفري</p>
                   </a>
                 </li>
 

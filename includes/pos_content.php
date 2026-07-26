@@ -997,6 +997,20 @@ body {
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- مندوب التوصيل -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">مندوب التوصيل</label>
+                        <select class="form-select" id="delivery_person_id">
+                            <option value="">-- اختر مندوب التوصيل --</option>
+                            <?php
+                            $resdelivery = $conn->query("SELECT * FROM `acc_head` WHERE code LIKE '126%' AND isdeleted = 0 ORDER BY aname");
+                            while ($rowdelivery = $resdelivery->fetch_assoc()) {
+                                echo '<option value="' . $rowdelivery['id'] . '">' . htmlspecialchars($rowdelivery['aname']) . ' (' . $rowdelivery['code'] . ')</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label fw-bold">رقم العميل</label>
                         <div class="input-group">
@@ -1417,6 +1431,7 @@ body {
                 $('#customer_name').val('');
                 $('#customer_address').val('');
                 $('#customer_result').html('');
+                $('#delivery_person_id').val('');
                 $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ').show();
                 $('#confirmOrderBtn').hide();
                 lastSearchedPhone = ''; // إعادة تعيين متغير البحث
@@ -1473,7 +1488,8 @@ body {
                 const fields = {
                     delivery_customer_name: name,
                     delivery_customer_phone: phone,
-                    delivery_customer_address: address
+                    delivery_customer_address: address,
+                    delivery_person_id: $('#delivery_person_id').val()
                 };
 
                 Object.entries(fields).forEach(function ([fieldName, value]) {
@@ -1489,7 +1505,7 @@ body {
             };
 
             window.clearDeliveryFieldsFromForm = function () {
-                ['delivery_customer_name', 'delivery_customer_phone', 'delivery_customer_address'].forEach(function (fieldName) {
+                ['delivery_customer_name', 'delivery_customer_phone', 'delivery_customer_address', 'delivery_person_id'].forEach(function (fieldName) {
                     document.querySelectorAll('#posForm input[name="' + fieldName + '"]').forEach(function (input) {
                         input.remove();
                     });
