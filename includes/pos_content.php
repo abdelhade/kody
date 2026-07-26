@@ -269,7 +269,7 @@ body {
                                                         <input type="hidden" value='<?= $rowdet['item_id'] ?>'
                                                             name="itmname[]">
                                                         <input type="hidden" class="barcode" value="<?= $barcode ?>">
-                                                        <div class="text-truncate fw-bold" style="font-size: 0.75rem;"
+                                                        <div class="text-truncate fw-bold" style="font-size: 1rem;"
                                                             title="<?= $item_name ?>"><?= $item_name ?></div>
                                                     </div>
 
@@ -380,6 +380,15 @@ body {
                                             style="font-size: 0.7rem; padding: 0.4rem 0.6rem;"
                                             onclick="clearAllItems();" title="مسح">
                                             <i class="fas fa-eraser"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- زر عرض معلومات الشيفت -->
+                                    <div class="mt-1">
+                                        <button type="button" class="btn btn-info w-100" data-bs-toggle="modal"
+                                            data-bs-target="#shiftInfoModal" style="font-size: 0.75rem; padding: 0.3rem;">
+                                            <i class="fas fa-user-clock me-1"></i>معلومات الشيفت
+                                            <span id="shift_info_display" style="font-size: 0.65rem;">جاري التحميل...</span>
                                         </button>
                                     </div>
                                 </div>
@@ -499,7 +508,7 @@ body {
                                             </div>
 
                                             <!-- اسم الصنف -->
-                                            <h6 class="card-title text-truncate mb-1" style="font-size: 0.85rem;"
+                                            <h6 class="card-title text-truncate mb-1" style="font-size: 1.5rem; font-weight: 600;"
                                                 title="<?= $itemName ?>">
                                                 <?= $itemName ?>
                                             </h6>
@@ -923,6 +932,59 @@ body {
         </div>
     </div>
 
+    <!-- Modal معلومات الشيفت -->
+    <div class="modal fade" id="shiftInfoModal" tabindex="-1" aria-labelledby="shiftInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-info text-white border-0 py-3">
+                    <h5 class="modal-title fw-bold" id="shiftInfoModalLabel">
+                        <i class="fas fa-user-clock me-2"></i>معلومات الشيفت الحالي
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm text-center mb-0" style="font-size: 0.9rem;">
+                            <thead class="bg-light text-dark">
+                                <tr>
+                                    <th class="py-2">البيان</th>
+                                    <th class="py-2">القيمة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-start py-2 px-3 fw-bold">الكاشير</td>
+                                    <td class="py-2 px-3 fw-bold text-primary" id="shift_cashier_name">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start py-2 px-3">عدد الطلبات</td>
+                                    <td class="py-2 px-3" id="shift_total_orders">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start py-2 px-3">إجمالي المبيعات</td>
+                                    <td class="py-2 px-3" id="shift_total_gross">0.00 ج.م</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start py-2 px-3">إجمالي الخصومات</td>
+                                    <td class="py-2 px-3 text-danger" id="shift_total_discount">0.00 ج.م</td>
+                                </tr>
+                                <tr class="table-success fw-bold">
+                                    <td class="text-start py-2 px-3">صافي المبيعات</td>
+                                    <td class="py-2 px-3 text-success" id="shift_total_net">0.00 ج.م</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal الدليفري -->
     <div class="modal fade" id="deliveryModal" tabindex="-1" aria-labelledby="deliveryModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1045,6 +1107,9 @@ body {
 
             // ملاحظة: كود السيرش والفلترة موجود في pos_barcode.js (محسّن للأداء)
 
+            // تحديث معلومات الشيفت على الزر عند تحميل الصفحة
+            updateShiftInfoButton();
+
             let globalStartCash = 0;
             let globalNetSales = 0;
 
@@ -1082,6 +1147,10 @@ body {
                 loadShiftPreview();
             });
 
+            $('#shiftInfoModal').on('show.bs.modal', function () {
+                loadShiftInfo();
+            });
+
             function loadShiftPreview() {
                 $.ajax({
                     url: 'do/get_shift_preview.php',
@@ -1116,6 +1185,74 @@ body {
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', error);
+                    }
+                });
+            }
+
+            function loadShiftInfo() {
+                $.ajax({
+                    url: 'do/get_shift_preview.php',
+                    method: 'GET',
+                    success: function(data) {
+                        try {
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
+
+                            if (response.success) {
+                                $('#shift_cashier_name').text(response.data.cashier_name || 'الكاشير');
+                                $('#shift_total_orders').text(response.data.total_orders || 0);
+                                $('#shift_total_gross').text(parseFloat(response.data.total_gross || 0).toFixed(2) + ' ج.م');
+                                $('#shift_total_discount').text(parseFloat(response.data.total_discount || 0).toFixed(2) + ' ج.م');
+                                $('#shift_total_net').text(parseFloat(response.data.total_net || 0).toFixed(2) + ' ج.م');
+                            } else {
+                                $('#shift_cashier_name').text('خطأ');
+                                $('#shift_total_orders').text('0');
+                                $('#shift_total_gross').text('0.00 ج.م');
+                                $('#shift_total_discount').text('0.00 ج.م');
+                                $('#shift_total_net').text('0.00 ج.م');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing shift info:', e);
+                            $('#shift_cashier_name').text('خطأ');
+                            $('#shift_total_orders').text('0');
+                            $('#shift_total_gross').text('0.00 ج.م');
+                            $('#shift_total_discount').text('0.00 ج.م');
+                            $('#shift_total_net').text('0.00 ج.م');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#shift_cashier_name').text('خطأ');
+                        $('#shift_total_orders').text('0');
+                        $('#shift_total_gross').text('0.00 ج.م');
+                        $('#shift_total_discount').text('0.00 ج.م');
+                        $('#shift_total_net').text('0.00 ج.م');
+                    }
+                });
+            }
+
+            function updateShiftInfoButton() {
+                $.ajax({
+                    url: 'do/get_shift_preview.php',
+                    method: 'GET',
+                    success: function(data) {
+                        try {
+                            var response = (typeof data === 'object') ? data : JSON.parse(data);
+
+                            if (response.success) {
+                                var cashierName = response.data.cashier_name || 'الكاشير';
+                                var totalNet = parseFloat(response.data.total_net || 0).toFixed(2);
+                                $('#shift_info_display').text(cashierName + ' - ' + totalNet + ' ج.م');
+                            } else {
+                                $('#shift_info_display').text('غير متاح');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing shift info for button:', e);
+                            $('#shift_info_display').text('غير متاح');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#shift_info_display').text('غير متاح');
                     }
                 });
             }
@@ -1634,9 +1771,15 @@ body {
         
         if (saveBtn.length > 0) saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
         if (printBtn.length > 0) printBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
-        
+
         $('#paymentModal').modal('hide');
         form.submit();
+
+        // تحديث معلومات الشيفت بعد الحفظ
+        setTimeout(function() {
+            updateShiftInfoButton();
+        }, 1000);
+
         return true;
     };
     </script>

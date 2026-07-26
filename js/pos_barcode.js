@@ -249,7 +249,7 @@ $(document).ready(function() {
                         <div style="flex: 1; min-width: 0;">
                             <input type="hidden" value='${id}' name="itmname[]">
                             <input type="hidden" class="barcode" value="${barcode}">
-                            <div class="text-truncate fw-bold" style="font-size: 0.75rem;" title="${name}">${name}</div>
+                            <div class="text-truncate fw-bold" style="font-size: 1rem;" title="${name}">${name}</div>
                         </div>
                         
                         <div style="width: 65px;">

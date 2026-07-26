@@ -72,20 +72,21 @@ class ShiftReport {
      * Get basic shift totals (Sales, Invoices count)
      */
     public function getTotals() {
-        $timeCond = $this->getTimeCondition();
-        $query = "SELECT 
+        // استخدام التاريخ الحالي بدون شرط الوقت لحساب جميع فواتير اليوم
+        $currentDate = date('Y-m-d');
+        $query = "SELECT
                     COUNT(*) as total_orders,
                     COALESCE(SUM(fat_total), 0) as total_gross,
                     COALESCE(SUM(fat_disc), 0) as total_discount,
                     COALESCE(SUM(fat_net), 0) as total_net
-                  FROM ot_head 
-                  WHERE DATE(pro_date) = ? 
-                  AND user = ? 
+                  FROM ot_head
+                  WHERE DATE(pro_date) = ?
+                  AND user = ?
                   AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11)
-                  AND isdeleted = 0" . $timeCond;
-                  
+                  AND isdeleted = 0";
+
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("si", $this->date, $this->userId);
+        $stmt->bind_param("si", $currentDate, $this->userId);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->fetch_assoc();
