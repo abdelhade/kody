@@ -70,6 +70,11 @@ if (isset($_GET)) {
             $code = 123;
             $b1 = "?parent_id=123";
         }
+        if ($_GET['acc'] == "delivery") {
+            $a01 = " AND code LIKE '126%' ";
+            $code = 126;
+            $b1 = "?parent_id=126";
+        }
 }}
 
 ?>
@@ -82,7 +87,7 @@ if(isset($_POST['fix_balances'])) {
     $conn->query($sqlchk);
 
     // أولاً: نتأكد إن الحسابات الرئيسية is_basic = 1
-    $main_accounts = ['122', '211', '121', '124', '44', '32', '212', '125', '221', '11', '213', '112', '123'];
+    $main_accounts = ['122', '211', '121', '124', '44', '32', '212', '125', '221', '11', '213', '112', '123', '126'];
     foreach ($main_accounts as $acc_code) {
         $fix_main = "UPDATE acc_head SET is_basic = 1 WHERE code = '$acc_code' AND isdeleted = 0";
         $conn->query($fix_main);

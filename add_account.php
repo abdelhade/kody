@@ -50,7 +50,8 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
 ($parent == '11' && $role['add_assets'] == 1) ||
 ($parent == '213' && $role['add_employees'] == 1) ||
 ($parent == '112' && $role['add_rentables'] == 1) ||
-($parent == '123' && $role['add_stock'] == 1)) {
+($parent == '123' && $role['add_stock'] == 1) ||
+($parent == '126' && $role['add_delivery'] == 1)) {
 ?>
 
 
