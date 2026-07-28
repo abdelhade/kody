@@ -248,6 +248,17 @@ try {
             throw new Exception('فشل في تحضير استعلام تحديث الفاتورة: ' . $conn->error);
         }
         
+        $total_paid = $paid_cash + $paid_bank;
+        $change_amount = max(0, $total_paid - $headnet);
+        $payment_status = ($total_paid >= $headnet) ? 'paid' : (($total_paid > 0) ? 'partial' : 'unpaid');
+        $payment_notes_json = json_encode([
+            'paid_cash' => $paid_cash,
+            'paid_bank' => $paid_bank,
+            'payment_fund_id' => $payment_fund_id,
+            'payment_bank_id' => $payment_bank_id,
+            'change_amount' => $change_amount
+        ]);
+
         $stmt->bind_param(
             "sssssssssssssssssssss",
             $pro_tybe, $info, $accural_date, 
@@ -261,6 +272,16 @@ try {
             throw new Exception('فشل في تحديث الفاتورة: ' . $stmt->error);
         }
         $stmt->close();
+        
+        // تحديث بيانات الدفع في رأس الفاتورة
+        $stmt_update_payment = $conn->prepare(
+            "UPDATE ot_head SET 
+                paid_amount = ?, remaining_amount = ?, payment_status = ?, payment_notes = ?
+             WHERE id = ?"
+        );
+        $stmt_update_payment->bind_param("ddssi", $total_paid, $change_amount, $payment_status, $payment_notes_json, $edit_id);
+        $stmt_update_payment->execute();
+        $stmt_update_payment->close();
         
         // حذف التفاصيل القديمة
         // Note: Assuming fat_details.pro_id links to ot_head.pro_id (invoice number), not ot_head.id (primary key)
@@ -336,6 +357,26 @@ try {
         $last_op = $conn->insert_id; // last_op now refers to the primary key of the new ot_head record
         error_log('Order header inserted successfully with ID: ' . $last_op);
         $stmt->close();
+        
+        // حفظ بيانات الدفع للفاتورة الجديدة
+        $total_paid_new = $paid_cash + $paid_bank;
+        $change_amount_new = max(0, $total_paid_new - $headnet);
+        $payment_status_new = ($total_paid_new >= $headnet) ? 'paid' : (($total_paid_new > 0) ? 'partial' : 'unpaid');
+        $payment_notes_json_new = json_encode([
+            'paid_cash' => $paid_cash,
+            'paid_bank' => $paid_bank,
+            'payment_fund_id' => $payment_fund_id,
+            'payment_bank_id' => $payment_bank_id,
+            'change_amount' => $change_amount_new
+        ]);
+        $stmt_update_payment_new = $conn->prepare(
+            "UPDATE ot_head SET 
+                paid_amount = ?, remaining_amount = ?, payment_status = ?, payment_notes = ?
+             WHERE id = ?"
+        );
+        $stmt_update_payment_new->bind_param("ddssi", $total_paid_new, $change_amount_new, $payment_status_new, $payment_notes_json_new, $last_op);
+        $stmt_update_payment_new->execute();
+        $stmt_update_payment_new->close();
     }
     
     // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض)

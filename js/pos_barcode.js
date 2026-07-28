@@ -339,13 +339,56 @@ $(document).ready(function() {
         $('#net_display').text(net.toFixed(2) + ' ج.م');
         $('#modal_net').text(net.toFixed(2) + ' ج.م');
         
-        // تعبئة المدفوع كاش تلقائياً بقيمة الصافي
-        $('#modal_paid_cash').val(net.toFixed(2));
-        // مسح المدفوع صرافة
-        $('#modal_paid_bank').val('0.00');
-        // حساب الباقي (سيكون صفر لأن المدفوع = الصافي)
-        $('#modal_change').text('0.00 ج.م');
+        // حساب الباقي مع القيم الحالية
+        calculateChange();
     }
+    
+    // عند فتح موديل الدفع، تعبئة المدفوع كاش أو استرجاع بيانات الدفع المحفوظة (في حالة التعديل)
+    $(document).on('shown.bs.modal', '#paymentModal', function() {
+        let net = parseFloat($('#net_val').val()) || 0;
+        let editId = $('#edit_order_id').val();
+        
+        if (editId) {
+            // في حالة التعديل - استخدم البيانات المحفوظة
+            let savedPaidCash = parseFloat($('#edit_paid_cash').val()) || 0;
+            let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
+            let savedFundId = $('#edit_payment_fund_id').val();
+            let savedBankId = $('#edit_payment_bank_id').val();
+            let savedChange = parseFloat($('#edit_change_amount').val()) || 0;
+            let oldTotalPaid = savedPaidCash + savedPaidBank;
+            
+            // عرض المدفوع سابقاً
+            if (oldTotalPaid > 0) {
+                $('#old_payment_container').show();
+                $('#old_paid_display').text(oldTotalPaid.toFixed(2) + ' ج.م');
+            } else {
+                $('#old_payment_container').hide();
+            }
+            
+            // في حالة التعديل - نضع الحقول صفر لأن المستخدم سيدخل مبلغ إضافي فقط
+            // والمبلغ الإجمالي = القديم + الجديد (يتم حسابه في submitPOS)
+            $('#modal_paid_cash').val('0.00');
+            $('#modal_paid_bank').val('0.00');
+            
+            if (savedFundId && savedFundId != '0') {
+                $('#payment_fund_id').val(savedFundId);
+            }
+            if (savedBankId && savedBankId != '0') {
+                $('#payment_bank_id').val(savedBankId);
+            }
+        } else {
+            // طلب جديد - إخفاء المدفوع سابقاً
+            $('#old_payment_container').hide();
+            
+            // تعبئة المدفوع كاش تلقائياً بقيمة الصافي
+            let currentPaid = parseFloat($('#modal_paid_cash').val()) || 0;
+            if (currentPaid === 0) {
+                $('#modal_paid_cash').val(net.toFixed(2));
+            }
+            $('#modal_paid_bank').val('0.00');
+        }
+        calculateChange();
+    });
     
     // ========================================
     // Tables System
@@ -637,6 +680,16 @@ $(document).ready(function() {
                         if (response.order.acc1) $('select[name="acc2_id"]').val(response.order.acc1);
                          // Set hidden edit_order_id
                          $('#edit_order_id').val(response.order.id);
+                         
+                        // تعبئة بيانات الدفع المحفوظة للطلب
+                        if (response.order.payment_notes) {
+                            let pn = response.order.payment_notes;
+                            $('#edit_paid_cash').val(pn.paid_cash || 0);
+                            $('#edit_paid_bank').val(pn.paid_bank || 0);
+                            $('#edit_payment_fund_id').val(pn.payment_fund_id || 0);
+                            $('#edit_payment_bank_id').val(pn.payment_bank_id || 0);
+                            $('#edit_change_amount').val(pn.change_amount || 0);
+                        }
                     }
                     
                     updateItemCount();
@@ -747,18 +800,30 @@ $(document).ready(function() {
         }
         console.log('✅ Validation passed');
         
-        // جمع بيانات الدفع
+// جمع بيانات الدفع
         let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
         let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
         let fundId = $('#payment_fund_id').val();
         let bankId = $('#payment_bank_id').val();
         let net = parseFloat($('#net_val').val()) || 0;
         
+        // في حالة التعديل - اجمع المدفوع القديم + الجديد
+        let editId = $('#edit_order_id').val();
+        if (editId) {
+            let savedPaidCash = parseFloat($('#edit_paid_cash').val()) || 0;
+            let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
+            // المبلغ الإجمالي = المدفوع سابقاً + المبلغ الإضافي الجديد
+            paidCash = savedPaidCash + paidCash;
+            paidBank = savedPaidBank + paidBank;
+            console.log('✏️ Edit Mode - Cumulative Payment: old_cash=' + savedPaidCash + ' + new_cash=' + $('#modal_paid_cash').val() + ' = ' + paidCash + ', old_bank=' + savedPaidBank + ' + new_bank=' + $('#modal_paid_bank').val() + ' = ' + paidBank);
+        }
+        
         console.log('=== PAYMENT DATA DEBUG ===');
         console.log('modal_paid_cash value:', $('#modal_paid_cash').val());
         console.log('modal_paid_bank value:', $('#modal_paid_bank').val());
         console.log('payment_fund_id value:', $('#payment_fund_id').val());
         console.log('payment_bank_id value:', $('#payment_bank_id').val());
+        console.log('edit_id:', editId);
         console.log('Processed:', {
             paidCash: paidCash,
             paidBank: paidBank,
@@ -835,8 +900,8 @@ $(document).ready(function() {
         }
         paidInput.value = totalPaid;
 
-        // Check for Edit ID
-        let editId = $('#edit_order_id').val();
+        // Check for Edit ID (remove duplicate - already declared above)
+        // let editId = $('#edit_order_id').val();
         if (editId) {
             console.log('✏️ Edit Mode: ID', editId);
             let editIdInput = form.querySelector('input[name="edit_id"]');
