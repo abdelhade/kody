@@ -84,6 +84,27 @@ if(isset($_GET['edit'])){
     $rowed = $result->fetch_assoc();
     $stmt->close();
 }
+// استخراج بيانات الدفع من الطلب عند التعديل
+$edit_paid_cash = 0;
+$edit_paid_bank = 0;
+$edit_payment_fund_id = 0;
+$edit_payment_bank_id = 0;
+$edit_change_amount = 0;
+if (isset($rowed) && !empty($rowed['payment_notes'])) {
+    $payment_notes_data = json_decode($rowed['payment_notes'], true);
+    if (is_array($payment_notes_data)) {
+        $edit_paid_cash = floatval($payment_notes_data['paid_cash'] ?? 0);
+        $edit_paid_bank = floatval($payment_notes_data['paid_bank'] ?? 0);
+        $edit_payment_fund_id = intval($payment_notes_data['payment_fund_id'] ?? 0);
+        $edit_payment_bank_id = intval($payment_notes_data['payment_bank_id'] ?? 0);
+        $edit_change_amount = floatval($payment_notes_data['change_amount'] ?? 0);
+    }
+}
+
+// استخدام remaining_amount كبديل إذا كان موجوداً
+if ($edit_change_amount == 0 && isset($rowed) && isset($rowed['remaining_amount'])) {
+    $edit_change_amount = floatval($rowed['remaining_amount']);
+}
 $success_message = '';
 if(isset($_SESSION['success_message'])){
     $success_message = $_SESSION['success_message'];
@@ -101,6 +122,12 @@ if(isset($_SESSION['success_message'])){
 
 <!-- Hidden input for Edit Mode -->
 <input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
+<!-- Hidden inputs for Edit Payment Data -->
+<input type="hidden" id="edit_paid_cash" value="<?= $edit_paid_cash ?>">
+<input type="hidden" id="edit_paid_bank" value="<?= $edit_paid_bank ?>">
+<input type="hidden" id="edit_payment_fund_id" value="<?= $edit_payment_fund_id ?>">
+<input type="hidden" id="edit_payment_bank_id" value="<?= $edit_payment_bank_id ?>">
+<input type="hidden" id="edit_change_amount" value="<?= $edit_change_amount ?>">
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">

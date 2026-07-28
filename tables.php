@@ -265,6 +265,8 @@ $sql = "CREATE TABLE IF NOT EXISTS tables (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tname VARCHAR(255) NOT NULL,
     table_case INT NOT NULL DEFAULT 0,
+    parent_table_id INT DEFAULT NULL,
+    is_merged TINYINT(1) NOT NULL DEFAULT 0,
     crtime DATETIME DEFAULT CURRENT_TIMESTAMP,
     mdtime DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     isdeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -272,6 +274,16 @@ $sql = "CREATE TABLE IF NOT EXISTS tables (
     tatnet VARCHAR(255) DEFAULT NULL
 )";
 $conn->query($sql);
+
+// إضافة الأعمدة المفقودة إذا لم تكن موجودة (للتأكد من التوافق مع الإصدارات الأقدم)
+$check_col_parent = $conn->query("SHOW COLUMNS FROM tables WHERE Field = 'parent_table_id'");
+if (!$check_col_parent || $check_col_parent->num_rows == 0) {
+    $conn->query("ALTER TABLE tables ADD COLUMN parent_table_id INT DEFAULT NULL");
+}
+$check_col_merged = $conn->query("SHOW COLUMNS FROM tables WHERE Field = 'is_merged'");
+if (!$check_col_merged || $check_col_merged->num_rows == 0) {
+    $conn->query("ALTER TABLE tables ADD COLUMN is_merged TINYINT(1) NOT NULL DEFAULT 0");
+}
 
 // إضافة طاولات تجريبية إذا لم تكن موجودة
 $check_tables = $conn->query("SELECT COUNT(*) as count FROM tables WHERE isdeleted = 0");

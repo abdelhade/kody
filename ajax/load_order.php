@@ -56,6 +56,15 @@ try {
         }
     }
     
+    // استخراج بيانات الدفع المحفوظة
+    $payment_notes = [];
+    if (!empty($order['payment_notes'])) {
+        $decoded = json_decode($order['payment_notes'], true);
+        if (is_array($decoded)) {
+            $payment_notes = $decoded;
+        }
+    }
+    
     echo json_encode([
         'success' => true,
         'order' => [
@@ -68,6 +77,10 @@ try {
             'discount' => floatval($order['fat_disc']),
             'net' => floatval($order['fat_net']),
             'paid' => floatval($order['paid']),
+            'paid_amount' => floatval($order['paid_amount'] ?? 0),
+            'remaining_amount' => floatval($order['remaining_amount'] ?? 0),
+            'payment_status' => $order['payment_status'] ?? 'unpaid',
+            'payment_notes' => $payment_notes,
             'order_status' => 'active'
         ],
         'items' => $items
