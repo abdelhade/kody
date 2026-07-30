@@ -873,6 +873,14 @@ if ($submit == 'print') {
     if ($pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
         error_log('Redirecting to POS page');
         
+        // التحقق من وجود table_id للعودة إلى صفحة الطاولات
+        $table_id_redirect = isset($_POST['table_id']) ? intval($_POST['table_id']) : 0;
+        if ($table_id_redirect > 0) {
+            error_log('Redirecting to tables page with table_id: ' . $table_id_redirect);
+            header("Location: ../tables.php?table_id=" . $table_id_redirect);
+            exit;
+        }
+        
         // التحقق من طلب القفل بعد الحفظ
         if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
             error_log('Lock after save requested - redirecting to logout');

@@ -55,8 +55,9 @@ try {
 
     if ($transfer_type === 'all') {
         // 1. نقل جميع الطلبات النشطة للطاولة القديمة
-        $pat1 = "%$old_table_id%";
-        $pat2 = "%$old_table_name%";
+        // أنماط دقيقة: اسم الطاولة في نهاية النص أو يليه مسافة (حتى لا تتطابق "طاولة 1" مع "طاولة 12" أو أرقام عشوائية)
+        $pat1 = "%$old_table_name";
+        $pat2 = "%$old_table_name %";
         
         if ($has_table_id) {
             $info_update_query = "UPDATE ot_head 
@@ -96,8 +97,8 @@ try {
         $stmt->execute();
 
         // التأكد مما إذا كان هناك طلبات نشطة أخرى على الطاولة القديمة
-        $pat1 = "%$old_table_id%";
-        $pat2 = "%$old_table_name%";
+        $pat1 = "%$old_table_name";
+        $pat2 = "%$old_table_name %";
         
         if ($has_table_id) {
             $check_query = "SELECT COUNT(*) as active_cnt FROM ot_head 
@@ -126,8 +127,9 @@ try {
     } elseif ($transfer_type === 'items') {
         // 3. نقل أصناف محددة فقط
         // البحث عن طلب نشط على الطاولة الجديدة أو إنشاء طلب جديد
-        $pat_n1 = "%$new_table_id%";
-        $pat_n2 = "%$new_table_name%";
+        // أنماط دقيقة على اسم الطاولة الكامل (نهاية النص أو يليه مسافة) حتى لا يتطابق رقم الطاولة مع أرقام هواتف/عناوين أو طاولات أخرى
+        $pat_n1 = "%$new_table_name";
+        $pat_n2 = "%$new_table_name %";
         
         if ($has_table_id) {
             $new_ord_stmt = $conn->prepare("SELECT id FROM ot_head WHERE (table_id = ? OR info LIKE ? OR info LIKE ?) AND pro_tybe = 9 AND isdeleted = 0 ORDER BY id DESC LIMIT 1");
@@ -142,7 +144,8 @@ try {
         if ($new_ord_res) {
             $target_order_id = intval($new_ord_res['id']);
         } else {
-            $info_str = "طاولة $new_table_name";
+            // نفس صيغة info المستخدمة عند إنشاء طلب طاولة عادي حتى تتعرف عليه صفحة الطاولات
+            $info_str = "نوع الطلب: طاولة - طاولة: $new_table_name";
             if ($has_table_id) {
                 $ins = $conn->prepare("INSERT INTO ot_head (info, pro_tybe, table_id, fat_total, fat_disc, fat_net, crtime, isdeleted) VALUES (?, 9, ?, 0, 0, 0, NOW(), 0)");
                 $ins->bind_param('si', $info_str, $new_table_id);
@@ -192,8 +195,8 @@ try {
         }
 
         // فحص الطاولة القديمة إذا كان بها أي أصناف متبقية
-        $pat1 = "%$old_table_id%";
-        $pat2 = "%$old_table_name%";
+        $pat1 = "%$old_table_name";
+        $pat2 = "%$old_table_name %";
         if ($has_table_id) {
             $check_query = "SELECT COUNT(fd.id) as active_items 
                             FROM ot_head h

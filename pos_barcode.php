@@ -75,8 +75,14 @@ if ($check_tables) {
     }
 }
 $posdate = date('Y-m-d', strtotime('-4 hours'));
-if(isset($_GET['edit'])){
-    $id = intval($_GET['edit']); // تأمين المدخلات
+// وضع إضافة صنف: يفتح الطلب بنفس آلية التعديل مع علم add_item_mode
+$add_item_mode = isset($_GET['add_item']);
+if ($add_item_mode && !isset($_GET['edit'])) {
+    // توحيد السلوك مع وضع التعديل حتى تعمل كل أجزاء الواجهة (تحميل الأصناف والبيانات)
+    $_GET['edit'] = intval($_GET['add_item']);
+}
+if(isset($_GET['edit']) || $add_item_mode){
+    $id = intval($_GET['edit'] ?? $_GET['add_item']); // تأمين المدخلات
     $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -84,6 +90,9 @@ if(isset($_GET['edit'])){
     $rowed = $result->fetch_assoc();
     $stmt->close();
 }
+// استخراج table_id من GET للعودة إلى صفحة الطاولات (في حالة إضافة صنف من tables.php)
+$table_id_from_get = isset($_GET['table_id']) ? intval($_GET['table_id']) : 0;
+
 // استخراج بيانات الدفع من الطلب عند التعديل
 $edit_paid_cash = 0;
 $edit_paid_bank = 0;
@@ -122,6 +131,8 @@ if(isset($_SESSION['success_message'])){
 
 <!-- Hidden input for Edit Mode -->
 <input type="hidden" id="edit_order_id" value="<?= isset($id) ? $id : '' ?>">
+<!-- Hidden input for Add Item Mode (فتح الطلب من صفحة الطاولات لإضافة صنف) -->
+<input type="hidden" id="add_item_mode" value="<?= $add_item_mode ? '1' : '0' ?>">
 <!-- Hidden inputs for Edit Payment Data -->
 <input type="hidden" id="edit_paid_cash" value="<?= $edit_paid_cash ?>">
 <input type="hidden" id="edit_paid_bank" value="<?= $edit_paid_bank ?>">

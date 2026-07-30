@@ -9,6 +9,10 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include('includes/header.php');
 
 // جلب الإعدادات
@@ -510,6 +514,11 @@ if ($selected_table) {
                     <?php if (!empty($order_data)): ?>
                         <!-- Actions Grid -->
                         <div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <a href="pos_barcode.php?add_item=<?= $order_data['id'] ?>&table_id=<?= $selected_table ?>" class="btn btn-primary w-100 py-2 d-flex flex-column justify-content-center align-items-center">
+                                    <i class="fas fa-cart-plus mb-1"></i><small class="fw-bold">إضافة صنف</small>
+                                </a>
+                            </div>
                             <div class="col-6">
                                 <a href="pos_barcode.php?edit=<?= $order_data['id'] ?>" class="btn btn-warning w-100 py-2 h-100 d-flex flex-column justify-content-center align-items-center">
                                     <i class="fas fa-edit mb-1"></i><small class="fw-bold">تعديل</small>
@@ -742,6 +751,40 @@ if ($selected_table) {
                 <button type="button" class="btn btn-success" onclick="confirmSplitPayment()">
                     <i class="fas fa-money-bill-wave me-1"></i> سداد وطباعة
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-cart-plus me-2"></i>إضافة صنف للطلب</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="addItemOrderId">
+                <div class="row g-2 mb-3">
+                    <div class="col-8">
+                        <input type="text" id="addItemSearch" class="form-control form-control-lg" placeholder="ابحث عن صنف بالاسم أو الباركود...">
+                    </div>
+                    <div class="col-4">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">الكمية</span>
+                            <input type="number" id="addItemQty" class="form-control" value="1" min="0.01" step="any">
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2" id="addItemsGrid" style="max-height:400px; overflow-y:auto;">
+                    <div class="col-12 text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الأصناف...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>
@@ -1186,6 +1229,102 @@ function activateTable(tableId) {
     });
 }
 
+// دوال إضافة صنف للطلب
+let addItemsCache = []; // كاش الأصناف المحملة
+
+function showAddItemModal(orderId) {
+    $('#addItemOrderId').val(orderId);
+    $('#addItemSearch').val('');
+    $('#addItemQty').val(1);
+    loadItemsForAdd();
+    $('#addItemModal').modal('show');
+}
+
+function loadItemsForAdd() {
+    $('#addItemsGrid').html('<div class="col-12 text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>جاري تحميل الأصناف...</div>');
+    $.ajax({
+        url: 'ajax/get_items.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+            if (!resp.success || !resp.items || resp.items.length === 0) {
+                $('#addItemsGrid').html('<div class="col-12"><div class="alert alert-warning mb-0">لا توجد أصناف</div></div>');
+                return;
+            }
+            addItemsCache = resp.items;
+            renderAddItems(addItemsCache);
+        },
+        error: function() {
+            $('#addItemsGrid').html('<div class="col-12"><div class="alert alert-danger mb-0">خطأ في الاتصال</div></div>');
+        }
+    });
+}
+
+function renderAddItems(items) {
+    if (items.length === 0) {
+        $('#addItemsGrid').html('<div class="col-12"><div class="alert alert-warning mb-0">لا توجد نتائج مطابقة للبحث</div></div>');
+        return;
+    }
+    let html = '';
+    items.forEach(function(it) {
+        const price = parseFloat(it.price1 || 0);
+        html += `
+            <div class="col-md-4 col-sm-6">
+                <button class="btn w-100 py-3 h-100"
+                        style="border:2px solid #0d6efd; background:#f0f7ff; border-radius:12px; transition:all 0.2s;"
+                        onclick="addItemToOrder(${it.id})">
+                    <div class="text-center">
+                        <h6 class="fw-bold mb-1 text-dark">${it.iname}</h6>
+                        <span class="badge bg-primary">${price.toFixed(2)} ج.م</span>
+                    </div>
+                </button>
+            </div>
+        `;
+    });
+    $('#addItemsGrid').html(html);
+}
+
+// فلترة الأصناف بالبحث (اسم أو باركود)
+$(document).on('input', '#addItemSearch', function() {
+    const q = $(this).val().trim().toLowerCase();
+    if (!q) {
+        renderAddItems(addItemsCache);
+        return;
+    }
+    const filtered = addItemsCache.filter(function(it) {
+        return (it.iname && it.iname.toLowerCase().includes(q)) ||
+               (it.barcode && String(it.barcode).includes(q)) ||
+               (it.name2 && it.name2.toLowerCase().includes(q));
+    });
+    renderAddItems(filtered);
+});
+
+function addItemToOrder(itemId) {
+    const orderId = $('#addItemOrderId').val();
+    const qty = parseFloat($('#addItemQty').val()) || 1;
+    if (qty <= 0) {
+        alert('يرجى إدخال كمية صحيحة');
+        return;
+    }
+    $.ajax({
+        url: 'ajax/add_item_to_order.php',
+        method: 'POST',
+        data: { order_id: orderId, item_id: itemId, qty: qty },
+        dataType: 'json',
+        success: function(resp) {
+            if (resp.success) {
+                $('#addItemModal').modal('hide');
+                location.reload();
+            } else {
+                alert('خطأ: ' + resp.message);
+            }
+        },
+        error: function() {
+            alert('خطأ في الاتصال بالخادم');
+        }
+    });
+}
+
 // دوال نقل الطاولة
 let transferSelectedOrderId = null; // الطلب المختار عند نقل طلب واحد
 
@@ -1429,14 +1568,13 @@ function displayTransferTables(tables, currentTableId) {
         const borderColor = isAvailable ? '#10b981' : '#ef4444';
         const iconColor   = isAvailable ? '#10b981' : '#ef4444';
         const bgColor     = isAvailable ? '#ecfdf5' : '#fef2f2';
-        const disabled    = isAvailable ? '' : 'disabled';
 
+        // كل الطاولات (متاحة أو مشغولة) قابلة للاختيار - النقل لطاولة مشغولة يدمج مع طلباتها
         html += `
             <div class="col-md-3 col-sm-4">
-                <button class="btn w-100 py-3 ${disabled}"
+                <button class="btn w-100 py-3"
                         style="border:2px solid ${borderColor}; background:${bgColor}; border-radius:16px; transition:all 0.2s;"
-                        onclick="transferTable(${table.id}, '${table.tname}')"
-                        ${disabled}>
+                        onclick="transferTable(${table.id}, '${table.tname}')">
                     <div class="text-center">
                         <i class="fas fa-chair fa-2x mb-2" style="color:${iconColor};"></i>
                         <h6 class="fw-bold mb-1" style="color:${iconColor};">${table.tname}</h6>
