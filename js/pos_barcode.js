@@ -756,6 +756,11 @@ $(document).ready(function() {
         let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
         let totalPaid = paidCash + paidBank;
         
+        // في حالة التعديل - أضف المدفوع سابقاً للحساب
+        if ($('#edit_order_id').val()) {
+            totalPaid += (parseFloat($('#edit_paid_cash').val()) || 0) + (parseFloat($('#edit_paid_bank').val()) || 0);
+        }
+        
         let change = totalPaid - net;
         
         // الباقي للحساب فقط - لا يؤثر على السند
@@ -1139,9 +1144,12 @@ function loadRecentOrders() {
                                 </span>
                             </td>
                             <td class="text-nowrap">
-                                <div class="btn-group btn-group-sm" role="group">
+                            <div class="btn-group btn-group-sm" role="group">
                                     <button class="btn btn-warning edit-order" data-id="${order.id}" title="تعديل">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-success add-item-order" data-id="${order.id}" title="إضافة صنف">
+                                        <i class="fas fa-plus"></i>
                                     </button>
                                     <button class="btn btn-secondary print-order" data-id="${order.id}" title="طباعة الفاتورة">
                                         <i class="fas fa-print"></i>
@@ -1228,13 +1236,22 @@ $(document).ready(function() {
         loadRecentOrders();
     });
 
-    // Handle edit order button
+// Handle edit order button
     $(document).on('click', '.edit-order', function(e) {
         e.preventDefault();
         e.stopPropagation();
         const orderId = $(this).data('id');
         console.log('Edit button clicked for order:', orderId);
         editOrder(orderId);
+    });
+
+    // Handle add item order button
+    $(document).on('click', '.add-item-order', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const orderId = $(this).data('id');
+        console.log('Add item button clicked for order:', orderId);
+        window.location.href = 'pos_barcode.php?add_item=' + orderId;
     });
 
     // Handle delete order button
