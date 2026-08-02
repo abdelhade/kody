@@ -3,6 +3,40 @@
  * نظام نقاط البيع بالباركود
  */
 
+// ========================================
+// Password Protection for Order Actions
+// ========================================
+const ORDER_ACTION_PASSWORD = '1234'; // ← غيّر الباسورد من هنا
+
+function askOrderPassword(title, onSuccess) {
+    Swal.fire({
+        title: title,
+        html: `<input type="password" id="swal-order-pass" class="swal2-input" placeholder="أدخل كلمة المرور" autocomplete="off">`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'تأكيد',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#3085d6',
+        didOpen: () => {
+            document.getElementById('swal-order-pass').focus();
+            document.getElementById('swal-order-pass').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') Swal.clickConfirm();
+            });
+        },
+        preConfirm: () => {
+            const pass = document.getElementById('swal-order-pass').value;
+            if (pass !== ORDER_ACTION_PASSWORD) {
+                Swal.showValidationMessage('كلمة المرور غير صحيحة!');
+                return false;
+            }
+            return true;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) onSuccess();
+    });
+}
+// ========================================
+
 $(document).ready(function() {
     // ========================================
     // Initialize on page load - Update totals if items exist (edit mode)
@@ -771,8 +805,54 @@ $(document).ready(function() {
     // Delete & Update Row
     // ========================================
     $(document).on('click', '.delRow', function() {
-        $(this).closest('.item-card-order').remove();
-        updateItemCount();
+        const $card  = $(this).closest('.item-card-order');
+        const fatId  = $(this).data('fat-id') || $card.data('fat-id');
+
+        if (fatId) {
+            // صنف محفوظ في DB → احذفه من السيرفر
+            Swal.fire({
+                title: 'حذف الصنف',
+                text: 'هل تريد حذف هذا الصنف من الطلب؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'نعم، احذف',
+                cancelButtonText: 'إلغاء'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: 'ajax/delete_order_item.php',
+                        method: 'POST',
+                        data: { fat_id: fatId },
+                        dataType: 'json',
+                        success: function(res) {
+                            if (res.success) {
+                                $card.remove();
+                                updateItemCount();
+                                // تحديث الإجمالي المعروض
+                                if (res.new_total !== undefined) {
+                                    $('#total_display').text(parseFloat(res.new_total).toFixed(2) + ' ج.م');
+                                    $('#net_display').text(parseFloat(res.new_total).toFixed(2) + ' ج.م');
+                                    $('#total').val(parseFloat(res.new_total).toFixed(2));
+                                    $('#net_val').val(parseFloat(res.new_total).toFixed(2));
+                                }
+                                Swal.fire({ icon: 'success', title: 'تم الحذف', timer: 1000, showConfirmButton: false });
+                            } else {
+                                Swal.fire('خطأ', res.error || 'فشل الحذف', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+                        }
+                    });
+                }
+            });
+        } else {
+            // صنف جديد لم يُحفظ بعد → شيله من الواجهة مباشرة
+            $card.remove();
+            updateItemCount();
+        }
         updateTotal();
     });
     
@@ -1201,29 +1281,44 @@ function loadRecentOrders() {
 
 function editOrder(orderId) {
     console.log('Edit order:', orderId);
-    window.location.href = 'pos_barcode.php?edit=' + orderId;
+    askOrderPassword('🔐 تعديل الطلب', function() {
+        window.location.href = 'pos_barcode.php?edit=' + orderId;
+    });
 }
 
 function deleteOrder(orderId) {
-    if (confirm('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذه العملية.')) {
-        $.ajax({
-            url: 'ajax/delete_order.php',
-            type: 'POST',
-            data: { id: orderId },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    loadRecentOrders();
-                    alert('تم حذف الطلب بنجاح');
-                } else {
-                    alert('حدث خطأ أثناء حذف الطلب: ' + (response.message || 'خطأ غير معروف'));
-                }
-            },
-            error: function() {
-                alert('حدث خطأ في الاتصال بالخادم');
+    askOrderPassword('🔐 حذف الطلب', function() {
+        Swal.fire({
+            title: 'هل أنت متأكد؟',
+            text: 'سيتم حذف الطلب نهائياً ولا يمكن التراجع!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'ajax/cancel_order.php',
+                    type: 'POST',
+                    data: { id: orderId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({ icon: 'success', title: 'تم الحذف!', timer: 1200, showConfirmButton: false });
+                            loadRecentOrders();
+                        } else {
+                            Swal.fire('خطأ', response.message || 'فشل الحذف', 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+                    }
+                });
             }
         });
-    }
+    });
 }
 
 // Initialize recent orders functionality
@@ -1250,7 +1345,6 @@ $(document).ready(function() {
         e.preventDefault();
         e.stopPropagation();
         const orderId = $(this).data('id');
-        console.log('Add item button clicked for order:', orderId);
         window.location.href = 'pos_barcode.php?add_item=' + orderId;
     });
 

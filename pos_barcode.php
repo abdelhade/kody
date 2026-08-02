@@ -75,6 +75,77 @@ if ($check_tables) {
     }
 }
 $posdate = date('Y-m-d', strtotime('-4 hours'));
+
+// ========================================
+// حماية وضع التعديل بكلمة مرور (server-side)
+// ========================================
+define('EDIT_ORDER_PASSWORD', '1234'); // ← غيّر الباسورد من هنا
+
+$edit_auth_error = '';
+if (isset($_GET['edit'])) {
+    // وضع التعديل فقط يحتاج باسورد
+    $edit_id_check = intval($_GET['edit']);
+
+    // لو جاي POST بالباسورد → تحقق منه
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_order_password'])) {
+        if ($_POST['edit_order_password'] === EDIT_ORDER_PASSWORD) {
+            // صح → احفظ في session إذن مؤقت لهذا الأوردر
+            $_SESSION['edit_order_allowed'] = $edit_id_check;
+        } else {
+            $edit_auth_error = 'كلمة المرور غير صحيحة!';
+        }
+    }
+
+    // لو مفيش إذن → اعرض صفحة الباسورد وأوقف التنفيذ
+    if (!isset($_SESSION['edit_order_allowed']) || $_SESSION['edit_order_allowed'] != $edit_id_check) {
+        // بناء الـ URL الكامل للعودة بعد التحقق
+        $return_url = htmlspecialchars($_SERVER['REQUEST_URI']);
+?>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>تأكيد كلمة المرور</title>
+    <link rel="stylesheet" href="plugins/bootstrap/css/bootstrap.min.css">
+    <style>
+        body { background: #1a1a2e; display:flex; align-items:center; justify-content:center; min-height:100vh; }
+        .pass-card { background:#fff; border-radius:16px; padding:40px; max-width:380px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+        .pass-card h4 { color:#333; margin-bottom:8px; }
+        .pass-card p  { color:#777; font-size:14px; margin-bottom:24px; }
+        .lock-icon { font-size:48px; margin-bottom:16px; }
+    </style>
+</head>
+<body>
+<div class="pass-card text-center">
+    <div class="lock-icon">🔐</div>
+    <h4>تأكيد كلمة المرور</h4>
+    <p>هذه العملية تحتاج إلى كلمة مرور للمتابعة</p>
+    <?php if ($edit_auth_error): ?>
+        <div class="alert alert-danger py-2"><?= $edit_auth_error ?></div>
+    <?php endif; ?>
+    <form method="POST" action="<?= $return_url ?>">
+        <div class="mb-3 text-start">
+            <label class="form-label fw-bold">كلمة المرور</label>
+            <input type="password" name="edit_order_password" class="form-control form-control-lg text-center"
+                   placeholder="••••••" autofocus autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 btn-lg">تأكيد</button>
+        <a href="pos_barcode.php" class="btn btn-outline-secondary w-100 mt-2">إلغاء</a>
+    </form>
+</div>
+</body>
+</html>
+<?php
+        exit();
+    }
+} else {
+    // مسح إذن التعديل لما المستخدم يرجع لصفحة POS العادية (بدون edit)
+    if (!isset($_GET['add_item'])) {
+        unset($_SESSION['edit_order_allowed']);
+    }
+}
+// ========================================
 // وضع إضافة صنف: يفتح الطلب بنفس آلية التعديل مع علم add_item_mode
 $add_item_mode = isset($_GET['add_item']);
 if ($add_item_mode && !isset($_GET['edit'])) {

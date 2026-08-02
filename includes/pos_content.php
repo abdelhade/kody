@@ -271,6 +271,7 @@ body {
                                                 ?>
                                         <div class="card mb-1 item-card-order shadow-sm border-start border-3"
                                             data-itemid="<?= $barcode ?>"
+                                            data-fat-id="<?= $rowdet['id'] ?>"
                                             style="border-color: #0a7ea4 !important; max-width: 100%;">
                                             <div class="card-body p-1">
                                                 <div class="d-flex align-items-center gap-1"
@@ -321,7 +322,8 @@ body {
                                                     </div>
 
                                                     <button type="button" class="btn btn-danger btn-sm delRow"
-                                                        style="padding: 2px 6px; font-size: 0.7rem;" title="حذف">
+                                                        data-fat-id="<?= $rowdet['id'] ?>"
+                                                        style="padding: 2px 6px; font-size: 0.7rem;" title="حذف صنف">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -1903,6 +1905,26 @@ body {
         </div>
     </div>
 
+    <!-- Order Items Modal -->
+    <div class="modal fade" id="orderItemsModal" tabindex="-1" aria-labelledby="orderItemsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white py-2">
+                    <h6 class="modal-title mb-0" id="orderItemsModalLabel">
+                        <i class="fas fa-minus-circle me-1"></i> حذف صنف من الطلب
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-2" id="orderItemsBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-danger"></div>
+                        <p class="mt-2 text-muted">جاري التحميل...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Orders Offcanvas -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="recentOrdersModal" aria-labelledby="recentOrdersModalLabel"
         style="width: 80%; max-width: 1200px;">
@@ -1991,17 +2013,20 @@ body {
                                                 <td><span class="badge ${statusBadge}">${order.status}</span></td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <a href="pos_barcode.php?edit=${order.id}" class="btn btn-warning" title="تعديل">
+                                                        <button type="button" class="btn btn-warning" onclick="editOrderWithPassword(${order.id})" title="تعديل">
                                                             <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <a href="pos_barcode.php?add_item=${order.id}" class="btn btn-success" title="إضافة صنف">
+                                                        </button>
+                                                        <button type="button" class="btn btn-success" onclick="window.location.href='pos_barcode.php?add_item=${order.id}'" title="إضافة صنف">
                                                             <i class="fas fa-plus"></i>
-                                                        </a>
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger" onclick="showOrderItems(${order.id})" title="حذف صنف">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
                                                         <button type="button" class="btn btn-secondary" onclick="reprintOrder(${order.id})" title="طباعة">
                                                             <i class="fas fa-print"></i>
                                                         </button>
                                                         ${order.status !== 'ملغى' ? `
-                                                        <button type="button" class="btn btn-danger" onclick="deleteOrder(${order.id})" title="حذف">
+                                                        <button type="button" class="btn btn-dark" onclick="deleteOrder(${order.id})" title="حذف الطلب">
                                                             <i class="fas fa-trash"></i>
                                                         </button>` : ''}
                                                     </div>
@@ -2033,7 +2058,133 @@ body {
                  window.open('print/receipt.php?order_id=' + orderId, '_blank');
             };
 
+            window.showOrderItems = function(orderId) {
+                $('#orderItemsBody').html('<div class="text-center py-4"><div class="spinner-border text-info"></div><p class="mt-2 text-muted">جاري التحميل...</p></div>');
+                var modal = new bootstrap.Modal(document.getElementById('orderItemsModal'));
+                modal.show();
+
+                $.ajax({
+                    url: 'ajax/get_order_items.php',
+                    method: 'GET',
+                    data: { order_id: orderId },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (!res.success || !res.items.length) {
+                            $('#orderItemsBody').html('<div class="alert alert-warning m-2">لا توجد أصناف في هذا الطلب</div>');
+                            return;
+                        }
+                        var html = '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
+                        html += '<thead class="table-dark"><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th>حذف</th></tr></thead><tbody id="items-tbody-' + orderId + '">';
+                        res.items.forEach(function(item, i) {
+                            html += `<tr id="item-row-${item.id}">
+                                <td class="text-center">${i+1}</td>
+                                <td>${item.item_name}</td>
+                                <td class="text-center">${parseFloat(item.qty).toFixed(2)}</td>
+                                <td class="text-center">${parseFloat(item.price).toFixed(2)}</td>
+                                <td class="text-center fw-bold text-primary">${parseFloat(item.det_value).toFixed(2)}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-danger btn-sm" onclick="deleteOrderItem(${item.id}, ${orderId})" title="حذف الصنف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+                        html += '</tbody></table></div>';
+                        html += `<div class="d-flex justify-content-between align-items-center px-2 pt-2">
+                            <span class="text-muted small">عدد الأصناف: <strong>${res.items.length}</strong></span>
+                            <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span> ج.م</span>
+                        </div>`;
+                        $('#orderItemsBody').html(html);
+                    },
+                    error: function() {
+                        $('#orderItemsBody').html('<div class="alert alert-danger m-2">خطأ في الاتصال بالخادم</div>');
+                    }
+                });
+            };
+
+            window.deleteOrderItem = function(fatId, orderId) {
+                Swal.fire({
+                    title: 'حذف الصنف',
+                    text: 'هل تريد حذف هذا الصنف من الطلب؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'نعم، احذف',
+                    cancelButtonText: 'إلغاء'
+                }).then(function(result) {
+                    if (!result.isConfirmed) return;
+                    $.ajax({
+                        url: 'ajax/delete_order_item.php',
+                        method: 'POST',
+                        data: { fat_id: fatId },
+                        dataType: 'json',
+                        success: function(res) {
+                            if (res.success) {
+                                $('#item-row-' + fatId).fadeOut(300, function() { $(this).remove(); });
+                                if (res.new_total !== undefined) {
+                                    $('#items-total-' + orderId).text(parseFloat(res.new_total).toFixed(2));
+                                }
+                                Swal.fire({ icon: 'success', title: 'تم الحذف', timer: 900, showConfirmButton: false });
+                                loadRecentOrders(); // تحديث القائمة الخارجية
+                            } else {
+                                Swal.fire('خطأ', res.error || 'فشل الحذف', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+                        }
+                    });
+                });
+            };
+
+            // ---- Password helpers ----
+            const ORDER_PASSWORD = '1234'; // ← غيّر الباسورد من هنا
+
+            function askPassword(title, onSuccess) {
+                Swal.fire({
+                    title: title,
+                    html: `<input type="password" id="swal-order-pass" class="swal2-input" placeholder="أدخل كلمة المرور" autocomplete="off">`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'تأكيد',
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonColor: '#3085d6',
+                    didOpen: () => {
+                        document.getElementById('swal-order-pass').focus();
+                        // السماح بـ Enter داخل حقل الباسورد
+                        document.getElementById('swal-order-pass').addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') Swal.clickConfirm();
+                        });
+                    },
+                    preConfirm: () => {
+                        const pass = document.getElementById('swal-order-pass').value;
+                        if (pass !== ORDER_PASSWORD) {
+                            Swal.showValidationMessage('كلمة المرور غير صحيحة!');
+                            return false;
+                        }
+                        return true;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) onSuccess();
+                });
+            }
+
+            window.editOrderWithPassword = function(orderId) {
+                askPassword('🔐 تعديل الطلب', function() {
+                    window.location.href = 'pos_barcode.php?edit=' + orderId;
+                });
+            };
+
+            window.addItemWithPassword = function(orderId) {
+                askPassword('🔐 إضافة صنف للطلب', function() {
+                    window.location.href = 'pos_barcode.php?add_item=' + orderId;
+                });
+            };
+            // ---- End Password helpers ----
+
             window.deleteOrder = function(orderId) {
+                askPassword('🔐 حذف الطلب', function() {
                 Swal.fire({
                     title: 'هل أنت متأكد؟',
                     text: "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -2046,7 +2197,7 @@ body {
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: 'ajax/delete_order.php',
+                            url: 'ajax/cancel_order.php',
                             method: 'POST',
                             data: { id: orderId },
                             success: function(response) {
@@ -2084,6 +2235,7 @@ body {
                         });
                     }
                 });
+                }); // end askPassword
             };
         });
     </script>
