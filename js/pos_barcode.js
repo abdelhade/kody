@@ -200,11 +200,13 @@ $(document).ready(function() {
     // ========================================
     // Item Click Events
     // ========================================
-    $('#itemsGrid').on('click', '.item-image-click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    $('#itemsGrid').on('click', '.item-card', function(e) {
+        // لو ضغط على زرار التفاصيل → متضيفش الصنف
+        if ($(e.target).closest('.item-details-btn').length > 0) return;
         
-        let card = $(this).closest('.item-card');
+        e.preventDefault();
+        
+        let card = $(this);
         let itemId = card.data('item-id');
         let itemName = card.data('item-name');
         let itemPrice = parseFloat(card.data('item-price')) || 0;
@@ -1231,10 +1233,13 @@ function loadRecentOrders() {
                                     <button class="btn btn-success add-item-order" data-id="${order.id}" title="إضافة صنف">
                                         <i class="fas fa-plus"></i>
                                     </button>
+                                    <button class="btn btn-danger show-order-items" data-id="${order.id}" title="حذف صنف">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
                                     <button class="btn btn-secondary print-order" data-id="${order.id}" title="طباعة الفاتورة">
                                         <i class="fas fa-print"></i>
                                     </button>
-                                    <button class="btn btn-danger delete-order" data-id="${order.id}" title="حذف">
+                                    <button class="btn btn-dark delete-order" data-id="${order.id}" title="حذف الطلب">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -1321,8 +1326,101 @@ function deleteOrder(orderId) {
     });
 }
 
+// ========================================
+// Order Items Modal (حذف صنف من الطلب)
+// ========================================
+function showOrderItemsModal(orderId) {
+    if ($('#orderItemsModal').length === 0) {
+        $('body').append(`
+            <div class="modal fade" id="orderItemsModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white py-2">
+                            <h6 class="modal-title mb-0">
+                                <i class="fas fa-minus-circle me-1"></i> حذف صنف من الطلب
+                            </h6>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-2" id="orderItemsBody"></div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
+    $('#orderItemsBody').html('<div class="text-center py-4"><div class="spinner-border text-danger"></div><p class="mt-2 text-muted">جاري التحميل...</p></div>');
+    const modal = new bootstrap.Modal(document.getElementById('orderItemsModal'));
+    modal.show();
+
+    $.ajax({
+        url: 'ajax/get_order_items.php',
+        method: 'GET',
+        data: { order_id: orderId },
+        dataType: 'json',
+        success: function(res) {
+            if (!res.success || !res.items || res.items.length === 0) {
+                $('#orderItemsBody').html('<div class="alert alert-warning m-2"><i class="fas fa-info-circle me-1"></i> لا توجد أصناف في هذا الطلب</div>');
+                return;
+            }
+            let html = '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
+            html += '<thead class="table-dark"><tr><th>#</th><th>الصنف</th><th class="text-center">الكمية</th><th class="text-center">السعر</th><th class="text-center">الإجمالي</th><th class="text-center">حذف</th></tr></thead><tbody>';
+            res.items.forEach(function(item, i) {
+                html += `<tr id="item-row-${item.id}">
+                    <td class="text-center">${i + 1}</td>
+                    <td>${item.item_name}</td>
+                    <td class="text-center item-qty">${parseFloat(item.qty).toFixed(2)}</td>
+                    <td class="text-center">${parseFloat(item.price).toFixed(2)}</td>
+                    <td class="text-center fw-bold text-primary">${parseFloat(item.det_value).toFixed(2)}</td>
+                    <td class="text-center">
+                        <button class="btn btn-danger btn-sm" onclick="deleteItemFromOrder(${item.id}, ${orderId})" title="حذف / نقص كمية">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            html += `<div class="d-flex justify-content-between align-items-center px-2 pt-2 pb-1">
+                <span class="text-muted small">عدد الأصناف: <strong>${res.items.length}</strong></span>
+                <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span> ج.م</span>
+            </div>`;
+            $('#orderItemsBody').html(html);
+        },
+        error: function() {
+            $('#orderItemsBody').html('<div class="alert alert-danger m-2">خطأ في الاتصال بالخادم</div>');
+        }
+    });
+}
+
+function deleteItemFromOrder(fatId, orderId) {
+    $.ajax({
+        url: 'ajax/delete_order_item.php',
+        method: 'POST',
+        data: { fat_id: fatId },
+        dataType: 'json',
+        success: function(res) {
+            if (res.success) {
+                if (res.removed) {
+                    $('#item-row-' + fatId).fadeOut(300, function() { $(this).remove(); });
+                } else {
+                    $('#item-row-' + fatId + ' .item-qty').text(parseFloat(res.new_qty).toFixed(2));
+                }
+                if (res.new_total !== undefined) {
+                    $('#items-total-' + orderId).text(parseFloat(res.new_total).toFixed(2));
+                }
+                loadRecentOrders();
+            } else {
+                Swal.fire('خطأ', res.error || 'فشل التعديل', 'error');
+            }
+        },
+        error: function() {
+            Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+        }
+    });
+}
+
 // Initialize recent orders functionality
 $(document).ready(function() {
+
     $(document).on('click', '.recent-orders-btn, #recentOrdersBtn1, #recentOrdersBtn2', function(e) {
         e.preventDefault();
         console.log('Recent orders button clicked');
@@ -1346,6 +1444,14 @@ $(document).ready(function() {
         e.stopPropagation();
         const orderId = $(this).data('id');
         window.location.href = 'pos_barcode.php?add_item=' + orderId;
+    });
+
+    // Handle show order items (delete item) button
+    $(document).on('click', '.show-order-items', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const orderId = $(this).data('id');
+        showOrderItemsModal(orderId);
     });
 
     // Handle delete order button

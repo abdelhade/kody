@@ -505,7 +505,7 @@ body {
                                     <div class="card item-card itemButton  shadow-sm border-0"
                                         data-item-id="<?= $itemId ?>" data-item-name="<?= $itemName ?>"
                                         data-item-price="<?= $itemPrice ?>" data-item-barcode="<?= $itemBarcode ?>"
-                                        data-item-desc="<?= $itemDesc ?>" style="transition: all 0.3s ease;">
+                                        data-item-desc="<?= $itemDesc ?>" style="transition: all 0.3s ease; cursor: pointer;">
                                         <div class="card-body p-2 text-center">
                                             <!-- الصورة -->
                                             <div class="item-image-container mb-2 ratio ratio-1x1 rounded overflow-hidden"
@@ -776,29 +776,26 @@ body {
 
     <!-- Modal الطاولات -->
     <div class="modal fade" id="tablesModal" tabindex="-1" aria-labelledby="tablesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="modal-title" id="tablesModalLabel">
+                <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+                    <h5 class="modal-title mb-0" id="tablesModalLabel">
                         <i class="fas fa-th-large me-2"></i>اختر الطاولة
                     </h5>
-                    <div class="d-flex align-items-center">
-                        <button type="button" class="btn btn-warning btn-sm me-3 fw-bold shadow-sm" id="btnToggleMergeMode" onclick="toggleTableMergeMode()">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-warning btn-sm fw-bold shadow-sm" id="btnToggleMergeMode" onclick="toggleTableMergeMode()">
                             <i class="fas fa-object-group me-1"></i> دمج الطاولات
                         </button>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                 </div>
-                <div class="modal-body p-4">
+                <div class="modal-body p-3" style="max-height:75vh; overflow-y:auto;">
                     <!-- الشريط العلوي لنمط الدمج -->
-                    <div id="mergeControlsBar" class="alert alert-warning d-none mb-3 p-3 shadow-sm border-warning">
+                    <div id="mergeControlsBar" class="alert alert-warning d-none mb-3 p-2 shadow-sm border-warning">
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-info-circle me-2 text-warning fs-5"></i>
-                                <div>
-                                    <span class="fw-bold fs-6 d-block">نمط دمج الطاولات (Merge Mode):</span>
-                                    <span class="small text-muted">قم بتحديد الطاولات المراد دمجها باستخدام خيارات التحديد (Checkbox) ثم اضغط تأكيد الدمج.</span>
-                                </div>
+                                <i class="fas fa-info-circle me-2 text-warning"></i>
+                                <span class="fw-bold small">حدد الطاولات المراد دمجها ثم اضغط تأكيد الدمج</span>
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <button type="button" class="btn btn-sm btn-success fw-bold px-3" onclick="confirmMergeTables()">
@@ -808,13 +805,13 @@ body {
                                     <i class="fas fa-unlink me-1"></i> فك دمج المحدد
                                 </button>
                                 <button type="button" class="btn btn-sm btn-secondary px-2" onclick="toggleTableMergeMode(false)">
-                                    <i class="fas fa-times me-1"></i> إلغاء
+                                    <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row g-3" id="tablesGrid">
+                    <div class="row g-2" id="tablesGrid">
                         <?php include('includes/tables_grid_render.php'); ?>
                     </div>
                 </div>
