@@ -83,6 +83,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    word-break: keep-all;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     text-decoration: none !important;
@@ -428,24 +430,51 @@ if ($selected_table) {
                     <div class="tables-grid pb-5">
                         <?php 
                         if ($tables_result && $tables_result->num_rows > 0) {
-                            while ($table = $tables_result->fetch_assoc()) {
-                                $table_id = $table['id'];
+                            // بناء map للطاولات المدمجة (primary → أسماء الـ children)
+                            $all_tables_arr = [];
+                            $merged_children_map = [];
+                            while ($t = $tables_result->fetch_assoc()) {
+                                $all_tables_arr[] = $t;
+                                if (intval($t['parent_table_id'] ?? 0) > 0) {
+                                    $merged_children_map[$t['parent_table_id']][] = $t['tname'];
+                                }
+                            }
+                            // إعادة استخدام المصفوفة بدل result مباشرة
+                            foreach ($all_tables_arr as $table) {
+                                $table_id   = $table['id'];
                                 $table_name = $table['tname'];
                                 $table_case = $table['table_case'];
-                                $is_merged = isset($table['is_merged']) && intval($table['is_merged']) == 1;
-                                $has_order = isset($table['has_active_order']) && intval($table['has_active_order']) > 0;
+                                $is_merged  = isset($table['is_merged']) && intval($table['is_merged']) == 1;
+                                $has_order  = isset($table['has_active_order']) && intval($table['has_active_order']) > 0;
                                 $parent_name = htmlspecialchars($table['parent_tname'] ?? '');
+                                $parent_table_id = intval($table['parent_table_id'] ?? 0) > 0 ? intval($table['parent_table_id']) : null;
                                 
                                 if ($is_merged && $has_order) {
                                     $border_color = '#dc3545';
                                     $text_color = '#dc3545';
                                     $icon = 'fas fa-object-group';
-                                    $status = 'محجوزة ومدمجة';
+                                    if ($parent_name) {
+                                        // child table
+                                        $status = 'محجوزة ومدمجة مع ' . $parent_name;
+                                    } elseif (!empty($merged_children_map[$table_id])) {
+                                        // primary table
+                                        $status = 'محجوزة ومدمجة مع ' . implode(', ', $merged_children_map[$table_id]);
+                                    } else {
+                                        $status = 'محجوزة ومدمجة';
+                                    }
                                 } elseif ($is_merged) {
                                     $border_color = '#ffc107';
                                     $text_color = '#856404';
                                     $icon = 'fas fa-object-group';
-                                    $status = 'مدمجة';
+                                    if ($parent_name) {
+                                        // child table
+                                        $status = 'مدمجة مع ' . $parent_name;
+                                    } elseif (!empty($merged_children_map[$table_id])) {
+                                        // primary table
+                                        $status = 'مدمجة مع ' . implode(', ', $merged_children_map[$table_id]);
+                                    } else {
+                                        $status = 'مدمجة';
+                                    }
                                 } elseif ($has_order || $table_case != 0) {
                                     $border_color = '#dc3545';
                                     $text_color = '#dc3545';
@@ -462,10 +491,10 @@ if ($selected_table) {
                                 
                                 // Simplified Button Style
                                 echo '<a href="tables.php?table_id=' . $table_id . '" class="btn table-btn ' . $selected_class . '" style="border: 2px solid ' . $border_color . '; color: ' . $text_color . '; background: white;">';
-                                echo '<div class="text-center">';
+                                echo '<div class="text-center" style="width:100%;">';
                                 echo '<i class="' . $icon . ' fa-2x mb-2"></i><br>';
                                 echo '<h6 class="fw-bold mb-1">' . htmlspecialchars($table_name) . '</h6>';
-                                echo '<small class="fw-bold">' . $status . '</small>';
+                                echo '<small class="fw-bold d-block text-truncate" style="max-width:130px; margin:0 auto;" title="' . htmlspecialchars($status) . '">' . htmlspecialchars($status) . '</small>';
                                 echo '</div>';
                                 echo '</a>';
                             }

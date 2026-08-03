@@ -28,8 +28,9 @@ if ($restables && $restables->num_rows > 0) {
     $all_tables = [];
     while ($r = $restables->fetch_assoc()) {
         $all_tables[] = $r;
-        if (!empty($r['parent_table_id'])) {
-            $merged_children[$r['parent_table_id']][] = $r['tname'];
+        $pid = intval($r['parent_table_id'] ?? 0);
+        if ($pid > 0) {
+            $merged_children[$pid][] = $r['tname'];
         }
     }
 
@@ -38,7 +39,7 @@ if ($restables && $restables->num_rows > 0) {
         $tableName = htmlspecialchars($rowtable['tname']);
         $hasActiveOrder = $rowtable['has_active_order'] > 0;
         $isMerged = intval($rowtable['is_merged']) == 1;
-        $parentTableId = $rowtable['parent_table_id'];
+        $parentTableId = intval($rowtable['parent_table_id']) > 0 ? intval($rowtable['parent_table_id']) : null;
         $parentTableName = htmlspecialchars($rowtable['parent_tname'] ?? '');
 
         // Determine effective case
@@ -97,7 +98,7 @@ if ($restables && $restables->num_rows > 0) {
             }
         }
 ?>
-<div class="col-4 position-relative table-card-wrapper" data-table-id="<?= $tableId ?>">
+<div class="col-3 position-relative table-card-wrapper" data-table-id="<?= $tableId ?>">
     <div class="card h-100 border-2 overflow-hidden shadow-sm table-card-box position-relative" style="transition: all 0.2s ease;">
         <!-- Checkbox overlay for merge mode -->
         <div class="form-check position-absolute top-0 end-0 m-2 merge-checkbox-wrapper" style="display: none; z-index: 25;">
@@ -108,15 +109,18 @@ if ($restables && $restables->num_rows > 0) {
                    style="width: 24px; height: 24px; cursor: pointer; border: 2px solid #0d6efd;">
         </div>
 
-        <button type="button"
+        <?php if ($isMerged): ?>
+        <!-- الطاولات المدمجة: نستخدم div بدل button لتجنب nested buttons -->
+        <div
             class="btn <?= $statusClass ?> w-100 h-100 table-select-btn p-3 position-relative d-flex flex-column justify-content-between"
             data-table-id="<?= $tableId ?>" 
             data-table-name="<?= $tableName ?>"
             data-table-case="<?= $tableCase ?>" 
             data-order-id="<?= $orderId ?>"
-            data-is-merged="<?= $isMerged ? 1 : 0 ?>"
+            data-is-merged="1"
             data-parent-id="<?= $parentTableId ?: '' ?>"
-            style="min-height: 120px; font-size: 1.05rem;">
+            role="button"
+            style="min-height: 120px; font-size: 1.05rem; cursor: pointer;">
             
             <div class="d-flex flex-column align-items-center justify-content-center w-100">
                 <i class="fas <?= $statusIcon ?> fa-2x mb-2"></i>
@@ -133,17 +137,40 @@ if ($restables && $restables->num_rows > 0) {
                 <?php endif; ?>
             </div>
 
-            <?php if ($isMerged): ?>
-            <div class="w-100 mt-2 text-center" onclick="event.stopPropagation();">
+            <div class="w-100 mt-2 text-center">
                 <button type="button" 
                         class="btn btn-sm btn-outline-dark bg-white py-0 px-2 text-danger fw-bold shadow-sm" 
-                        onclick="unmergeSingleTable(<?= $tableId ?>)" 
+                        onclick="event.stopPropagation(); unmergeSingleTable(<?= $tableId ?>)" 
                         title="فك دمج هذه الطاولة">
                     <i class="fas fa-unlink me-1"></i>فك الدمج
                 </button>
             </div>
+        </div>
+        <?php else: ?>
+        <button type="button"
+            class="btn <?= $statusClass ?> w-100 h-100 table-select-btn p-3 position-relative d-flex flex-column justify-content-center align-items-center"
+            data-table-id="<?= $tableId ?>" 
+            data-table-name="<?= $tableName ?>"
+            data-table-case="<?= $tableCase ?>" 
+            data-order-id="<?= $orderId ?>"
+            data-is-merged="0"
+            data-parent-id=""
+            style="min-height: 120px; font-size: 1.05rem;">
+            
+            <i class="fas <?= $statusIcon ?> fa-2x mb-2"></i>
+            <h6 class="fw-bold mb-1"><?= $tableName ?></h6>
+            <small class="d-flex align-items-center fw-semibold">
+                <i class="fas <?= $statusIcon ?> me-1"></i>
+                <?= $statusText ?>
+            </small>
+
+            <?php if ($orderTotal > 0): ?>
+            <div class="mt-2 badge bg-white text-dark border shadow-sm px-2 py-1 fs-6">
+                <?= number_format($orderTotal, 2) ?> ج.م
+            </div>
             <?php endif; ?>
         </button>
+        <?php endif; ?>
     </div>
 </div>
 <?php
