@@ -89,6 +89,13 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                                 <i class="fas fa-money-check-alt ml-1"></i> <?= $lang_addemployee_salaries ?>
                             </a>
                         </li>
+                        <?php if ($isEdit): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#targets-tab-pane" role="tab">
+                                <i class="fas fa-bullseye ml-1"></i> التارجيتات
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
 
@@ -358,6 +365,10 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                         </div>
                     </div>
                 </div>
+
+                <?php if ($isEdit): ?>
+                <?php include __DIR__ . '/employee_targets_tab.php'; ?>
+                <?php endif; ?>
 
                 <div class="form-footer">
                     <button type="submit" id="emp_submit" class="btn btn-success btn-lg px-5" disabled>

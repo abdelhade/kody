@@ -46,13 +46,7 @@
                 </div>
             </div>
 
-            
-            <div class="row">
-                    <div class="col bg-light"> آخر وقت للتعديل</div>
-                    <div class="col border border-light" id="cost_price_div">
-                        <h6 id="storemdtime" class=""></h6>
-                </div>
-            </div>
+
                 </div>
                 <div class="col-md-3">
 
@@ -74,6 +68,14 @@
 
 </div>
 <div class="col-md-3">
+<div class="row">
+                            <div class="col col-md-4">
+                                <label for="">إجمالي الكميات</label>
+                            </div>
+                                <div class="col-md-8">
+                                <input id="headqty" name="headqty" type="text" class="form-control form-control-sm bg-light" readonly value="0">
+                            </div>
+                            </div>
 <div class="row">
                             <div class="col col-md-4">
                                 <label for="">الاجمالي</label>
