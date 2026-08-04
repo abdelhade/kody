@@ -109,9 +109,8 @@ class InvoiceFooter extends InvoiceElementBase
         </div>
         
         <div class="row">
-            <div class="col bg-light">آخر وقت للتعديل</div>
             <div class="col border border-light" id="cost_price_div">
-                <h6 id="storemdtime"></h6>
+                <h6 id="storemdtime" style="display:none;"></h6>
             </div>
         </div>
         <?php
@@ -145,6 +144,17 @@ class InvoiceFooter extends InvoiceElementBase
     private function renderTotals()
     {
         ?>
+        <div class="row">
+            <div class="col col-md-4">
+                <label for="">إجمالي الكميات</label>
+            </div>
+            <div class="col-md-8">
+                <input id="headqty" name="headqty" type="text"
+                       class="form-control form-control-sm bg-light"
+                       value="<?php echo $this->getTotalQty(); ?>" readonly>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col col-md-4">
                 <label for="">الإجمالي</label>
@@ -355,6 +365,18 @@ class InvoiceFooter extends InvoiceElementBase
     private function getFatTotal()
     {
         return $this->isEditMode && $this->data ? $this->data['fat_total'] : '0';
+    }
+
+    private function getTotalQty()
+    {
+        if ($this->isEditMode && $this->data && $this->conn) {
+            $id = intval($this->data['id']);
+            $res = $this->conn->query("SELECT COALESCE(SUM(ABS(qty_in - qty_out) / u_val), 0) as total_qty FROM fat_details WHERE fatid = $id AND isdeleted = 0");
+            if ($res && $row = $res->fetch_assoc()) {
+                return round($row['total_qty'], 2);
+            }
+        }
+        return '0';
     }
 
     private function getFatDisc()

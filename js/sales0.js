@@ -66,4 +66,12 @@ $(document).ready(function() {
     $('#showOps').off('click').on('click', function() {
         $('#operations').toggle();
     });
+
+    // علّم الفورم إنه بيتبعت عشان تحذير المغادرة ميطلعش بعد الحفظ
+    $(document).on('click', '#submit, #submit2', function() {
+        formSubmitting = true;
+    });
+    $('#myForm2').on('submit', function() {
+        formSubmitting = true;
+    });
 });

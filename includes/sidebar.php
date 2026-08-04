@@ -604,6 +604,12 @@
                     <p><?= $lang_sideemployees ?></p>
                   </a>
                 </li>
+                <li class="nav-item">
+                  <a href="emp_targets_report.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-bullseye"></i> </i>
+                    <p>تارجيت الموظفين</p>
+                  </a>
+                </li>
 
                 <li class="nav-item">
                   <a href="acc_report.php?acc=delivery" class="nav-link">
@@ -1450,6 +1456,20 @@
                 </a>
               </li>
 
+
+              <li class="nav-item">
+                <a href="sales-by-employee.php" class="nav-link">
+                  <i class="nav-icon fas fa-user-tie"></i>
+                  <p>مبيعات الموظفين</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="emp_targets_report.php" class="nav-link">
+                  <i class="nav-icon fas fa-bullseye"></i>
+                  <p>تارجيت الموظفين</p>
+                </a>
+              </li>
 
               <li class="nav-item">
                 <a href="prints.php" class="nav-link">

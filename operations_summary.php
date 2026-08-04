@@ -15,20 +15,12 @@ if ($strtdate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $strtdate)) $strtdate = nu
 if ($enddate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $enddate)) $enddate = null;
 
 $dateFilter = "";
-if ($strtdate && $enddate) {
-    $dateFilter = "AND DATE(pro_date) BETWEEN '$strtdate' AND '$enddate'";
-} elseif ($strtdate) {
-    $dateFilter = "AND DATE(pro_date) >= '$strtdate'";
-} elseif ($enddate) {
-    $dateFilter = "AND DATE(pro_date) <= '$enddate'";
-} else {
-    $dateFilter = "AND DATE(pro_date) = '$today'";
-}
+// سيتم تعريف dateFilter بـ alias ot. في الأسفل مع الـ JOIN
 
 $searchFilter = "";
 if ($search) {
     $search = $conn->real_escape_string($search);
-    $searchFilter = "AND (pro_id LIKE '%$search%' OR info LIKE '%$search%' OR jal_name LIKE '%$search%')";
+    $searchFilter = "AND (ot.id LIKE '%$search%' OR ot.pro_id LIKE '%$search%' OR ot.info LIKE '%$search%' OR ot.jal_name LIKE '%$search%' OR acc1.aname LIKE '%$search%' OR acc2.aname LIKE '%$search%')";
 }
 
 // Pagination
@@ -36,23 +28,40 @@ $limit = 9999;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
+// Base JOIN query for search support (acc1 = supplier/client, acc2 = opposite account)
+$join_clause = "FROM ot_head ot
+    LEFT JOIN acc_head acc1 ON acc1.id = ot.acc1
+    LEFT JOIN acc_head acc2 ON acc2.id = ot.acc2";
+
+// Replace date filter to use ot. alias
+$dateFilter = "";
+if ($strtdate && $enddate) {
+    $dateFilter = "AND DATE(ot.pro_date) BETWEEN '$strtdate' AND '$enddate'";
+} elseif ($strtdate) {
+    $dateFilter = "AND DATE(ot.pro_date) >= '$strtdate'";
+} elseif ($enddate) {
+    $dateFilter = "AND DATE(ot.pro_date) <= '$enddate'";
+} else {
+    $dateFilter = "AND DATE(ot.pro_date) = '$today'";
+}
+
 switch ($q) {
     case "purchase":
     case "sale_legacy": // للتوافقية
         $report_name = "مشتريات";
-        $where_clause = "pro_tybe = 4 AND isdeleted != 1 $dateFilter $searchFilter";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
+        $where_clause = "ot.pro_tybe = 4 AND ot.isdeleted != 1 $dateFilter $searchFilter";
+        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
-        $where_clause = "(pro_tybe = 3 OR pro_tybe = 9 OR pro_tybe = 10) AND isdeleted != 1 $dateFilter $searchFilter";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
+        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter";
+        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
-        $where_clause = "isdeleted != 1 $dateFilter $searchFilter";
-        $resop = $conn->query("SELECT * FROM ot_head WHERE $where_clause ORDER BY id DESC LIMIT $limit OFFSET $offset");
+        $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter";
+        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
 }
 ?>
 
@@ -106,7 +115,7 @@ switch ($q) {
                                 <input class="form-control" type="date" value="<?= $enddate_display ?>" name="enddate">
                             </div>
                             <div class="col-md-4 col-sm-6 col-12 mb-2">
-                                <label>بحث (رقم الفاتورة، العميل، البيان)</label>
+                                <label>بحث (رقم الفاتورة، <?= $q === 'purchase' ? 'المورد' : 'العميل' ?>، البيان)</label>
                                 <input class="form-control" type="text" value="<?= htmlspecialchars($search ?? '') ?>" name="search" placeholder="ابحث هنا...">
                             </div>
                             <div class="col-md-2 col-12 mb-2">
@@ -207,12 +216,12 @@ switch ($q) {
                                                 <small class="d-block text-muted" style="font-size: 0.65rem;">(أجل: <?= number_format($remaining, 2, '.', '') ?>)</small>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc1']}")->fetch_assoc()['aname'] ?></td>
-                                        <td><?= $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['acc2']}")->fetch_assoc()['aname'] ?></td>
-                                        <td><?= $rowop['store_id'] > 0 ? $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['store_id']}")->fetch_assoc()['aname'] : '' ?></td>
-                                        <td><?= $rowop['emp_id'] > 0 ? $conn->query("SELECT aname FROM acc_head WHERE id = {$rowop['emp_id']}")->fetch_assoc()['aname'] : '' ?></td>
+                                        <td><?= !empty($rowop['acc1']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc1']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
+                                        <td><?= !empty($rowop['acc2']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc2']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
+                                        <td><?= $rowop['store_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['store_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
+                                        <td><?= $rowop['emp_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['emp_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
                                          <td class="prft"><?= $rowop['profit'] ?></td>
-                                        <td><?= $conn->query("SELECT uname FROM users WHERE id = {$rowop['user']}")->fetch_assoc()['uname'] ?></td>
+                                        <td><?= !empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '' ?></td>
                                         <td>
                                             <?= $rowop['id'] ?>
                                             <a href="inv_operations.php?h=<?= md5($proid) ?>&q=<?= $proid ?>&t=<?= md5($tybe) ?>">
@@ -353,7 +362,7 @@ switch ($q) {
                         <ul class="pagination pagination-sm justify-content-center mb-0">
                             <?php
                             // حساب إجمالي السجلات
-                            $count_query = $conn->query("SELECT COUNT(*) as total FROM ot_head WHERE $where_clause");
+                            $count_query = $conn->query("SELECT COUNT(*) as total $join_clause WHERE $where_clause");
                             $total_items = $count_query->fetch_assoc()['total'];
                             $total_pages = ceil($total_items / $limit);
                             

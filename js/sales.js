@@ -1,6 +1,56 @@
 let counter = 1;
 let isProcessing = false; // منع التنفيذ المتعدد
 
+// ========== تحذير مغادرة الصفحة لو في بيانات ==========
+let formSubmitting = false;
+let allowLeave = false;
+
+function hasInvoiceData() {
+    if ($('#itmrow tr').length > 0) return true;
+    if ((parseFloat($('#headtotal').val()) || 0) > 0) return true;
+    return false;
+}
+
+// منع مغادرة الصفحة بالـ browser native (للـ refresh/close)
+function beforeUnloadHandler(e) {
+    if (!formSubmitting && !allowLeave && hasInvoiceData()) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+}
+window.addEventListener('beforeunload', beforeUnloadHandler);
+
+// اعتراض الروابط داخل الصفحة (navbar/sidebar)
+$(document).on('click', 'a[href]', function(e) {
+    const href = $(this).attr('href');
+    if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript')) return;
+    if (formSubmitting || allowLeave || !hasInvoiceData()) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const targetHref = href;
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'تنبيه',
+        text: 'الفاتورة تحتوي على بيانات غير محفوظة، هل تريد المغادرة؟',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، اخرج',
+        cancelButtonText: 'لا، ارجع',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            // شيل الـ listener كلياً قبل ما تروح
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            allowLeave = true;
+            window.location.href = targetHref;
+        }
+    });
+});
+// ========== نهاية تحذير المغادرة ==========
+
 $(document).ready(function() {
     initializeSelect2();
     handleItemSelectionChange();
@@ -353,8 +403,12 @@ function calcProfitPct(row) {
 
 function updateTotal() {
     let total = 0;
+    let totalQty = 0;
     $('#itmrow .itmval').each(function() {
         total += parseFloat(this.value) || 0;
+    });
+    $('#itmrow .itmqty').each(function() {
+        totalQty += parseFloat(this.value) || 0;
     });
     
     const headtotal = total;
@@ -364,6 +418,7 @@ function updateTotal() {
     
     $('#headtotal').val(parseFloat(headtotal.toFixed(2)));
     $("#headnet").val(parseFloat(headnet.toFixed(2)));
+    $('#headqty').val(parseFloat(totalQty.toFixed(2)));
     
     if (headtotal > 0) {
         $('#headdisc_pct').val(parseFloat(((headdisc / headtotal) * 100).toFixed(2)));
