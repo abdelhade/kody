@@ -256,6 +256,7 @@ echo "<strong>" . $label . ":</strong> " . $rowacc1['aname'];?>
 <tbody>
     <?php 
     $x =0;
+    $total_qty = 0;
     $resdet = $conn->query("SELECT * FROM fat_details where pro_id = $id AND isdeleted = 0 order by id desc");
     while ($rowdet =$resdet->fetch_assoc()) {
         $x++;
@@ -268,6 +269,7 @@ echo "<strong>" . $label . ":</strong> " . $rowacc1['aname'];?>
         } else {
             $qty = 0;
         } 
+        $total_qty += $qty;
         
         $disc_pct = isset($rowdet['disc_pct']) ? $rowdet['disc_pct'] : 0;
         if ($disc_pct == 0 && $rowdet['discount'] > 0) {
@@ -293,6 +295,11 @@ echo $unitid['uname'];
 <td class="text-center"><strong><?= number_format($rowdet['det_value'], 2)?></strong></td>
 </tr>
 <?php }?>
+<tr style="background-color: #e8f0fe; font-weight: bold;">
+<td colspan="3" class="text-center" style="color: #1a2f5a;">إجمالي الكميات</td>
+<td class="text-center" style="color: #1a2f5a; font-size: 13px;"><?= number_format($total_qty, 2) ?></td>
+<td colspan="5"></td>
+</tr>
 </tbody>
 </table>
 

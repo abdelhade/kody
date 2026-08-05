@@ -239,3 +239,5 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-07-27 16:52:31] ParseError: syntax error, unexpected token "else", expecting end of file in C:\xampp\htdocs\kody\includes\pos_content.php:784
 [2026-08-04 15:47:29] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1 in C:\xampp\htdocs\kody\operations_summary.php:219
 [2026-08-04 21:26:36] mysqli_sql_exception: Unknown column 'username' in 'field list' in C:\xampp\htdocs\kody\check_admin.php:4
+[2026-08-05 16:06:23] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
+[2026-08-05 16:29:47] mysqli_sql_exception: Table 'kody2.pulse_types' doesn't exist in C:\xampp\htdocs\kody\pulse.php:15

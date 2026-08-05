@@ -21,17 +21,23 @@ function beforeUnloadHandler(e) {
 window.addEventListener('beforeunload', beforeUnloadHandler);
 
 // اعتراض الروابط داخل الصفحة (navbar/sidebar)
+let _leaveConfirmOpen = false;
 $(document).on('click', 'a[href]', function(e) {
     const href = $(this).attr('href');
     if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript')) return;
     if (formSubmitting || allowLeave || !hasInvoiceData()) return;
+    if (_leaveConfirmOpen) { e.preventDefault(); return; }
 
     e.preventDefault();
     e.stopImmediatePropagation();
-    const targetHref = href;
+    // تحويل الـ href لـ absolute URL عشان نضمن الانتقال الصح
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    const targetHref = anchor.href;
+    _leaveConfirmOpen = true;
 
     Swal.fire({
-        icon: 'warning',
+        type: 'warning',
         title: 'تنبيه',
         text: 'الفاتورة تحتوي على بيانات غير محفوظة، هل تريد المغادرة؟',
         showCancelButton: true,
@@ -41,8 +47,10 @@ $(document).on('click', 'a[href]', function(e) {
         cancelButtonColor: '#3085d6',
         reverseButtons: true
     }).then(function(result) {
-        if (result.isConfirmed) {
-            // شيل الـ listener كلياً قبل ما تروح
+        _leaveConfirmOpen = false;
+        // v8: result.value === true عند الضغط على confirm
+        // v9+: result.isConfirmed === true
+        if (result.value === true || result.isConfirmed === true) {
             window.removeEventListener('beforeunload', beforeUnloadHandler);
             allowLeave = true;
             window.location.href = targetHref;
