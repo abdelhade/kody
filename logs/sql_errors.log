@@ -241,3 +241,5 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-08-04 21:26:36] mysqli_sql_exception: Unknown column 'username' in 'field list' in C:\xampp\htdocs\kody\check_admin.php:4
 [2026-08-05 16:06:23] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
 [2026-08-05 16:29:47] mysqli_sql_exception: Table 'kody2.pulse_types' doesn't exist in C:\xampp\htdocs\kody\pulse.php:15
+[2026-08-08 15:36:40] mysqli_sql_exception: Reference 'total_sales' not supported (reference to group function) in C:\xampp\htdocs\kody\sales-by-employee.php:37
+[2026-08-08 15:36:50] mysqli_sql_exception: Reference 'total_sales' not supported (reference to group function) in C:\xampp\htdocs\kody\sales-by-employee.php:37
