@@ -1423,7 +1423,7 @@
               </li>
 
               <li class="nav-item">
-                <a href="operations_summary.php?q=purchase" class="nav-link">
+                <a href="purchase-reports.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
                     <?= $lang_purchase_invoices_report ?>

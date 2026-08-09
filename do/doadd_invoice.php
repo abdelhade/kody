@@ -421,12 +421,25 @@ try {
             }
             $stmt->close();
             
-            // الدائن: المبيعات (حساب 91)
+            // الدائن: المبيعات — يُقرأ من شجرة الحسابات (أول حساب طرفي تحت 32)
+            // إذا لم يُوجد يُستخدم الحساب 32101 (id=99) كقيمة افتراضية
+            $sales_account = 99; // id=99 → code=32101 (إيرادات من التأجير)
+            $stmt_sa = $conn->prepare(
+                "SELECT ah.id FROM acc_head ah
+                 INNER JOIN acc_head parent ON ah.parent_id = parent.id
+                 WHERE parent.code LIKE '32%' AND ah.is_basic = 0 AND ah.isdeleted = 0
+                 ORDER BY ah.code LIMIT 1"
+            );
+            if ($stmt_sa) {
+                $stmt_sa->execute();
+                $res_sa = $stmt_sa->get_result()->fetch_assoc();
+                if ($res_sa) { $sales_account = $res_sa['id']; }
+                $stmt_sa->close();
+            }
             $stmt = $conn->prepare(
                 "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
                  VALUES (?, ?, 0, ?, 1, ?)"
             );
-            $sales_account = 91;
             $stmt->bind_param("ssds", $journal_lastid, $sales_account, $headnet, $last_op);
             
             if (!$stmt->execute()) {
