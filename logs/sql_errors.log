@@ -243,3 +243,6 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-08-05 16:29:47] mysqli_sql_exception: Table 'kody2.pulse_types' doesn't exist in C:\xampp\htdocs\kody\pulse.php:15
 [2026-08-08 15:36:40] mysqli_sql_exception: Reference 'total_sales' not supported (reference to group function) in C:\xampp\htdocs\kody\sales-by-employee.php:37
 [2026-08-08 15:36:50] mysqli_sql_exception: Reference 'total_sales' not supported (reference to group function) in C:\xampp\htdocs\kody\sales-by-employee.php:37
+[2026-08-08 22:24:20] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1 in C:\xampp\htdocs\kody\print\includes\header.php:9
+[2026-08-08 22:24:30] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1 in C:\xampp\htdocs\kody\print\includes\header.php:9
+[2026-08-09 19:34:41] mysqli_sql_exception: Unknown column 'sid_cards' in 'field list' in C:\xampp\htdocs\kody\do\doadd_role.php:268

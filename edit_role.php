@@ -161,11 +161,11 @@ if ($hash_id !== $hash) {
 
                     <tr class="tr1">
                         <td>ديليفري</td>
-                        <td><input type="checkbox" class="user-checkbox" name="show_delivery" id="" <?php if( $rowrol['show_delivery'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="add_delivery" id="" <?php if( $rowrol['add_delivery'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="edit_delivery" id="" <?php if( $rowrol['edit_delivery'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="delete_delivery" id="" <?php if( $rowrol['delete_delivery'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="is_fav_delivery" id="" <?php if( $rowrol['is_fav_delivery'] == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="show_delivery" id="" <?php if( ($rowrol['show_delivery'] ?? 0) == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="add_delivery" id="" <?php if( ($rowrol['add_delivery'] ?? 0) == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="edit_delivery" id="" <?php if( ($rowrol['edit_delivery'] ?? 0) == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="delete_delivery" id="" <?php if( ($rowrol['delete_delivery'] ?? 0) == 1){echo "checked"; }?>></td>
+                        <td><input type="checkbox" class="user-checkbox" name="is_fav_delivery" id="" <?php if( ($rowrol['is_fav_delivery'] ?? 0) == 1){echo "checked"; }?>></td>
                     </tr>
 
                     <tr class="tr1">
@@ -479,6 +479,14 @@ if ($hash_id !== $hash) {
                             <tr class="tr1">
                                 <td>اظهار قسم التأجير من الجانب الايمن</td>
                                 <td><input type="checkbox" name="sid_rents"  class="user-checkbox" <?php if( $rowrol['sid_rents'] == 1){echo "checked"; }?>></td>
+                            </tr>
+                            <tr class="tr1">
+                                <td>اظهار قسم ادارة الكروت من الجانب الايمن</td>
+                                <td><input type="checkbox" name="sid_cards"  class="user-checkbox" <?php if( ($rowrol['sid_cards'] ?? 0) == 1){echo "checked"; }?>></td>
+                            </tr>
+                            <tr class="tr1">
+                                <td>تعديل كلمات مرور المستخدمين</td>
+                                <td><input type="checkbox" name="edit_user_passwords"  class="user-checkbox" <?php if( ($rowrol['edit_user_passwords'] ?? 0) == 1){echo "checked"; }?>></td>
                             </tr>
 
                         </tbody>

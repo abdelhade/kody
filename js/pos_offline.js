@@ -14,11 +14,13 @@ class OfflinePOS {
     }
 
     init() {
-        // تسجيل Service Worker
+        // إلغاء Service Worker لعدم تخزين كاش
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed'));
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
         }
 
         // إعداد البيانات الافتراضية

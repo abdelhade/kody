@@ -134,15 +134,25 @@ $pos_type = $settings['pos_type'] ?? 'barcode';
 // تحديد صفحة POS حسب النوع
 $pos_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
 
-// إعادة التوجيه حسب نوع العملية
-$redirects = [
-    InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=purchase',
-    InvoiceProcessor::INVOICE_TYPES['SALES'] => '../operations_summary.php?q=sale',
-    InvoiceProcessor::INVOICE_TYPES['POS'] => $pos_page
-];
+// إعادة التوجيه حسب نوع العملية أو الصفحة السابقة
+$return_url = isset($_POST['return_url']) ? $_POST['return_url'] : '';
 
-$redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);
-$separator = strpos($redirect, '?') !== false ? '&' : '?';
-header("Location: $redirect{$separator}success=deleted");
+if (!empty($return_url)) {
+    // إزالة رسالة النجاح القديمة إن وجدت لمنع تكرارها
+    $return_url = preg_replace('/([?&])success=[^&]*(&|$)/', '$1', $return_url);
+    $return_url = rtrim($return_url, '?&');
+    $separator = strpos($return_url, '?') !== false ? '&' : '?';
+    header("Location: $return_url{$separator}success=deleted");
+} else {
+    $redirects = [
+        InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=purchase',
+        InvoiceProcessor::INVOICE_TYPES['SALES'] => '../operations_summary.php?q=sale',
+        InvoiceProcessor::INVOICE_TYPES['POS'] => $pos_page
+    ];
+
+    $redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);
+    $separator = strpos($redirect, '?') !== false ? '&' : '?';
+    header("Location: $redirect{$separator}success=deleted");
+}
 exit;
 ?>

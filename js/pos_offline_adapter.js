@@ -23,9 +23,11 @@ class POSOfflineAdapter {
 
     setupServiceWorker() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('pos_sw.js')
-                .then(reg => console.log('POS Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed'));
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
         }
     }
 

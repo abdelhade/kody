@@ -121,6 +121,26 @@ if ($colMainHr && $colMainHr->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN show_main_hr TINYINT(1) NOT NULL DEFAULT 1');
 }
 
+$colDelivery = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'show_delivery'");
+if ($colDelivery && $colDelivery->num_rows === 0) {
+    $conn->query("ALTER TABLE usr_pwrs
+        ADD COLUMN is_fav_delivery INT(11) DEFAULT 0 AFTER delete_depits,
+        ADD COLUMN show_delivery INT(11) DEFAULT 1 AFTER is_fav_delivery,
+        ADD COLUMN add_delivery INT(11) DEFAULT 1 AFTER show_delivery,
+        ADD COLUMN edit_delivery INT(11) DEFAULT 1 AFTER add_delivery,
+        ADD COLUMN delete_delivery INT(11) DEFAULT 1 AFTER edit_delivery");
+}
+
+$colSidCards = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'sid_cards'");
+if ($colSidCards && $colSidCards->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN sid_cards INT(11) NOT NULL DEFAULT 1 AFTER sid_rents');
+}
+
+$colEditUserPasswords = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'edit_user_passwords'");
+if ($colEditUserPasswords && $colEditUserPasswords->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN edit_user_passwords INT(11) NOT NULL DEFAULT 0 AFTER sid_cards');
+}
+
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 
 $now = new DateTime();

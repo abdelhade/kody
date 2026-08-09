@@ -289,6 +289,7 @@ switch ($q) {
 
                                             <form action="do/dodel_invoice.php?id=<?= $rowop['id'] ?>" method="post">
                                                 <input type="hidden" name="q" value="<?= $q ?>">
+                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
                                             
                                             <div class="modal fade" id="deleteModal<?= $rowop['id']?>" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog" role="document">

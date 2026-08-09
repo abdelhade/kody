@@ -108,7 +108,7 @@ if ($rollname === null) {
     $is_fav_employees = isset($_POST['is_fav_employees']) ? 1 : 0; 
     
     $show_items = isset($_POST['show_items']) ? 1 : 0;
-    $add_items = isset($_POST['add_items']) ?  : 0;
+    $add_items = isset($_POST['add_items']) ? 1 : 0;
     $edit_items = isset($_POST['edit_items']) ? 1 : 0; 
     $delete_items = isset($_POST['delete_items']) ? 1 : 0; 
     $is_fav_items = isset($_POST['is_fav_items']) ? 1 : 0; 
@@ -264,7 +264,7 @@ SET
 `edit_general_entrys`= '$edit_general_entrys',
 `delete_general_entrys`= '$delete_general_entrys',
 `is_fav_clients`= '$is_fav_clients',
-`show_clients`= '$is_fav_clients',
+`show_clients`= '$show_clients',
 `add_clients`= '$add_clients',
 `edit_clients`= '$edit_clients',
 `is_fav_suppliers`= '$is_fav_suppliers',
@@ -437,6 +437,8 @@ SET
 `sid_hr`= '$sid_hr',
 `sid_payroll`= '$sid_payroll',
 `sid_rents`= '$sid_rents',
+`sid_cards`= '$sid_cards',
+`edit_user_passwords`= '$edit_user_passwords',
 `info`= '$info',
 `show_total_reservation`= '$show_total_reservation',
 `show_ended_reservation`= '$show_ended_reservation',

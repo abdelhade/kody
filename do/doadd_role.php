@@ -200,7 +200,7 @@ if ($rollname === null) {
     $is_fav_attandance = isset($_POST['is_fav_attandance']) ? 1 : 0; 
    
     $show_calls = isset($_POST['show_calls']) ? 1 : 0;
-    $add_calls = isset($_POST['add_calls']) ?  : 0;
+    $add_calls = isset($_POST['add_calls']) ? 1 : 0;
     $edit_calls = isset($_POST['edit_calls']) ? 1 : 0; 
     $delete_calls = isset($_POST['delete_calls']) ? 1 : 0; 
     $is_fav_calls = isset($_POST['is_fav_calls']) ? 1 : 0; 
