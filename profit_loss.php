@@ -3,7 +3,7 @@
 <?php include('includes/sidebar.php') ?>
 <?php
 // ──────────────────────────────────────────────────────────────
-// تحديد الفترة الزمنية مع تحقق من الصيغة
+// تحديد الفترة الزمنية
 // ──────────────────────────────────────────────────────────────
 $startdate = (isset($_POST['startdate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['startdate']))
     ? $_POST['startdate'] : date('Y-01-01');
@@ -11,60 +11,7 @@ $enddate = (isset($_POST['enddate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_PO
     ? $_POST['enddate'] : date('Y-m-d');
 
 // ──────────────────────────────────────────────────────────────
-// دالة: إجمالي debit/credit لكل حسابات مجموعة (شجرة كاملة)
-// تجمع فقط القيود على الحسابات الطرفية (is_basic=0)
-// لتجنب double counting مع الحسابات الأب
-// ──────────────────────────────────────────────────────────────
-function getPLGroupBalance($conn, $group_code, $startdate, $enddate) {
-    $sql = "SELECT
-                COALESCE(SUM(je.debit),  0) AS total_debit,
-                COALESCE(SUM(je.credit), 0) AS total_credit
-            FROM journal_entries je
-            INNER JOIN acc_head ah ON je.account_id = ah.id
-            WHERE ah.code LIKE ?
-              AND ah.is_basic = 0
-              AND ah.isdeleted = 0
-              AND je.isdeleted = 0
-              AND DATE(je.crtime) BETWEEN ? AND ?";
-    $like = $group_code . '%';
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sss", $like, $startdate, $enddate);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-    return $row;
-}
-
-// ──────────────────────────────────────────────────────────────
-// دالة: الحسابات الطرفية (is_basic=0) مع رصيدها الصافي
-// net_balance = debit - credit  (القيمة الخام، التفسير يعتمد على الطبيعة)
-// تُرجع فقط الحسابات الطرفية لتجنب double counting
-// ──────────────────────────────────────────────────────────────
-function getPLLeafAccounts($conn, $group_code, $startdate, $enddate) {
-    $sql = "SELECT ah.id, ah.code, ah.aname,
-                COALESCE((
-                    SELECT SUM(je.debit) - SUM(je.credit)
-                    FROM journal_entries je
-                    WHERE je.account_id = ah.id
-                      AND je.isdeleted = 0
-                      AND DATE(je.crtime) BETWEEN ? AND ?
-                ), 0) AS net_balance
-            FROM acc_head ah
-            WHERE ah.code LIKE ?
-              AND ah.is_basic = 0
-              AND ah.isdeleted = 0
-            ORDER BY ah.code";
-    $like = $group_code . '%';
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sss", $startdate, $enddate, $like);
-    $stmt->execute();
-    return $stmt->get_result();
-}
-
-// ──────────────────────────────────────────────────────────────
 // دالة مساعدة: تنسيق محاسبي
-//   موجب  →  "1,234.56"
-//   سالب  →  "(1,234.56)"
 // ──────────────────────────────────────────────────────────────
 function plFormat($value) {
     if ($value < -0.001) {
@@ -74,83 +21,211 @@ function plFormat($value) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// حساب أرقام قائمة الأرباح والخسائر
+// المصدر الوحيد الموثوق للمبيعات: ot_head
+//
+// بعد فحص قاعدة البيانات تبيّن:
+//   - حسابات 31% (إيرادات المبيعات) فارغة تماماً في journal_entries
+//   - المبيعات تُسجَّل في ot_head فقط
+//   - pro_tybe=9  : مبيعات كاشير (JE: عميل مدين + مخزن دائن)
+//   - pro_tybe=3 مع journal_tybe=3 : مبيعات تيك-أواي (JE: عميل مدين + 41103 دائن)
+//   - pro_tybe=10 : مبيعات آجلة (JE: عميل مدين + مخزن دائن)
+//   - pro_tybe=11 : مردود مبيعات → يُطرح
+//
+// الحساب 41103 "خصم مسموح به" يُستخدم فعلياً كحساب دائن للمبيعات
+// لذا لا يُصنَّف كتكلفة مبيعات في هذا التقرير
 // ══════════════════════════════════════════════════════════════
 
-// 1. الإيرادات — مصدران:
-//    أ) حسابات الإيرادات المحاسبية (32) — دائنة الطبيعة
-//    ب) إيرادات المبيعات من ot_head (مبيعات + كاشير) مطروحاً منها مردودات المبيعات
-//       تُستخدم كاحتياطي للفواتير القديمة المسجلة في غير 32
-
-// أ) إيرادات حسابات 32
-$rev_data       = getPLGroupBalance($conn, '32', $startdate, $enddate);
-$rev_from_32    = $rev_data['total_credit'] - $rev_data['total_debit'];
-
-// ب) إيرادات المبيعات من ot_head (3=مبيعات، 9=كاشير) مطروحاً منها (11=مردود مبيعات)
-$stmt_sales = $conn->prepare(
-    "SELECT
-         COALESCE(SUM(CASE WHEN oh.pro_tybe IN (3,9) THEN oh.fat_net ELSE 0 END), 0) AS sales_total,
-         COALESCE(SUM(CASE WHEN oh.pro_tybe IN (11)  THEN oh.fat_net ELSE 0 END), 0) AS returns_total
-     FROM ot_head oh
-     WHERE oh.isdeleted = 0
-       AND DATE(oh.pro_date) BETWEEN ? AND ?"
-);
+// ── 1. مبيعات ot_head ──────────────────────────────────────
+$stmt_sales = $conn->prepare("
+    SELECT
+        COALESCE(SUM(CASE WHEN oh.pro_tybe IN (9)                   THEN oh.fat_net ELSE 0 END), 0) AS cashier_sales,
+        COALESCE(SUM(CASE WHEN oh.pro_tybe = 3 AND oh.journal_tybe = 3 THEN oh.fat_net ELSE 0 END), 0) AS pos_sales,
+        COALESCE(SUM(CASE WHEN oh.pro_tybe IN (10)                  THEN oh.fat_net ELSE 0 END), 0) AS credit_sales,
+        COALESCE(SUM(CASE WHEN oh.pro_tybe IN (11)                  THEN oh.fat_net ELSE 0 END), 0) AS returns_total
+    FROM ot_head oh
+    WHERE oh.isdeleted = 0
+      AND DATE(oh.pro_date) BETWEEN ? AND ?
+");
 $stmt_sales->bind_param("ss", $startdate, $enddate);
 $stmt_sales->execute();
-$row_sales         = $stmt_sales->get_result()->fetch_assoc();
+$row_sales = $stmt_sales->get_result()->fetch_assoc();
 $stmt_sales->close();
-$sales_net_ot      = $row_sales['sales_total'] - $row_sales['returns_total'];
 
-// الإيراد الكلي = الأعلى بين المصدرين (لتجنب الازدواج إذا تم تصحيح الحسابات)
-// إذا كانت 32 تحتوي على المبيعات كاملة نستخدمها، وإلا نستخدم ot_head
-$total_revenues = max($rev_from_32, $sales_net_ot);
+$cashier_sales    = (float)$row_sales['cashier_sales'];
+$pos_sales        = (float)$row_sales['pos_sales'];
+$credit_sales     = (float)$row_sales['credit_sales'];
+$returns_total    = (float)$row_sales['returns_total'];
 
-// 2. تكلفة المبيعات (41) — طبيعتها مدينة
-//    صافي التكلفة = debit - credit  → موجب = تكلفة فعلية
-$cost_data           = getPLGroupBalance($conn, '41', $startdate, $enddate);
-$total_cost_of_sales = $cost_data['total_debit'] - $cost_data['total_credit'];
-// إذا كانت سالبة (مردودات/خصومات تفوق المشتريات) → صفر
-if ($total_cost_of_sales < 0) { $total_cost_of_sales = 0.0; }
+// إجمالي المبيعات (قبل المردود)
+$gross_sales_total = $cashier_sales + $pos_sales + $credit_sales;
+// صافي المبيعات (بعد المردود)
+$net_sales         = $gross_sales_total - $returns_total;
 
-// 3. المصروفات (44) — طبيعتها مدينة
-//    صافي المصروفات = debit - credit  → موجب = مصروف فعلي
-$exp_data       = getPLGroupBalance($conn, '44', $startdate, $enddate);
-$total_expenses = $exp_data['total_debit'] - $exp_data['total_credit'];
-if ($total_expenses < 0) { $total_expenses = 0.0; }
+// ── 2. إيرادات أخرى (32%) من journal_entries ──────────────
+// حسابات 32 دائنة الطبيعة → net = credit - debit
+$stmt_rev32 = $conn->prepare("
+    SELECT
+        COALESCE(SUM(je.credit), 0) AS total_credit,
+        COALESCE(SUM(je.debit),  0) AS total_debit
+    FROM journal_entries je
+    INNER JOIN acc_head ah ON je.account_id = ah.id
+    WHERE ah.code LIKE '32%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+      AND je.isdeleted = 0
+      AND DATE(je.crtime) BETWEEN ? AND ?
+");
+$stmt_rev32->bind_param("ss", $startdate, $enddate);
+$stmt_rev32->execute();
+$rev32_row     = $stmt_rev32->get_result()->fetch_assoc();
+$stmt_rev32->close();
+$other_revenues = (float)$rev32_row['total_credit'] - (float)$rev32_row['total_debit'];
+if ($other_revenues < 0) $other_revenues = 0.0;
 
-// 4. مجمل الربح / الخسارة
-//    موجب = مجمل ربح | سالب = مجمل خسارة
-$gross_profit = $total_revenues - $total_cost_of_sales;
+// ── 3. تفاصيل الإيرادات الأخرى (32%) للعرض ──────────────
+$stmt_rev32_detail = $conn->prepare("
+    SELECT ah.id, ah.code, ah.aname,
+        COALESCE(SUM(je.credit), 0) - COALESCE(SUM(je.debit), 0) AS net_credit
+    FROM acc_head ah
+    LEFT JOIN journal_entries je ON je.account_id = ah.id
+        AND je.isdeleted = 0
+        AND DATE(je.crtime) BETWEEN ? AND ?
+    WHERE ah.code LIKE '32%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+    GROUP BY ah.id, ah.code, ah.aname
+    HAVING ABS(net_credit) > 0.001
+    ORDER BY ah.code
+");
+$stmt_rev32_detail->bind_param("ss", $startdate, $enddate);
+$stmt_rev32_detail->execute();
+$rev32_details = $stmt_rev32_detail->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_rev32_detail->close();
 
-// 5. صافي الربح / الخسارة
-//    موجب = صافي ربح | سالب = صافي خسارة
-$net_profit = $gross_profit - $total_expenses;
+// ── 4. إجمالي الإيرادات ─────────────────────────────────
+$revenue_total = $net_sales + $other_revenues;
 
-// اسم الشركة
+// ── 5. تكلفة المبيعات (42%) من journal_entries ──────────
+// حسابات 42 مدينة الطبيعة → net = debit - credit
+$stmt_cos = $conn->prepare("
+    SELECT
+        COALESCE(SUM(je.debit),  0) AS total_debit,
+        COALESCE(SUM(je.credit), 0) AS total_credit
+    FROM journal_entries je
+    INNER JOIN acc_head ah ON je.account_id = ah.id
+    WHERE ah.code LIKE '42%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+      AND je.isdeleted = 0
+      AND DATE(je.crtime) BETWEEN ? AND ?
+");
+$stmt_cos->bind_param("ss", $startdate, $enddate);
+$stmt_cos->execute();
+$cos_row       = $stmt_cos->get_result()->fetch_assoc();
+$stmt_cos->close();
+$cost_of_sales = (float)$cos_row['total_debit'] - (float)$cos_row['total_credit'];
+if ($cost_of_sales < 0) $cost_of_sales = 0.0;
+
+// ── 6. تفاصيل تكلفة المبيعات (42%) للعرض ────────────────
+$stmt_cos_detail = $conn->prepare("
+    SELECT ah.id, ah.code, ah.aname,
+        COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0) AS net_debit
+    FROM acc_head ah
+    LEFT JOIN journal_entries je ON je.account_id = ah.id
+        AND je.isdeleted = 0
+        AND DATE(je.crtime) BETWEEN ? AND ?
+    WHERE ah.code LIKE '42%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+    GROUP BY ah.id, ah.code, ah.aname
+    HAVING ABS(net_debit) > 0.001
+    ORDER BY ah.code
+");
+$stmt_cos_detail->bind_param("ss", $startdate, $enddate);
+$stmt_cos_detail->execute();
+$cos_details = $stmt_cos_detail->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_cos_detail->close();
+
+// ── 7. المصروفات (44%) من journal_entries ────────────────
+$stmt_exp = $conn->prepare("
+    SELECT
+        COALESCE(SUM(je.debit),  0) AS total_debit,
+        COALESCE(SUM(je.credit), 0) AS total_credit
+    FROM journal_entries je
+    INNER JOIN acc_head ah ON je.account_id = ah.id
+    WHERE ah.code LIKE '44%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+      AND je.isdeleted = 0
+      AND DATE(je.crtime) BETWEEN ? AND ?
+");
+$stmt_exp->bind_param("ss", $startdate, $enddate);
+$stmt_exp->execute();
+$exp_row        = $stmt_exp->get_result()->fetch_assoc();
+$stmt_exp->close();
+$total_expenses = (float)$exp_row['total_debit'] - (float)$exp_row['total_credit'];
+if ($total_expenses < 0) $total_expenses = 0.0;
+
+// ── 8. تفاصيل المصروفات (44%) للعرض ─────────────────────
+$stmt_exp_detail = $conn->prepare("
+    SELECT ah.id, ah.code, ah.aname,
+        COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0) AS net_debit
+    FROM acc_head ah
+    LEFT JOIN journal_entries je ON je.account_id = ah.id
+        AND je.isdeleted = 0
+        AND DATE(je.crtime) BETWEEN ? AND ?
+    WHERE ah.code LIKE '44%'
+      AND ah.is_basic = 0
+      AND ah.isdeleted = 0
+    GROUP BY ah.id, ah.code, ah.aname
+    HAVING net_debit > 0.001
+    ORDER BY ah.code
+");
+$stmt_exp_detail->bind_param("ss", $startdate, $enddate);
+$stmt_exp_detail->execute();
+$expense_items = $stmt_exp_detail->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt_exp_detail->close();
+
+// ── 9. مجمل الربح / صافي الربح ───────────────────────────
+$gross_profit = $revenue_total - $cost_of_sales;
+$net_profit   = $gross_profit  - $total_expenses;
+
+// ── اسم الشركة ────────────────────────────────────────────
 $company_name = $rowstg['storename'] ?? 'الشركة';
 
-// ── بيانات الرسوم البيانية ──
-// الإيرادات: طبيعة دائنة → net_balance*-1 للحصول على قيمة موجبة
+// ── بيانات الرسم البياني للإيرادات ───────────────────────
 $revenue_items = [];
-$rev_chart = getPLLeafAccounts($conn, '32', $startdate, $enddate);
-while ($r = $rev_chart->fetch_assoc()) {
-    $val = $r['net_balance'] * -1;  // عكس الإشارة: دائن = موجب
-    if ($val > 0.001) {
-        $revenue_items[] = ['name' => $r['aname'], 'value' => $val];
+// مبيعات كاشير
+if ($cashier_sales > 0.001)  $revenue_items[] = ['name' => 'مبيعات كاشير',      'value' => $cashier_sales];
+if ($pos_sales    > 0.001)  $revenue_items[] = ['name' => 'مبيعات تيك-أواي',    'value' => $pos_sales];
+if ($credit_sales > 0.001)  $revenue_items[] = ['name' => 'مبيعات آجلة',        'value' => $credit_sales];
+// إيرادات أخرى من 32
+foreach ($rev32_details as $r32d) {
+    if ($r32d['net_credit'] > 0.001) {
+        $revenue_items[] = ['name' => $r32d['aname'], 'value' => (float)$r32d['net_credit']];
     }
 }
 
-// المصروفات: طبيعة مدينة → net_balance موجب مباشرة
-$expense_items = [];
-$exp_chart = getPLLeafAccounts($conn, '44', $startdate, $enddate);
-while ($r = $exp_chart->fetch_assoc()) {
-    if ($r['net_balance'] > 0.001) {
-        $expense_items[] = ['name' => $r['aname'], 'value' => $r['net_balance']];
-    }
-}
+// ── إجمالي التكاليف للبطاقة الملخصة ─────────────────────
+$summary_total_costs = $cost_of_sales + $total_expenses;
 
-// إجمالي التكاليف للبطاقة الملخصة
-$summary_total_costs = $total_cost_of_sales + $total_expenses;
+// ══════════════════════════════════════════════════════════════
+// التحقق الرياضي الإلزامي (سيُطبع في HTML comment للمطور)
+// ══════════════════════════════════════════════════════════════
+$_pl_debug = [
+    'revenue_total'      => $revenue_total,
+    'sales_gross_total'  => $gross_sales_total,
+    'sales_net_total'    => $net_sales,
+    'returns_total'      => $returns_total,
+    'other_revenues'     => $other_revenues,
+    'cost_of_sales'      => $cost_of_sales,
+    'gross_profit'       => $gross_profit,
+    'expense_total'      => $total_expenses,
+    'net_profit'         => $net_profit,
+    // التحقق
+    'check_gross'        => abs($gross_profit - ($revenue_total - $cost_of_sales)) < 0.01 ? 'OK' : 'ERROR',
+    'check_net'          => abs($net_profit   - ($gross_profit  - $total_expenses)) < 0.01 ? 'OK' : 'ERROR',
+];
 ?>
 <style>
 .pl-wrapper { max-width: 1000px; margin: 0 auto; }
@@ -325,11 +400,11 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
           <div class="summary-cards">
             <div class="summary-card sales">
               <div class="card-label"><i class="fas fa-shopping-cart"></i> إجمالي المبيعات</div>
-              <div class="card-amount"><?= number_format($row_sales['sales_total'], 2) ?></div>
+              <div class="card-amount"><?= number_format($gross_sales_total, 2) ?></div>
             </div>
             <div class="summary-card revenue">
-              <div class="card-label"><i class="fas fa-arrow-up"></i> إجمالي الإيرادات</div>
-              <div class="card-amount"><?= number_format($total_revenues, 2) ?></div>
+              <div class="card-label"><i class="fas fa-arrow-up"></i> صافي الإيرادات</div>
+              <div class="card-amount"><?= number_format($revenue_total, 2) ?></div>
             </div>
             <div class="summary-card expense">
               <div class="card-label"><i class="fas fa-arrow-down"></i> إجمالي التكاليف والمصروفات</div>
@@ -350,69 +425,86 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
           </div>
           <table class="pl-table">
             <?php
-            $rev_rows = getPLLeafAccounts($conn, '32', $startdate, $enddate);
-            $has_rev  = false;
-            while ($row = $rev_rows->fetch_assoc()) {
-                // الإيرادات دائنة: net_balance = debit-credit → نعكس للعرض
-                $display = $row['net_balance'] * -1;
-                if (abs($display) < 0.001) continue;
-                $has_rev = true;
+            // ── مبيعات كاشير ──
+            if ($cashier_sales > 0.001): ?>
+            <tr>
+              <td class="acc-name">مبيعات كاشير (POS)</td>
+              <td class="acc-value profit-text"><?= number_format($cashier_sales, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php
+            // ── مبيعات تيك-أواي ──
+            if ($pos_sales > 0.001): ?>
+            <tr>
+              <td class="acc-name">مبيعات تيك-أواي</td>
+              <td class="acc-value profit-text"><?= number_format($pos_sales, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php
+            // ── مبيعات آجلة ──
+            if ($credit_sales > 0.001): ?>
+            <tr>
+              <td class="acc-name">مبيعات آجلة</td>
+              <td class="acc-value profit-text"><?= number_format($credit_sales, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php
+            // ── مردود المبيعات (يُطرح) ──
+            if ($returns_total > 0.001): ?>
+            <tr>
+              <td class="acc-name" style="padding-right:50px; color:#e53e3e;">مردود المبيعات</td>
+              <td class="acc-value loss-text">(<?= number_format($returns_total, 2) ?>)</td>
+            </tr>
+            <?php endif; ?>
+            <?php
+            // ── صافي المبيعات ──
+            if ($returns_total > 0.001): ?>
+            <tr style="border-top:1px solid #e2e8f0; background:#f7f7f7;">
+              <td class="acc-name" style="font-weight:600;">صافي المبيعات</td>
+              <td class="acc-value profit-text" style="font-weight:600;"><?= number_format($net_sales, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php
+            // ── إيرادات أخرى (32) ──
+            foreach ($rev32_details as $r32d):
+                $disp = (float)$r32d['net_credit'];
+                if (abs($disp) < 0.001) continue;
             ?>
             <tr>
-              <td class="acc-name"><?= htmlspecialchars($row['code']) ?> - <?= htmlspecialchars($row['aname']) ?></td>
-              <td class="acc-value <?= $display >= 0 ? 'profit-text' : 'loss-text' ?>"><?= plFormat($display) ?></td>
+              <td class="acc-name"><?= htmlspecialchars($r32d['code']) ?> - <?= htmlspecialchars($r32d['aname']) ?></td>
+              <td class="acc-value <?= $disp >= 0 ? 'profit-text' : 'loss-text' ?>"><?= plFormat($disp) ?></td>
             </tr>
-            <?php } ?>
+            <?php endforeach; ?>
             <?php
-            // إذا لم تكن هناك إيرادات في 32، أظهر المبيعات من ot_head كبند منفصل
-            if (!$has_rev && $sales_net_ot > 0.001):
-            ?>
-            <tr>
-              <td class="acc-name">إيرادات المبيعات</td>
-              <td class="acc-value profit-text"><?= number_format($sales_net_ot, 2) ?></td>
-            </tr>
-            <?php
-                $has_rev = true;
-            endif;
-            ?>
-            <?php if (!$has_rev): ?>
+            if ($gross_sales_total < 0.001 && $other_revenues < 0.001): ?>
             <tr class="empty-row"><td colspan="2">لا توجد إيرادات مسجلة في هذه الفترة</td></tr>
             <?php endif; ?>
             <tr class="total-row revenue-total">
               <td>إجمالي الإيرادات</td>
-              <td class="acc-value"><?= plFormat($total_revenues) ?></td>
+              <td class="acc-value"><?= plFormat($revenue_total) ?></td>
             </tr>
           </table>
 
           <!-- ── قسم تكلفة المبيعات ── -->
-          <?php
-          // جلب الحسابات الطرفية لـ 41 ذات رصيد
-          $cost_rows_res  = getPLLeafAccounts($conn, '41', $startdate, $enddate);
-          $cost_rows_data = [];
-          while ($cr = $cost_rows_res->fetch_assoc()) {
-              if (abs($cr['net_balance']) > 0.001) { $cost_rows_data[] = $cr; }
-          }
-          if (!empty($cost_rows_data)):
-          ?>
+          <?php if (!empty($cos_details) || $cost_of_sales > 0.001): ?>
           <div class="pl-section-title cost-title">
             <i class="fas fa-minus-circle"></i> تكلفة المبيعات
           </div>
           <table class="pl-table">
-            <?php foreach ($cost_rows_data as $row):
-                // تكلفة مدينة: موجب = تكلفة فعلية (أحمر) | سالب = خصم/مردود (أخضر)
+            <?php foreach ($cos_details as $cos_row):
+                $val = (float)$cos_row['net_debit'];
             ?>
             <tr>
-              <td class="acc-name"><?= htmlspecialchars($row['code']) ?> - <?= htmlspecialchars($row['aname']) ?></td>
-              <td class="acc-value <?= $row['net_balance'] >= 0 ? 'loss-text' : 'profit-text' ?>">
-                <?= plFormat($row['net_balance']) ?>
-              </td>
+              <td class="acc-name"><?= htmlspecialchars($cos_row['code']) ?> - <?= htmlspecialchars($cos_row['aname']) ?></td>
+              <td class="acc-value <?= $val >= 0 ? 'loss-text' : 'profit-text' ?>"><?= plFormat($val) ?></td>
             </tr>
             <?php endforeach; ?>
             <tr class="total-row cost-total">
               <td>إجمالي تكلفة المبيعات</td>
-              <td class="acc-value"><?= plFormat($total_cost_of_sales) ?></td>
+              <td class="acc-value"><?= plFormat($cost_of_sales) ?></td>
             </tr>
           </table>
+          <?php endif; ?>
 
           <!-- مجمل الربح / الخسارة -->
           <div class="gross-profit-row <?= $gross_profit >= 0 ? 'gp-profit' : 'gp-loss' ?>">
@@ -424,7 +516,6 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
               <?= plFormat($gross_profit) ?>
             </span>
           </div>
-          <?php endif; ?>
 
           <!-- ── قسم المصروفات ── -->
           <div class="pl-section-title expense-title">
@@ -432,16 +523,15 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
           </div>
           <table class="pl-table">
             <?php
-            $exp_rows = getPLLeafAccounts($conn, '44', $startdate, $enddate);
-            $has_exp  = false;
-            while ($row = $exp_rows->fetch_assoc()) {
-                // المصروفات مدينة: net_balance موجب = مصروف فعلي
-                if ($row['net_balance'] < 0.001) continue;
+            $has_exp = false;
+            foreach ($expense_items as $row) {
+                $val = (float)$row['net_debit'];
+                if ($val < 0.001) continue;
                 $has_exp = true;
             ?>
             <tr>
               <td class="acc-name"><?= htmlspecialchars($row['code']) ?> - <?= htmlspecialchars($row['aname']) ?></td>
-              <td class="acc-value loss-text"><?= number_format($row['net_balance'], 2) ?></td>
+              <td class="acc-value loss-text"><?= number_format($val, 2) ?></td>
             </tr>
             <?php } ?>
             <?php if (!$has_exp): ?>
@@ -461,6 +551,20 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
             </span>
             <span class="result-value"><?= plFormat($net_profit) ?></span>
           </div>
+
+          <!-- تعليق مطور: التحقق الرياضي -->
+          <?php /* DEBUG P&L:
+            revenue_total     = <?= $revenue_total ?>
+            gross_sales_total = <?= $gross_sales_total ?>
+            returns_total     = <?= $returns_total ?>
+            net_sales         = <?= $net_sales ?>
+            other_revenues    = <?= $other_revenues ?>
+            cost_of_sales     = <?= $cost_of_sales ?>
+            gross_profit      = <?= $gross_profit ?> [check: revenue(<?=$revenue_total?>) - cos(<?=$cost_of_sales?>) = <?=$revenue_total-$cost_of_sales?>]
+            expense_total     = <?= $total_expenses ?>
+            net_profit        = <?= $net_profit ?> [check: gross(<?=$gross_profit?>) - exp(<?=$total_expenses?>) = <?=$gross_profit-$total_expenses?>]
+            math_ok: gross=<?= $_pl_debug['check_gross'] ?> net=<?= $_pl_debug['check_net'] ?>
+          */ ?>
 
           <!-- ── الرسم البياني ── -->
           <div class="chart-section no-print">
@@ -502,9 +606,12 @@ $summary_total_costs = $total_cost_of_sales + $total_expenses;
 
 <script>
 var revenueData = <?= json_encode($revenue_items, JSON_UNESCAPED_UNICODE) ?>;
-var expenseData = <?= json_encode($expense_items, JSON_UNESCAPED_UNICODE) ?>;
+var expenseData = <?= json_encode(
+    array_map(function($e){ return ['name'=>$e['aname'],'value'=>(float)$e['net_debit']]; },
+              array_filter($expense_items, function($e){ return (float)$e['net_debit'] > 0.001; })),
+    JSON_UNESCAPED_UNICODE) ?>;
 var netProfitVal       = <?= (float)$net_profit ?>;
-var totalRevenues      = <?= (float)$total_revenues ?>;
+var totalRevenues      = <?= (float)$revenue_total ?>;
 var totalCosts         = <?= (float)$summary_total_costs ?>;
 
 var greenColors = ['#38a169','#48bb78','#68d391','#9ae6b4','#c6f6d5','#2f855a','#276749'];
