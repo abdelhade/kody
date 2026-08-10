@@ -164,6 +164,38 @@ if ($parent_table_result['ok'] && $is_merged_result['ok']) {
     $errors++;
 }
 
+// ─── visits table: missing columns ───────────────────────────────────────────
+echo '<h3>أعمدة جدول الزيارات (visits)</h3>';
+
+$visits_cols = [
+    'gender'     => "ALTER TABLE `visits` ADD COLUMN `gender` enum('male','female') NOT NULL DEFAULT 'male' AFTER `client`",
+    'age_group'  => "ALTER TABLE `visits` ADD COLUMN `age_group` enum('under18','18_25','25_40','over40') NOT NULL DEFAULT 'under18' AFTER `gender`",
+    'mode'       => "ALTER TABLE `visits` ADD COLUMN `mode` enum('solo','group') NOT NULL DEFAULT 'solo' AFTER `age_group`",
+    'start_time' => "ALTER TABLE `visits` ADD COLUMN `start_time` time NOT NULL DEFAULT '00:00:00' AFTER `mode`",
+    'end_time'   => "ALTER TABLE `visits` ADD COLUMN `end_time` time NOT NULL DEFAULT '00:00:00' AFTER `start_time`",
+    'order_value'=> "ALTER TABLE `visits` ADD COLUMN `order_value` enum('under60','over60') NOT NULL DEFAULT 'under60' AFTER `end_time`",
+    'type'       => "ALTER TABLE `visits` ADD COLUMN `type` enum('new','returning','regular') NOT NULL DEFAULT 'new' AFTER `order_value`",
+    'created_by' => "ALTER TABLE `visits` ADD COLUMN `created_by` int(10) unsigned NOT NULL DEFAULT 0 AFTER `type`",
+    'created_at' => "ALTER TABLE `visits` ADD COLUMN `created_at` datetime NOT NULL DEFAULT current_timestamp() AFTER `created_by`",
+];
+
+$visits_ok = true;
+foreach ($visits_cols as $col => $sql) {
+    $r = run_migration_query($conn, $sql);
+    if ($r['ok']) {
+        if ($r['skipped']) {
+            echo "<p style='color:orange'>⚠️ العمود <code>{$col}</code> موجود مسبقاً</p>";
+        } else {
+            echo "<p style='color:green'>✅ تم إضافة <code>{$col}</code></p>";
+        }
+    } else {
+        echo "<p style='color:red'>❌ <code>{$col}</code>: " . htmlspecialchars($r['error']) . "</p>";
+        $visits_ok = false;
+    }
+}
+if ($visits_ok) { $success++; } else { $errors++; }
+// ─────────────────────────────────────────────────────────────────────────────
+
 echo "<hr><p><strong>النتيجة:</strong> {$success} ناجح، {$errors} فاشل</p>";
 echo "<p><a href='dashboard.php'>الرئيسية</a></p>";
 echo '</body></html>';

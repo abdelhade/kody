@@ -9,7 +9,15 @@
     <div class="user-panel d-flex flex-column">
       <div class="d-flex align-items-center mb-2">
         <div class="image-user me-2">
-          <img src="assets/logo/hors.png" alt="User Image"
+          <?php
+            $sidebar_logo = $rowstg['company_logo'] ?? '';
+            if (!empty($sidebar_logo) && file_exists(__DIR__ . '/../assets/logo/' . $sidebar_logo)) {
+                $sidebar_logo_src = 'assets/logo/' . htmlspecialchars($sidebar_logo, ENT_QUOTES, 'UTF-8');
+            } else {
+                $sidebar_logo_src = 'assets/logo/hors.png';
+            }
+          ?>
+          <img src="<?= $sidebar_logo_src ?>?v=<?= isset($rowstg['company_logo']) ? md5($rowstg['company_logo']) : '1' ?>" alt="User Image"
             style="height: 45px; width: 45px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
             onerror="this.onerror=null; this.src='assets/logo/hors.png';">
         </div>

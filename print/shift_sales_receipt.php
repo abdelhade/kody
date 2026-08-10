@@ -88,9 +88,11 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
 <!-- رأس الشركة -->
 <div class="company-header text-center">
     <?php 
-    $logo_path = '../assets/logo/logo.jpg';
+    $_logo_file = !empty($settings['company_logo']) ? $settings['company_logo'] : 'logo.jpg';
+    $logo_path = '../assets/logo/' . $_logo_file;
+    if (!file_exists($logo_path)) $logo_path = '../assets/logo/logo.jpg';
     if (file_exists($logo_path)) {
-        echo '<img src="' . $logo_path . '" alt="" class="img-fluid mb-2" style="max-height: 60px;">';
+        echo '<img src="' . htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') . '" alt="" class="img-fluid mb-2" style="max-height: 60px;">';
     }
     ?>
     <h4 class="mb-1"><?= $settings['company_name'] ?? 'اسم الشركة' ?></h4>

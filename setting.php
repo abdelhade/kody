@@ -114,7 +114,7 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
   <section class="content">
     <div class="container-fluid">
 
-      <form action="do/doedit_settings.php" method="post" id="settings-main-form">
+      <form action="do/doedit_settings.php" method="post" id="settings-main-form" enctype="multipart/form-data">
 
         <div class="row">
           <!-- قائمة التبويبات الجانبية (شبه تطبيقات سطح المكتب) -->
@@ -179,6 +179,38 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                           <label for="companyadd">عنوان الشركة</label>
                           <input type="text" class="form-control" id="companyadd" name="companyadd"
                                  value="<?= htmlspecialchars($rowstg['company_add'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                      </div>
+                      <!-- حقل رفع لوجو الشركة -->
+                      <div class="col-12">
+                        <div class="form-group">
+                          <label>شعار الشركة (اللوجو)</label>
+                          <div class="d-flex align-items-center flex-wrap" style="gap: 16px;">
+                            <?php
+                              $current_logo = $rowstg['company_logo'] ?? '';
+                              $logo_src = '';
+                              if (!empty($current_logo) && file_exists(__DIR__ . '/assets/logo/' . $current_logo)) {
+                                  $logo_src = 'assets/logo/' . htmlspecialchars($current_logo, ENT_QUOTES, 'UTF-8');
+                              } elseif (file_exists(__DIR__ . '/assets/logo/logo.jpg')) {
+                                  $logo_src = 'assets/logo/logo.jpg';
+                              }
+                            ?>
+                            <?php if ($logo_src): ?>
+                              <img id="logo-preview" src="<?= $logo_src ?>?v=<?= time() ?>" alt="لوجو الشركة"
+                                style="height: 70px; width: auto; max-width: 200px; border-radius: 8px; border: 2px solid #dee2e6; object-fit: contain; background: #f8f9fa; padding: 4px;">
+                            <?php else: ?>
+                              <div id="logo-preview-placeholder" style="height: 70px; width: 120px; border-radius: 8px; border: 2px dashed #dee2e6; display: flex; align-items: center; justify-content: center; background: #f8f9fa; color: #adb5bd; font-size: 0.8rem;">
+                                <i class="fas fa-image fa-2x"></i>
+                              </div>
+                            <?php endif; ?>
+                            <div>
+                              <div class="custom-file" style="width: 280px;">
+                                <input type="file" class="custom-file-input" id="company_logo" name="company_logo" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml">
+                                <label class="custom-file-label text-right" for="company_logo">اختر صورة اللوجو...</label>
+                              </div>
+                              <small class="form-text text-muted mt-1">الصيغ المسموحة: JPG, PNG, GIF, WEBP, SVG — اتركها فارغة للإبقاء على اللوجو الحالي.</small>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div class="col-md-6">
@@ -440,9 +472,23 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                       </div>
                       <div class="col-12">
                         <div class="form-group">
+                          <label for="receipt_header_text">نص أعلى الفاتورة (الهيدر)</label>
+                          <textarea class="form-control" id="receipt_header_text" name="receipt_header_text" rows="2" placeholder="مثال: أهلاً بكم في شركتنا"><?= htmlspecialchars((string)($rowstg['receipt_header_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                          <small class="form-text text-muted">يظهر أسفل اللوجو مباشرةً قبل بيانات الفاتورة.</small>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="form-group">
                           <label for="receipt_footer_text">نص أسفل الفاتورة (الفوتر)</label>
                           <textarea class="form-control" id="receipt_footer_text" name="receipt_footer_text" rows="2" placeholder="❤ perfect place to grow"><?= htmlspecialchars((string)($rowstg['receipt_footer_text'] ?? '❤ perfect place to grow'), ENT_QUOTES, 'UTF-8') ?></textarea>
                           <small class="form-text text-muted">يمكن كتابة سياسة الاسترجاع أو رسالة شكر للعميل.</small>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="form-group">
+                          <label for="receipt_notes_text">ملاحظات / شروط وأحكام</label>
+                          <textarea class="form-control" id="receipt_notes_text" name="receipt_notes_text" rows="3" placeholder="مثال: لا يُقبل الاسترجاع بعد 7 أيام من الشراء"><?= htmlspecialchars((string)($rowstg['receipt_notes_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                          <small class="form-text text-muted">يظهر في نهاية الفاتورة تحت الفوتر بخط أصغر.</small>
                         </div>
                       </div>
                     </div>
@@ -475,5 +521,40 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
 </div>
 
 <?php endif; ?>
+
+<script>
+// Preview اللوجو لما المستخدم يختار صورة
+document.addEventListener('DOMContentLoaded', function () {
+  var logoInput = document.getElementById('company_logo');
+  if (!logoInput) return;
+
+  logoInput.addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+
+    // تحديث اسم الملف في الـ label
+    var label = this.nextElementSibling;
+    if (label) label.textContent = file.name;
+
+    // عرض preview
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var preview = document.getElementById('logo-preview');
+      var placeholder = document.getElementById('logo-preview-placeholder');
+      if (preview) {
+        preview.src = e.target.result;
+      } else if (placeholder) {
+        var img = document.createElement('img');
+        img.id = 'logo-preview';
+        img.src = e.target.result;
+        img.alt = 'لوجو الشركة';
+        img.style.cssText = 'height:70px;width:auto;max-width:200px;border-radius:8px;border:2px solid #dee2e6;object-fit:contain;background:#f8f9fa;padding:4px;';
+        placeholder.replaceWith(img);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script>
 
 <?php include('includes/footer.php'); ?>
