@@ -252,3 +252,4 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-08-09 16:43:19] mysqli_sql_exception: Unknown column 'storename' in 'field list' in C:\xampp\htdocs\kody\profit_loss.php:48
 [2026-08-09 16:48:51] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
 [2026-08-09 17:04:37] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
+[2026-08-11 15:14:52] mysqli_sql_exception: Unknown column 'showpulse' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:164

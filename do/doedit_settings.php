@@ -71,6 +71,18 @@ if (empty($companyname)) {
     die("Error: Company name is required");
 }
 
+// إضافة عمود showpulse إذا لم يكن موجوداً
+$col_pulse_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'showpulse'");
+if ($col_pulse_check && $col_pulse_check->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings` ADD COLUMN `showpulse` TINYINT(1) NOT NULL DEFAULT 1");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding showpulse column: ' . $e->getMessage());
+        }
+    }
+}
+
 // إضافة أعمدة العمولة إذا لم تكن موجودة (تحديث قاعدة البيانات)
 $col_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'emp_commission'");
 if ($col_check && $col_check->num_rows === 0) {

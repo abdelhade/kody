@@ -1517,6 +1517,22 @@
         $('#reservations').addClass('bg-slate-200');
       }
 
+      // لما أي قائمة تتفتح، سكرول لآخر السايد بار
+      var sidebarEl = document.querySelector('.sidebar');
+
+      $(document).on('click', '.nav-link-basic', function () {
+        var observer = new MutationObserver(function (mutations, obs) {
+          sidebarEl.scrollTo({ top: sidebarEl.scrollHeight, behavior: 'smooth' });
+          obs.disconnect(); // نوقف المراقبة بعد أول تغيير
+        });
+        observer.observe(sidebarEl, { subtree: true, attributes: true, attributeFilter: ['style'] });
+
+        // fallback لو المراقب متأخر
+        setTimeout(function () {
+          observer.disconnect();
+          sidebarEl.scrollTo({ top: sidebarEl.scrollHeight, behavior: 'smooth' });
+        }, 600);
+      });
 
     });
   </script>
