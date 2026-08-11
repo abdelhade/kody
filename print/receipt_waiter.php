@@ -59,9 +59,11 @@ $rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
     <div class="receipt-container" id="printed">
         <div class="card-body">
             <?php 
-            $logo_path = '../assets/logo/logo.jpg';
+            $_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
+            $logo_path = '../assets/logo/' . $_logo_file;
+            if (!file_exists($logo_path)) $logo_path = '../assets/logo/logo.jpg';
             if (file_exists($logo_path)) {
-                echo '<img src="' . $logo_path . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
+                echo '<img src="' . htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
             }
             ?>
             <h1 class="text-center p-3 p-0 font-bold" style="font-size: 23px;font-weight:bolder;">

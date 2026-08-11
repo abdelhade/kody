@@ -45,10 +45,42 @@ $receipt_font_size = (int)($_POST['receipt_font_size'] ?? 14);
 $receipt_paper_width = trim($_POST['receipt_paper_width'] ?? '78mm');
 $receipt_footer_text = trim($_POST['receipt_footer_text'] ?? '❤ perfect place to grow');
 $receipt_show_client = isset($_POST['receipt_show_client']) ? 1 : 0;
+$receipt_header_text = trim($_POST['receipt_header_text'] ?? '');
+$receipt_notes_text  = trim($_POST['receipt_notes_text']  ?? '');
+
+// رفع اللوجو
+$company_logo = '';
+if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    $file_type = mime_content_type($_FILES['company_logo']['tmp_name']);
+    if (in_array($file_type, $allowed_types)) {
+        $ext = pathinfo($_FILES['company_logo']['name'], PATHINFO_EXTENSION);
+        $new_filename = 'company_logo_' . time() . '.' . strtolower($ext);
+        $upload_dir = __DIR__ . '/../assets/logo/';
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        if (move_uploaded_file($_FILES['company_logo']['tmp_name'], $upload_dir . $new_filename)) {
+            $company_logo = $new_filename;
+        }
+    }
+}
 
 // التحقق من صحة البيانات المطلوبة
 if (empty($companyname)) {
     die("Error: Company name is required");
+}
+
+// إضافة عمود showpulse إذا لم يكن موجوداً
+$col_pulse_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'showpulse'");
+if ($col_pulse_check && $col_pulse_check->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings` ADD COLUMN `showpulse` TINYINT(1) NOT NULL DEFAULT 1");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding showpulse column: ' . $e->getMessage());
+        }
+    }
 }
 
 // إضافة أعمدة العمولة إذا لم تكن موجودة (تحديث قاعدة البيانات)
@@ -82,6 +114,32 @@ if ($col_print_check && $col_print_check->num_rows === 0) {
     }
 }
 
+// إضافة عمود اللوجو إذا لم يكن موجوداً
+$col_logo_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'company_logo'");
+if ($col_logo_check && $col_logo_check->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings` ADD COLUMN `company_logo` VARCHAR(255) NOT NULL DEFAULT ''");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding logo column: ' . $e->getMessage());
+        }
+    }
+}
+
+// إضافة أعمدة النصوص الإضافية للفاتورة إذا لم تكن موجودة
+$col_extra_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'receipt_header_text'");
+if ($col_extra_check && $col_extra_check->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings`
+            ADD COLUMN `receipt_header_text` TEXT NOT NULL,
+            ADD COLUMN `receipt_notes_text`  TEXT NOT NULL");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding extra text columns: ' . $e->getMessage());
+        }
+    }
+}
+
 // استخدام prepared statement لتحديث الإعدادات
 $sql = "UPDATE settings 
 SET company_name = ?, 
@@ -109,19 +167,37 @@ SET company_name = ?,
     receipt_font_size = ?,
     receipt_paper_width = ?,
     receipt_footer_text = ?,
-    receipt_show_client = ?
+    receipt_show_client = ?,
+    receipt_header_text = ?,
+    receipt_notes_text  = ?
+    " . ($company_logo !== '' ? ", company_logo = ?" : "") . "
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sssssiiiisissiiisiiddiissi", 
-    $companyname, $companyadd, $companytel, $edit_pass, $lang,
-    $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
-    $showrent, $showclinc, $def_pos_client, $def_pos_store, 
-    $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
-    $showpulse, $emp_commission, $user_commission,
-    $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
-    $receipt_footer_text, $receipt_show_client
-);
+
+if ($company_logo !== '') {
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississs",
+        $companyname, $companyadd, $companytel, $edit_pass, $lang,
+        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
+        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+        $showpulse, $emp_commission, $user_commission,
+        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
+        $receipt_footer_text, $receipt_show_client,
+        $receipt_header_text, $receipt_notes_text, $company_logo
+    );
+} else {
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississ",
+        $companyname, $companyadd, $companytel, $edit_pass, $lang,
+        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
+        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+        $showpulse, $emp_commission, $user_commission,
+        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
+        $receipt_footer_text, $receipt_show_client,
+        $receipt_header_text, $receipt_notes_text
+    );
+}
 
 if ($stmt->execute()) {
     header('location:../dashboard.php');

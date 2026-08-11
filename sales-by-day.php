@@ -50,6 +50,7 @@
                 $sql = "SELECT pro_date, SUM(pro_value) as total_sales 
                         FROM ot_head 
                         WHERE (pro_tybe = 9 OR pro_tybe = 3)
+                        AND isdeleted = 0
                         AND pro_date BETWEEN '$from' AND '$to'
                         GROUP BY pro_date
                         ORDER BY pro_date ASC";

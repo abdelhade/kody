@@ -1,39 +1,48 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
-<?php
+<?php 
+include('includes/header.php');
+include('includes/navbar.php');
+include('includes/sidebar.php');
+
 // ──────────────────────────────────────────────────────────────
-// تحديد الفترة الزمنية
+// تأمين جلسة CSRF
+// ──────────────────────────────────────────────────────────────
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$_SESSION['csrf_token'] ??= bin2hex(random_bytes(32));
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        die('طلب غير مصرح به (Invalid CSRF Token)');
+    }
+}
+
+// ──────────────────────────────────────────────────────────────
+// تحديد الفترة الزمنية وتحسين الاستعلامات بعدم استخدام DATE()
 // ──────────────────────────────────────────────────────────────
 $startdate = (isset($_POST['startdate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['startdate']))
     ? $_POST['startdate'] : date('Y-01-01');
 $enddate = (isset($_POST['enddate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['enddate']))
     ? $_POST['enddate'] : date('Y-m-d');
 
+// تاريخ النهاية + يوم واحد لمعالجة حقول DATETIME بكفاءة وبدون إبطاء الـ Index
+$enddate_plus1 = date('Y-m-d', strtotime($enddate . ' +1 day'));
+
 // ──────────────────────────────────────────────────────────────
-// دالة مساعدة: تنسيق محاسبي
+// دالة مساعدة: تنسيق محاسبي محسن
 // ──────────────────────────────────────────────────────────────
-function plFormat($value) {
+function plFormat(float $value, bool $showSign = false): string {
     if ($value < -0.001) {
-        return '(' . number_format(abs($value), 2) . ')';
+        return '<span class="loss-text">(' . number_format(abs($value), 2) . ')</span>';
     }
-    return number_format(abs($value), 2);
+    $formatted = number_format(abs($value), 2);
+    return ($showSign && $value > 0.001)
+        ? '<span class="profit-text">' . $formatted . '</span>'
+        : $formatted;
 }
 
-// ══════════════════════════════════════════════════════════════
-// المصدر الوحيد الموثوق للمبيعات: ot_head
-//
-// بعد فحص قاعدة البيانات تبيّن:
-//   - حسابات 31% (إيرادات المبيعات) فارغة تماماً في journal_entries
-//   - المبيعات تُسجَّل في ot_head فقط
-//   - pro_tybe=9  : مبيعات كاشير (JE: عميل مدين + مخزن دائن)
-//   - pro_tybe=3 مع journal_tybe=3 : مبيعات تيك-أواي (JE: عميل مدين + 41103 دائن)
-//   - pro_tybe=10 : مبيعات آجلة (JE: عميل مدين + مخزن دائن)
-//   - pro_tybe=11 : مردود مبيعات → يُطرح
-//
-// الحساب 41103 "خصم مسموح به" يُستخدم فعلياً كحساب دائن للمبيعات
-// لذا لا يُصنَّف كتكلفة مبيعات في هذا التقرير
-// ══════════════════════════════════════════════════════════════
+// ── جلب اسم الشركة بأمان ────────────────────────────────────
+$company_name = $rowstg['company_name'] ?? 'الشركة';
 
 // ── 1. مبيعات ot_head ──────────────────────────────────────
 $stmt_sales = $conn->prepare("
@@ -44,25 +53,22 @@ $stmt_sales = $conn->prepare("
         COALESCE(SUM(CASE WHEN oh.pro_tybe IN (11)                  THEN oh.fat_net ELSE 0 END), 0) AS returns_total
     FROM ot_head oh
     WHERE oh.isdeleted = 0
-      AND DATE(oh.pro_date) BETWEEN ? AND ?
+      AND oh.pro_date >= ? AND oh.pro_date < ?
 ");
-$stmt_sales->bind_param("ss", $startdate, $enddate);
+$stmt_sales->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_sales->execute();
 $row_sales = $stmt_sales->get_result()->fetch_assoc();
 $stmt_sales->close();
 
-$cashier_sales    = (float)$row_sales['cashier_sales'];
-$pos_sales        = (float)$row_sales['pos_sales'];
-$credit_sales     = (float)$row_sales['credit_sales'];
-$returns_total    = (float)$row_sales['returns_total'];
+$cashier_sales     = (float)$row_sales['cashier_sales'];
+$pos_sales         = (float)$row_sales['pos_sales'];
+$credit_sales      = (float)$row_sales['credit_sales'];
+$returns_total     = (float)$row_sales['returns_total'];
 
-// إجمالي المبيعات (قبل المردود)
-$gross_sales_total = $cashier_sales + $pos_sales + $credit_sales;
-// صافي المبيعات (بعد المردود)
-$net_sales         = $gross_sales_total - $returns_total;
+$gross_sales_total = (float)bcadd((string)$cashier_sales, (string)bcadd((string)$pos_sales, (string)$credit_sales, 4), 4);
+$net_sales         = (float)bcsub((string)$gross_sales_total, (string)$returns_total, 4);
 
 // ── 2. إيرادات أخرى (32%) من journal_entries ──────────────
-// حسابات 32 دائنة الطبيعة → net = credit - debit
 $stmt_rev32 = $conn->prepare("
     SELECT
         COALESCE(SUM(je.credit), 0) AS total_credit,
@@ -73,13 +79,13 @@ $stmt_rev32 = $conn->prepare("
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
       AND je.isdeleted = 0
-      AND DATE(je.crtime) BETWEEN ? AND ?
+      AND je.crtime >= ? AND je.crtime < ?
 ");
-$stmt_rev32->bind_param("ss", $startdate, $enddate);
+$stmt_rev32->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_rev32->execute();
 $rev32_row     = $stmt_rev32->get_result()->fetch_assoc();
 $stmt_rev32->close();
-$other_revenues = (float)$rev32_row['total_credit'] - (float)$rev32_row['total_debit'];
+$other_revenues = (float)bcsub((string)$rev32_row['total_credit'], (string)$rev32_row['total_debit'], 4);
 if ($other_revenues < 0) $other_revenues = 0.0;
 
 // ── 3. تفاصيل الإيرادات الأخرى (32%) للعرض ──────────────
@@ -89,7 +95,7 @@ $stmt_rev32_detail = $conn->prepare("
     FROM acc_head ah
     LEFT JOIN journal_entries je ON je.account_id = ah.id
         AND je.isdeleted = 0
-        AND DATE(je.crtime) BETWEEN ? AND ?
+        AND je.crtime >= ? AND je.crtime < ?
     WHERE ah.code LIKE '32%'
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
@@ -97,16 +103,51 @@ $stmt_rev32_detail = $conn->prepare("
     HAVING ABS(net_credit) > 0.001
     ORDER BY ah.code
 ");
-$stmt_rev32_detail->bind_param("ss", $startdate, $enddate);
+$stmt_rev32_detail->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_rev32_detail->execute();
 $rev32_details = $stmt_rev32_detail->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt_rev32_detail->close();
 
 // ── 4. إجمالي الإيرادات ─────────────────────────────────
-$revenue_total = $net_sales + $other_revenues;
+$revenue_total = (float)bcadd((string)$net_sales, (string)$other_revenues, 4);
 
-// ── 5. تكلفة المبيعات (42%) من journal_entries ──────────
-// حسابات 42 مدينة الطبيعة → net = debit - credit
+// ── 5. بيان المشتريات من ot_head (للعرض الاستسترشادي فقط) ───
+$stmt_purch = $conn->prepare("
+    SELECT
+        COALESCE(SUM(CASE WHEN oh.pro_tybe IN (1,4) THEN oh.fat_net ELSE 0 END), 0) AS gross_purchases,
+        COALESCE(SUM(CASE WHEN oh.pro_tybe IN (2)   THEN oh.fat_net ELSE 0 END), 0) AS purchase_returns
+    FROM ot_head oh
+    WHERE oh.isdeleted = 0
+      AND oh.pro_date >= ? AND oh.pro_date < ?
+");
+$stmt_purch->bind_param("ss", $startdate, $enddate_plus1);
+$stmt_purch->execute();
+$row_purch = $stmt_purch->get_result()->fetch_assoc();
+$stmt_purch->close();
+
+$gross_purchases    = (float)$row_purch['gross_purchases'];
+$purchase_returns   = (float)$row_purch['purchase_returns'];
+$net_purchases      = (float)bcsub((string)$gross_purchases, (string)$purchase_returns, 4);
+
+$stmt_purch_det = $conn->prepare("
+    SELECT oh.pro_tybe,
+           COALESCE(SUM(oh.fat_net), 0) AS total
+    FROM ot_head oh
+    WHERE oh.isdeleted = 0
+      AND oh.pro_tybe IN (1, 4, 2)
+      AND oh.pro_date >= ? AND oh.pro_date < ?
+    GROUP BY oh.pro_tybe
+");
+$stmt_purch_det->bind_param("ss", $startdate, $enddate_plus1);
+$stmt_purch_det->execute();
+$purch_by_type = [];
+$res_pd = $stmt_purch_det->get_result();
+while ($pd = $res_pd->fetch_assoc()) {
+    $purch_by_type[$pd['pro_tybe']] = (float)$pd['total'];
+}
+$stmt_purch_det->close();
+
+// ── 6a. تكلفة البضاعة المباعة - COGS (42%) من journal_entries ──
 $stmt_cos = $conn->prepare("
     SELECT
         COALESCE(SUM(je.debit),  0) AS total_debit,
@@ -117,23 +158,23 @@ $stmt_cos = $conn->prepare("
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
       AND je.isdeleted = 0
-      AND DATE(je.crtime) BETWEEN ? AND ?
+      AND je.crtime >= ? AND je.crtime < ?
 ");
-$stmt_cos->bind_param("ss", $startdate, $enddate);
+$stmt_cos->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_cos->execute();
 $cos_row       = $stmt_cos->get_result()->fetch_assoc();
 $stmt_cos->close();
-$cost_of_sales = (float)$cos_row['total_debit'] - (float)$cos_row['total_credit'];
+$cost_of_sales = (float)bcsub((string)$cos_row['total_debit'], (string)$cos_row['total_credit'], 4);
 if ($cost_of_sales < 0) $cost_of_sales = 0.0;
 
-// ── 6. تفاصيل تكلفة المبيعات (42%) للعرض ────────────────
+// ── 6b. تفاصيل تكلفة البضاعة المباعة (42%) للعرض ──────────────
 $stmt_cos_detail = $conn->prepare("
     SELECT ah.id, ah.code, ah.aname,
         COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0) AS net_debit
     FROM acc_head ah
     LEFT JOIN journal_entries je ON je.account_id = ah.id
         AND je.isdeleted = 0
-        AND DATE(je.crtime) BETWEEN ? AND ?
+        AND je.crtime >= ? AND je.crtime < ?
     WHERE ah.code LIKE '42%'
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
@@ -141,7 +182,7 @@ $stmt_cos_detail = $conn->prepare("
     HAVING ABS(net_debit) > 0.001
     ORDER BY ah.code
 ");
-$stmt_cos_detail->bind_param("ss", $startdate, $enddate);
+$stmt_cos_detail->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_cos_detail->execute();
 $cos_details = $stmt_cos_detail->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt_cos_detail->close();
@@ -157,13 +198,13 @@ $stmt_exp = $conn->prepare("
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
       AND je.isdeleted = 0
-      AND DATE(je.crtime) BETWEEN ? AND ?
+      AND je.crtime >= ? AND je.crtime < ?
 ");
-$stmt_exp->bind_param("ss", $startdate, $enddate);
+$stmt_exp->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_exp->execute();
 $exp_row        = $stmt_exp->get_result()->fetch_assoc();
 $stmt_exp->close();
-$total_expenses = (float)$exp_row['total_debit'] - (float)$exp_row['total_credit'];
+$total_expenses = (float)bcsub((string)$exp_row['total_debit'], (string)$exp_row['total_credit'], 4);
 if ($total_expenses < 0) $total_expenses = 0.0;
 
 // ── 8. تفاصيل المصروفات (44%) للعرض ─────────────────────
@@ -173,7 +214,7 @@ $stmt_exp_detail = $conn->prepare("
     FROM acc_head ah
     LEFT JOIN journal_entries je ON je.account_id = ah.id
         AND je.isdeleted = 0
-        AND DATE(je.crtime) BETWEEN ? AND ?
+        AND je.crtime >= ? AND je.crtime < ?
     WHERE ah.code LIKE '44%'
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
@@ -181,71 +222,46 @@ $stmt_exp_detail = $conn->prepare("
     HAVING net_debit > 0.001
     ORDER BY ah.code
 ");
-$stmt_exp_detail->bind_param("ss", $startdate, $enddate);
+$stmt_exp_detail->bind_param("ss", $startdate, $enddate_plus1);
 $stmt_exp_detail->execute();
 $expense_items = $stmt_exp_detail->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt_exp_detail->close();
 
-// ── 9. مجمل الربح / صافي الربح ───────────────────────────
-$gross_profit = $revenue_total - $cost_of_sales;
-$net_profit   = $gross_profit  - $total_expenses;
+// ── 9. مجمل الربح / صافي الربح (حسابات محاسبية دقيقة) ─────
+// معالجة مصدر التكلفة لمنع الخصم المزدوج (Double Counting)
+// إذا توفرت حسابات 42% نعتمدها كـ COGS، وإلا نستخدم صافي المشتريات كبديل
+$effective_cogs = ($cost_of_sales > 0.001) ? $cost_of_sales : $net_purchases;
 
-// ── اسم الشركة ────────────────────────────────────────────
-$company_name = $rowstg['storename'] ?? 'الشركة';
+$gross_profit = (float)bcsub((string)$revenue_total, (string)$effective_cogs, 4);
+$net_profit   = (float)bcsub((string)$gross_profit, (string)$total_expenses, 4);
+
+// ── إجمالي التكاليف والمصروفات للبطاقة الملخصة ─────────────────────
+$summary_total_costs = (float)bcadd((string)$effective_cogs, (string)$total_expenses, 4);
 
 // ── بيانات الرسم البياني للإيرادات ───────────────────────
 $revenue_items = [];
-// مبيعات كاشير
-if ($cashier_sales > 0.001)  $revenue_items[] = ['name' => 'مبيعات كاشير',      'value' => $cashier_sales];
-if ($pos_sales    > 0.001)  $revenue_items[] = ['name' => 'مبيعات تيك-أواي',    'value' => $pos_sales];
-if ($credit_sales > 0.001)  $revenue_items[] = ['name' => 'مبيعات آجلة',        'value' => $credit_sales];
-// إيرادات أخرى من 32
+if ($cashier_sales > 0.001) $revenue_items[] = ['name' => 'مبيعات كاشير', 'value' => $cashier_sales];
+if ($pos_sales     > 0.001) $revenue_items[] = ['name' => 'مبيعات تيك-أواي', 'value' => $pos_sales];
+if ($credit_sales  > 0.001) $revenue_items[] = ['name' => 'مبيعات آجلة', 'value' => $credit_sales];
+
 foreach ($rev32_details as $r32d) {
     if ($r32d['net_credit'] > 0.001) {
         $revenue_items[] = ['name' => $r32d['aname'], 'value' => (float)$r32d['net_credit']];
     }
 }
-
-// ── إجمالي التكاليف للبطاقة الملخصة ─────────────────────
-$summary_total_costs = $cost_of_sales + $total_expenses;
-
-// ══════════════════════════════════════════════════════════════
-// التحقق الرياضي الإلزامي (سيُطبع في HTML comment للمطور)
-// ══════════════════════════════════════════════════════════════
-$_pl_debug = [
-    'revenue_total'      => $revenue_total,
-    'sales_gross_total'  => $gross_sales_total,
-    'sales_net_total'    => $net_sales,
-    'returns_total'      => $returns_total,
-    'other_revenues'     => $other_revenues,
-    'cost_of_sales'      => $cost_of_sales,
-    'gross_profit'       => $gross_profit,
-    'expense_total'      => $total_expenses,
-    'net_profit'         => $net_profit,
-    // التحقق
-    'check_gross'        => abs($gross_profit - ($revenue_total - $cost_of_sales)) < 0.01 ? 'OK' : 'ERROR',
-    'check_net'          => abs($net_profit   - ($gross_profit  - $total_expenses)) < 0.01 ? 'OK' : 'ERROR',
-];
 ?>
+
 <style>
 .pl-wrapper { max-width: 1000px; margin: 0 auto; }
-
 .pl-report-header {
     background: linear-gradient(135deg, #1a365d 0%, #2d3748 50%, #4a5568 100%);
     color: white; padding: 30px; border-radius: 12px 12px 0 0;
     text-align: center; position: relative; overflow: hidden;
 }
-.pl-report-header::before {
-    content: ''; position: absolute; top:0;left:0;right:0;bottom:0;
-    background: linear-gradient(45deg,transparent 30%,rgba(255,255,255,.03) 50%,transparent 70%);
-    animation: pl-shine 6s infinite;
-}
-@keyframes pl-shine { 0%,100%{transform:translateX(-100%)} 50%{transform:translateX(100%)} }
 .pl-report-header h2  { font-size:1.8rem; margin-bottom:5px; position:relative; z-index:1; }
 .pl-report-header h4  { font-size:1.1rem; opacity:.9; position:relative; z-index:1; }
 .pl-report-header .period { font-size:.9rem; opacity:.8; margin-top:10px; position:relative; z-index:1; }
 
-/* Summary Cards */
 .summary-cards {
     display: grid; grid-template-columns: repeat(4,1fr);
     gap: 15px; padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
@@ -267,7 +283,6 @@ $_pl_debug = [
 .summary-card.loss    { border-top:3px solid #e53e3e; }
 .summary-card.loss    .card-amount { color:#e53e3e; }
 
-/* Section titles */
 .pl-section-title {
     padding:12px 20px; font-weight:bold; font-size:1.05rem; margin:0;
     display:flex; align-items:center; gap:10px;
@@ -276,9 +291,8 @@ $_pl_debug = [
 .pl-section-title.expense-title { background:linear-gradient(135deg,#fff5f5,#fed7d7); color:#742a2a; border-right:4px solid #e53e3e; }
 .pl-section-title.cost-title    { background:linear-gradient(135deg,#fffaf0,#feebc8); color:#744210; border-right:4px solid #dd6b20; }
 
-/* Tables */
 .pl-table { width:100%; border-collapse:collapse; }
-.pl-table td { padding:10px 20px; border-bottom:1px solid #f0f0f0; font-size:.95rem; transition:background .2s; }
+.pl-table td { padding:10px 20px; border-bottom:1px solid #f0f0f0; font-size:.95rem; }
 .pl-table tr:hover td { background-color:#f8fafc; }
 .pl-table .acc-name  { padding-right:40px; color:#4a5568; }
 .pl-table .acc-value { text-align:left; font-weight:500; width:200px; font-family:'Courier New',monospace; }
@@ -291,17 +305,14 @@ $_pl_debug = [
 .pl-table .total-row.cost-total    td { color:#744210; }
 .pl-table .empty-row td { color:#a0aec0; font-style:italic; text-align:center; padding:14px; }
 
-/* Gross profit row */
 .gross-profit-row {
     padding:14px 20px; display:flex; justify-content:space-between; align-items:center;
-    font-weight:bold; font-size:1.05rem;
-    border-top:2px solid; border-bottom:2px solid;
+    font-weight:bold; font-size:1.05rem; border-top:2px solid; border-bottom:2px solid;
 }
 .gross-profit-row.gp-profit { background:linear-gradient(135deg,#ebf8ff,#bee3f8); color:#2a4365; border-color:#90cdf4; }
 .gross-profit-row.gp-loss   { background:linear-gradient(135deg,#fff5f5,#fed7d7); color:#742a2a; border-color:#fc8181; }
 .gross-profit-row .result-value { font-family:'Courier New',monospace; font-size:1.1rem; }
 
-/* Net result */
 .net-result {
     padding:18px 20px; display:flex; justify-content:space-between;
     align-items:center; font-weight:bold; font-size:1.15rem;
@@ -310,11 +321,9 @@ $_pl_debug = [
 .net-result.loss-result   { background:linear-gradient(135deg,#fed7d7,#feb2b2); color:#742a2a; border-top:3px double #e53e3e; }
 .net-result .result-value { font-family:'Courier New',monospace; font-size:1.3rem; }
 
-/* Charts */
 .chart-section   { padding:20px; background:#f8fafc; border-top:1px solid #e2e8f0; }
 .chart-container { position:relative; height:300px; max-width:100%; }
 
-/* Cards */
 .pl-filter-card { border:none; box-shadow:0 2px 15px rgba(0,0,0,.08); border-radius:12px; margin-bottom:20px; overflow:hidden; }
 .pl-report-card { border:none; box-shadow:0 4px 25px rgba(0,0,0,.1);  border-radius:12px; overflow:hidden; }
 
@@ -336,10 +345,11 @@ $_pl_debug = [
     <div class="container-fluid">
       <div class="pl-wrapper">
 
-        <!-- فلتر التاريخ -->
+        <!-- فلتر التاريخ مع حماية CSRF -->
         <div class="card pl-filter-card no-print">
           <div class="card-body" style="padding:15px 20px;">
             <form method="post" class="row align-items-end">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
               <div class="col-md-2">
                 <div class="form-group mb-0">
                   <label><i class="fas fa-filter"></i> الفترة</label>
@@ -415,7 +425,7 @@ $_pl_debug = [
                 <i class="fas fa-<?= $net_profit >= 0 ? 'trophy' : 'exclamation-triangle' ?>"></i>
                 <?= $net_profit >= 0 ? 'صافي الربح' : 'صافي الخسارة' ?>
               </div>
-              <div class="card-amount"><?= plFormat($net_profit) ?></div>
+              <div class="card-amount"><?= plFormat($net_profit, true) ?></div>
             </div>
           </div>
 
@@ -424,48 +434,36 @@ $_pl_debug = [
             <i class="fas fa-plus-circle"></i> الإيرادات
           </div>
           <table class="pl-table">
-            <?php
-            // ── مبيعات كاشير ──
-            if ($cashier_sales > 0.001): ?>
+            <?php if ($cashier_sales > 0.001): ?>
             <tr>
               <td class="acc-name">مبيعات كاشير (POS)</td>
               <td class="acc-value profit-text"><?= number_format($cashier_sales, 2) ?></td>
             </tr>
             <?php endif; ?>
-            <?php
-            // ── مبيعات تيك-أواي ──
-            if ($pos_sales > 0.001): ?>
+            <?php if ($pos_sales > 0.001): ?>
             <tr>
               <td class="acc-name">مبيعات تيك-أواي</td>
               <td class="acc-value profit-text"><?= number_format($pos_sales, 2) ?></td>
             </tr>
             <?php endif; ?>
-            <?php
-            // ── مبيعات آجلة ──
-            if ($credit_sales > 0.001): ?>
+            <?php if ($credit_sales > 0.001): ?>
             <tr>
               <td class="acc-name">مبيعات آجلة</td>
               <td class="acc-value profit-text"><?= number_format($credit_sales, 2) ?></td>
             </tr>
             <?php endif; ?>
-            <?php
-            // ── مردود المبيعات (يُطرح) ──
-            if ($returns_total > 0.001): ?>
+            <?php if ($returns_total > 0.001): ?>
             <tr>
               <td class="acc-name" style="padding-right:50px; color:#e53e3e;">مردود المبيعات</td>
               <td class="acc-value loss-text">(<?= number_format($returns_total, 2) ?>)</td>
             </tr>
-            <?php endif; ?>
-            <?php
-            // ── صافي المبيعات ──
-            if ($returns_total > 0.001): ?>
             <tr style="border-top:1px solid #e2e8f0; background:#f7f7f7;">
               <td class="acc-name" style="font-weight:600;">صافي المبيعات</td>
               <td class="acc-value profit-text" style="font-weight:600;"><?= number_format($net_sales, 2) ?></td>
             </tr>
             <?php endif; ?>
+
             <?php
-            // ── إيرادات أخرى (32) ──
             foreach ($rev32_details as $r32d):
                 $disp = (float)$r32d['net_credit'];
                 if (abs($disp) < 0.001) continue;
@@ -475,8 +473,8 @@ $_pl_debug = [
               <td class="acc-value <?= $disp >= 0 ? 'profit-text' : 'loss-text' ?>"><?= plFormat($disp) ?></td>
             </tr>
             <?php endforeach; ?>
-            <?php
-            if ($gross_sales_total < 0.001 && $other_revenues < 0.001): ?>
+
+            <?php if ($gross_sales_total < 0.001 && $other_revenues < 0.001): ?>
             <tr class="empty-row"><td colspan="2">لا توجد إيرادات مسجلة في هذه الفترة</td></tr>
             <?php endif; ?>
             <tr class="total-row revenue-total">
@@ -485,26 +483,56 @@ $_pl_debug = [
             </tr>
           </table>
 
-          <!-- ── قسم تكلفة المبيعات ── -->
-          <?php if (!empty($cos_details) || $cost_of_sales > 0.001): ?>
+          <!-- ── قسم تكلفة البضاعة المباعة (COGS) ── -->
           <div class="pl-section-title cost-title">
-            <i class="fas fa-minus-circle"></i> تكلفة المبيعات
+            <i class="fas fa-minus-circle"></i> تكلفة البضاعة المباعة (COGS)
           </div>
           <table class="pl-table">
-            <?php foreach ($cos_details as $cos_row):
+            <?php
+            // عرض تفاصيل قيود تكلفة المبيعات المباشرة (حسابات 42%)
+            foreach ($cos_details as $cos_row):
                 $val = (float)$cos_row['net_debit'];
             ?>
             <tr>
               <td class="acc-name"><?= htmlspecialchars($cos_row['code']) ?> - <?= htmlspecialchars($cos_row['aname']) ?></td>
-              <td class="acc-value <?= $val >= 0 ? 'loss-text' : 'profit-text' ?>"><?= plFormat($val) ?></td>
+              <td class="acc-value loss-text"><?= plFormat($val) ?></td>
             </tr>
             <?php endforeach; ?>
+
+            <?php
+            // عرض المشتريات كبيان استسترشادي أو كبديل في حال عدم وجود قيود 42%
+            $purch1 = $purch_by_type[1] ?? 0.0;
+            $purch4 = $purch_by_type[4] ?? 0.0;
+            $ret2   = $purch_by_type[2] ?? 0.0;
+            ?>
+            <?php if ($purch1 > 0.001): ?>
+            <tr>
+              <td class="acc-name">مشتريات نقدية (بيان استسترشادي)</td>
+              <td class="acc-value loss-text"><?= number_format($purch1, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php if ($purch4 > 0.001): ?>
+            <tr>
+              <td class="acc-name">مشتريات آجلة (بيان استسترشادي)</td>
+              <td class="acc-value loss-text"><?= number_format($purch4, 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php if ($ret2 > 0.001): ?>
+            <tr>
+              <td class="acc-name" style="padding-right:50px; color:#38a169;">مردود المشتريات</td>
+              <td class="acc-value profit-text">(<?= number_format($ret2, 2) ?>)</td>
+            </tr>
+            <?php endif; ?>
+
+            <?php if (empty($cos_details) && $net_purchases < 0.001): ?>
+            <tr class="empty-row"><td colspan="2">لا توجد تكاليف أو مشتريات مسجلة في هذه الفترة</td></tr>
+            <?php endif; ?>
+
             <tr class="total-row cost-total">
-              <td>إجمالي تكلفة المبيعات</td>
-              <td class="acc-value"><?= plFormat($cost_of_sales) ?></td>
+              <td>إجمالي تكلفة البضاعة المباعة (COGS)</td>
+              <td class="acc-value"><?= plFormat($effective_cogs) ?></td>
             </tr>
           </table>
-          <?php endif; ?>
 
           <!-- مجمل الربح / الخسارة -->
           <div class="gross-profit-row <?= $gross_profit >= 0 ? 'gp-profit' : 'gp-loss' ?>">
@@ -552,20 +580,6 @@ $_pl_debug = [
             <span class="result-value"><?= plFormat($net_profit) ?></span>
           </div>
 
-          <!-- تعليق مطور: التحقق الرياضي -->
-          <?php /* DEBUG P&L:
-            revenue_total     = <?= $revenue_total ?>
-            gross_sales_total = <?= $gross_sales_total ?>
-            returns_total     = <?= $returns_total ?>
-            net_sales         = <?= $net_sales ?>
-            other_revenues    = <?= $other_revenues ?>
-            cost_of_sales     = <?= $cost_of_sales ?>
-            gross_profit      = <?= $gross_profit ?> [check: revenue(<?=$revenue_total?>) - cos(<?=$cost_of_sales?>) = <?=$revenue_total-$cost_of_sales?>]
-            expense_total     = <?= $total_expenses ?>
-            net_profit        = <?= $net_profit ?> [check: gross(<?=$gross_profit?>) - exp(<?=$total_expenses?>) = <?=$gross_profit-$total_expenses?>]
-            math_ok: gross=<?= $_pl_debug['check_gross'] ?> net=<?= $_pl_debug['check_net'] ?>
-          */ ?>
-
           <!-- ── الرسم البياني ── -->
           <div class="chart-section no-print">
             <h5 class="mb-3 text-center"><i class="fas fa-chart-pie"></i> تحليل بياني</h5>
@@ -610,121 +624,53 @@ var expenseData = <?= json_encode(
     array_map(function($e){ return ['name'=>$e['aname'],'value'=>(float)$e['net_debit']]; },
               array_filter($expense_items, function($e){ return (float)$e['net_debit'] > 0.001; })),
     JSON_UNESCAPED_UNICODE) ?>;
-var netProfitVal       = <?= (float)$net_profit ?>;
-var totalRevenues      = <?= (float)$revenue_total ?>;
-var totalCosts         = <?= (float)$summary_total_costs ?>;
 
 var greenColors = ['#38a169','#48bb78','#68d391','#9ae6b4','#c6f6d5','#2f855a','#276749'];
 var redColors   = ['#e53e3e','#fc8181','#feb2b2','#f56565','#c53030','#dd6b20','#ed8936','#f6ad55'];
 
-if (revenueData.length > 0) {
+if (revenueData.length > 0 && document.getElementById('revenueChart')) {
     new Chart(document.getElementById('revenueChart'), {
         type: 'doughnut',
         data: {
-            labels:   revenueData.map(function(i){ return i.name; }),
-            datasets: [{ data: revenueData.map(function(i){ return i.value; }),
-                backgroundColor: greenColors.slice(0,revenueData.length), borderWidth:2, borderColor:'#fff' }]
+            labels: revenueData.map(function(i){ return i.name; }),
+            datasets: [{ 
+                data: revenueData.map(function(i){ return i.value; }),
+                backgroundColor: greenColors.slice(0, revenueData.length), 
+                borderWidth: 2, 
+                borderColor: '#fff' 
+            }]
         },
         options: {
-            responsive:true, maintainAspectRatio:false,
-            plugins: { legend:{position:'bottom',labels:{font:{family:'Playpen Sans Arabic'}}},
-                       title:{display:true,text:'توزيع الإيرادات',font:{family:'Playpen Sans Arabic'}} }
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                title: { display: true, text: 'توزيع الإيرادات' }
+            }
         }
     });
 }
 
-if (expenseData.length > 0) {
+if (expenseData.length > 0 && document.getElementById('expenseChart')) {
     new Chart(document.getElementById('expenseChart'), {
         type: 'doughnut',
         data: {
-            labels:   expenseData.map(function(i){ return i.name; }),
-            datasets: [{ data: expenseData.map(function(i){ return i.value; }),
-                backgroundColor: redColors.slice(0,expenseData.length), borderWidth:2, borderColor:'#fff' }]
+            labels: expenseData.map(function(i){ return i.name; }),
+            datasets: [{ 
+                data: expenseData.map(function(i){ return i.value; }),
+                backgroundColor: redColors.slice(0, expenseData.length), 
+                borderWidth: 2, 
+                borderColor: '#fff' 
+            }]
         },
         options: {
-            responsive:true, maintainAspectRatio:false,
-            plugins: { legend:{position:'bottom',labels:{font:{family:'Playpen Sans Arabic'}}},
-                       title:{display:true,text:'توزيع المصروفات',font:{family:'Playpen Sans Arabic'}} }
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                title: { display: true, text: 'توزيع المصروفات' }
+            }
         }
     });
 }
-
-// رسم بياني المقارنة — يعرض القيم الفعلية (ربح موجب / خسارة سالبة)
-var netLabel  = netProfitVal >= 0 ? 'صافي الربح'    : 'صافي الخسارة';
-var netColor  = netProfitVal >= 0 ? 'rgba(49,130,206,.8)' : 'rgba(229,62,62,.8)';
-var netBorder = netProfitVal >= 0 ? '#3182ce'        : '#e53e3e';
-
-new Chart(document.getElementById('comparisonChart'), {
-    type: 'bar',
-    data: {
-        labels: ['الإيرادات', 'التكاليف والمصروفات', netLabel],
-        datasets: [{
-            label: 'المبلغ',
-            data: [totalRevenues, totalCosts, netProfitVal],
-            backgroundColor: ['rgba(56,161,105,.8)','rgba(229,62,62,.8)', netColor],
-            borderColor:     ['#38a169','#e53e3e', netBorder],
-            borderWidth:2, borderRadius:6
-        }]
-    },
-    options: {
-        responsive:true, maintainAspectRatio:false,
-        plugins: { legend:{display:false} },
-        scales: {
-            y: { beginAtZero:false, ticks:{font:{family:'Playpen Sans Arabic'}} },
-            x: { ticks:{font:{family:'Playpen Sans Arabic',size:13}} }
-        }
-    }
-});
-
-// تصدير Excel — يحذف الرسوم البيانية من النسخة المُصدَّرة
-document.getElementById('exportExcelPL')?.addEventListener('click', function() {
-    var clone = document.getElementById('plReport').cloneNode(true);
-    var cs    = clone.querySelector('.chart-section');
-    if (cs) cs.remove();
-    var url = 'data:application/vnd.ms-excel,' + encodeURIComponent(
-        '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:spreadsheet">' +
-        '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>' +
-        '<x:Name>الأرباح والخسائر</x:Name><x:WorksheetOptions><x:DisplayRightToLeft/></x:WorksheetOptions>' +
-        '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>' +
-        '<body dir="rtl">' + clone.outerHTML + '</body></html>'
-    );
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'profit_loss_<?= date("Y-m-d") ?>.xls';
-    a.click();
-});
 </script>
 
-<script>
-function updateDateRange() {
-    var period     = document.getElementById('periodFilter').value;
-    var startInput = document.getElementById('startdate');
-    var endInput   = document.getElementById('enddate');
-    if (!period) return;
-
-    var now = new Date();
-    var fmt = function(d) {
-        return d.getFullYear() + '-' +
-               String(d.getMonth()+1).padStart(2,'0') + '-' +
-               String(d.getDate()).padStart(2,'0');
-    };
-    var todayStr = fmt(now);
-    endInput.value = todayStr;
-
-    if (period === 'today') {
-        startInput.value = todayStr;
-    } else if (period === 'week') {
-        var day  = now.getDay();                        // 0=أحد
-        var diff = (day === 0) ? 6 : (day - 1);        // الاثنين = بداية الأسبوع
-        var mon  = new Date(now);
-        mon.setDate(now.getDate() - diff);
-        startInput.value = fmt(mon);
-    } else if (period === 'month') {
-        startInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
-    } else if (period === 'all') {
-        startInput.value = '2000-01-01';
-    }
-}
-</script>
-
-<?php include('includes/footer.php') ?>
+<?php include('includes/footer.php'); ?>

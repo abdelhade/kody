@@ -242,13 +242,20 @@ html, body {
 
 <?php
 if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])) {
-    $logo_path = '../assets/logo/logo.jpg';
+    $_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
+    $logo_path = '../assets/logo/' . $_logo_file;
+    if (!file_exists($logo_path)) {
+        $logo_path = '../assets/logo/logo.jpg';
+    }
     if (file_exists($logo_path)) {
-        echo '<img src="' . $logo_path . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
+        echo '<img src="' . htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') . '" alt="" style="width: 90px; height: auto; display: block; margin: 0 auto;">';
     }
 }
 ?>
 <div class="company-name"><?= htmlspecialchars($rowstg['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+<?php if (!empty($rowstg['receipt_header_text'])): ?>
+<div style="text-align:center; font-size:11px; margin: 4px 0 6px; white-space: pre-wrap;"><?= nl2br(htmlspecialchars($rowstg['receipt_header_text'], ENT_QUOTES, 'UTF-8')) ?></div>
+<?php endif; ?>
 <div class="invoice-num"><?= date('md', strtotime($rowfat['pro_date'])) . $rowfat['pro_id'] ?></div>
 
 <?php
@@ -359,6 +366,11 @@ $change_amount = $paid_amount - floatval($rowfat['fat_net']);
 <div style="text-align: center; font-size: 12px; font-weight: bold; margin-top: 10px;">
     <p><?= nl2br(htmlspecialchars($rowstg['receipt_footer_text'] ?? '❤ perfect place to grow', ENT_QUOTES, 'UTF-8')) ?></p>
 </div>
+<?php if (!empty($rowstg['receipt_notes_text'])): ?>
+<div style="text-align:center; font-size:10px; margin-top:6px; border-top:1px dashed #000; padding-top:4px; white-space:pre-wrap; font-weight:normal;">
+    <?= nl2br(htmlspecialchars($rowstg['receipt_notes_text'], ENT_QUOTES, 'UTF-8')) ?>
+</div>
+<?php endif; ?>
 </div>
 
 <script>

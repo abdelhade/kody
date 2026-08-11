@@ -248,3 +248,8 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-08-09 19:34:41] mysqli_sql_exception: Unknown column 'sid_cards' in 'field list' in C:\xampp\htdocs\kody\do\doadd_role.php:268
 [2026-08-09 14:36:49] mysqli_sql_exception: Unknown column 'je.invoice_id' in 'field list' in C:\xampp\htdocs\kody\debug_pl.php:29
 [2026-08-09 14:39:09] mysqli_sql_exception: Unknown column 'fat_discount' in 'field list' in C:\xampp\htdocs\kody\debug_pl3.php:61
+[2026-08-09 15:45:42] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
+[2026-08-09 16:43:19] mysqli_sql_exception: Unknown column 'storename' in 'field list' in C:\xampp\htdocs\kody\profit_loss.php:48
+[2026-08-09 16:48:51] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
+[2026-08-09 17:04:37] mysqli_sql_exception: Unknown column 'created_at' in 'order clause' in C:\xampp\htdocs\kody\visits.php:39
+[2026-08-11 15:14:52] mysqli_sql_exception: Unknown column 'showpulse' in 'field list' in C:\xampp\htdocs\kody\do\doedit_settings.php:164

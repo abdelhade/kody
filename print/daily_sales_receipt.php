@@ -76,9 +76,11 @@ if ($items_query->num_rows == 0) {
 <div class="card-body">
 
 <?php 
-$logo_path = '../assets/logo/logo.jpg';
+$_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
+$logo_path = '../assets/logo/' . $_logo_file;
+if (!file_exists($logo_path)) $logo_path = '../assets/logo/logo.jpg';
 if (file_exists($logo_path)) {
-    echo '<img src="' . $logo_path . '" alt="" class="img-fluid">';
+    echo '<img src="' . htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') . '" alt="" class="img-fluid">';
 } else {
     echo '<div class="text-center p-2">لوجو الشركة</div>';
 }
