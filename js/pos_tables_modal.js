@@ -9,8 +9,7 @@
     const state = {
         tables: [],
         selected: null,
-        mode: 'normal', // normal | merge | transfer
-        mergePicks: [],
+        mode: 'normal', // normal | transfer
         selectedItemIds: [],
     };
 
@@ -81,21 +80,14 @@
         let html = '<div class="row g-2">';
         state.tables.forEach(function (t) {
             const sel = state.selected && state.selected.table_id === t.id;
-            const mergePick = state.mergePicks.indexOf(t.id) >= 0;
             const transferOk = state.mode === 'transfer' && t.status === 'available' && (!state.selected || t.id !== state.selected.table_id);
 
             let cls = 'ptp-table-card status-' + t.status;
             if (sel && state.mode === 'normal') cls += ' is-selected-panel';
-            if (mergePick) cls += ' is-merge-pick';
             if (transferOk) cls += ' is-transfer-target';
-
-            const chk = state.mode === 'merge'
-                ? '<input type="checkbox" class="form-check-input ptp-merge-chk" data-id="' + t.id + '"' + (mergePick ? ' checked' : '') + '>'
-                : '';
 
             html += '<div class="col-4 col-md-3">';
             html += '<button type="button" class="' + cls + '" data-id="' + t.id + '" data-order-id="' + (t.order_id || '') + '" data-status="' + t.status + '">';
-            html += chk;
             html += '<i class="fas ' + statusIcon(t.status) + ' fa-lg"></i>';
             html += '<span>' + escapeHtml(t.name) + '</span>';
             html += '<small>' + statusLabel(t.status) + '</small>';
@@ -106,12 +98,6 @@
         });
         html += '</div>';
 
-        if (state.mode === 'merge') {
-            html += '<div class="p-2 text-center border-top mt-2">';
-            html += '<button type="button" class="btn btn-success btn-lg me-2" id="ptpConfirmMerge"><i class="fas fa-link me-1"></i>تأكيد الدمج</button>';
-            html += '<button type="button" class="btn btn-outline-secondary btn-lg" id="ptpCancelMode">إلغاء</button>';
-            html += '</div>';
-        }
         if (state.mode === 'transfer') {
             html += '<div class="p-2 text-center border-top mt-2 alert alert-info mb-0">';
             html += '<i class="fas fa-hand-pointer me-1"></i>اختر الطاولة الهدف (متاحة)';
@@ -190,9 +176,7 @@
         $('#ptpBtnAddItems').prop('disabled', !state.selected);
 
         const badge = $('#ptpModeBadge');
-        if (state.mode === 'merge') {
-            badge.removeClass('d-none').text('وضع الدمج');
-        } else if (state.mode === 'transfer') {
+        if (state.mode === 'transfer') {
             badge.removeClass('d-none').text('وضع النقل');
         } else {
             badge.addClass('d-none').text('');
@@ -201,7 +185,6 @@
 
     function setMode(mode) {
         state.mode = mode;
-        if (mode !== 'merge') state.mergePicks = [];
         renderGrid();
         updateOps();
     }
@@ -238,6 +221,17 @@
     }
 
     /**
+     * وجهة الفاتورة: المجموعة المدمجة لها فاتورة واحدة على الطاولة الرئيسية،
+     * فالضغط على طاولة تابعة يجب أن يفتح فاتورة الرئيسية لا أن يربطها بالتابعة.
+     */
+    function billingTarget(sel) {
+        const id = sel.primary_table_id || sel.table_id;
+        const name = sel.primary_table_name || sel.table_name;
+        const extra = (sel.merged_with || []).length;
+        return { id: id, name: name, badge: extra > 0 ? name + ' +' + extra : name };
+    }
+
+    /**
      * تحميل طلب في سلة الـ POS مع ضبط سياق الطاولة.
      * onReady تُنادى بعد اكتمال تحميل الأصناف وحساب الإجماليات.
      */
@@ -245,6 +239,8 @@
         const tableId = opts.tableId || 0;
         const tableName = opts.tableName || '';
         const orderId = opts.orderId || 0;
+        // اسم المجموعة للعرض فقط؛ الاسم المُرسَل للخادم يبقى نظيفاً لأنه يُخزَّن في info
+        const badgeName = opts.badgeName || tableName;
 
         // detach: طلب مستقل عن الطاولة (سداد أصناف) — لا يُربط بها عند الحفظ
         if (opts.detach) {
@@ -256,10 +252,10 @@
             $('#selected_table_id').val(tableId);
             $('#selected_table_name').val(tableName);
             $('#age2').prop('checked', true);
-            updateNavBadge(tableName);
+            updateNavBadge(badgeName);
 
             if ($('#selectedTableDisplay').length) {
-                $('#selectedTableDisplay').show().find('#selectedTableName').text(tableName);
+                $('#selectedTableDisplay').show().find('#selectedTableName').text(badgeName);
             }
         }
 
@@ -302,12 +298,27 @@
         const sel = state.selected;
         if (!sel || !sel.order_id) return;
 
+        const target = billingTarget(sel);
+
         loadOrderIntoPos({
-            tableId: sel.table_id,
-            tableName: sel.table_name,
+            tableId: target.id,
+            tableName: target.name,
+            badgeName: target.badge,
             orderId: sel.order_id,
             finalize: true,
-        }, openPaymentModalSafely);
+        }, function (ok) {
+            // فاتورة بصافي صفر تعني أن الأصناف لم تُحمَّل — الدفع هنا يُنشئ قيوداً صفرية
+            const net = parseFloat($('#net_val').val()) || 0;
+            if (!ok || net <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'تعذّر تحميل الفاتورة',
+                    text: 'صافي الطلب صفر — أعد اختيار الطاولة وتأكد من ظهور الأصناف قبل الدفع',
+                });
+                return;
+            }
+            openPaymentModalSafely();
+        });
     }
 
     /** دفع أصناف: يفصلها في طلب مستقل ثم يدفعه من نفس مودال الـ POS */
@@ -316,7 +327,7 @@
         if (!sel || !sel.order_id || !state.selectedItemIds.length) return;
 
         post('split_items', {
-            table_id: sel.table_id,
+            table_id: billingTarget(sel).id,
             order_id: sel.order_id,
             item_ids: state.selectedItemIds,
         }).done(function (data) {
@@ -337,9 +348,7 @@
     }
 
     function bindEvents() {
-        $(document).on('click', '.ptp-table-card', function (e) {
-            if ($(e.target).hasClass('ptp-merge-chk')) return;
-
+        $(document).on('click', '.ptp-table-card', function () {
             const id = parseInt($(this).data('id'));
             const orderId = parseInt($(this).data('order-id')) || 0;
             const table = state.tables.find(function (t) { return t.id === id; });
@@ -375,14 +384,6 @@
                 return;
             }
 
-            if (state.mode === 'merge') {
-                const idx = state.mergePicks.indexOf(id);
-                if (idx >= 0) state.mergePicks.splice(idx, 1);
-                else state.mergePicks.push(id);
-                renderGrid();
-                return;
-            }
-
             // Normal: select table in panel (stay open for ops)
             post('state', { selected_table_id: id }).done(function (data) {
                 if (data.success) {
@@ -401,22 +402,16 @@
 
         $('#ptpBtnAddItems').on('click', function () {
             if (!state.selected) return;
-            const t = state.tables.find(function (x) { return x.id === state.selected.table_id; });
+            const target = billingTarget(state.selected);
+            const t = state.tables.find(function (x) { return x.id === target.id; });
             const orderId = state.selected.order_id || (t ? t.order_id : 0);
             loadOrderIntoPos({
-                tableId: state.selected.table_id,
-                tableName: state.selected.table_name,
+                tableId: target.id,
+                tableName: target.name,
+                badgeName: target.badge,
                 orderId: orderId,
                 finalize: false,
             });
-        });
-
-        $(document).on('change', '.ptp-merge-chk', function (e) {
-            e.stopPropagation();
-            const id = parseInt($(this).data('id'));
-            const idx = state.mergePicks.indexOf(id);
-            if (this.checked && idx < 0) state.mergePicks.push(id);
-            if (!this.checked && idx >= 0) state.mergePicks.splice(idx, 1);
         });
 
         $(document).on('change', '.ptp-item-chk', function () {
@@ -436,26 +431,6 @@
         $('#ptpBtnTransfer').on('click', function () {
             if (!state.selected || !state.selected.order_id) return;
             setMode('transfer');
-        });
-
-        $('#ptpBtnMerge').on('click', function () {
-            setMode('merge');
-        });
-
-        $(document).on('click', '#ptpConfirmMerge', function () {
-            if (state.mergePicks.length < 2) {
-                Swal.fire({ icon: 'warning', text: 'اختر طاولتين على الأقل' });
-                return;
-            }
-            post('merge', { table_ids: state.mergePicks }).done(function (data) {
-                if (data.success) {
-                    setMode('normal');
-                    applyServerState(data);
-                    Swal.fire({ icon: 'success', title: 'تم الدمج', timer: 1200, showConfirmButton: false });
-                } else {
-                    Swal.fire({ icon: 'error', text: data.message });
-                }
-            });
         });
 
         $(document).on('click', '#ptpCancelMode', function () {

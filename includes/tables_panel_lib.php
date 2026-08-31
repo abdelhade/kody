@@ -267,6 +267,8 @@ function tpanel_build_state($conn, $selected_table_id = 0) {
         }
     }
 
+    tpanel_release_stale_tables($conn);
+
     $tables = [];
     $res = $conn->query(
         "SELECT * FROM tables WHERE isdeleted = 0
@@ -413,6 +415,44 @@ function tpanel_consolidate_group_orders($conn, $primary_id) {
     }
 
     return $merged;
+}
+
+/**
+ * تحرير الطاولات المشغولة بلا فاتورة (بقايا طلبات مُغلقة أو محذوفة).
+ * بدون ذلك تبقى الطاولة مشغولة للأبد فلا يمكن فتح طلب جديد عليها.
+ * الدمج لا يُفكّ هنا: قد تُدمج طاولات قبل الطلب استعداداً لمجموعة كبيرة،
+ * وفكّه يقتصر على الإلغاء الصريح أو الإغلاق بعد السداد.
+ *
+ * @return int عدد المجموعات التي حُرِّرت
+ */
+function tpanel_release_stale_tables($conn) {
+    $res = $conn->query(
+        "SELECT id, parent_table_id FROM tables
+         WHERE isdeleted = 0 AND (table_case <> 0 OR is_merged = 1)"
+    );
+    if (!$res) return 0;
+
+    $primaries = [];
+    while ($row = $res->fetch_assoc()) {
+        $parent = intval($row['parent_table_id'] ?? 0);
+        $primaries[$parent > 0 ? $parent : intval($row['id'])] = true;
+    }
+
+    $freed = 0;
+    foreach (array_keys($primaries) as $primary_id) {
+        if (tpanel_get_active_order($conn, $primary_id)) continue;
+
+        $stmt = $conn->prepare(
+            "UPDATE tables SET table_case = 0
+             WHERE (id = ? OR parent_table_id = ?) AND table_case <> 0"
+        );
+        $stmt->bind_param('ii', $primary_id, $primary_id);
+        $stmt->execute();
+        if ($stmt->affected_rows > 0) $freed++;
+        $stmt->close();
+    }
+
+    return $freed;
 }
 
 /** توحيد حالة الإشغال على مستوى المجموعة المدمجة. */

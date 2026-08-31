@@ -136,10 +136,6 @@
     transform: scale(1.02);
 }
 
-.ptp-table-card.is-merge-pick {
-    box-shadow: 0 0 0 4px #ffc107;
-}
-
 .ptp-table-card.is-transfer-target {
     animation: ptp-pulse 1s infinite;
 }
@@ -151,15 +147,6 @@
     padding: 2px 8px;
     font-size: 0.8rem;
     margin-top: 4px;
-}
-
-.ptp-merge-chk {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    width: 24px;
-    height: 24px;
-    z-index: 2;
 }
 
 @keyframes ptp-pulse {

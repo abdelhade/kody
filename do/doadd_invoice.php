@@ -488,8 +488,11 @@ try {
     }
 
     if ($table_id > 0 && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS'] && $order_type == 2) {
-        $stmt_tc = $conn->prepare("UPDATE tables SET table_case = 1 WHERE id = ?");
-        $stmt_tc->bind_param('i', $table_id);
+        // المجموعة المدمجة تُشغل كوحدة واحدة مع فاتورتها
+        $stmt_tc = $conn->prepare(
+            "UPDATE tables SET table_case = 1 WHERE id = ? OR parent_table_id = ?"
+        );
+        $stmt_tc->bind_param('ii', $table_id, $table_id);
         $stmt_tc->execute();
         $stmt_tc->close();
     }
@@ -918,21 +921,46 @@ try {
         $stmt_fin->close();
 
         if ($table_id > 0) {
-            $stmt_rem = $conn->prepare(
-                "SELECT COUNT(*) AS c FROM ot_head
-                 WHERE table_id = ? AND pro_tybe = 9 AND isdeleted = 0 AND id <> ?"
+            /**
+             * الطاولات المدمجة: التحرير يبدأ من الطاولة الرئيسية،
+             * وإلا حُرِّرت الطاولة التابعة وحدها وبقيت باقي المجموعة مشغولة بلا فاتورة.
+             */
+            $primary_tid = $table_id;
+            $stmt_par = $conn->prepare("SELECT parent_table_id FROM tables WHERE id = ? LIMIT 1");
+            $stmt_par->bind_param('i', $table_id);
+            $stmt_par->execute();
+            $row_par = $stmt_par->get_result()->fetch_assoc();
+            $stmt_par->close();
+            if ($row_par && intval($row_par['parent_table_id'] ?? 0) > 0) {
+                $primary_tid = intval($row_par['parent_table_id']);
+            }
+
+            $group_ids = [$primary_tid];
+            $stmt_grp = $conn->prepare(
+                "SELECT id FROM tables WHERE parent_table_id = ? AND isdeleted = 0"
             );
-            $stmt_rem->bind_param('ii', $table_id, $last_op);
-            $stmt_rem->execute();
-            $remaining_open = intval($stmt_rem->get_result()->fetch_assoc()['c'] ?? 0);
-            $stmt_rem->close();
+            $stmt_grp->bind_param('i', $primary_tid);
+            $stmt_grp->execute();
+            $res_grp = $stmt_grp->get_result();
+            while ($row_grp = $res_grp->fetch_assoc()) {
+                $group_ids[] = intval($row_grp['id']);
+            }
+            $stmt_grp->close();
+
+            $in_list = implode(',', array_map('intval', array_unique($group_ids)));
+            $res_rem = $conn->query(
+                "SELECT COUNT(*) AS c FROM ot_head
+                 WHERE table_id IN ($in_list) AND pro_tybe = 9 AND isdeleted = 0
+                   AND id <> " . intval($last_op)
+            );
+            $remaining_open = $res_rem ? intval($res_rem->fetch_assoc()['c'] ?? 0) : 0;
 
             if ($remaining_open === 0) {
                 $stmt_free = $conn->prepare(
                     "UPDATE tables SET is_merged = 0, parent_table_id = NULL, table_case = 0
                      WHERE id = ? OR parent_table_id = ?"
                 );
-                $stmt_free->bind_param('ii', $table_id, $table_id);
+                $stmt_free->bind_param('ii', $primary_tid, $primary_tid);
                 $stmt_free->execute();
                 $stmt_free->close();
             }

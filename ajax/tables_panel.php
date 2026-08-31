@@ -167,7 +167,9 @@ try {
             $stmt->execute();
             $stmt->close();
 
-            tpanel_sync_table_case($conn, tpanel_resolve_primary_id($conn, $old_table_id), 0);
+            // نقل فاتورة مجموعة مدمجة يُفرِّغ المجموعة كلها ويفكّ دمجها،
+            // وإلا بقيت الطاولات التابعة مشغولة بلا فاتورة
+            tpanel_free_merged_group($conn, tpanel_resolve_primary_id($conn, $old_table_id));
             tpanel_sync_table_case($conn, $new_table_id, 1);
 
             $conn->commit();

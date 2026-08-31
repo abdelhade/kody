@@ -409,9 +409,18 @@ $(document).ready(function() {
                 $('#old_payment_container').hide();
             }
             
-            // في حالة التعديل - نضع الحقول صفر لأن المستخدم سيدخل مبلغ إضافي فقط
-            // والمبلغ الإجمالي = القديم + الجديد (يتم حسابه في submitPOS)
-            $('#modal_paid_cash').val('0.00');
+            /**
+             * في التعديل يُدخل المستخدم المبلغ الإضافي فقط (الإجمالي = القديم + الجديد في submitPOS).
+             * أما "دفع وإغلاق" طلب طاولة فهو سداد كامل، فيُعبّأ المتبقي تلقائياً
+             * وإلا أُغلق الطلب بصافي مدفوع صفر.
+             */
+            let finalizing = $('#posForm input[name="finalize_order"]').val() === '1';
+            if (finalizing) {
+                let remaining = Math.max(0, net - oldTotalPaid);
+                $('#modal_paid_cash').val(remaining.toFixed(2));
+            } else {
+                $('#modal_paid_cash').val('0.00');
+            }
             $('#modal_paid_bank').val('0.00');
             
             if (savedFundId && savedFundId != '0') {
@@ -740,15 +749,17 @@ $(document).ready(function() {
                          // Set hidden edit_order_id
                          $('#edit_order_id').val(response.order.id);
                          
-                        // تعبئة بيانات الدفع المحفوظة للطلب
-                        if (response.order.payment_notes) {
-                            let pn = response.order.payment_notes;
-                            $('#edit_paid_cash').val(pn.paid_cash || 0);
-                            $('#edit_paid_bank').val(pn.paid_bank || 0);
-                            $('#edit_payment_fund_id').val(pn.payment_fund_id || 0);
-                            $('#edit_payment_bank_id').val(pn.payment_bank_id || 0);
-                            $('#edit_change_amount').val(pn.change_amount || 0);
-                        }
+                        /**
+                         * بيانات الدفع المحفوظة للطلب.
+                         * تُصفَّر أولاً: الطلب المعلّق بلا سداد، ولو بقيت قيم طلب سابق
+                         * لأُضيفت إلى المدفوع في submitPOS فاختلّ مبلغ السداد.
+                         */
+                        let pn = response.order.payment_notes || {};
+                        $('#edit_paid_cash').val(pn.paid_cash || 0);
+                        $('#edit_paid_bank').val(pn.paid_bank || 0);
+                        $('#edit_payment_fund_id').val(pn.payment_fund_id || 0);
+                        $('#edit_payment_bank_id').val(pn.payment_bank_id || 0);
+                        $('#edit_change_amount').val(pn.change_amount || 0);
                     }
                     
                     updateItemCount();
