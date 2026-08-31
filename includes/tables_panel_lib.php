@@ -65,10 +65,15 @@ function tpanel_get_active_order($conn, $table_id) {
     $table = tpanel_get_table($conn, $primary_id);
     $tname = $table['tname'] ?? '';
 
-    // 1) الربط الرقمي (المفضل)
+    /**
+     * 1) الربط الرقمي (المفضل).
+     * الطلب المفتوح = فاتورة كاشير (pro_tybe = 9) لم تُغلق بعد،
+     * والإغلاق يُسجَّل في order_status لا في pro_tybe.
+     */
     $stmt = $conn->prepare(
         "SELECT * FROM ot_head
          WHERE table_id = ? AND pro_tybe = 9 AND isdeleted = 0
+           AND order_status <> 'completed'
          ORDER BY id DESC LIMIT 1"
     );
     $stmt->bind_param('i', $primary_id);
@@ -89,6 +94,7 @@ function tpanel_get_active_order($conn, $table_id) {
             $res = $conn->query(
                 "SELECT * FROM ot_head
                  WHERE table_id IN ($in_list) AND pro_tybe = 9 AND isdeleted = 0
+                   AND order_status <> 'completed'
                  ORDER BY id DESC LIMIT 1"
             );
             $order = $res ? $res->fetch_assoc() : null;
@@ -112,6 +118,7 @@ function tpanel_get_active_order($conn, $table_id) {
         $stmt = $conn->prepare(
             "SELECT * FROM ot_head
              WHERE pro_tybe = 9 AND isdeleted = 0
+               AND order_status <> 'completed'
                AND (info LIKE ? OR info = ? OR info LIKE ?)
              ORDER BY id DESC LIMIT 1"
         );
@@ -367,6 +374,7 @@ function tpanel_consolidate_group_orders($conn, $primary_id) {
     $res = $conn->query(
         "SELECT id, table_id, paid_amount FROM ot_head
          WHERE table_id IN ($in_list) AND pro_tybe = 9 AND isdeleted = 0
+           AND order_status <> 'completed'
          ORDER BY (table_id = $primary_id) DESC, id ASC"
     );
     if (!$res || $res->num_rows === 0) return 0;

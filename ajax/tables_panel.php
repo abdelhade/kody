@@ -48,7 +48,11 @@ try {
 
             $conn->begin_transaction();
 
-            $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ? AND pro_tybe = 9 AND isdeleted = 0");
+            $stmt = $conn->prepare(
+                "SELECT * FROM ot_head
+                 WHERE id = ? AND pro_tybe = 9 AND isdeleted = 0
+                   AND order_status <> 'completed'"
+            );
             $stmt->bind_param('i', $order_id);
             $stmt->execute();
             $orig = $stmt->get_result()->fetch_assoc();

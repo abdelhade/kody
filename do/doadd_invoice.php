@@ -296,15 +296,15 @@ try {
     
     $edit_id = isset($_REQUEST['edit_id']) ? intval($_REQUEST['edit_id']) : 0;
 
-    // الطلب المسدَّد والمغلق (pro_tybe = 2) لا يُعاد حفظه، وإلا حُذفت قيوده وأُعيد إنشاؤها
+    // الطلب المسدَّد والمغلق لا يُعاد حفظه، وإلا حُذفت قيوده وأُعيد إنشاؤها
     if ($edit_id > 0) {
-        $stmt_state = $conn->prepare("SELECT pro_tybe FROM ot_head WHERE id = ? LIMIT 1");
+        $stmt_state = $conn->prepare("SELECT order_status FROM ot_head WHERE id = ? LIMIT 1");
         $stmt_state->bind_param('i', $edit_id);
         $stmt_state->execute();
         $row_state = $stmt_state->get_result()->fetch_assoc();
         $stmt_state->close();
 
-        if ($row_state && intval($row_state['pro_tybe']) == 2) {
+        if ($row_state && ($row_state['order_status'] ?? '') === 'completed') {
             throw new Exception('هذا الطلب مسدَّد ومغلق بالفعل — لا يمكن حفظه مرة أخرى');
         }
     }
@@ -915,7 +915,12 @@ try {
     
     // إغلاق طلب الطاولة وتفريغها (يعمل بعد إنشاء قيود الدفع أعلاه، فلا تتكرر القيود)
     if ($finalize_order && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
-        $stmt_fin = $conn->prepare("UPDATE ot_head SET pro_tybe = 2 WHERE id = ?");
+        /**
+         * الإغلاق يُسجَّل في order_status فقط.
+         * تغيير pro_tybe محظور: 9 = فاتورة كاشير و2 = سند دفع،
+         * فتغييره يُخرج البيع من تقارير المبيعات ويُدرجه في المدفوعات.
+         */
+        $stmt_fin = $conn->prepare("UPDATE ot_head SET order_status = 'completed' WHERE id = ?");
         $stmt_fin->bind_param('i', $last_op);
         $stmt_fin->execute();
         $stmt_fin->close();
@@ -951,6 +956,7 @@ try {
             $res_rem = $conn->query(
                 "SELECT COUNT(*) AS c FROM ot_head
                  WHERE table_id IN ($in_list) AND pro_tybe = 9 AND isdeleted = 0
+                   AND order_status <> 'completed'
                    AND id <> " . intval($last_op)
             );
             $remaining_open = $res_rem ? intval($res_rem->fetch_assoc()['c'] ?? 0) : 0;
