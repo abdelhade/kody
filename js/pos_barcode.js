@@ -186,7 +186,14 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    addItemToOrder(response.item.id, response.item.name, response.item.price, response.item.barcode, qty);
+                    addItemToOrder(
+                        response.item.id,
+                        response.item.name,
+                        response.item.price,
+                        response.item.barcode,
+                        qty,
+                        response.item.u_val || 1
+                    );
                 } else {
                     alert('الصنف غير موجود');
                 }
@@ -254,7 +261,7 @@ $(document).ready(function() {
     // ========================================
     // Add Item to Order
     // ========================================
-    function addItemToOrder(id, name, price, barcode, qty = 1) {
+    function addItemToOrder(id, name, price, barcode, qty = 1, uVal = 1) {
         let existingItem = $(`.item-card-order[data-itemid="${barcode}"]`);
         
         if (existingItem.length > 0) {
@@ -298,7 +305,7 @@ $(document).ready(function() {
                                    step="0.1"
                                    style="width: 100%; font-size: 0.75rem; padding: 3px; border: 2px solid #ff6347; height: 26px;"
                                    title="الكمية">
-                            <input type="hidden" name="u_val[]" value="1">
+                            <input type="hidden" name="u_val[]" value="${uVal}">
                         </div>
                         
                         <div style="width: 55px;">

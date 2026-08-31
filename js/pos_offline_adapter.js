@@ -17,7 +17,6 @@ class POSOfflineAdapter {
         this.loadOfflineData();
         this.setupEventListeners();
         this.interceptAjaxCalls();
-        this.addOfflineIndicator();
         this.cacheCurrentItems();
     }
 
@@ -64,7 +63,6 @@ class POSOfflineAdapter {
         window.addEventListener('online', () => {
             console.log('🌐 Network is back online - starting sync...');
             this.isOnline = true;
-            this.updateConnectionStatus();
             // تأخير بسيط للتأكد من استقرار الاتصال
             setTimeout(() => {
                 this.syncPendingData();
@@ -74,7 +72,6 @@ class POSOfflineAdapter {
         window.addEventListener('offline', () => {
             console.log('📴 Network went offline');
             this.isOnline = false;
-            this.updateConnectionStatus();
         });
     }
 
@@ -196,40 +193,6 @@ class POSOfflineAdapter {
         setTimeout(() => {
             deferred.resolve(JSON.stringify(this.offlineData.items));
         }, 300);
-    }
-
-    addOfflineIndicator() {
-        const indicator = document.createElement('div');
-        indicator.id = 'offline-indicator';
-        indicator.style.cssText = `
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            z-index: 9999;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        `;
-        
-        document.body.appendChild(indicator);
-        this.updateConnectionStatus();
-    }
-
-    updateConnectionStatus() {
-        const indicator = document.getElementById('offline-indicator');
-        if (!indicator) return;
-        
-        if (this.isOnline) {
-            indicator.textContent = '🟢 متصل';
-            indicator.style.backgroundColor = '#28a745';
-            indicator.style.color = 'white';
-        } else {
-            indicator.textContent = '🔴 غير متصل';
-            indicator.style.backgroundColor = '#dc3545';
-            indicator.style.color = 'white';
-        }
     }
 
     showOfflineNotification(message) {

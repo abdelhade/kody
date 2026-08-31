@@ -70,7 +70,7 @@
                                 <span aria-hidden="true">&times;</span>
                               </button>
                             </div>
-                            <form action="DO/dodel_joprule.php?id=<?= $row['id'] ?>" method="POST">
+                            <form action="do/dodel_joprule.php?id=<?= $row['id'] ?>" method="POST">
                               <div class="modal-body text-right">
                                 <p><?= $lang_job_delete_confirm ?></p>
                                 <div class="form-group">

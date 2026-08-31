@@ -31,13 +31,13 @@ body {
 </style>
 <!-- Main Content -->
 <form action="<?= $action_url ?>" method="post" id="posForm">
-        <div class="container-fluid h-100" style="height: calc(100vh - 60px);">
+        <div class="container-fluid pos-main-container h-100">
             <div class="row h-100 g-1">
                 <!-- القسم الأيمن - معلومات الطلب -->
                 <div class="col-lg-4">
-                    <div class="card shadow-sm h-100 d-flex flex-column">
+                    <div class="card shadow-sm h-100 d-flex flex-column order-info-panel">
                         <div
-                            class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                            class="card-header bg-primary text-white py-1 d-flex justify-content-between align-items-center">
                             <h6 class="mb-0">
                             معلومات الطلب
                             </h6>
@@ -45,14 +45,14 @@ body {
                                  عرض الطلبات السابقة
                             </button>
                         </div>
-                        <div class="card-body flex-grow-1 overflow-auto d-flex flex-column">
+                        <div class="card-body flex-grow-1 overflow-auto d-flex flex-column p-1">
                             <!-- Hidden Fields -->
                             <input type="hidden" name="pro_tybe" value="9">
                             <input type="hidden" name="pro_serial" value="0">
                             <input type="hidden" name="pro_id" value="1">
 
                             <!-- نوع الطلب -->
-                            <div class="mb-2">
+                            <div class="mb-0">
                                 <div class="btn-group w-100" role="group">
                                     <?php
                                     $order_type_val = 1; // Default تيك أواي
@@ -87,7 +87,7 @@ body {
                             </div>
 
                             <!-- الباركود والبحث -->
-                            <div class="row g-1 mb-2">
+                            <div class="row g-0 mb-0">
                                 <!-- البحث -->
                                 <div class="col-6">
                                     <div class="input-group input-group-sm">
@@ -110,34 +110,25 @@ body {
                             </div>
 
                             <!-- الحقول الثانوية - في الناحية التانية -->
-                            <div class="row g-1 mb-2">
+                            <div class="row g-0 mb-0">
                                 <!-- التواريخ -->
-                                <div class="col-4">
+                                <div class="col-6">
                                     <input type="date" name="pro_date" class="form-control form-control-sm"
                                         value="<?= $posdate ?>" title="التاريخ" style="font-size: 0.75rem;">
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6">
                                     <input type="date" name="accural_date" class="form-control form-control-sm"
                                         value="<?php echo isset($_GET['edit']) ? $rowed['accural_date'] : date('Y-m-d'); ?>"
                                         title="تاريخ الاستحقاق" style="font-size: 0.75rem;">
                                 </div>
 
-                                <!-- اختيار الطاولة -->
-                                <div class="col-4">
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100"
-                                        data-bs-toggle="modal" data-bs-target="#tablesModal" title="اختر الطاولة"
-                                        style="font-size: 0.75rem;">
-                                        
-                                        <span id="selected_table_display">اختر طاولة</span>
-                                    </button>
-                                    <input type="hidden" id="selected_table_id" name="table_id" value="<?= isset($table_id_from_get) && $table_id_from_get > 0 ? $table_id_from_get : 0 ?>">
-                                    <input type="hidden" id="selected_table_name" name="table_name" value="">
-                                    <input type="hidden" id="selected_order_id" name="edit" value="0">
-                                </div>
+                                <input type="hidden" id="selected_table_id" name="table_id" value="<?= isset($table_id_from_get) && $table_id_from_get > 0 ? $table_id_from_get : 0 ?>">
+                                <input type="hidden" id="selected_table_name" name="table_name" value="">
+                                <input type="hidden" id="selected_order_id" name="edit" value="0">
                             </div>
 
                             <!-- الحقول الصغيرة -->
-                            <div class="row g-1 mb-2">
+                            <div class="row g-0 mb-0">
                                 <!-- المخزن -->
                                 <div class="col-3">
                                     <select name="store_id" class="form-select form-select-sm" title="المخزن"
@@ -236,9 +227,9 @@ body {
                             </div>
 
                             <!-- الأصناف المُضافة -->
-                            <div class="mb-2 flex-grow-1 d-flex flex-column">
-                                <div class="card flex-grow-1 d-flex flex-column border-primary">
-                                    <div class="card-header bg-gradient bg-primary text-white py-2">
+                            <div class="mb-0 flex-grow-1 d-flex flex-column min-h-0">
+                                <div class="card flex-grow-1 d-flex flex-column border-primary mb-0">
+                                    <div class="card-header bg-gradient bg-primary text-white py-1">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0" style="font-size: 0.95rem;">
                                                 الأصناف المُضافة
@@ -246,8 +237,8 @@ body {
                                             <span class="badge bg-white text-primary" id="itemCount">0</span>
                                         </div>
                                     </div>
-                                    <div class="card-body p-1 flex-grow-1"
-                                        style="min-height: 40vh; max-height: 40vh; overflow-y: auto; overflow-x: auto; background: #f8f9fa;"
+                                    <div class="card-body p-1 flex-grow-1 min-h-0"
+                                        style="overflow-y: auto; overflow-x: auto; background: #f8f9fa;"
                                         id="itemData">
                                         <?php
                                         if (isset($_GET['edit'])){
@@ -338,15 +329,15 @@ body {
                             </div>
 
                             <!-- قسم الدفع والحسابات -->
-                            <div class="card border-primary mt-1">
-                                <div class="card-header bg-primary text-white py-1">
+                            <div class="card border-primary mt-0 mb-0">
+                                <div class="card-header bg-primary text-white py-0">
                                     <h6 class="mb-0" style="font-size: 0.8rem;">
                                         <i class="fas fa-calculator me-1"></i>الحسابات والدفع
                                     </h6>
                                 </div>
                                 <div class="card-body p-1">
                                     <!-- الإجمالي والصافي -->
-                                    <div class="row g-1 mb-1">
+                                    <div class="row g-0 mb-0">
                                         <div class="col-6 text-center">
                                             <small class="text-muted d-block"
                                                 style="font-size: 0.65rem;">الإجمالي</small>
@@ -365,7 +356,7 @@ body {
                                     </div>
 
                                     <!-- ملاحظات -->
-                                    <div class="mb-1">
+                                    <div class="mb-0">
                                         <textarea class="form-control form-control-sm" name="info" id="info" rows="1"
                                             placeholder="ملاحظات..."
                                             style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
@@ -391,20 +382,6 @@ body {
                                                 <i class="fas fa-chair me-1"></i><span id="selectedTableName"></span>
                                             </div>
                                         </div>
-                                        <button type="button" class="btn btn-outline-danger"
-                                            style="font-size: 0.7rem; padding: 0.4rem 0.6rem;"
-                                            onclick="clearAllItems();" title="مسح">
-                                            <i class="fas fa-eraser"></i>
-                                        </button>
-                                    </div>
-
-                                    <!-- زر عرض معلومات الشيفت -->
-                                    <div class="mt-1">
-                                        <button type="button" class="btn btn-info w-100" data-bs-toggle="modal"
-                                            data-bs-target="#shiftInfoModal" style="font-size: 0.75rem; padding: 0.3rem;">
-                                            <i class="fas fa-user-clock me-1"></i>معلومات الشيفت
-                                            <span id="shift_info_display" style="font-size: 0.65rem;">جاري التحميل...</span>
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -438,7 +415,7 @@ body {
                         </div>
                         <div class="card-body">
                             <!-- التصنيفات -->
-                            <div class="mb-2">
+                            <div class="mb-0">
                                 <div class="d-flex flex-wrap gap-1" id="categoriesContainer">
                                     <?php
                                 $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
@@ -505,7 +482,7 @@ body {
                                     <div class="card item-card itemButton  shadow-sm border-0"
                                         data-item-id="<?= $itemId ?>" data-item-name="<?= $itemName ?>"
                                         data-item-price="<?= $itemPrice ?>" data-item-barcode="<?= $itemBarcode ?>"
-                                        data-item-desc="<?= $itemDesc ?>" style="transition: all 0.3s ease; cursor: pointer;">
+                                        data-item-desc="<?= $itemDesc ?>" style="cursor: pointer;">
                                         <div class="card-body p-2 text-center">
                                             <!-- الصورة -->
                                             <div class="item-image-container mb-2 ratio ratio-1x1 rounded overflow-hidden"
@@ -673,7 +650,7 @@ body {
                                                     </h6>
                                                 </div>
                                                 <div class="card-body">
-                                                    <div class="mb-2">
+                                                    <div class="mb-0">
                                                         <label class="form-label fw-bold">اختر الصندوق</label>
                                                         <select class="form-select" id="payment_fund_id">
                                                             <?php
@@ -709,7 +686,7 @@ body {
                                                     </h6>
                                                 </div>
                                                 <div class="card-body">
-                                                    <div class="mb-2">
+                                                    <div class="mb-0">
                                                         <label class="form-label fw-bold">اختر البنك</label>
                                                         <select class="form-select" id="payment_bank_id">
                                                             <option value="">-- اختر البنك --</option>
@@ -1070,12 +1047,6 @@ body {
         </div>
     </div>
 
-    <!-- زر عائم للطاولات -->
-    <a href="tables.php" class="btn btn-primary position-fixed"
-        style="bottom: 20px; right: 20px; z-index: 1000; border-radius: 50px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);"
-        title="عرض الطاولات">
-        <i class="fas fa-th-large fa-lg"></i>
-    </a>
 
     <!-- Scripts - jQuery (CDN for reliability) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

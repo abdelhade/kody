@@ -28,7 +28,7 @@
     --border-radius: 12px;
     --box-shadow: 0 2px 8px rgba(26, 47, 90, 0.08);
     --box-shadow-hover: 0 4px 16px rgba(26, 47, 90, 0.12);
-    --transition: all 0.3s ease;
+    --pos-navbar-height: 56px;
 }
 
 body {
@@ -74,12 +74,10 @@ body {
     background: #ff8c42 !important;
     border: none !important;
     box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
-    transition: var(--transition);
 }
 
 .btn-primary:hover {
     background: #ff7a28 !important;
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 140, 66, 0.4);
 }
 
@@ -87,14 +85,12 @@ body {
     color: #1a2f5a !important;
     border: 2px solid #1a2f5a !important;
     background: white;
-    transition: var(--transition);
 }
 
 .btn-outline-primary:hover {
     background: #ff8c42 !important;
     border-color: #ff8c42 !important;
     color: white !important;
-    transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
 }
 
@@ -114,7 +110,6 @@ body {
     background: white;
     box-shadow: var(--box-shadow);
     margin-bottom: 0.5rem;
-    transition: var(--transition);
 }
 
 .card-header {
@@ -136,9 +131,101 @@ body {
 /* --- Navbar --- */
 .navbar {
     background: linear-gradient(135deg, #1a2f5a 0%, #2d4a7c 100%) !important;
-    margin-bottom: 25px;
+    margin-bottom: 0 !important;
     box-shadow: 0 2px 8px rgba(26, 47, 90, 0.2);
     padding: 0.75rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+/* --- POS layout: content flush under navbar --- */
+#posForm > .pos-main-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    height: calc(100vh - var(--pos-navbar-height));
+    max-height: calc(100vh - var(--pos-navbar-height));
+}
+
+#posForm > .pos-main-container > .row {
+    height: 100%;
+    margin-top: 0;
+}
+
+#posForm .col-lg-8 {
+    height: 100%;
+    padding-top: 0;
+}
+
+#posForm .col-lg-4 > .card {
+    height: 100%;
+    margin-top: 0;
+    border-radius: 0;
+}
+
+/* --- Order info panel: compact vertical spacing --- */
+.order-info-panel > .card-header {
+    padding: 0.3rem 0.5rem !important;
+}
+
+.order-info-panel > .card-body {
+    padding: 0.25rem !important;
+    gap: 0;
+}
+
+.order-info-panel .card {
+    margin-bottom: 0 !important;
+}
+
+.order-info-panel .card-header {
+    padding: 0.25rem 0.5rem !important;
+}
+
+.order-info-panel .card-body {
+    padding: 0.25rem !important;
+}
+
+.order-info-panel .row {
+    margin-bottom: 0 !important;
+}
+
+.order-info-panel .form-control,
+.order-info-panel .form-select {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    min-height: calc(1.5em + 0.4rem + 2px);
+}
+
+.order-info-panel .btn-group .btn-sm {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.75rem;
+}
+
+.order-info-panel .item-card-order {
+    margin-bottom: 0.2rem !important;
+}
+
+.order-info-panel .item-card-order .card-body {
+    padding: 0.2rem !important;
+}
+
+.order-info-panel .item-card-order small.text-muted {
+    display: none;
+}
+
+.order-info-panel #total_display,
+.order-info-panel #net_display {
+    font-size: 0.85rem !important;
+    margin-bottom: 0 !important;
+}
+
+.order-info-panel h5,
+.order-info-panel h6 {
+    margin-bottom: 0 !important;
+}
+
+.order-info-panel .min-h-0 {
+    min-height: 0;
 }
 
 .navbar-brand {
@@ -154,7 +241,6 @@ body {
     border: 1px solid #e0e0e0;
     padding: 0.4rem 0.8rem;
     font-size: 0.85rem;
-    transition: var(--transition);
 }
 
 .form-control:focus,
@@ -214,31 +300,32 @@ body {
     border-right: 3px solid #ff8c42 !important;
     box-shadow: 0 2px 6px rgba(26, 47, 90, 0.08);
     margin-bottom: 0.75rem !important;
-    transition: var(--transition);
-}
-
-.item-card-order:hover {
-    transform: translateX(-3px);
-    box-shadow: 0 3px 10px rgba(255, 140, 66, 0.2);
 }
 
 /* --- Product Grid --- */
 .items-section-card {
     background: transparent;
     box-shadow: none;
-    height: calc(100vh - 80px) !important;
+    height: 100% !important;
+    max-height: 100%;
+    margin-top: 0 !important;
+    border-radius: 0;
 }
 
 .items-section-card .card-header {
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
+    position: sticky;
+    top: var(--pos-navbar-height);
+    z-index: 1020;
+    border-radius: 0 !important;
+    margin-bottom: 0;
     box-shadow: var(--box-shadow);
 }
 
 .items-section-card .card-body {
-    padding: 0;
+    padding: 0.5rem 0 0;
     background: transparent;
     overflow-y: auto;
+    max-height: calc(100vh - var(--pos-navbar-height) - 48px);
 }
 
 .item-wrapper {
@@ -251,13 +338,11 @@ body {
     border-radius: 12px;
     overflow: hidden;
     height: 100%;
-    transition: var(--transition);
     cursor: pointer;
 }
 
 .item-card:hover {
     box-shadow: 0 4px 12px rgba(255, 140, 66, 0.15);
-    transform: translateY(-2px);
     border-color: #ff8c42;
 }
 
@@ -345,4 +430,22 @@ div:where(.swal2-container) div:where(.swal2-popup) {
     .items-section-card {
         height: auto !important;
     }
+}
+
+/* Disable hover animations */
+.btn,
+.card,
+.item-card,
+.item-card-order,
+.form-control,
+.form-select,
+.category-btn {
+    transition: none !important;
+}
+
+.btn:hover,
+.card:hover,
+.item-card:hover,
+.item-card-order:hover {
+    transform: none !important;
 }

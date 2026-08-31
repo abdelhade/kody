@@ -1,5 +1,106 @@
 $(document).ready(function() {
 
+    // ── Select2 للمجموعات ───────────────────────────────────────────────────
+    if ($.fn.select2) {
+        $('.select2-item').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: '— اختر —',
+            allowClear: true
+        });
+    }
+
+    // ── Custom file labels + معاينة الصورة ───────────────────────────────────
+    $('#imgs').on('change', function() {
+        if (!this.files || !this.files[0]) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var $img = $('#itemPreviewImg');
+            var $placeholder = $('#itemImagePlaceholder');
+            $img.attr('src', e.target.result).removeClass('d-none').show();
+            $placeholder.addClass('d-none').hide();
+            $('#itemImagePanel').addClass('has-image');
+        };
+        reader.readAsDataURL(this.files[0]);
+    });
+
+    $('.custom-file-input').on('change', function() {
+        if (this.id === 'imgs') return;
+        var fileName = $(this).val().split('\\').pop();
+        $(this).siblings('.custom-file-label').addClass('selected').html(fileName || 'اختر ملفاً');
+    });
+
+    $('#importItemsModal').on('hidden.bs.modal', function() {
+        var $form = $('#import-items-form');
+        if ($form.length) {
+            $form[0].reset();
+            $form.find('.custom-file-label').removeClass('selected').html('اختر ملف');
+        }
+    });
+
+    // ── حساب الأسعار حسب المعامل ─────────────────────────────────────────────
+    var priceFields = ['cost_price', 'price1', 'price2', 'market_price'];
+
+    priceFields.forEach(function(fieldName) {
+        $(document).on('input', '.urow:first input[name="' + fieldName + '[]"]', function() {
+            var firstRowValue = parseFloat($(this).val()) || 0;
+            $('.urow').each(function(index) {
+                if (index === 0) return;
+                var u_val = parseFloat($(this).find('input[name="u_val[]"]').val()) || 1;
+                $(this).find('input[name="' + fieldName + '[]"]').val((firstRowValue * u_val).toFixed(3));
+            });
+        });
+    });
+
+    $(document).on('input', 'input[name="u_val[]"]', function() {
+        var currentRow = $(this).closest('.urow');
+        var u_val = parseFloat($(this).val()) || 1;
+        priceFields.forEach(function(fieldName) {
+            var firstRowValue = parseFloat($('.urow:first input[name="' + fieldName + '[]"]').val()) || 0;
+            currentRow.find('input[name="' + fieldName + '[]"]').val((firstRowValue * u_val).toFixed(3));
+        });
+    });
+
+    // ── التحقق من الوحدات عند الحفظ ─────────────────────────────────────────
+    $('#item-main-form').on('submit', function(e) {
+        var selectedValues = [];
+        var duplicateFound = false;
+        var validUnitFound = false;
+        $('select[name="unit_id[]"]').each(function() {
+            var val = $(this).val();
+            if (val) {
+                validUnitFound = true;
+                if (selectedValues.indexOf(val) !== -1) duplicateFound = true;
+                selectedValues.push(val);
+            }
+        });
+        if ($('.urow').length === 0 || !validUnitFound) {
+            e.preventDefault();
+            alert('لا يمكن حفظ صنف بدون وحدات');
+            return;
+        }
+        if (duplicateFound) {
+            e.preventDefault();
+            alert('غير مسموح بتكرار الوحدات');
+        }
+    });
+
+    // ── منع Enter من إرسال النموذج ───────────────────────────────────────────
+    $('#item-main-form').on('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        var $target = $(e.target);
+        if ($target.is('textarea, button, [type="submit"]')) return;
+        e.preventDefault();
+    });
+
+    // ── اختصار F2 للحفظ ─────────────────────────────────────────────────────
+    $(document).on('keydown', function(e) {
+        if (e.key === 'F2') {
+            e.preventDefault();
+            $('#item-main-form').trigger('submit');
+        }
+    });
+
     // ── تعطيل السكرول والكيبورد على جميع حقول الأرقام في جدول الوحدات ──────
     $(document).on('wheel', '#unitsContainer input[type="number"]', function(e) {
         e.preventDefault();

@@ -16,6 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_GET['id'])) {
         die;
     }
 
-    $conn->query("DELETE FROM departments where id = $id");
+    // Try soft delete first, if column exists
+    $sql = "UPDATE departments SET isdeleted = 1 WHERE id = $id";
+    if ($conn->query($sql) !== TRUE) {
+        // Fallback to hard delete if isdeleted column doesn't exist
+        $conn->query("DELETE FROM departments where id = $id");
+    }
+    
     header('location:../departments.php');
 }

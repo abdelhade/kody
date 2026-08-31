@@ -82,7 +82,7 @@
                                                         </div>
                                                         <div class="modal-footer justify-content-between">
                                                          <button type="button" class="btn btn-outline-light" data-dismiss="modal">الغاء</button>
-                                                           <a href="DO/dodel_contract.php?id=<?= $rowcntr['id'] ?>"class="btn btn-outline-light">حذف</a>
+                                                           <a href="do/dodel_contract.php?id=<?= $rowcntr['id'] ?>"class="btn btn-outline-light">حذف</a>
                                                           </div>
 
                                                     </div>
