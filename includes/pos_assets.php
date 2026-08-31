@@ -3,6 +3,7 @@
 <link href="assets/libs/fontawesome.min.css" rel="stylesheet">
 <link href="dist/css/pos.css" rel="stylesheet">
 <link href="dist/css/pos_barcode.css" rel="stylesheet">
+<link href="dist/css/pos_tables_modal.css" rel="stylesheet">
 <link href="dist/css/pos_search.css" rel="stylesheet">
 <link href="assets/libs/sweetalert2/sweetalert2-bootstrap-4.css" rel="stylesheet">
 <link href="plugins/jquery-ui/jquery-ui.min.css" rel="stylesheet">

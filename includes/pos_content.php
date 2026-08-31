@@ -4,13 +4,28 @@ if (!isset($action_url)) {
 }
 ?>
 <style>
-/* إصلاح مشكلة التظليل في صفحة POS */
+/* POS — blur + تعتيم الخلفية عند فتح المودال */
 .modal-backdrop {
-    display: none !important;
+    opacity: 1 !important;
+    background-color: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
-.modal {
-    background-color: transparent !important;
+
+.modal-backdrop.fade {
+    opacity: 0 !important;
 }
+
+.modal-backdrop.show {
+    opacity: 1 !important;
+}
+
+.modal.show {
+    background-color: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
 body {
     background-color: #f5f7fa !important;
 }
@@ -18,15 +33,8 @@ body {
     background-color: #f5f7fa !important;
 }
 
-/* Tables Modal - scrollable body with proper sizing */
-#tablesModal .modal-dialog {
-    width: 90% !important;
-    max-width: 900px !important;
-    margin: 1.75rem auto !important;
-}
-#tablesModal .modal-body {
-    max-height: 70vh !important;
-    overflow-y: auto !important;
+#posTablesPanelModal .modal-body {
+    overflow: hidden;
 }
 </style>
 <!-- Main Content -->
@@ -45,28 +53,65 @@ body {
                                  عرض الطلبات السابقة
                             </button>
                         </div>
-                        <div class="card-body flex-grow-1 overflow-auto d-flex flex-column p-1">
+                        <div class="card-body order-info-body flex-grow-1 d-flex flex-column p-1 min-h-0">
+                            <div class="order-info-top">
                             <!-- Hidden Fields -->
                             <input type="hidden" name="pro_tybe" value="9">
                             <input type="hidden" name="pro_serial" value="0">
                             <input type="hidden" name="pro_id" value="1">
 
                             <!-- نوع الطلب -->
+                            <?php
+                            // يُحسب في pos_barcode.php قبل الـ navbar — هذا احتياط لو ضُمِّن الملف من مكان آخر
+                            if (!isset($default_table_pref)) {
+                                $default_table_pref = isset($_COOKIE['pos_default_table']) && $_COOKIE['pos_default_table'] === '1';
+                            }
+
+                            $order_type_val = $default_table_pref ? 2 : 1;
+                            if (isset($_GET['edit']) && isset($rowed['info'])) {
+                                $info_text = $rowed['info'];
+                                if (strpos($info_text, 'نوع الطلب: دليفري') !== false) {
+                                    $order_type_val = 3;
+                                } elseif (strpos($info_text, 'طاولة:') !== false || strpos($info_text, 'نوع الطلب: طاولة') !== false) {
+                                    $order_type_val = 2;
+                                } elseif (strpos($info_text, 'نوع الطلب: تيك أواي') !== false) {
+                                    $order_type_val = 1;
+                                }
+                            }
+
+                            // عند تعديل طلب طاولة: استرجع ربط الطاولة حتى لا يُحفظ الطلب بلا طاولة
+                            $preset_table_id = isset($table_id_from_get) && $table_id_from_get > 0 ? $table_id_from_get : 0;
+                            $preset_table_name = isset($table_name_from_get) ? $table_name_from_get : '';
+                            if ($preset_table_id <= 0 && isset($_GET['edit']) && $order_type_val == 2) {
+                                if (!empty($rowed['table_id'])) {
+                                    $preset_table_id = intval($rowed['table_id']);
+                                    $ptn = $conn->prepare("SELECT tname FROM tables WHERE id = ? AND isdeleted = 0 LIMIT 1");
+                                    if ($ptn) {
+                                        $ptn->bind_param('i', $preset_table_id);
+                                        $ptn->execute();
+                                        $ptn_row = $ptn->get_result()->fetch_assoc();
+                                        if ($ptn_row) $preset_table_name = $ptn_row['tname'];
+                                        $ptn->close();
+                                    }
+                                } elseif (preg_match('/طاولة:\s*([^\-]+)/u', (string)$rowed['info'], $m)) {
+                                    // طلبات قديمة مربوطة باسم الطاولة في info فقط
+                                    $legacy_name = trim($m[1]);
+                                    $ptn = $conn->prepare("SELECT id, tname FROM tables WHERE tname = ? AND isdeleted = 0 LIMIT 1");
+                                    if ($ptn) {
+                                        $ptn->bind_param('s', $legacy_name);
+                                        $ptn->execute();
+                                        $ptn_row = $ptn->get_result()->fetch_assoc();
+                                        if ($ptn_row) {
+                                            $preset_table_id = intval($ptn_row['id']);
+                                            $preset_table_name = $ptn_row['tname'];
+                                        }
+                                        $ptn->close();
+                                    }
+                                }
+                            }
+                            ?>
                             <div class="mb-0">
                                 <div class="btn-group w-100" role="group">
-                                    <?php
-                                    $order_type_val = 1; // Default تيك أواي
-                                    if (isset($_GET['edit']) && isset($rowed['info'])) {
-                                        $info_text = $rowed['info'];
-                                        if (strpos($info_text, 'نوع الطلب: دليفري') !== false) {
-                                            $order_type_val = 3;
-                                        } elseif (strpos($info_text, 'طاولة:') !== false || strpos($info_text, 'نوع الطلب: طاولة') !== false) {
-                                            $order_type_val = 2;
-                                        } elseif (strpos($info_text, 'نوع الطلب: تيك أواي') !== false) {
-                                            $order_type_val = 1;
-                                        }
-                                    }
-                                    ?>
                                     <input type="radio" class="btn-check" id="age1" name="age" value="1" <?= $order_type_val == 1 ? 'checked' : '' ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age1">
                                         تيك اواي
@@ -122,8 +167,8 @@ body {
                                         title="تاريخ الاستحقاق" style="font-size: 0.75rem;">
                                 </div>
 
-                                <input type="hidden" id="selected_table_id" name="table_id" value="<?= isset($table_id_from_get) && $table_id_from_get > 0 ? $table_id_from_get : 0 ?>">
-                                <input type="hidden" id="selected_table_name" name="table_name" value="">
+                                <input type="hidden" id="selected_table_id" name="table_id" value="<?= $preset_table_id ?>">
+                                <input type="hidden" id="selected_table_name" name="table_name" value="<?= htmlspecialchars($preset_table_name) ?>">
                                 <input type="hidden" id="selected_order_id" name="edit" value="0">
                             </div>
 
@@ -187,7 +232,8 @@ body {
                                             $selected = '';
                                             if($rowstg['def_pos_client'] == $rowclient['id']){
                                                 $selected = "selected";
-                                            } elseif(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){
+                                            } elseif(isset($_GET['edit']) && $rowed['acc2'] == $rowclient['id']){
+                                                // العميل في acc2 لفواتير الكاشير (acc1 = الصندوق)
                                                 $selected = "selected";
                                             } elseif ($first_client && empty($rowstg['def_pos_client']) && !isset($_GET['edit'])) {
                                                 $selected = "selected";
@@ -212,7 +258,10 @@ body {
                                             $selected = '';
                                             if($rowstg['def_pos_fund'] == $rowfund['id']){
                                                 $selected = "selected";
-                                            } elseif((isset($_GET['edit'])) && $rowed['acc_fund'] == $rowfund['id']){
+                                            } elseif(isset($_GET['edit']) && (
+                                                $rowed['acc_fund'] == $rowfund['id']
+                                                || (empty($rowed['acc_fund']) && $rowed['acc1'] == $rowfund['id'])
+                                            )){
                                                 $selected = "selected";
                                             } elseif ($first_fund && empty($rowstg['def_pos_fund']) && !isset($_GET['edit'])) {
                                                 $selected = "selected";
@@ -225,20 +274,21 @@ body {
                                     </select>
                                 </div>
                             </div>
+                            </div>
 
                             <!-- الأصناف المُضافة -->
-                            <div class="mb-0 flex-grow-1 d-flex flex-column min-h-0">
-                                <div class="card flex-grow-1 d-flex flex-column border-primary mb-0">
+                            <div class="order-items-panel flex-grow-1 d-flex flex-column min-h-0">
+                                <div class="card flex-grow-1 d-flex flex-column border-primary mb-0 min-h-0">
                                     <div class="card-header bg-gradient bg-primary text-white py-1">
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0" style="font-size: 0.95rem;">
+                                            <h6 class="mb-0" style="font-size: 0.85rem;">
                                                 الأصناف المُضافة
                                             </h6>
                                             <span class="badge bg-white text-primary" id="itemCount">0</span>
                                         </div>
                                     </div>
-                                    <div class="card-body p-1 flex-grow-1 min-h-0"
-                                        style="overflow-y: auto; overflow-x: auto; background: #f8f9fa;"
+                                    <div class="card-body p-1 flex-grow-1 min-h-0 order-items-scroll"
+                                        style="background: #f8f9fa;"
                                         id="itemData">
                                         <?php
                                         if (isset($_GET['edit'])){
@@ -328,99 +378,66 @@ body {
                                 </div>
                             </div>
 
-                            <!-- قسم الدفع والحسابات -->
-                            <div class="card border-primary mt-0 mb-0">
-                                <div class="card-header bg-primary text-white py-0">
-                                    <h6 class="mb-0" style="font-size: 0.8rem;">
-                                        <i class="fas fa-calculator me-1"></i>الحسابات والدفع
-                                    </h6>
-                                </div>
-                                <div class="card-body p-1">
-                                    <!-- الإجمالي والصافي -->
-                                    <div class="row g-0 mb-0">
-                                        <div class="col-6 text-center">
-                                            <small class="text-muted d-block"
-                                                style="font-size: 0.65rem;">الإجمالي</small>
-                                            <h5 class="mb-0 text-primary" id="total_display" style="font-size: 0.9rem;">
-                                                0.00 ج.م</h5>
-                                            <input type="hidden" name="headtotal" id="total" value="0.00">
-                                            <input name="headplus" type="hidden">
-                                        </div>
-                                        <div class="col-6 text-center">
-                                            <small class="text-muted d-block" style="font-size: 0.65rem;">الصافي</small>
-                                            <h5 class="mb-0 text-success" id="net_display" style="font-size: 0.9rem;">
-                                                0.00 ج.م</h5>
-                                            <input type="hidden" name="headnet" id="net_val" value="0">
-                                            <input type="hidden" name="headdisc" id="discount" value="0">
-                                        </div>
-                                    </div>
-
-                                    <!-- ملاحظات -->
-                                    <div class="mb-0">
-                                        <textarea class="form-control form-control-sm" name="info" id="info" rows="1"
-                                            placeholder="ملاحظات..."
-                                            style="font-size: 0.7rem; padding: 0.2rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
-                                    </div>
-
-                                    <!-- أزرار الإجراءات -->
-                                    <div class="d-flex gap-1 justify-content-between align-items-center">
-                                        <button type="button" class="btn btn-primary flex-grow-1" data-bs-toggle="modal"
-                                            data-bs-target="#paymentModal" style="font-size: 0.8rem; padding: 0.4rem;">
-                                            <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
-                                            <div style="font-size: 0.7rem; font-weight: bold;" id="total_display_btn">
-                                                0.00 ج.م</div>
-                                        </button>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <!-- <button type="button" class="btn btn-outline-info btn-sm recent-orders-btn" title="الطلبات الأخيرة">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-                                            <a href="tables.php" class="btn btn-outline-primary" style="font-size: 0.7rem; padding: 0.4rem 0.6rem;" title="الطاولات">
-                                                <i class="fas fa-th-large"></i>
-                                            </a> -->
-                                            <div id="selectedTableDisplay" class="badge bg-primary text-white"
-                                                style="font-size: 0.8rem; display: none;">
-                                                <i class="fas fa-chair me-1"></i><span id="selectedTableName"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
+
+                            <!-- الحسابات والدفع -->
+                            <div class="order-info-footer">
+                                <input type="hidden" name="headtotal" id="total" value="0.00">
+                                <input name="headplus" type="hidden">
+                                <input type="hidden" name="headnet" id="net_val" value="0">
+                                <input type="hidden" name="headdisc" id="discount" value="0">
+                                <span id="total_display" class="d-none">0.00 ج.م</span>
+                                <span id="net_display" class="d-none">0.00 ج.م</span>
+                                <div id="selectedTableDisplay" class="badge bg-primary text-white mb-2"
+                                    style="font-size: 0.7rem; display: none;">
+                                    <i class="fas fa-chair me-1"></i><span id="selectedTableName"></span>
+                                </div>
+                                <textarea class="form-control form-control-sm mb-2" name="info" id="info" rows="1"
+                                    placeholder="ملاحظات..."
+                                    style="font-size: 0.75rem; padding: 0.35rem;"><?php echo isset($_GET['edit']) ? htmlspecialchars($rowed['info']) : ''; ?></textarea>
+                                <!-- حفظ طلب الطاولة معلّقاً: مخزون فقط بلا قيود حتى السداد -->
+                                <button type="button" class="btn btn-warning w-100 fw-bold mb-2 d-none"
+                                    id="holdOrderBtn" onclick="submitPOS('hold');">
+                                    <i class="fas fa-clock me-1"></i>حفظ معلّق
+                                    <span class="fw-bold ms-1" id="hold_total_display">0.00 ج.م</span>
+                                </button>
+                                <button type="button" class="btn btn-primary w-100 order-pay-btn"
+                                    data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                    <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
+                                    <span class="fw-bold ms-1" id="total_display_btn">0.00 ج.م</span>
+                                </button>
+                            </div>
                     </div>
                 </div>
 
                 <!-- القسم الأوسط - الأصناف -->
                 <div class="col-lg-8">
-                    <div class="card shadow-sm items-section-card">
-                        <div class="card-header bg-primary text-white py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">
-                                    <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
-                                </h6>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="input-group" style="width: 280px;">
-                                       
-                                        <input type="text" class="scnd form-control border-start-0" id="itemFilterInput"
-                                            placeholder="فلترة الأصناف..." autocomplete="off"
-                                            title="اضغط Ctrl+F للتركيز | Escape للمسح"
-                                            style="font-size: 0.9rem;">
-                                        <button class="btn btn-outline-secondary" type="button" id="clearFilter"
-                                            title="مسح الفلتر">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                    <div class="card shadow-sm items-section-card d-flex flex-column h-100">
+                        <div class="items-section-top">
+                            <div class="card-header bg-primary text-white py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
+                                    </h6>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="input-group" style="width: 280px;">
+                                            <input type="text" class="scnd form-control border-start-0" id="itemFilterInput"
+                                                placeholder="فلترة الأصناف..." autocomplete="off"
+                                                title="اضغط Ctrl+F للتركيز | Escape للمسح"
+                                                style="font-size: 0.9rem;">
+                                            <button class="btn btn-outline-secondary" type="button" id="clearFilter"
+                                                title="مسح الفلتر">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <!-- التصنيفات -->
-                            <div class="mb-0">
+                            <div class="items-categories-bar">
                                 <div class="d-flex flex-wrap gap-1" id="categoriesContainer">
                                     <?php
                                 $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
                                 if ($rescategories && $rescategories->num_rows > 0) {
-                                    // زر "الكل"
                                     echo '<button type="button" class="btn btn-primary btn-sm category-btn active" data-category="all">
                                             <i class="fas fa-th me-1"></i>الكل
                                           </button>';
@@ -440,7 +457,8 @@ body {
                                 ?>
                                 </div>
                             </div>
-
+                        </div>
+                        <div class="card-body items-grid-scroll flex-grow-1 min-h-0 p-2">
                             <!-- شبكة الأصناف -->
                             <div class="row g-3" id="itemsGrid">
                                 <?php
@@ -494,7 +512,7 @@ body {
                                                 <?php else: ?>
                                                 <div
                                                     class="d-flex align-items-center justify-content-center item-image-click">
-                                                    <i class="fas fa-utensils fa-3x text-primary opacity-50"></i>
+                                                    <i class="fas fa-box fa-3x text-primary opacity-50"></i>
                                                 </div>
                                                 <?php endif; ?>
                                             </div>
@@ -537,272 +555,100 @@ body {
 
     <!-- Modal الدفع -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="paymentModalLabel">
-                       الدفع والإجماليات
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+        <div class="modal-dialog modal-dialog-centered payment-modal-dialog">
+            <div class="modal-content payment-modal-content">
+                <div class="modal-header payment-modal-header py-2 px-3">
+                    <h6 class="modal-title mb-0" id="paymentModalLabel">الدفع والإجماليات</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <!-- الإجمالي -->
-                        <div class="col-12">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <div class="col-4">
-                                            <label class="mb-0 fw-bold text-primary">
-                                                الإجمالي
-                                            </label>
-                                        </div>
-                                        <div class="col-8">
-                                            <h4 class="mb-0 text-primary text-end" id="modal_total">0.00 ج.م</h4>
-                                        </div>
-                                    </div>
-                                </div>
+                <div class="modal-body payment-modal-body p-2">
+                    <div class="pay-summary-strip">
+                        <div class="pay-stat">
+                            <span class="pay-stat-lbl">الإجمالي</span>
+                            <strong class="pay-stat-val text-primary" id="modal_total">0.00 ج.م</strong>
+                        </div>
+                        <div class="pay-stat">
+                            <span class="pay-stat-lbl">الصافي</span>
+                            <strong class="pay-stat-val text-success" id="modal_net">0.00 ج.م</strong>
+                        </div>
+                        <div class="pay-stat">
+                            <span class="pay-stat-lbl">الباقي</span>
+                            <strong class="pay-stat-val text-danger" id="modal_change">0.00 ج.م</strong>
+                        </div>
+                    </div>
+
+                    <div class="row g-1 pay-row">
+                        <div class="col-6">
+                            <label class="pay-lbl" for="modal_discperc">خصم %</label>
+                            <input class="form-control form-control-sm text-center" type="number"
+                                id="modal_discperc" value="0" min="0" max="100" step="0.1">
+                        </div>
+                        <div class="col-6">
+                            <label class="pay-lbl" for="modal_discount">ق. الخصم</label>
+                            <input class="form-control form-control-sm text-center" type="number"
+                                id="modal_discount" value="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="pay-old-paid" id="old_payment_container" style="display: none;">
+                        <span><i class="fas fa-history"></i> مدفوع سابقاً</span>
+                        <strong class="text-info" id="old_paid_display">0.00 ج.م</strong>
+                    </div>
+
+                    <div class="row g-1 pay-row">
+                        <div class="col-6">
+                            <label class="pay-lbl" for="payment_fund_id"><i class="fas fa-money-bill"></i> كاش</label>
+                            <select class="form-select form-select-sm pay-select" id="payment_fund_id">
+                                <?php
+                                $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                                while ($rowfund = $resfund->fetch_assoc()) {
+                                    $selected = '';
+                                    if ($rowstg['def_pos_fund'] == $rowfund['id']) {
+                                        $selected = 'selected';
+                                    }
+                                ?>
+                                <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
+                                <?php } ?>
+                            </select>
+                            <div class="input-group input-group-sm mt-1">
+                                <input class="form-control text-center fw-bold" type="number"
+                                    id="modal_paid_cash" value="0.00" step="0.01" min="0">
+                                <span class="input-group-text">ج.م</span>
                             </div>
                         </div>
-
-                        <!-- الخصم -->
-                        <div class="col-12">
-                            <div class="card border-primary">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0">
-                                       الخصم
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold text-dark">الخصم %</label>
-                                            <div class="input-group">
-                                                <input class="form-control text-center" type="number"
-                                                    id="modal_discperc" value="0" min="0" max="100" step="0.1">
-                                              
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label fw-bold text-dark">قيمة الخصم</label>
-                                            <div class="input-group">
-                                                <input class="form-control text-center" type="number"
-                                                    id="modal_discount" value="0" step="0.01">
-                                                
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- الصافي -->
-                        <div class="col-12">
-                            <div class="card bg-success bg-opacity-10 border-success">
-                                <div class="card-body">
-                                    <div class="row align-items-center">
-                                        <div class="col-4">
-                                            <label class="mb-0 fw-bold text-success">
-                                                الصافي
-                                            </label>
-                                        </div>
-                                        <div class="col-8">
-                                            <h3 class="mb-0 text-success text-end" id="modal_net">0.00 ج.م</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- المدفوع سابقاً (يظهر فقط في وضع التعديل) -->
-                        <div class="col-12" id="old_payment_container" style="display: none;">
-                            <div class="alert alert-info mb-0">
-                                <div class="row align-items-center">
-                                    <div class="col-6">
-                                        <h6 class="mb-0">
-                                            <i class="fas fa-history me-2"></i>المدفوع سابقاً
-                                        </h6>
-                                    </div>
-                                    <div class="col-6 text-end">
-                                        <h4 class="mb-0 text-info" id="old_paid_display">0.00 ج.م</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- قسم الدفع -->
-                        <div class="col-12">
-                            <div class="card border-success">
-                                <div class="card-header bg-success bg-opacity-10">
-                                    <h6 class="mb-0 text-success">
-                                        <i class="fas fa-money-bill-wave me-2"></i>طريقة الدفع
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row g-3">
-                                        <!-- مدفوع كاش -->
-                                        <div class="col-md-6">
-                                            <div class="card border-primary h-100">
-                                                <div class="card-header bg-primary text-white py-2">
-                                                    <h6 class="mb-0">
-                                                        <i class="fas fa-money-bill me-2"></i>مدفوع كاش
-                                                    </h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-0">
-                                                        <label class="form-label fw-bold">اختر الصندوق</label>
-                                                        <select class="form-select" id="payment_fund_id">
-                                                            <?php
-                                                            $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
-                                                            while ($rowfund = $resfund->fetch_assoc()) { 
-                                                                $selected = '';
-                                                                if($rowstg['def_pos_fund'] == $rowfund['id']){
-                                                                    $selected = "selected";
-                                                                }
-                                                            ?>
-                                                            <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
-                                                            <?php } ?>
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label class="form-label fw-bold">المبلغ المدفوع كاش</label>
-                                                        <div class="input-group input-group-lg">
-                                                            <input class="form-control text-center fw-bold" type="number" 
-                                                                   id="modal_paid_cash" value="0.00" step="0.01" min="0">
-                                                            <span class="input-group-text">ج.م</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- مدفوع صرافة -->
-                                        <div class="col-md-6">
-                                            <div class="card border-info h-100">
-                                                <div class="card-header bg-info text-white py-2">
-                                                    <h6 class="mb-0">
-                                                        <i class="fas fa-credit-card me-2"></i>مدفوع صرافة
-                                                    </h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="mb-0">
-                                                        <label class="form-label fw-bold">اختر البنك</label>
-                                                        <select class="form-select" id="payment_bank_id">
-                                                            <option value="">-- اختر البنك --</option>
-                                                            <?php
-                                                            $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
-                                                            while ($rowbank = $resbank->fetch_assoc()) { ?>
-                                                            <option value="<?= $rowbank['id'] ?>"><?= $rowbank['aname'] ?></option>
-                                                            <?php } ?>
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label class="form-label fw-bold">المبلغ المدفوع صرافة</label>
-                                                        <div class="input-group input-group-lg">
-                                                            <input class="form-control text-center fw-bold" type="number" 
-                                                                   id="modal_paid_bank" value="0.00" step="0.01" min="0">
-                                                            <span class="input-group-text">ج.م</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- الباقي -->
-                                        <div class="col-12">
-                                            <div class="alert alert-warning mb-0">
-                                                <div class="row align-items-center">
-                                                    <div class="col-6">
-                                                        <h6 class="mb-0">
-                                                            <i class="fas fa-exclamation-triangle me-2"></i>الباقي 
-                                                        </h6>
-                                                    </div>
-                                                    <div class="col-6 text-end">
-                                                        <h4 class="mb-0 text-danger" id="modal_change">0.00 ج.م</h4>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="col-6">
+                            <label class="pay-lbl" for="payment_bank_id"><i class="fas fa-credit-card"></i> صرافة</label>
+                            <select class="form-select form-select-sm pay-select" id="payment_bank_id">
+                                <option value="">-- بنك --</option>
+                                <?php
+                                $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                                while ($rowbank = $resbank->fetch_assoc()) { ?>
+                                <option value="<?= $rowbank['id'] ?>"><?= $rowbank['aname'] ?></option>
+                                <?php } ?>
+                            </select>
+                            <div class="input-group input-group-sm mt-1">
+                                <input class="form-control text-center fw-bold" type="number"
+                                    id="modal_paid_bank" value="0.00" step="0.01" min="0">
+                                <span class="input-group-text">ج.م</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>إلغاء
-                    </button>
-                    <?php if(isset($id)): ?>
-                    <button type="button" class="btn btn-warning text-dark fw-bold" onclick="submitPOS('save');">
-                        <i class="fas fa-edit me-1"></i>حفظ التعديل
-                    </button>
+                <div class="modal-footer payment-modal-footer py-2 px-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                    <?php if (isset($id)): ?>
+                    <button type="button" id="paymentSaveBtn" class="btn btn-warning btn-sm text-dark fw-bold" onclick="submitPOS('save');">حفظ التعديل</button>
                     <?php else: ?>
-                    <button type="button" class="btn btn-success" onclick="submitPOS('save');">
-                       حفظ الطلب
-                    </button>
+                    <button type="button" id="paymentSaveBtn" class="btn btn-success btn-sm" onclick="submitPOS('save');">حفظ</button>
                     <?php endif; ?>
-                    <button type="button" class="btn btn-primary" onclick="submitPOS('cash');">
-                        حفظ وطباعة
-                    </button>
+                    <button type="button" id="paymentPrintBtn" class="btn btn-primary btn-sm" onclick="submitPOS('cash');">حفظ وطباعة</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal الطاولات -->
-    <div class="modal fade" id="tablesModal" tabindex="-1" aria-labelledby="tablesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
-                    <h5 class="modal-title mb-0" id="tablesModalLabel">
-                        <i class="fas fa-th-large me-2"></i>اختر الطاولة
-                    </h5>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-warning btn-sm fw-bold shadow-sm" id="btnToggleMergeMode" onclick="toggleTableMergeMode()">
-                            <i class="fas fa-object-group me-1"></i> دمج الطاولات
-                        </button>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body p-3" style="max-height:75vh; overflow-y:auto;">
-                    <!-- الشريط العلوي لنمط الدمج -->
-                    <div id="mergeControlsBar" class="alert alert-warning d-none mb-3 p-2 shadow-sm border-warning">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-info-circle me-2 text-warning"></i>
-                                <span class="fw-bold small">حدد الطاولات المراد دمجها ثم اضغط تأكيد الدمج</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-success fw-bold px-3" onclick="confirmMergeTables()">
-                                    <i class="fas fa-link me-1"></i> تأكيد الدمج
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger fw-bold px-3" onclick="unmergeSelectedTables()">
-                                    <i class="fas fa-unlink me-1"></i> فك دمج المحدد
-                                </button>
-                                <button type="button" class="btn btn-sm btn-secondary px-2" onclick="toggleTableMergeMode(false)">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row g-2" id="tablesGrid">
-                        <?php include('includes/tables_grid_render.php'); ?>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>إلغاء
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="selectNoTable();">
-                        <i class="fas fa-shopping-bag me-1"></i>بدون طاولة (تيك أواي)
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modal الطاولات (full screen) -->
+    <?php include('includes/pos_tables_modal.php'); ?>
 
     <!-- Modal تفاصيل الصنف -->
     <div class="modal fade" id="itemDetailsModal" tabindex="-1" aria-labelledby="itemDetailsModalLabel"
@@ -1072,6 +918,7 @@ body {
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
     <script src="js/pos_barcode.js?v=<?= time() ?>"></script>
+    <script src="js/pos_tables_modal.js?v=<?= time() ?>"></script>
     
     <script>
         // تفعيل النظام الأوفلاين فور تحميل الصفحة
@@ -1445,18 +1292,52 @@ body {
             // Listen for changes on the 'age' radio buttons
             $('input[name="age"]').change(function(){
                 if ($(this).val() == '2') {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'تنبيه',
-                        text: 'يرجى اختيار طاولة',
-                        confirmButtonText: 'حسناً'
-                    });
+                    if (window.PosTablesPanel) {
+                        window.PosTablesPanel.open();
+                    }
                 } else if ($(this).val() == '3') {
                     openDeliveryModal();
                 } else {
                     clearDeliveryFieldsFromForm();
                 }
+
+                if ($(this).val() != '2' && window.PosTablesPanel) {
+                    $('#selected_table_id').val(0);
+                    $('#selected_table_name').val('');
+                    window.PosTablesPanel.setTableBadge('');
+                    window.PosTablesPanel.clearFinalizeFlag();
+                }
             });
+
+            // زر "حفظ معلّق" خاص بطلبات الطاولة فقط
+            window.syncHoldButton = function () {
+                const isTable = $('input[name="age"]:checked').val() == '2';
+                $('#holdOrderBtn').toggleClass('d-none', !isTable);
+            };
+            $('input[name="age"]').on('change', window.syncHoldButton);
+            window.syncHoldButton();
+
+            // تفضيل "الطاولة افتراضياً" — يُحفظ سنة كاملة في الكوكيز
+            $('#defaultTableChk').on('change', function () {
+                const on = this.checked ? '1' : '0';
+                const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+                document.cookie = 'pos_default_table=' + on + '; expires=' + exp + '; path=/; SameSite=Lax';
+                Swal.fire({
+                    icon: 'success',
+                    title: this.checked ? 'الطاولة هي الافتراضي' : 'تم إلغاء الافتراضي',
+                    timer: 1200,
+                    showConfirmButton: false
+                });
+            });
+
+            // لو الطاولة هي الافتراضي، افتح اللوحة مباشرة ليختار الكاشير طاولته
+            <?php if ($default_table_pref && !isset($_GET['edit']) && !isset($_GET['table'])): ?>
+            if (!parseInt($('#selected_table_id').val() || 0)) {
+                setTimeout(function () {
+                    if (window.PosTablesPanel) window.PosTablesPanel.open();
+                }, 400);
+            }
+            <?php endif; ?>
 
             window.getDeliveryCustomerData = function () {
                 let phone = ($('#customer_phone').val() || '').trim();
@@ -1652,6 +1533,20 @@ body {
             return false;
         }
 
+        // طلب طاولة بلا طاولة = بيانات ناقصة
+        if ($('input[name="age"]:checked').val() == '2' && !(parseInt($('#selected_table_id').val()) || 0)) {
+            $('#paymentModal').modal('hide');
+            Swal.fire({
+                icon: 'warning',
+                title: 'اختر الطاولة',
+                text: 'لا يمكن حفظ طلب نوع "طاولة" بدون تحديد طاولة',
+                confirmButtonText: 'اختيار طاولة'
+            }).then(function () {
+                if (window.PosTablesPanel) window.PosTablesPanel.open();
+            });
+            return false;
+        }
+
         if ($('input[name="age"]:checked').val() == '3' && typeof getDeliveryCustomerData === 'function') {
             const customer = getDeliveryCustomerData();
             if (!customer.phone || !customer.name || !customer.address) {
@@ -1671,16 +1566,17 @@ body {
         }
         
         // جمع بيانات الدفع
-        let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
-        let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
-        let fundId = $('#payment_fund_id').val();
-        let bankId = $('#payment_bank_id').val();
+        const isHold = (action === 'hold');
+        let paidCash = isHold ? 0 : (parseFloat($('#modal_paid_cash').val()) || 0);
+        let paidBank = isHold ? 0 : (parseFloat($('#modal_paid_bank').val()) || 0);
+        let fundId = isHold ? '' : $('#payment_fund_id').val();
+        let bankId = isHold ? '' : $('#payment_bank_id').val();
         let net = parseFloat($('#net_val').val()) || 0;
         
         // في حالة التعديل - اجمع المدفوع القديم + الجديد
         // (الباك اند يحذف سندات الدفع القديمة ويعيد إنشاءها بالمبلغ المرسل)
         let editIdForPayment = $('#edit_order_id').val();
-        if (editIdForPayment) {
+        if (!isHold && editIdForPayment) {
             let savedPaidCash = parseFloat($('#edit_paid_cash').val()) || 0;
             let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
             paidCash = savedPaidCash + paidCash;
@@ -1800,14 +1696,97 @@ body {
         submitInput.name = 'submit';
         submitInput.value = action;
         form.appendChild(submitInput);
-        
-        let saveBtn = $("button:contains('حفظ الطلب')");
-        let printBtn = $("button:contains('حفظ وطباعة')");
-        
-        if (saveBtn.length > 0) saveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
-        if (printBtn.length > 0) printBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...');
+
+        // أزرار محدّدة بالـ id: المحدّد النصي القديم لم يكن يطابق زر الحفظ فبقي مفعّلاً
+        // وأتاح ضغطاً مزدوجاً يحفظ الطلب مرتين
+        let saveBtn = $('#paymentSaveBtn');
+        let printBtn = $('#paymentPrintBtn');
+        let holdBtn = $('#holdOrderBtn');
+
+        const spinner = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+        const saveBtnHtml = saveBtn.html();
+        const printBtnHtml = printBtn.html();
+        const holdBtnHtml = holdBtn.html();
+
+        const restoreButtons = function () {
+            saveBtn.prop('disabled', false).html(saveBtnHtml);
+            printBtn.prop('disabled', false).html(printBtnHtml);
+            holdBtn.prop('disabled', false).html(holdBtnHtml);
+        };
+
+        saveBtn.prop('disabled', true).html(spinner);
+        printBtn.prop('disabled', true).html(spinner);
+        if (isHold) holdBtn.prop('disabled', true).html(spinner);
 
         $('#paymentModal').modal('hide');
+
+        const tableId = parseInt($('#selected_table_id').val()) || 0;
+        const isTableOrder = $('input[name="age"]:checked').val() == '2' && tableId > 0;
+        const finalizeInput = form.querySelector('input[name="finalize_order"]');
+        if (isHold && finalizeInput) finalizeInput.value = '0';
+        const isFinalizing = !isHold && !!(finalizeInput && finalizeInput.value === '1');
+
+        if ((isTableOrder || isFinalizing) && (action === 'save' || action === 'cash' || action === 'hold')) {
+            let ajaxInput = form.querySelector('input[name="ajax_save"]');
+            if (!ajaxInput) {
+                ajaxInput = document.createElement('input');
+                ajaxInput.type = 'hidden';
+                ajaxInput.name = 'ajax_save';
+                form.appendChild(ajaxInput);
+            }
+            ajaxInput.value = '1';
+
+            const formData = new FormData(form);
+            fetch(form.action, { method: 'POST', body: formData })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    restoreButtons();
+                    if (data.success) {
+                        let editIdInput = form.querySelector('input[name="edit_id"]');
+                        if (!editIdInput) {
+                            editIdInput = document.createElement('input');
+                            editIdInput.type = 'hidden';
+                            editIdInput.name = 'edit_id';
+                            form.appendChild(editIdInput);
+                        }
+
+                        if (data.finalized) {
+                            // الطلب أُغلق: أفرِغ السياق حتى لا يُعدّل طلب مقفول
+                            if (finalizeInput) finalizeInput.value = '0';
+                            editIdInput.value = '';
+                            $('#edit_order_id, #selected_order_id').val('');
+                            $('#selected_table_id').val(0);
+                            $('#selected_table_name').val('');
+                            $('#age1').prop('checked', true);
+                            if (typeof window.syncHoldButton === 'function') window.syncHoldButton();
+                            $('#selectedTableDisplay').hide();
+                            if (window.PosTablesPanel) PosTablesPanel.setTableBadge('');
+                            $('#itemData').empty();
+                            if (typeof window.updateItemCount === 'function') window.updateItemCount();
+                            if (typeof window.updateTotal === 'function') window.updateTotal();
+                        } else {
+                            // الطاولة ما زالت مفتوحة: أكمل الإضافة على نفس الطلب
+                            $('#edit_order_id').val(data.order_id);
+                            editIdInput.value = data.order_id;
+                        }
+
+                        Swal.fire({ icon: 'success', title: 'تم', text: data.message, timer: 1500, showConfirmButton: false });
+                        if (window.PosTablesPanel) PosTablesPanel.refresh();
+                        if (action === 'cash' && data.order_id) {
+                            window.open('print/receipt.php?id=' + data.order_id, '_blank');
+                        }
+                        setTimeout(updateShiftInfoButton, 500);
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'خطأ', text: data.message || 'فشل الحفظ' });
+                    }
+                })
+                .catch(function() {
+                    restoreButtons();
+                    Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل الاتصال بالخادم' });
+                });
+            return true;
+        }
+
         form.submit();
 
         // تحديث معلومات الشيفت بعد الحفظ

@@ -120,7 +120,7 @@ try {
         <h2>✅ تم إعداد النظام بنجاح!</h2>
         <p>يمكنك الآن البدء باستخدام النظام:</p>
         <ul>
-            <li><a href='tables.php' style='color: #007bff; font-size: 18px;'>→ افتح صفحة الطاولات</a></li>
+            <li><a href='pos_barcode.php' style='color: #007bff; font-size: 18px;'>→ افتح POS (الطاولات من زر طاولة)</a></li>
             <li><a href='pos_barcode.php' style='color: #007bff; font-size: 18px;'>→ افتح نقطة البيع</a></li>
             <li><a href='pos_tables.php' style='color: #007bff; font-size: 18px;'>→ افتح الشاشة المتكاملة</a></li>
         </ul>

@@ -330,27 +330,25 @@ switch ($q) {
                                 ?>
                             </tbody>
                         </table>
-                        <?php if($q == 'buy'): ?>
-                        <div class="d-flex flex-wrap gap-2 mt-3" style="gap: 8px;">
-                            <div class="flex-fill text-center text-white py-2 px-3" style="border-radius:8px; background:#17a2b8; min-width:120px;">
+                        <?php if($q !== 'purchase' && $q !== 'sale_legacy'): ?>
+                        <div class="d-flex flex-wrap mt-3 summary-cards" style="gap: 8px;">
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#17a2b8; min-width:130px;">
                                 <small class="d-block">إجمالي المبيعات</small>
-                                <strong id="total_sales_val">0.00</strong>
+                                <strong id="total_sales_val" style="font-size:1.15rem;">0.00</strong>
+                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="fatnet_sales">0.00</span></small>
                             </div>
-                            <div class="flex-fill text-center text-white py-2 px-3" style="border-radius:8px; background:#007bff; min-width:120px;">
-                                <small class="d-block">صافي البيع بعد الخصم</small>
-                                <strong id="fatnet_sales">0.00</strong>
-                            </div>
-                            <div class="flex-fill text-center text-white py-2 px-3" style="border-radius:8px; background:#dc3545; min-width:120px;">
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#dc3545; min-width:130px;">
                                 <small class="d-block">إجمالي المردودات</small>
-                                <strong id="total_returns_val">0.00</strong>
+                                <strong id="total_returns_val" style="font-size:1.15rem;">0.00</strong>
                             </div>
-                            <div class="flex-fill text-center text-white py-2 px-3" style="border-radius:8px; background:#28a745; min-width:120px;">
-                                <small class="d-block">الصافي بعد المردود</small>
-                                <strong id="net_after_returns">0.00</strong>
-                            </div>
-                            <div class="flex-fill text-center text-white py-2 px-3" style="border-radius:8px; background:#00796b; min-width:120px;">
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#28a745; min-width:130px;">
                                 <small class="d-block">الصافي (مبيعات - مردود)</small>
-                                <strong id="net_sales_val">0.00</strong>
+                                <strong id="net_sales_val" style="font-size:1.15rem;">0.00</strong>
+                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="net_after_returns">0.00</span></small>
+                            </div>
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#00796b; min-width:130px;">
+                                <small class="d-block">الأرباح</small>
+                                <strong id="total_profit_val" style="font-size:1.15rem;">0.00</strong>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -517,27 +515,32 @@ switch ($q) {
                     if (valEl.classList.contains("ret-value")) {
                         returns += val;
                         fatnet_returns += net;
+                        profit -= prft;
                     } else if (valEl.classList.contains("sale-value")) {
                         sales += val;
                         fatnet_sales += net;
+                        profit += prft;
                     }
                 }
                 
                 fatnet += net;
                 paid += pd;
-                profit += prft;
             });
             
             const net = sales - returns;
             const net_after_returns = fatnet_sales - fatnet_returns;
 
-            if (document.getElementById("total_sales_val")) {
-                document.getElementById("total_sales_val").textContent = sales.toFixed(2);
-                document.getElementById("fatnet_sales").textContent = fatnet_sales.toFixed(2);
-                document.getElementById("total_returns_val").textContent = returns.toFixed(2);
-                document.getElementById("net_after_returns").textContent = net_after_returns.toFixed(2);
-                document.getElementById("net_sales_val").textContent = net.toFixed(2);
-            }
+            const setVal = (id, v) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = v.toFixed(2);
+            };
+
+            setVal("total_sales_val", sales);
+            setVal("fatnet_sales", fatnet_sales);
+            setVal("total_returns_val", returns);
+            setVal("net_after_returns", net_after_returns);
+            setVal("net_sales_val", net);
+            setVal("total_profit_val", profit);
         }
 
         // Initial calculation
@@ -608,6 +611,30 @@ function printBrutal() {
 </script>
 
 <style>
+.summary-card {
+    border: 2px solid var(--c);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--c);
+    transition: background-color .15s ease-in-out, color .15s ease-in-out;
+}
+.summary-card small:not(.text-muted) {
+    color: var(--c);
+    opacity: .85;
+}
+.summary-card strong {
+    color: var(--c);
+}
+.summary-card:hover {
+    background: var(--c);
+    color: #fff;
+}
+.summary-card:hover small,
+.summary-card:hover strong {
+    color: #fff !important;
+    opacity: 1;
+}
+
 @media print {
     body * {
         visibility: hidden;
@@ -752,6 +779,10 @@ function printBrutal() {
             <div style="font-size: 12px;">الصافي النهائي</div>
             <div style="font-size: 24px; font-weight: 900;" id="brutal_net">0.00</div>
         </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">الأرباح</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_profit">0.00</div>
+        </div>
     </div>
 </div>
 
@@ -762,6 +793,7 @@ $(document).ready(function() {
         document.getElementById('brutal_sales').textContent = document.getElementById('total_sales_val')?.textContent || '0.00';
         document.getElementById('brutal_returns').textContent = document.getElementById('total_returns_val')?.textContent || '0.00';
         document.getElementById('brutal_net').textContent = document.getElementById('net_sales_val')?.textContent || '0.00';
+        document.getElementById('brutal_profit').textContent = document.getElementById('total_profit_val')?.textContent || '0.00';
     }, 1000);
 });
 </script>

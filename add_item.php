@@ -38,9 +38,6 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                     <h1 class="m-0 text-dark page-title-compact">
                         <i class="fas fa-<?= $isEdit ? 'pen' : 'plus-circle' ?> text-primary ml-1"></i>
                         <?= $isEdit ? 'تعديل صنف' : 'إضافة صنف' ?>
-                        <?php if ($isEdit): ?>
-                            <small class="text-muted">— <?= htmlspecialchars($rowitm['iname'], ENT_QUOTES, 'UTF-8') ?></small>
-                        <?php endif; ?>
                     </h1>
                 </div>
                 <div class="col-auto d-none d-lg-block">
@@ -87,7 +84,12 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                 </div>
             <?php endif; ?>
 
-            <?php if ($role['add_items'] == 1): ?>
+            <?php
+            $canUseItemForm = $isEdit
+                ? ((int) ($role['edit_items'] ?? 0) === 1 || (int) ($role['add_items'] ?? 0) === 1)
+                : ((int) ($role['add_items'] ?? 0) === 1);
+            ?>
+            <?php if ($canUseItemForm): ?>
 
                 <?php if (!$isEdit): ?>
                     <form action="do/doadd_item.php" method="post" enctype="multipart/form-data" id="item-main-form">
@@ -115,6 +117,38 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                     $newBarcode = $rowitm['barcode'];
                 } else {
                     $newBarcode = (int) $maxBarcode + 1;
+                }
+
+                $allUnits = [];
+                $resAllUnits = $conn->query('SELECT * FROM myunits ORDER BY id');
+                while ($u = $resAllUnits->fetch_assoc()) {
+                    $allUnits[] = $u;
+                }
+
+                $itemUnitRows = [];
+                if (!$isEdit) {
+                    $itemUnitRows[] = [
+                        'unit_id' => (int) ($allUnits[0]['id'] ?? 0),
+                        'u_val' => '1',
+                        'unit_barcode' => (string) $newBarcode,
+                        'cost_price' => '0',
+                        'price1' => '0',
+                        'price2' => '0',
+                        'market_price' => '0',
+                    ];
+                } else {
+                    $resunt = $conn->query('SELECT * FROM item_units WHERE item_id = ' . $editId . ' ORDER BY id');
+                    while ($rowunt = $resunt->fetch_assoc()) {
+                        $itemUnitRows[] = [
+                            'unit_id' => (int) $rowunt['unit_id'],
+                            'u_val' => (string) $rowunt['u_val'],
+                            'unit_barcode' => (string) $rowunt['unit_barcode'],
+                            'cost_price' => (string) $rowunt['cost_price'],
+                            'price1' => (string) $rowunt['price1'],
+                            'price2' => (string) $rowunt['price2'],
+                            'market_price' => (string) $rowunt['price3'],
+                        ];
+                    }
                 }
                 ?>
 
@@ -213,58 +247,35 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                     </tr>
                                 </thead>
                                 <tbody id="unitsContainer">
-                                <?php if (!$isEdit) { ?>
+                                <?php foreach ($itemUnitRows as $unitIdx => $unitRow) { ?>
                                     <tr class="urow">
                                         <td>
                                             <select name="unit_id[]" class="form-control form-control-sm">
-                                                <?php
-                                                $resunit = $conn->query('SELECT * FROM myunits');
-                                                while ($rowunit = $resunit->fetch_assoc()) { ?>
-                                                    <option value="<?= (int) $rowunit['id'] ?>"><?= htmlspecialchars($rowunit['uname'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                <?php foreach ($allUnits as $rowunit) { ?>
+                                                    <option <?= ((int) $rowunit['id'] === (int) $unitRow['unit_id']) ? 'selected' : '' ?> value="<?= (int) $rowunit['id'] ?>"><?= htmlspecialchars($rowunit['uname'], ENT_QUOTES, 'UTF-8') ?></option>
                                                 <?php } ?>
                                             </select>
                                         </td>
-                                        <td><input class="form-control form-control-sm text-center" type="number" readonly name="u_val[]" value="1" step="0.001"></td>
                                         <td>
-                                            <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                            <input class="form-control form-control-sm text-center" type="number" name="u_val[]"
+                                                   value="<?= htmlspecialchars($unitRow['u_val'], ENT_QUOTES, 'UTF-8') ?>" step="0.001"
+                                                   <?= $unitIdx === 0 ? 'readonly' : '' ?>>
+                                        </td>
+                                        <td>
+                                            <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]"
+                                                   value="<?= htmlspecialchars($unitRow['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>"
+                                                   data-id="<?= $isEdit ? $editId : 0 ?>">
                                             <small class="text-danger d-none unit-barcode-error" style="font-size:0.65rem;">مستخدم</small>
                                         </td>
-                                        <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
-                                        <td><input type="number" name="price1[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
-                                        <td><input type="number" name="price2[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
-                                        <td><input type="number" name="market_price[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
+                                        <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['cost_price'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
+                                        <td><input type="number" name="price1[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['price1'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
+                                        <td><input type="number" name="price2[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['price2'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
+                                        <td><input type="number" name="market_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['market_price'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
                                         <td class="text-center align-middle p-0">
                                             <button type="button" class="btn btn-link btn-del-row deleteRow" title="حذف"><i class="fas fa-times text-danger"></i></button>
                                         </td>
                                     </tr>
-                                <?php } else {
-                                    $resunt = $conn->query("SELECT * FROM item_units WHERE item_id = " . $editId);
-                                    while ($rowunt = $resunt->fetch_assoc()) { ?>
-                                        <tr class="urow">
-                                            <td>
-                                                <select name="unit_id[]" class="form-control form-control-sm">
-                                                    <?php
-                                                    $resunit = $conn->query('SELECT * FROM myunits');
-                                                    while ($rowunit = $resunit->fetch_assoc()) { ?>
-                                                        <option <?= ((int) $rowunit['id'] === (int) $rowunt['unit_id']) ? 'selected' : '' ?> value="<?= (int) $rowunit['id'] ?>"><?= htmlspecialchars($rowunit['uname'], ENT_QUOTES, 'UTF-8') ?></option>
-                                                    <?php } ?>
-                                                </select>
-                                            </td>
-                                            <td><input class="form-control form-control-sm text-center" type="number" name="u_val[]" value="<?= htmlspecialchars((string) $rowunt['u_val'], ENT_QUOTES, 'UTF-8') ?>" step="0.001"></td>
-                                            <td>
-                                                <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="<?= htmlspecialchars((string) $rowunt['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>" data-id="<?= $isEdit ? $editId : 0 ?>">
-                                                <small class="text-danger d-none unit-barcode-error" style="font-size:0.65rem;">مستخدم</small>
-                                            </td>
-                                            <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['cost_price'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
-                                            <td><input type="number" name="price1[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['price1'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
-                                            <td><input type="number" name="price2[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['price2'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
-                                            <td><input type="number" name="market_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars((string) $rowunt['price3'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
-                                            <td class="text-center align-middle p-0">
-                                                <button type="button" class="btn btn-link btn-del-row deleteRow" title="حذف"><i class="fas fa-times text-danger"></i></button>
-                                            </td>
-                                        </tr>
-                                    <?php }
-                                } ?>
+                                <?php } ?>
                                 </tbody>
                             </table>
                         </div>
@@ -280,7 +291,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                             <?php endif; ?>
                             <small class="text-muted d-none d-md-inline">F2</small>
                         </div>
-                        <button type="submit" class="btn btn-<?= $isEdit ? 'warning' : 'primary' ?> btn-sm btn-save-item">
+                        <button type="submit" class="btn btn-primary btn-sm btn-save-item">
                             <i class="fas fa-save ml-1"></i> <?= $isEdit ? 'تحديث' : 'حفظ' ?>
                         </button>
                     </div>

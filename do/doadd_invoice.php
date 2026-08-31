@@ -137,8 +137,49 @@ if ($order_type == 3) { // دليفري
 
 // إضافة اسم الطاولة إلى حقل info إذا كانت موجودة
 $table_name = isset($_POST['table_name']) ? htmlspecialchars(trim($_POST['table_name']), ENT_QUOTES, 'UTF-8') : '';
+$table_id = isset($_POST['table_id']) ? intval($_POST['table_id']) : 0;
+if ($table_id <= 0 && !empty($table_name)) {
+    $stmt_tid = $conn->prepare("SELECT id FROM tables WHERE tname = ? AND isdeleted = 0 LIMIT 1");
+    if ($stmt_tid) {
+        $stmt_tid->bind_param('s', $table_name);
+        $stmt_tid->execute();
+        $row_tid = $stmt_tid->get_result()->fetch_assoc();
+        if ($row_tid) {
+            $table_id = intval($row_tid['id']);
+        }
+        $stmt_tid->close();
+    }
+}
 if (!empty($table_name)) {
     $info = empty($info) ? "طاولة: $table_name" : "$info - طاولة: $table_name";
+}
+
+$ajax_save = isset($_POST['ajax_save']) && $_POST['ajax_save'] == '1';
+// إغلاق طلب الطاولة بعد الدفع (مسار الدفع الوحيد)
+$finalize_order = isset($_POST['finalize_order']) && $_POST['finalize_order'] == '1';
+
+$is_table_order = (
+    $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']
+    && $order_type == 2
+    && $table_id > 0
+);
+
+// قاعدة موحدة: الدفع = إغلاق. أي سداد يغطي صافي طلب الطاولة يغلقه فوراً،
+// فلا يبقى الطلب مفتوحاً ليُدفع مرة ثانية من مكان آخر.
+if (!$finalize_order && $is_table_order && $headnet > 0 && ($paid_cash + $paid_bank) >= $headnet) {
+    $finalize_order = true;
+}
+
+/**
+ * طلب طاولة مفتوح = طلب معلّق: تُسجَّل حركة المخزون فقط،
+ * ولا تُنشأ أي قيود محاسبية إلا عند السداد (الإيراد يُعترف به وقت الإغلاق).
+ */
+$is_pending_table_order = ($is_table_order && !$finalize_order);
+
+// تأكد من وجود عمود table_id
+$col_chk = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'table_id'");
+if ($col_chk && $col_chk->num_rows == 0) {
+    $conn->query("ALTER TABLE ot_head ADD COLUMN table_id INT DEFAULT NULL");
 }
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
@@ -166,7 +207,13 @@ if ($pro_tybe == 0 || $store_id == 0 || $acc2_id == 0 || $emp_id == 0) {
     if ($store_id == 0) $missing[] = 'المخزن';
     if ($acc2_id == 0) $missing[] = 'العميل';
     if ($emp_id == 0) $missing[] = 'الموظف';
-    die('خطأ: بيانات مطلوبة مفقودة - ' . implode(', ', $missing));
+    $err_msg = 'خطأ: بيانات مطلوبة مفقودة - ' . implode(', ', $missing);
+    if ($ajax_save) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $err_msg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    die($err_msg);
 }
 
 // التحقق من وجود أصناف
@@ -226,9 +273,42 @@ try {
     error_log('Starting database transaction');
     $conn->begin_transaction();
     error_log('Database transaction started successfully');
+
+    // طلب نوع "طاولة" لا يُحفظ بدون طاولة محددة
+    if (
+        $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']
+        && $order_type == 2
+        && $table_id <= 0
+    ) {
+        throw new Exception('لا يمكن حفظ طلب نوع "طاولة" بدون تحديد طاولة');
+    }
+
+    // الطلب المعلّق لا يقبل سداداً جزئياً: إما يبقى مفتوحاً بلا نقدية،
+    // أو يُسدَّد كاملاً فيُغلق. السداد الجزئي يتم عبر "دفع أصناف".
+    if ($is_pending_table_order && ($paid_cash + $paid_bank) > 0) {
+        throw new Exception('السداد الجزئي غير مسموح لطلب الطاولة — سدّد المبلغ كاملاً أو استخدم "دفع أصناف"');
+    }
+
+    // إغلاق بصافي صفر يُنتج قيداً بقيمة صفر ويقفل الطاولة بلا إيراد
+    if ($finalize_order && $headnet <= 0) {
+        throw new Exception('لا يمكن الدفع والإغلاق بصافي صفر — تأكد من تحميل أصناف الطلب');
+    }
     
     $edit_id = isset($_REQUEST['edit_id']) ? intval($_REQUEST['edit_id']) : 0;
-    
+
+    // الطلب المسدَّد والمغلق (pro_tybe = 2) لا يُعاد حفظه، وإلا حُذفت قيوده وأُعيد إنشاؤها
+    if ($edit_id > 0) {
+        $stmt_state = $conn->prepare("SELECT pro_tybe FROM ot_head WHERE id = ? LIMIT 1");
+        $stmt_state->bind_param('i', $edit_id);
+        $stmt_state->execute();
+        $row_state = $stmt_state->get_result()->fetch_assoc();
+        $stmt_state->close();
+
+        if ($row_state && intval($row_state['pro_tybe']) == 2) {
+            throw new Exception('هذا الطلب مسدَّد ومغلق بالفعل — لا يمكن حفظه مرة أخرى');
+        }
+    }
+
     if ($edit_id > 0) {
         // --- تحديث فاتورة موجودة (UPDATE) ---
         error_log('Updating existing order ID: ' . $edit_id);
@@ -282,6 +362,13 @@ try {
         $stmt_update_payment->bind_param("ddssi", $total_paid, $change_amount, $payment_status, $payment_notes_json, $edit_id);
         $stmt_update_payment->execute();
         $stmt_update_payment->close();
+
+        if ($table_id > 0 && $order_type == 2) {
+            $stmt_tbl = $conn->prepare("UPDATE ot_head SET table_id = ? WHERE id = ?");
+            $stmt_tbl->bind_param('ii', $table_id, $edit_id);
+            $stmt_tbl->execute();
+            $stmt_tbl->close();
+        }
         
         // حذف التفاصيل القديمة
         // Note: Assuming fat_details.pro_id links to ot_head.pro_id (invoice number), not ot_head.id (primary key)
@@ -297,18 +384,32 @@ try {
         if ($row_pro_id) {
             $original_pro_id = $row_pro_id['pro_id'];
             $conn->query("DELETE FROM fat_details WHERE fatid = '$edit_id'");
-            // Also delete related journal entries and payment operations if they exist and are linked by op_id/op2
-            // Fix: Delete journal entries first (linked by journal_id which is the FK referencing journal_heads.id)
-            $journal_query = $conn->query("SELECT id FROM journal_heads WHERE op_id = '$edit_id'");
+
+            /**
+             * حذف قيود الفاتورة القديمة قبل إعادة إنشائها.
+             * تشمل قيد الفاتورة نفسه (op_id = الفاتورة) وقيود سنداتها (op2 = الفاتورة)،
+             * لأن ترك قيود السندات يتيمة يُضخّم أرصدة الحسابات مع كل تعديل
+             * (triggers جدول journal_entries تُحدّث acc_head.balance).
+             * وتُحذف التفاصيل أولاً لأن journal_entries.journal_id مقيّد بـ journal_heads.id.
+             */
+            $journal_query = $conn->query(
+                "SELECT id FROM journal_heads WHERE op_id = '$edit_id' OR op2 = '$edit_id'"
+            );
+            $journal_ids = [];
             if ($journal_query) {
                 while ($journal_row = $journal_query->fetch_assoc()) {
-                    $jid = $journal_row['id'];
-                    $conn->query("DELETE FROM journal_entries WHERE journal_id = '$jid'");
+                    $journal_ids[] = intval($journal_row['id']);
                 }
             }
-            $conn->query("DELETE FROM journal_heads WHERE op_id = '$edit_id'");
-            // $conn->query("DELETE FROM journal_entries WHERE op_id = '$edit_id' OR op2 = '$edit_id'"); // Removed as we delete by journal_id now
-            $conn->query("DELETE FROM ot_head WHERE op2 = '$edit_id'"); // Delete payment/discount operations linked to this invoice
+
+            if (!empty($journal_ids)) {
+                $jid_list = implode(',', $journal_ids);
+                $conn->query("DELETE FROM journal_entries WHERE journal_id IN ($jid_list)");
+                $conn->query("DELETE FROM journal_heads WHERE id IN ($jid_list)");
+            }
+
+            // سندات الدفع/الخصم المرتبطة بالفاتورة
+            $conn->query("DELETE FROM ot_head WHERE op2 = '$edit_id'");
         } else {
             throw new Exception('فشل في العثور على رقم الفاتورة الأصلي للتحديث.');
         }
@@ -377,10 +478,31 @@ try {
         $stmt_update_payment_new->bind_param("ddssi", $total_paid_new, $change_amount_new, $payment_status_new, $payment_notes_json_new, $last_op);
         $stmt_update_payment_new->execute();
         $stmt_update_payment_new->close();
+
+        if ($table_id > 0 && $order_type == 2) {
+            $stmt_tbl = $conn->prepare("UPDATE ot_head SET table_id = ? WHERE id = ?");
+            $stmt_tbl->bind_param('ii', $table_id, $last_op);
+            $stmt_tbl->execute();
+            $stmt_tbl->close();
+        }
+    }
+
+    if ($table_id > 0 && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS'] && $order_type == 2) {
+        $stmt_tc = $conn->prepare("UPDATE tables SET table_case = 1 WHERE id = ?");
+        $stmt_tc->bind_param('i', $table_id);
+        $stmt_tc->execute();
+        $stmt_tc->close();
     }
     
-    // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض)
-    if (!in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    // علامة الترحيل: الطلب المعلّق غير مُرحَّل حتى السداد
+    $stmt_jf = $conn->prepare("UPDATE ot_head SET is_journal = ? WHERE id = ?");
+    $journal_flag = $is_pending_table_order ? 0 : 1;
+    $stmt_jf->bind_param('ii', $journal_flag, $last_op);
+    $stmt_jf->execute();
+    $stmt_jf->close();
+
+    // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض أو الطلبات المعلّقة)
+    if (!$is_pending_table_order && !in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         // الحصول على رقم القيد التالي
         $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
         $stmt->execute();
@@ -478,7 +600,7 @@ try {
     
     // معالجة المدفوعات إذا وجدت (فقط للفواتير الفعلية، ليس للأوامر أو العروض)
     // الدفع المقسم: كاش + صرافة
-    if (!in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    if (!$is_pending_table_order && !in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         
         // حساب المبلغ الفعلي الداخل للصندوق (المدفوع - الباقي)
         $total_paid = $paid_cash + $paid_bank;
@@ -788,6 +910,35 @@ try {
         $stmt->close();
     }
     
+    // إغلاق طلب الطاولة وتفريغها (يعمل بعد إنشاء قيود الدفع أعلاه، فلا تتكرر القيود)
+    if ($finalize_order && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
+        $stmt_fin = $conn->prepare("UPDATE ot_head SET pro_tybe = 2 WHERE id = ?");
+        $stmt_fin->bind_param('i', $last_op);
+        $stmt_fin->execute();
+        $stmt_fin->close();
+
+        if ($table_id > 0) {
+            $stmt_rem = $conn->prepare(
+                "SELECT COUNT(*) AS c FROM ot_head
+                 WHERE table_id = ? AND pro_tybe = 9 AND isdeleted = 0 AND id <> ?"
+            );
+            $stmt_rem->bind_param('ii', $table_id, $last_op);
+            $stmt_rem->execute();
+            $remaining_open = intval($stmt_rem->get_result()->fetch_assoc()['c'] ?? 0);
+            $stmt_rem->close();
+
+            if ($remaining_open === 0) {
+                $stmt_free = $conn->prepare(
+                    "UPDATE tables SET is_merged = 0, parent_table_id = NULL, table_case = 0
+                     WHERE id = ? OR parent_table_id = ?"
+                );
+                $stmt_free->bind_param('ii', $table_id, $table_id);
+                $stmt_free->execute();
+                $stmt_free->close();
+            }
+        }
+    }
+
     // إتمام المعاملة
     error_log('Committing transaction');
     $conn->commit();
@@ -838,7 +989,28 @@ try {
     error_log('ERROR trace: ' . $e->getTraceAsString());
     $conn->rollback();
     error_log('خطأ في معالجة الفاتورة: ' . $e->getMessage());
+    if (!empty($ajax_save)) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     die('حدث خطأ أثناء معالجة الفاتورة: ' . $e->getMessage());
+}
+
+if (!empty($ajax_save)) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => true,
+        'order_id' => $last_op,
+        'table_id' => $table_id,
+        'pro_id' => $pro_id,
+        'finalized' => $finalize_order,
+        'pending' => $is_pending_table_order,
+        'message' => $finalize_order
+            ? 'تم الدفع وإغلاق الطاولة'
+            : ($is_pending_table_order ? 'تم الحفظ كطلب معلّق — بلا قيود حتى السداد' : 'تم الحفظ بنجاح'),
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 // إعادة التوجيه حسب نوع العملية
@@ -885,14 +1057,6 @@ if ($submit == 'print') {
     // For save action, redirect back to POS for POS invoices, or to sales page for others
     if ($pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
         error_log('Redirecting to POS page');
-        
-        // التحقق من وجود table_id للعودة إلى صفحة الطاولات
-        $table_id_redirect = isset($_POST['table_id']) ? intval($_POST['table_id']) : 0;
-        if ($table_id_redirect > 0) {
-            error_log('Redirecting to tables page with table_id: ' . $table_id_redirect);
-            header("Location: ../tables.php?table_id=" . $table_id_redirect);
-            exit;
-        }
         
         // التحقق من طلب القفل بعد الحفظ
         if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {

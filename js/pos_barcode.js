@@ -374,6 +374,7 @@ $(document).ready(function() {
         $('#total').val(total.toFixed(2));
         $('#total_display').text(total.toFixed(2) + ' ج.م');
         $('#total_display_btn').text(total.toFixed(2) + ' ج.م');
+        $('#hold_total_display').text(total.toFixed(2) + ' ج.م');
         $('#modal_total').text(total.toFixed(2) + ' ج.م');
         
         let discount = parseFloat($('#discount').val()) || 0;
@@ -687,7 +688,19 @@ $(document).ready(function() {
         clearAllItems();
     };
     
-    function loadExistingOrder(orderId, tableName) {
+    /** يضبط قيمة القائمة فقط إن وُجد خيار مطابق، وإلا يترك الاختيار الافتراضي */
+    function setSelectIfOptionExists(selector, value) {
+        if (!value || value == '0') return;
+        const $sel = $(selector);
+        if (!$sel.length) return;
+        if ($sel.find('option[value="' + value + '"]').length) {
+            $sel.val(String(value));
+        } else {
+            console.warn('⚠️ تم تجاهل قيمة غير موجودة في ' + selector + ':', value);
+        }
+    }
+
+    function loadExistingOrder(orderId, tableName, onDone) {
         console.log('🔄 Loading existing order:', orderId, 'Table:', tableName);
         
         $.ajax({
@@ -720,7 +733,10 @@ $(document).ready(function() {
                     if (response.order) {
                         $('#discount').val(response.order.discount || 0);
                         if (response.order.emp_id) $('select[name="emp_id"]').val(response.order.emp_id);
-                        if (response.order.acc1) $('select[name="acc2_id"]').val(response.order.acc1);
+
+                        // لا تُفرَّغ قائمة مطلوبة بقيمة غير موجودة فيها — يُترك الافتراضي كما هو
+                        setSelectIfOptionExists('select[name="acc2_id"]', response.order.customer_id);
+                        setSelectIfOptionExists('select[name="fund_id"]', response.order.fund_id);
                          // Set hidden edit_order_id
                          $('#edit_order_id').val(response.order.id);
                          
@@ -737,12 +753,14 @@ $(document).ready(function() {
                     
                     updateItemCount();
                     updateTotal();
-                    
+
                     // Show success message briefly
                     const alertDiv = $('<div class="alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;">تم تحميل الطلب بنجاح</div>');
                     $('body').append(alertDiv);
                     setTimeout(() => alertDiv.fadeOut(() => alertDiv.remove()), 2000);
-                    
+
+                    if (typeof onDone === 'function') onDone(true);
+
                 } else {
                     console.error('❌ Load failed:', response.error);
                     alert('خطأ في تحميل طلب الطاولة: ' + (response.error || 'غير معروف'));
@@ -755,6 +773,12 @@ $(document).ready(function() {
             }
         });
     }
+
+    // إتاحة الدوال للوحة الطاولات (pos_tables_modal.js)
+    window.addItemToOrder = addItemToOrder;
+    window.updateItemCount = updateItemCount;
+    window.updateTotal = updateTotal;
+    window.loadExistingOrder = loadExistingOrder;
 
     // ========================================
     // Modal Calculations

@@ -70,9 +70,12 @@ try {
         'order' => [
             'id' => $order['id'],
             'emp_id' => $order['emp_id'],
+            // في فواتير المبيعات/الكاشير: acc1 = الصندوق، acc2 = العميل
             'acc1' => $order['acc1'],
+            'acc2' => $order['acc2'],
+            'customer_id' => $order['acc2'],
             'store_id' => $order['store_id'],
-            'fund_id' => $order['acc_fund'],
+            'fund_id' => !empty($order['acc_fund']) ? $order['acc_fund'] : $order['acc1'],
             'total' => floatval($order['fat_total']),
             'discount' => floatval($order['fat_disc']),
             'net' => floatval($order['fat_net']),

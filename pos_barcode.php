@@ -161,8 +161,19 @@ if(isset($_GET['edit']) || $add_item_mode){
     $rowed = $result->fetch_assoc();
     $stmt->close();
 }
-// استخراج table_id من GET للعودة إلى صفحة الطاولات (في حالة إضافة صنف من tables.php)
+// table_id من GET (وضع إضافة صنف)
 $table_id_from_get = isset($_GET['table_id']) ? intval($_GET['table_id']) : 0;
+$table_name_from_get = '';
+if ($table_id_from_get > 0) {
+    $tn_stmt = $conn->prepare("SELECT tname FROM tables WHERE id = ? AND isdeleted = 0 LIMIT 1");
+    if ($tn_stmt) {
+        $tn_stmt->bind_param('i', $table_id_from_get);
+        $tn_stmt->execute();
+        $tn_row = $tn_stmt->get_result()->fetch_assoc();
+        if ($tn_row) $table_name_from_get = $tn_row['tname'];
+        $tn_stmt->close();
+    }
+}
 
 // استخراج بيانات الدفع من الطلب عند التعديل
 $edit_paid_cash = 0;
@@ -190,6 +201,9 @@ if(isset($_SESSION['success_message'])){
     $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']);
 }
+
+// تفضيل الكاشير: الطاولة كنوع طلب افتراضي (يُقرأ هنا لأن الـ navbar يُطبع قبل pos_content.php)
+$default_table_pref = isset($_COOKIE['pos_default_table']) && $_COOKIE['pos_default_table'] === '1';
 ?>
 
 <!-- Assets (CSS & JS) -->
@@ -224,7 +238,33 @@ if(isset($_SESSION['success_message'])){
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto"></ul>
+            <ul class="navbar-nav me-auto align-items-center">
+                <li class="nav-item d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-light btn-sm fw-bold text-primary" id="navTablesPanelBtn"
+                        onclick="window.PosTablesPanel && PosTablesPanel.open()" title="إدارة الطاولات">
+                        <i class="fas fa-th-large me-1"></i>إدارة الطاولات
+                    </button>
+
+                    <!-- flex بدل .form-check لأن Bootstrap المحمّل نسخة LTR والصفحة RTL -->
+                    <label class="d-flex align-items-center gap-1 mb-0 text-white small"
+                        style="cursor: pointer; white-space: nowrap;"
+                        title="يجعل نوع الطلب طاولة هو الافتراضي">
+                        <input class="form-check-input mt-0" type="checkbox" id="defaultTableChk"
+                            <?= $default_table_pref ? 'checked' : '' ?>>
+                        افتراضي
+                    </label>
+
+                    <span id="navSelectedTable"
+                        class="badge bg-warning text-dark d-none d-flex align-items-center gap-2 py-2 px-3"
+                        style="font-size: 0.9rem;">
+                        <i class="fas fa-chair"></i>
+                        <strong id="navSelectedTableName"></strong>
+                        <a href="#" id="navClearTable" class="text-dark text-decoration-none" title="إلغاء اختيار الطاولة">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </span>
+                </li>
+            </ul>
 
             <ul class="navbar-nav">
                 <li class="nav-item">

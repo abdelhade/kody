@@ -12,11 +12,10 @@
         }
     });
     
-    // القفل عند الضغط على أي رابط غير tables.php و pos_barcode.php
+    // القفل عند الضغط على أي رابط غير pos_barcode.php
     document.addEventListener('click', function(e) {
         const link = e.target.closest('a');
         if (link && link.href && 
-            !link.href.includes('tables.php') && 
             !link.href.includes('pos_barcode.php') && 
             link.target !== '_blank') {
             // قفل الجلسة قبل المغادرة
