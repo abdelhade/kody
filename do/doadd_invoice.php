@@ -383,33 +383,7 @@ try {
 
         if ($row_pro_id) {
             $original_pro_id = $row_pro_id['pro_id'];
-            $conn->query("DELETE FROM fat_details WHERE fatid = '$edit_id'");
-
-            /**
-             * حذف قيود الفاتورة القديمة قبل إعادة إنشائها.
-             * تشمل قيد الفاتورة نفسه (op_id = الفاتورة) وقيود سنداتها (op2 = الفاتورة)،
-             * لأن ترك قيود السندات يتيمة يُضخّم أرصدة الحسابات مع كل تعديل
-             * (triggers جدول journal_entries تُحدّث acc_head.balance).
-             * وتُحذف التفاصيل أولاً لأن journal_entries.journal_id مقيّد بـ journal_heads.id.
-             */
-            $journal_query = $conn->query(
-                "SELECT id FROM journal_heads WHERE op_id = '$edit_id' OR op2 = '$edit_id'"
-            );
-            $journal_ids = [];
-            if ($journal_query) {
-                while ($journal_row = $journal_query->fetch_assoc()) {
-                    $journal_ids[] = intval($journal_row['id']);
-                }
-            }
-
-            if (!empty($journal_ids)) {
-                $jid_list = implode(',', $journal_ids);
-                $conn->query("DELETE FROM journal_entries WHERE journal_id IN ($jid_list)");
-                $conn->query("DELETE FROM journal_heads WHERE id IN ($jid_list)");
-            }
-
-            // سندات الدفع/الخصم المرتبطة بالفاتورة
-            $conn->query("DELETE FROM ot_head WHERE op2 = '$edit_id'");
+            InvoiceProcessor::purgeRelatedForRewrite($conn, (int) $edit_id);
         } else {
             throw new Exception('فشل في العثور على رقم الفاتورة الأصلي للتحديث.');
         }
@@ -898,19 +872,7 @@ try {
     }
     // تحديث إجمالي الأرباح للمبيعات
     if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
-        $stmt = $conn->prepare("SELECT SUM(profit) AS tprofit FROM fat_details WHERE fatid = ?");
-        $stmt->bind_param("i", $last_op);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $rowprofit = $result->fetch_assoc();
-        $ot_profit = $rowprofit['tprofit'] ?? 0;
-        $stmt->close();
-        
-        // تحديث رقم الربح في رأس الفاتورة
-        $stmt = $conn->prepare("UPDATE ot_head SET profit = ? WHERE id = ?");
-        $stmt->bind_param("ss", $ot_profit, $last_op);
-        $stmt->execute();
-        $stmt->close();
+        InvoiceProcessor::recalcProfit($conn, (int) $last_op);
     }
     
     // إغلاق طلب الطاولة وتفريغها (يعمل بعد إنشاء قيود الدفع أعلاه، فلا تتكرر القيود)

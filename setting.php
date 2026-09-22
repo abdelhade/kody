@@ -143,6 +143,9 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                   <a class="nav-link py-3 px-4 d-flex align-items-center" id="print-tab" data-toggle="pill" href="#tab-print" role="tab" aria-controls="tab-print" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-print ml-3" style="font-size: 1.1rem; width: 20px;"></i> إعدادات الطباعة
                   </a>
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="database-tab" data-toggle="pill" href="#tab-database" role="tab" aria-controls="tab-database" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fas fa-database ml-3" style="font-size: 1.1rem; width: 20px;"></i> قاعدة البيانات
+                  </a>
                 </div>
               </div>
             </div>
@@ -340,6 +343,49 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                           </select>
                         </div>
                       </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="ui_font">نوع الخط</label>
+                          <?php
+                            $fontCookie = isset($_COOKIE['ui_font']) ? preg_replace('/[^a-z0-9_]/', '', (string) $_COOKIE['ui_font']) : 'playpen';
+                            $fontOptions = [
+                              'playpen' => 'Playpen Sans Arabic (الافتراضي)',
+                              'arabic_script' => 'Arabic Type Script (Amiri)',
+                              'cairo' => 'Cairo',
+                              'tajawal' => 'Tajawal',
+                              'source_sans' => 'Source Sans Pro',
+                              'tahoma' => 'Tahoma',
+                              'segoe' => 'Segoe UI',
+                              'arial' => 'Arial',
+                            ];
+                            if ($fontCookie === '' || !isset($fontOptions[$fontCookie])) {
+                              $fontCookie = 'playpen';
+                            }
+                          ?>
+                          <select class="form-control" id="ui_font" name="ui_font">
+                            <?php
+                              $fontFamilyPreview = [
+                                'playpen' => "'Playpen Sans Arabic', cursive",
+                                'arabic_script' => "'Amiri', 'Traditional Arabic', serif",
+                                'cairo' => "'Cairo', sans-serif",
+                                'tajawal' => "'Tajawal', sans-serif",
+                                'source_sans' => "'Source Sans Pro', sans-serif",
+                                'tahoma' => 'Tahoma, sans-serif',
+                                'segoe' => "'Segoe UI', sans-serif",
+                                'arial' => 'Arial, sans-serif',
+                              ];
+                              foreach ($fontOptions as $fontKey => $fontLabel):
+                            ?>
+                              <option value="<?= htmlspecialchars($fontKey, ENT_QUOTES, 'UTF-8') ?>"
+                                      <?= ($fontCookie === $fontKey) ? 'selected' : '' ?>
+                                      style="font-family: <?= htmlspecialchars($fontFamilyPreview[$fontKey], ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars($fontLabel, ENT_QUOTES, 'UTF-8') ?>
+                              </option>
+                            <?php endforeach; ?>
+                          </select>
+                          <small class="form-text text-muted">يُحفظ على هذا الجهاز في الكوكيز ويُطبَّق فوراً على الواجهة.</small>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -496,6 +542,87 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                 </div>
               </div>
 
+              <!-- 7. قاعدة البيانات -->
+              <div class="tab-pane fade" id="tab-database" role="tabpanel" aria-labelledby="database-tab">
+                <div class="card card-outline card-success shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-success font-weight-bold mb-0"><i class="fas fa-database ml-2"></i> تحديث وإدارة قاعدة البيانات</h3>
+                  </div>
+                  <div class="card-body">
+                    <p class="text-muted mb-3">يشغّل التحديثات الناقصة من مجلد <code>update/</code> مرة واحدة لكل إصدار عبر <code>schema_migrations</code>.</p>
+                    <div id="db-migration-status" class="alert alert-secondary mb-3">جاري تحميل حالة التحديثات...</div>
+                    <div class="d-flex flex-wrap gap-2" style="gap:10px;">
+                      <button type="button" class="btn btn-success" id="btnRunMigrations">
+                        <i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات
+                      </button>
+                      <a href="pre_start.php" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-plus-circle ml-1"></i> إنشاء / استعادة قاعدة
+                      </a>
+                    </div>
+                    <ul id="db-pending-list" class="mt-3 mb-0 small text-muted"></ul>
+                  </div>
+                </div>
+
+                <div class="card card-outline card-primary shadow-sm border-0" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-primary font-weight-bold mb-0"><i class="fas fa-calendar-alt ml-2"></i> المدد وقواعد البيانات المرتبطة</h3>
+                  </div>
+                  <div class="card-body">
+                    <p class="text-muted small mb-3">
+                      كل مدة = قاعدة بيانات مستقلة. قفل المدة ينشئ قاعدة جديدة وينقل الأرصدة الافتتاحية (حسابات + مخزون) بدون حركات الفترة المقفلة.
+                    </p>
+
+                    <div class="form-group">
+                      <label for="periodDbSelect">القاعدة / المدة النشطة</label>
+                      <div class="input-group">
+                        <select id="periodDbSelect" class="form-control"></select>
+                        <div class="input-group-append">
+                          <button type="button" class="btn btn-primary" id="btnSwitchPeriod">
+                            <i class="fas fa-exchange-alt ml-1"></i> تبديل
+                          </button>
+                        </div>
+                      </div>
+                      <small class="text-muted" id="periodCurrentLabel">جاري التحميل...</small>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <h6 class="font-weight-bold text-danger"><i class="fas fa-lock ml-1"></i> قفل المدة الحالية</h6>
+                        <p class="small text-muted">يُقفل العمل على المدة الحالية ويُفتح مدة جديدة بأرصدة افتتاحية من الإقفال.</p>
+                        <div class="form-group">
+                          <label>اسم القاعدة الجديدة</label>
+                          <input type="text" class="form-control" id="closeDbName" placeholder="مثال: kody_2026" pattern="[A-Za-z0-9_]{2,64}">
+                        </div>
+                        <div class="form-group">
+                          <label>وصف المدة</label>
+                          <input type="text" class="form-control" id="closeDbLabel" placeholder="مثال: مدة 2026">
+                        </div>
+                        <button type="button" class="btn btn-danger btn-block" id="btnClosePeriod">
+                          <i class="fas fa-lock ml-1"></i> قفل المدة ونقل الأرصدة
+                        </button>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <h6 class="font-weight-bold text-info"><i class="fas fa-plus-circle ml-1"></i> قاعدة بيانات جديدة (فارغة)</h6>
+                        <p class="small text-muted">ينشئ قاعدة من الهيكل الافتراضي بدون نقل أرصدة، ويضيفها لمجموعة المدد.</p>
+                        <div class="form-group">
+                          <label>اسم القاعدة</label>
+                          <input type="text" class="form-control" id="newDbName" placeholder="مثال: kody_demo" pattern="[A-Za-z0-9_]{2,64}">
+                        </div>
+                        <div class="form-group">
+                          <label>الوصف</label>
+                          <input type="text" class="form-control" id="newDbLabel" placeholder="مثال: تجريبي">
+                        </div>
+                        <button type="button" class="btn btn-info btn-block" id="btnCreatePeriodDb">
+                          <i class="fas fa-database ml-1"></i> إنشاء قاعدة جديدة
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <!-- زر حفظ التغييرات أسفل التبويبات -->
@@ -526,34 +653,249 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
 // Preview اللوجو لما المستخدم يختار صورة
 document.addEventListener('DOMContentLoaded', function () {
   var logoInput = document.getElementById('company_logo');
-  if (!logoInput) return;
+  if (logoInput) {
+    logoInput.addEventListener('change', function () {
+      var file = this.files[0];
+      if (!file) return;
 
-  logoInput.addEventListener('change', function () {
-    var file = this.files[0];
-    if (!file) return;
+      // تحديث اسم الملف في الـ label
+      var label = this.nextElementSibling;
+      if (label) label.textContent = file.name;
 
-    // تحديث اسم الملف في الـ label
-    var label = this.nextElementSibling;
-    if (label) label.textContent = file.name;
+      // عرض preview
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var preview = document.getElementById('logo-preview');
+        var placeholder = document.getElementById('logo-preview-placeholder');
+        if (preview) {
+          preview.src = e.target.result;
+        } else if (placeholder) {
+          var img = document.createElement('img');
+          img.id = 'logo-preview';
+          img.src = e.target.result;
+          img.alt = 'لوجو الشركة';
+          img.style.cssText = 'height:70px;width:auto;max-width:200px;border-radius:8px;border:2px solid #dee2e6;object-fit:contain;background:#f8f9fa;padding:4px;';
+          placeholder.replaceWith(img);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
-    // عرض preview
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      var preview = document.getElementById('logo-preview');
-      var placeholder = document.getElementById('logo-preview-placeholder');
-      if (preview) {
-        preview.src = e.target.result;
-      } else if (placeholder) {
-        var img = document.createElement('img');
-        img.id = 'logo-preview';
-        img.src = e.target.result;
-        img.alt = 'لوجو الشركة';
-        img.style.cssText = 'height:70px;width:auto;max-width:200px;border-radius:8px;border:2px solid #dee2e6;object-fit:contain;background:#f8f9fa;padding:4px;';
-        placeholder.replaceWith(img);
-      }
+  // نوع الخط — يُحفظ في الكوكيز ويُطبَّق فوراً
+  var fontSelect = document.getElementById('ui_font');
+  if (fontSelect) {
+    var fontMap = {
+      playpen: "'Playpen Sans Arabic', cursive",
+      arabic_script: "'Amiri', 'Traditional Arabic', 'Arabic Typesetting', serif",
+      cairo: "'Cairo', 'Segoe UI', Tahoma, sans-serif",
+      tajawal: "'Tajawal', 'Segoe UI', Tahoma, sans-serif",
+      source_sans: "'Source Sans Pro', 'Segoe UI', Tahoma, sans-serif",
+      tahoma: "Tahoma, 'Segoe UI', Arial, sans-serif",
+      segoe: "'Segoe UI', Tahoma, Arial, sans-serif",
+      arial: "Arial, Tahoma, sans-serif"
     };
-    reader.readAsDataURL(file);
-  });
+
+    function setUiFontCookie(key) {
+      var exp = new Date();
+      exp.setFullYear(exp.getFullYear() + 1);
+      document.cookie = 'ui_font=' + encodeURIComponent(key) + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+    }
+
+    function ensureFontStylesheet(key) {
+      var id = 'ui-font-extra-' + key;
+      if (document.getElementById(id)) return;
+      var href = '';
+      if (key === 'arabic_script') {
+        href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap';
+      } else if (key === 'cairo') {
+        href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap';
+      } else if (key === 'tajawal') {
+        href = 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap';
+      } else if (key === 'source_sans') {
+        href = 'assets/libs/source-sans-pro-local.css';
+      }
+      if (!href) return;
+      var link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+
+    function applyUiFont(key) {
+      if (!fontMap[key]) key = 'playpen';
+      ensureFontStylesheet(key);
+      document.documentElement.style.setProperty('--app-font-family', fontMap[key]);
+      if (document.body) {
+        document.body.style.fontFamily = fontMap[key];
+        document.body.setAttribute('data-ui-font', key);
+      }
+      setUiFontCookie(key);
+    }
+
+    fontSelect.addEventListener('change', function () {
+      applyUiFont(this.value);
+    });
+
+    // تأكيد الحفظ عند إرسال نموذج الإعدادات أيضاً
+    var settingsForm = document.getElementById('settings-main-form');
+    if (settingsForm) {
+      settingsForm.addEventListener('submit', function () {
+        applyUiFont(fontSelect.value);
+      });
+    }
+  }
+
+  // ─── Database migrations panel ───
+  function renderMigrationStatus(status) {
+    var box = document.getElementById('db-migration-status');
+    var list = document.getElementById('db-pending-list');
+    if (!box) return;
+    if (!status) {
+      box.className = 'alert alert-warning mb-3';
+      box.textContent = 'تعذر قراءة حالة التحديثات';
+      return;
+    }
+    if (status.pending > 0) {
+      box.className = 'alert alert-warning mb-3';
+      box.innerHTML = 'يوجد <strong>' + status.pending + '</strong> تحديث ناقص من أصل ' + status.total
+        + (status.latest_applied ? ' — آخر مطبّق: <code>' + status.latest_applied + '</code>' : '');
+    } else {
+      box.className = 'alert alert-success mb-3';
+      box.innerHTML = 'قاعدة البيانات محدّثة (' + status.applied + '/' + status.total + ')'
+        + (status.latest_applied ? ' — <code>' + status.latest_applied + '</code>' : '');
+    }
+    if (list) {
+      list.innerHTML = '';
+      (status.pending_list || []).forEach(function (name) {
+        var li = document.createElement('li');
+        li.textContent = name;
+        list.appendChild(li);
+      });
+    }
+  }
+
+  function loadMigrationStatus() {
+    fetch('ajax/run_migrations.php?action=status', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.success) renderMigrationStatus(data.status);
+        else renderMigrationStatus(null);
+      })
+      .catch(function () { renderMigrationStatus(null); });
+  }
+
+  var btnMig = document.getElementById('btnRunMigrations');
+  if (btnMig) {
+    loadMigrationStatus();
+    btnMig.addEventListener('click', function () {
+      if (!confirm('تطبيق التحديثات الناقصة على قاعدة البيانات؟')) return;
+      btnMig.disabled = true;
+      btnMig.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري التحديث...';
+      var fd = new FormData();
+      fd.append('action', 'run');
+      fetch('ajax/run_migrations.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          alert(data.message || (data.success ? 'تم' : 'فشل'));
+          if (data.status) renderMigrationStatus(data.status);
+          else loadMigrationStatus();
+        })
+        .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+        .finally(function () {
+          btnMig.disabled = false;
+          btnMig.innerHTML = '<i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات';
+        });
+    });
+  }
+
+  // ─── Periods / multi-DB ───
+  function loadPeriods() {
+    var sel = document.getElementById('periodDbSelect');
+    var label = document.getElementById('periodCurrentLabel');
+    if (!sel) return;
+    fetch('ajax/period_ops.php?action=list', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) {
+          if (label) label.textContent = data.message || 'تعذر التحميل';
+          return;
+        }
+        sel.innerHTML = '';
+        (data.databases || []).forEach(function (db) {
+          var opt = document.createElement('option');
+          opt.value = db.name;
+          var tag = db.closed_at ? ' [مقفلة]' : '';
+          var miss = db.exists === false ? ' (غير موجودة)' : '';
+          opt.textContent = (db.label || db.name) + ' — ' + db.name + tag + miss;
+          if (db.is_current) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        if (label) {
+          label.textContent = 'النشطة الآن: ' + (data.current || '—');
+        }
+      })
+      .catch(function () {
+        if (label) label.textContent = 'تعذر الاتصال';
+      });
+  }
+
+  function postPeriod(action, fields, btn) {
+    if (btn) btn.disabled = true;
+    var fd = new FormData();
+    fd.append('action', action);
+    Object.keys(fields || {}).forEach(function (k) { fd.append(k, fields[k]); });
+    return fetch('ajax/period_ops.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        alert(data.message || (data.success ? 'تم' : 'فشل'));
+        if (data.success && (action === 'switch' || action === 'close')) {
+          location.reload();
+          return data;
+        }
+        loadPeriods();
+        return data;
+      })
+      .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+      .finally(function () { if (btn) btn.disabled = false; });
+  }
+
+  var btnSwitch = document.getElementById('btnSwitchPeriod');
+  if (btnSwitch) {
+    loadPeriods();
+    btnSwitch.addEventListener('click', function () {
+      var sel = document.getElementById('periodDbSelect');
+      if (!sel || !sel.value) return;
+      if (!confirm('التبديل إلى القاعدة: ' + sel.value + '؟')) return;
+      postPeriod('switch', { db_name: sel.value }, btnSwitch);
+    });
+  }
+
+  var btnClose = document.getElementById('btnClosePeriod');
+  if (btnClose) {
+    btnClose.addEventListener('click', function () {
+      var name = (document.getElementById('closeDbName') || {}).value || '';
+      var label = (document.getElementById('closeDbLabel') || {}).value || '';
+      name = name.trim();
+      if (!name) { alert('أدخل اسم القاعدة الجديدة'); return; }
+      if (!confirm('تأكيد قفل المدة الحالية وإنشاء "' + name + '" بالأرصدة الافتتاحية؟\nلن تُنقل حركات الفترة القديمة.')) return;
+      if (!confirm('تأكيد نهائي: العملية لا يمكن التراجع عنها بسهولة.')) return;
+      postPeriod('close', { db_name: name, label: label }, btnClose);
+    });
+  }
+
+  var btnCreateDb = document.getElementById('btnCreatePeriodDb');
+  if (btnCreateDb) {
+    btnCreateDb.addEventListener('click', function () {
+      var name = (document.getElementById('newDbName') || {}).value || '';
+      var label = (document.getElementById('newDbLabel') || {}).value || '';
+      name = name.trim();
+      if (!name) { alert('أدخل اسم القاعدة'); return; }
+      if (!confirm('إنشاء قاعدة جديدة فارغة باسم ' + name + '؟')) return;
+      postPeriod('create', { db_name: name, label: label }, btnCreateDb);
+    });
+  }
 });
 </script>
 

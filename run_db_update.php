@@ -1,6 +1,6 @@
 <?php
 /**
- * Database update runner — migrations 009–012 + disc_pct
+ * Database update runner (uses MigrationRunner)
  * Open: run_db_update.php?confirm=yes
  */
 
@@ -9,195 +9,32 @@ if (!isset($_GET['confirm']) || $_GET['confirm'] !== 'yes') {
 }
 
 include('includes/connect.php');
-
-function run_migration_query(mysqli $conn, string $query): array
-{
-    try {
-        if ($conn->query($query)) {
-            return ['ok' => true, 'skipped' => false, 'error' => ''];
-        }
-        $error = $conn->error;
-    } catch (mysqli_sql_exception $e) {
-        $error = $e->getMessage();
-    }
-
-    if (
-        stripos($error, 'Duplicate column') !== false ||
-        stripos($error, 'already exists') !== false
-    ) {
-        return ['ok' => true, 'skipped' => true, 'error' => $error];
-    }
-
-    return ['ok' => false, 'skipped' => false, 'error' => $error];
-}
+require_once __DIR__ . '/includes/MigrationRunner.php';
 
 header('Content-Type: text/html; charset=utf-8');
 echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>DB Update</title></head><body style="font-family:sans-serif;padding:20px;">';
 echo '<h2>تحديث قاعدة البيانات</h2>';
 
-$files = [
-    'update/009_add_calc_type_to_employees.sql' => 'نوع حساب الراتب (employees.calc_type)',
-    'update/010_add_payroll_calcs.sql'          => 'حسابات الرواتب + أعمدة attdocs',
-    'update/011_add_single_fp_rule_to_shifts.sql' => 'قاعدة البصمة الواحدة (shifts)',
-    'update/012_add_commission_to_settings.sql'   => 'عمولة الموظفين والمستخدمين (settings)',
-];
+$runner = new MigrationRunner($conn);
+$statusBefore = $runner->status();
+echo '<p>ناقص قبل التشغيل: <strong>' . (int) $statusBefore['pending'] . '</strong> / ' . (int) $statusBefore['total'] . '</p>';
 
-$success = 0;
-$errors  = 0;
+$result = $runner->runPending();
 
-foreach ($files as $file => $label) {
-    echo "<h3>{$label}</h3><p><code>{$file}</code></p>";
-
-    if (!file_exists($file)) {
-        echo "<p style='color:red'>❌ الملف غير موجود</p>";
-        $errors++;
-        continue;
-    }
-
-    $sql      = file_get_contents($file);
-    // إزالة الأسطر التي تبدأ بتعليقات
-    $lines = explode("\n", $sql);
-    $clean_lines = array_filter($lines, function($line) {
-        return strpos(ltrim($line), '--') !== 0;
-    });
-    $clean_sql = implode("\n", $clean_lines);
-    
-    $queries  = array_filter(array_map('trim', explode(';', $clean_sql)));
-    $executed = 0;
-    $failed   = 0;
-
-    foreach ($queries as $query) {
-        if ($query === '') {
-            continue;
-        }
-
-        $result = run_migration_query($conn, $query);
-        if ($result['ok']) {
-            if ($result['skipped']) {
-                echo "<p style='color:orange'>⚠️ موجود مسبقاً: " . htmlspecialchars($result['error']) . "</p>";
-            }
-            $executed++;
-        } else {
-            echo "<p style='color:red'>❌ " . htmlspecialchars($result['error']) . "</p>";
-            $failed++;
-        }
-    }
-
-    if ($failed === 0) {
-        echo "<p style='color:green'>✅ تم ({$executed} استعلام)</p>";
-        $success++;
+foreach ($result['results'] as $row) {
+    $ver = htmlspecialchars($row['version'] ?? '');
+    if (!empty($row['ok'])) {
+        $msg = !empty($row['skipped']) ? 'موجود مسبقاً (تخطي)' : ('تم — ' . (int) ($row['executed'] ?? 0) . ' استعلام');
+        echo "<p style='color:green'>✅ <code>{$ver}</code> — {$msg}</p>";
     } else {
-        $errors++;
+        echo "<p style='color:red'>❌ <code>{$ver}</code> — " . htmlspecialchars($row['error'] ?? '') . '</p>';
     }
 }
 
-echo '<h3>خصم النسبة على بنود الفاتورة (fat_details.disc_pct)</h3>';
-$disc_result = run_migration_query(
-    $conn,
-    "ALTER TABLE fat_details ADD COLUMN disc_pct DECIMAL(10,2) DEFAULT 0.00 AFTER discount"
-);
-if ($disc_result['ok']) {
-    if ($disc_result['skipped']) {
-        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
-    } else {
-        echo "<p style='color:green'>✅ تم</p>";
-    }
-    $success++;
-} else {
-    echo "<p style='color:red'>❌ " . htmlspecialchars($disc_result['error']) . "</p>";
-    $errors++;
-}
-
-echo '<h3>تجاهل دقائق التبكير (shifts.ignore_early_in)</h3>';
-$ignore_early_in_result = run_migration_query(
-    $conn,
-    "ALTER TABLE shifts ADD COLUMN ignore_early_in TINYINT(1) DEFAULT 0 AFTER earlylimit"
-);
-if ($ignore_early_in_result['ok']) {
-    if ($ignore_early_in_result['skipped']) {
-        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
-    } else {
-        echo "<p style='color:green'>✅ تم</p>";
-    }
-    $success++;
-} else {
-    echo "<p style='color:red'>❌ " . htmlspecialchars($ignore_early_in_result['error']) . "</p>";
-    $errors++;
-}
-
-echo '<h3>تجاهل دقائق التأخير في الانصراف (shifts.ignore_late_out)</h3>';
-$ignore_late_out_result = run_migration_query(
-    $conn,
-    "ALTER TABLE shifts ADD COLUMN ignore_late_out TINYINT(1) DEFAULT 0 AFTER ignore_early_in"
-);
-if ($ignore_late_out_result['ok']) {
-    if ($ignore_late_out_result['skipped']) {
-        echo "<p style='color:orange'>⚠️ العمود موجود مسبقاً</p>";
-    } else {
-        echo "<p style='color:green'>✅ تم</p>";
-    }
-    $success++;
-} else {
-    echo "<p style='color:red'>❌ " . htmlspecialchars($ignore_late_out_result['error']) . "</p>";
-    $errors++;
-}
-
-echo '<h3>أعمدة دمج الطاولات (tables.parent_table_id & tables.is_merged)</h3>';
-$parent_table_result = run_migration_query(
-    $conn,
-    "ALTER TABLE tables ADD COLUMN parent_table_id INT DEFAULT NULL COMMENT 'الطاولة الرئيسية في حالة الدمج'"
-);
-$is_merged_result = run_migration_query(
-    $conn,
-    "ALTER TABLE tables ADD COLUMN is_merged TINYINT(1) DEFAULT 0 COMMENT 'هل الطاولة مدمجة'"
-);
-
-if ($parent_table_result['ok'] && $is_merged_result['ok']) {
-    if ($parent_table_result['skipped'] && $is_merged_result['skipped']) {
-        echo "<p style='color:orange'>⚠️ الأعمدة موجودة مسبقاً</p>";
-    } else {
-        echo "<p style='color:green'>✅ تم تحديث أعمدة دمج الطاولات بنجاح</p>";
-    }
-    $success++;
-} else {
-    echo "<p style='color:red'>❌ " . htmlspecialchars($parent_table_result['error'] . ' ' . $is_merged_result['error']) . "</p>";
-    $errors++;
-}
-
-// ─── visits table: missing columns ───────────────────────────────────────────
-echo '<h3>أعمدة جدول الزيارات (visits)</h3>';
-
-$visits_cols = [
-    'gender'     => "ALTER TABLE `visits` ADD COLUMN `gender` enum('male','female') NOT NULL DEFAULT 'male' AFTER `client`",
-    'age_group'  => "ALTER TABLE `visits` ADD COLUMN `age_group` enum('under18','18_25','25_40','over40') NOT NULL DEFAULT 'under18' AFTER `gender`",
-    'mode'       => "ALTER TABLE `visits` ADD COLUMN `mode` enum('solo','group') NOT NULL DEFAULT 'solo' AFTER `age_group`",
-    'start_time' => "ALTER TABLE `visits` ADD COLUMN `start_time` time NOT NULL DEFAULT '00:00:00' AFTER `mode`",
-    'end_time'   => "ALTER TABLE `visits` ADD COLUMN `end_time` time NOT NULL DEFAULT '00:00:00' AFTER `start_time`",
-    'order_value'=> "ALTER TABLE `visits` ADD COLUMN `order_value` enum('under60','over60') NOT NULL DEFAULT 'under60' AFTER `end_time`",
-    'type'       => "ALTER TABLE `visits` ADD COLUMN `type` enum('new','returning','regular') NOT NULL DEFAULT 'new' AFTER `order_value`",
-    'created_by' => "ALTER TABLE `visits` ADD COLUMN `created_by` int(10) unsigned NOT NULL DEFAULT 0 AFTER `type`",
-    'created_at' => "ALTER TABLE `visits` ADD COLUMN `created_at` datetime NOT NULL DEFAULT current_timestamp() AFTER `created_by`",
-];
-
-$visits_ok = true;
-foreach ($visits_cols as $col => $sql) {
-    $r = run_migration_query($conn, $sql);
-    if ($r['ok']) {
-        if ($r['skipped']) {
-            echo "<p style='color:orange'>⚠️ العمود <code>{$col}</code> موجود مسبقاً</p>";
-        } else {
-            echo "<p style='color:green'>✅ تم إضافة <code>{$col}</code></p>";
-        }
-    } else {
-        echo "<p style='color:red'>❌ <code>{$col}</code>: " . htmlspecialchars($r['error']) . "</p>";
-        $visits_ok = false;
-    }
-}
-if ($visits_ok) { $success++; } else { $errors++; }
-// ─────────────────────────────────────────────────────────────────────────────
-
-echo "<hr><p><strong>النتيجة:</strong> {$success} ناجح، {$errors} فاشل</p>";
-echo "<p><a href='dashboard.php'>الرئيسية</a></p>";
+$status = $runner->status();
+echo '<hr><p><strong>' . htmlspecialchars($result['message']) . '</strong></p>';
+echo '<p>الحالة الآن: مطبّق ' . (int) $status['applied'] . ' / ' . (int) $status['total'] . '</p>';
+echo "<p><a href='dashboard.php'>الرئيسية</a> | <a href='setting.php'>الإعدادات</a></p>";
 echo '</body></html>';
 
 $conn->close();

@@ -340,39 +340,13 @@ try {
         }
         
     } elseif ($paid == 0 && $rowpaid !== null) {
-        // حذف الدفعة
-        $stmt = $conn->prepare("UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE op2 = ? AND pro_tybe = ?");
-        $stmt->bind_param("ii", $ot_id, $paid_type);
-        $stmt->execute();
-        $stmt->close();
-        
-        $stmt = $conn->prepare("UPDATE journal_heads SET isdeleted = 1 WHERE op2 = ?");
-        $stmt->bind_param("i", $ot_id);
-        $stmt->execute();
-        $stmt->close();
-        
-        $stmt = $conn->prepare("SELECT id FROM journal_heads WHERE op2 = ?");
-        $stmt->bind_param("i", $ot_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-        
-        if ($row) {
-            $paid_jr = $row['id'];
-            
-            $stmt = $conn->prepare("UPDATE journal_entries SET isdeleted = 1 WHERE journal_id = ?");
-            $stmt->bind_param("i", $paid_jr);
-            $stmt->execute();
-            $stmt->close();
-        }
+        // حذف الدفعة (موحّد عبر InvoiceProcessor)
+        InvoiceProcessor::softDeleteLinkedPayments($conn, $ot_id, (int) $paid_type);
+        InvoiceProcessor::softDeleteJournalsByOp2($conn, $ot_id);
     }
 
-    // تحديث تفاصيل الفاتورة
-    $stmt = $conn->prepare("UPDATE fat_details SET isdeleted = 1 WHERE pro_id = ?");
-    $stmt->bind_param("i", $ot_id);
-    $stmt->execute();
-    $stmt->close();
+    // تحديث تفاصيل الفاتورة — soft delete ثم إعادة الإدراج
+    InvoiceProcessor::softDeleteDetails($conn, $ot_id);
 
     // معالجة تفاصيل الفواتير باستخدام Prepared Statements
     if (isset($_POST['itmname'], $_POST['itmqty'], $_POST['itmprice'], $_POST['itmdisc'])) {
@@ -509,19 +483,7 @@ try {
     
     // تحديث إجمالي الأرباح للمبيعات
     if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
-        $stmt = $conn->prepare("SELECT SUM(profit) AS tprofit FROM fat_details WHERE fatid = ?");
-        $stmt->bind_param("i", $ot_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $rowprofit = $result->fetch_assoc();
-        $ot_profit = $rowprofit['tprofit'] ?? 0;
-        $stmt->close();
-        
-        // تحديث رقم الربح في رأس الفاتورة
-        $stmt = $conn->prepare("UPDATE ot_head SET profit = ?, crtime = crtime WHERE id = ?");
-        $stmt->bind_param("di", $ot_profit, $ot_id);
-        $stmt->execute();
-        $stmt->close();
+        InvoiceProcessor::recalcProfit($conn, (int) $ot_id);
     }
     
     // إتمام المعاملة

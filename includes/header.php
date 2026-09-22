@@ -47,6 +47,22 @@ if ($bodyColor === '' || !preg_match('/^#[0-9A-Fa-f]{3,8}$/', $bodyColor)) {
     $bodyColor = '#f4f4f5';
 }
 
+$uiFontPresets = [
+    'playpen' => "'Playpen Sans Arabic', cursive",
+    'arabic_script' => "'Amiri', 'Traditional Arabic', 'Arabic Typesetting', serif",
+    'cairo' => "'Cairo', 'Segoe UI', Tahoma, sans-serif",
+    'tajawal' => "'Tajawal', 'Segoe UI', Tahoma, sans-serif",
+    'source_sans' => "'Source Sans Pro', 'Segoe UI', Tahoma, sans-serif",
+    'tahoma' => "Tahoma, 'Segoe UI', Arial, sans-serif",
+    'segoe' => "'Segoe UI', Tahoma, Arial, sans-serif",
+    'arial' => "Arial, Tahoma, sans-serif",
+];
+$uiFontKey = isset($_COOKIE['ui_font']) ? preg_replace('/[^a-z0-9_]/', '', (string) $_COOKIE['ui_font']) : 'playpen';
+if ($uiFontKey === '' || !isset($uiFontPresets[$uiFontKey])) {
+    $uiFontKey = 'playpen';
+}
+$uiFontFamily = $uiFontPresets[$uiFontKey];
+
 $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
     ? (string) filemtime(__DIR__ . '/../dist/css/custom.css')
     : '1';
@@ -78,8 +94,20 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="plugins/hadi/google.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="assets/libs/playpen-sans-arabic-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
+  <?php if ($uiFontKey === 'source_sans'): ?>
+  <link rel="stylesheet" href="assets/libs/source-sans-pro-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
+  <?php elseif ($uiFontKey === 'arabic_script'): ?>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+  <?php elseif ($uiFontKey === 'cairo'): ?>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
+  <?php elseif ($uiFontKey === 'tajawal'): ?>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+  <?php endif; ?>
   <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="dist/css/custom.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
+  <style>
+    :root { --app-font-family: <?= $uiFontFamily ?>; }
+  </style>
   <link rel="stylesheet" href="plugins/select2/css/select2.min.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="dist/css/hadianime.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
@@ -189,5 +217,5 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <script src="dist/js/js.js"></script>
 </head>
 
-<body class="hold-transition sidebar-mini sidebar-collapse layout-fixed font-semibold" style="font-family: 'Playpen Sans Arabic', cursive;">
+<body class="hold-transition sidebar-mini sidebar-collapse layout-fixed font-semibold" style="font-family: <?= htmlspecialchars($uiFontFamily, ENT_QUOTES, 'UTF-8') ?>;" data-ui-font="<?= htmlspecialchars($uiFontKey, ENT_QUOTES, 'UTF-8') ?>">
   <div class="wrapper">

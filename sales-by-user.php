@@ -19,16 +19,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' || isset($_GET['search_filter'])) {
 // Retrieve the commission percentage from settings
 $user_commission_pct = floatval($rowstg['user_commission'] ?? 0);
 
-// Query to get sales by user
-$sql = "SELECT h.user, u.uname as user_name, SUM(h.pro_value) as total_sales
+// Query to get sales and returns by user in one go
+// Returns: 11 = مردود مبيعات, 10 + info مردود مبيعات = مرتجع POS الملابس
+$sql = "SELECT
+            h.user,
+            u.uname AS user_name,
+            COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) AS total_sales,
+            COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 THEN h.pro_value
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
+                ELSE 0 END), 0) AS total_returns
         FROM ot_head h
         LEFT JOIN users u ON h.user = u.id
-        WHERE (h.pro_tybe = 9 OR h.pro_tybe = 3)
+        WHERE (
+                h.pro_tybe IN (3, 9, 11)
+                OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%')
+              )
           AND (h.isdeleted != 1 OR h.isdeleted IS NULL)
           AND h.pro_date BETWEEN ? AND ?
           AND h.user > 0
         GROUP BY h.user, u.uname
-        ORDER BY total_sales DESC";
+        ORDER BY (COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) - COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 THEN h.pro_value
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
+                ELSE 0 END), 0)) DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ss", $from, $to);
@@ -36,18 +50,25 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 $data = [];
-$grand_total_sales = 0;
+$grand_total_sales   = 0;
+$grand_total_returns = 0;
+$grand_total_net     = 0;
 $grand_total_commission = 0;
 
 while ($row = $res->fetch_assoc()) {
-    $total_sales = floatval($row['total_sales']);
-    $commission_val = ($total_sales * $user_commission_pct) / 100;
-    
+    $total_sales   = floatval($row['total_sales']);
+    $total_returns = floatval($row['total_returns']);
+    $net_sales     = $total_sales - $total_returns;
+    $commission_val = ($net_sales * $user_commission_pct) / 100;
+
+    $row['net_sales']      = $net_sales;
     $row['commission_pct'] = $user_commission_pct;
     $row['commission_val'] = $commission_val;
-    
+
     $data[] = $row;
-    $grand_total_sales += $total_sales;
+    $grand_total_sales   += $total_sales;
+    $grand_total_returns += $total_returns;
+    $grand_total_net     += $net_sales;
     $grand_total_commission += $commission_val;
 }
 $stmt->close();
@@ -108,16 +129,28 @@ $stmt->close();
 
             <!-- Summary Statistics Cards -->
             <div class="row mb-4">
-                <div class="col-md-6 col-12">
+                <div class="col-md-3 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-info p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
-                        <h5>إجمالي مبيعات المستخدمين</h5>
-                        <h3><?= number_format($grand_total_sales, 2) ?> ج.م</h3>
+                        <h6>إجمالي المبيعات</h6>
+                        <h4><?= number_format($grand_total_sales, 2) ?> ج.م</h4>
                     </div>
                 </div>
-                <div class="col-md-6 col-12">
+                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                    <div class="small-box bg-danger p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
+                        <h6>إجمالي المردودات</h6>
+                        <h4><?= number_format($grand_total_returns, 2) ?> ج.م</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                    <div class="small-box bg-primary p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
+                        <h6>صافي المبيعات</h6>
+                        <h4><?= number_format($grand_total_net, 2) ?> ج.م</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-success p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
-                        <h5>إجمالي عمولات المستخدمين</h5>
-                        <h3><?= number_format($grand_total_commission, 2) ?> ج.م</h3>
+                        <h6>إجمالي العمولات</h6>
+                        <h4><?= number_format($grand_total_commission, 2) ?> ج.م</h4>
                     </div>
                 </div>
             </div>
@@ -129,11 +162,13 @@ $stmt->close();
                         <table class="table table-hover table-striped table-bordered mb-0">
                             <thead class="thead-dark text-center">
                                 <tr>
-                                    <th style="width: 80px;">م</th>
+                                    <th style="width: 50px;">م</th>
                                     <th>المستخدم</th>
                                     <th>إجمالي المبيعات</th>
+                                    <th class="text-danger">مردود المبيعات</th>
+                                    <th class="text-primary">صافي المبيعات</th>
                                     <th>العمولة (%)</th>
-                                    <th>النسبة (قيمة العمولة)</th>
+                                    <th class="text-success">قيمة العمولة</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -142,14 +177,22 @@ $stmt->close();
                                         <tr class="text-center">
                                             <td><?= $x ?></td>
                                             <td class="text-right font-weight-bold"><?= htmlspecialchars($row['user_name']) ?></td>
-                                            <td class="font-weight-bold text-primary"><?= number_format($row['total_sales'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold text-info"><?= number_format($row['total_sales'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold text-danger">
+                                                <?php if ($row['total_returns'] > 0): ?>
+                                                    <span>− <?= number_format($row['total_returns'], 2) ?> ج.م</span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">—</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="font-weight-bold text-primary"><?= number_format($row['net_sales'], 2) ?> ج.م</td>
                                             <td><span class="badge badge-info font-weight-normal"><?= number_format($row['commission_pct'], 2) ?> %</span></td>
                                             <td class="font-weight-bold text-success"><?= number_format($row['commission_val'], 2) ?> ج.م</td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted p-4">
+                                        <td colspan="7" class="text-center text-muted p-4">
                                             <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                                             لا توجد بيانات مبيعات للمستخدمين خلال هذه الفترة.
                                         </td>
@@ -160,7 +203,9 @@ $stmt->close();
                                 <tfoot class="bg-light font-weight-bold text-center">
                                     <tr>
                                         <td colspan="2" class="text-right">الإجمالي الكلي:</td>
-                                        <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_sales, 2) ?> ج.م</td>
+                                        <td class="text-info"><?= number_format($grand_total_sales, 2) ?> ج.م</td>
+                                        <td class="text-danger">− <?= number_format($grand_total_returns, 2) ?> ج.م</td>
+                                        <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_net, 2) ?> ج.م</td>
                                         <td>-</td>
                                         <td class="text-success" style="font-size: 1.1rem;"><?= number_format($grand_total_commission, 2) ?> ج.م</td>
                                     </tr>

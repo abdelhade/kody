@@ -60,7 +60,7 @@ class InvoiceDetails extends InvoiceElementBase
     {
         // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
         $showProfit = ((int) $this->invoiceType === 4);
-        $searchColspan = $showProfit ? 9 : 7;
+        $searchColspan = $showProfit ? 11 : 9;
         ob_start();
         ?>
         <div class="row">
@@ -97,19 +97,22 @@ class InvoiceDetails extends InvoiceElementBase
                                     </div>
                                 </td>
                                 <td colspan="<?php echo $searchColspan; ?>" style="position:relative; overflow:visible;">
-                                    <div style="display:flex; gap:6px;">
+                                    <div style="display:flex; gap:10px; align-items:center;">
                                         <input type="text"
                                                id="itemSearchInput"
                                                class="form-control form-control-sm frst"
                                                placeholder="ابحث عن صنف..."
                                                autocomplete="off"
                                                style="width:260px;">
-                                        <input type="text"
-                                               id="barcodeSearchInput"
-                                               class="form-control form-control-sm scnd"
-                                               placeholder="باركود"
-                                               autocomplete="off"
-                                               style="width:130px;">
+                                        <div class="barcode-scan-box">
+                                            <i class="fas fa-barcode"></i>
+                                            <input type="text"
+                                                   id="barcodeSearchInput"
+                                                   class="form-control form-control-sm scnd"
+                                                   placeholder="امسح الباركود أو اكتبه ثم Enter"
+                                                   autocomplete="off">
+                                        </div>
+                                        <span id="barcodeStatus" class="barcode-status"></span>
                                     </div>
                                     <input type="hidden" id="selectedItemId">
                                     <!-- searchResults خارج الجدول - بيتحرك بـ JS -->
@@ -138,6 +141,47 @@ class InvoiceDetails extends InvoiceElementBase
     #searchResults .search-result-item.search-result-active {
         background: #dbeafe !important;
     }
+
+    .barcode-scan-box {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        border: 2px solid #4B5694;
+        border-radius: 6px;
+        background: #f8fafc;
+    }
+    .barcode-scan-box i {
+        color: #4B5694;
+        font-size: 1.1rem;
+    }
+    .barcode-scan-box input {
+        width: 240px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        font-weight: 600;
+        letter-spacing: .5px;
+    }
+    .barcode-scan-box input:focus {
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        outline: 0;
+    }
+    .barcode-scan-box.is-error {
+        border-color: #dc2626;
+        background: #fef2f2;
+    }
+    .barcode-scan-box.is-ok {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    .barcode-status {
+        font-size: .8rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
 </style>
 <script>
 window.SHOW_PROFIT_COLS = <?php echo $showProfit ? 'true' : 'false'; ?>;
@@ -146,8 +190,9 @@ $(document).ready(function() {
     const searchResults = document.getElementById('searchResults');
     const selectedItemId = document.getElementById('selectedItemId');
     const priceInput = document.getElementById('itmprice');
+    const barcodeInput = document.getElementById('barcodeSearchInput');
 
-    if (!searchInput || !searchResults) return;
+    if (!searchInput || !searchResults || !barcodeInput) return;
 
     // تحديث موضع الـ dropdown تحت الـ input
     function positionDropdown() {
@@ -310,8 +355,71 @@ $(document).ready(function() {
         }
     });
 
+    // مسح صف الإدخال (مطلوب عند دمج الكمية بدل إضافة صف جديد)
+    function clearInputRow() {
+        searchInput.value = '';
+        selectedItemId.value = '';
+        $('#itmprice').val('0');
+        $('#itmqty').val('1');
+        $('#itmdisc').val('0');
+        $('#itmval').val('0');
+        $('#itmsprice_stg').val('0');
+        $('#inputUnitSelect').empty().append('<option value="">اختر وحدة</option>');
+    }
+
+    // البحث عن صف موجود بنفس الصنف ونفس الوحدة
+    function findExistingRow(itemId, unitVal) {
+        var found = null;
+        $('#itmrow tr').each(function() {
+            var $row = $(this);
+            if (String($row.find('input[name="itmname[]"]').val()) !== String(itemId)) return;
+            var rowUnit = parseFloat($row.find('select[name="u_val[]"]').val()) || 1;
+            if (Math.abs(rowUnit - unitVal) > 0.0001) return;
+            found = $row;
+            return false;
+        });
+        return found;
+    }
+
+    // إضافة صف جديد أو زيادة كمية الصف الموجود
+    function addRowOrMerge(merge) {
+        var itemId  = selectedItemId.value;
+        var unitVal = parseFloat($('#inputUnitSelect').val()) || 1;
+
+        if (merge && itemId) {
+            var $row = findExistingRow(itemId, unitVal);
+            if ($row) {
+                var $qty = $row.find('.itmqty');
+                $qty.val((parseFloat($qty.val()) || 0) + 1).trigger('input');
+                $row.addClass('table-warning');
+                setTimeout(function() { $row.removeClass('table-warning'); }, 700);
+                clearInputRow();
+                return true;
+            }
+        }
+
+        $('#addRow').click();
+        return false;
+    }
+
+    // اختيار الوحدة المطابقة للباركود الممسوح (قيم الوحدات عشرية مثل "12.000")
+    function selectUnitByValue(unitSelect, unitVal) {
+        if (unitVal === null || unitVal === undefined) return false;
+        var matched = false;
+        unitSelect.find('option').each(function() {
+            if (Math.abs((parseFloat(this.value) || 0) - unitVal) < 0.0001) {
+                unitSelect.val(this.value).trigger('change');
+                matched = true;
+                return false;
+            }
+        });
+        return matched;
+    }
+
     // اختيار صنف
-    function selectItem(item) {
+    // opts: { unitVal, merge, focusBarcode }
+    function selectItem(item, opts) {
+        opts = opts || {};
         selectedItem = item;
         searchInput.value = item.name;
         selectedItemId.value = item.id;
@@ -385,16 +493,27 @@ $(document).ready(function() {
                     unitSelect.append('<option value="">لا توجد وحدات</option>');
                 }
 
-                // أضف الصف فوراً وانتقل لحقل الكمية في الصف الجديد
-                $('#addRow').click();
+                // لو الباركود يخص وحدة معينة، اخترها قبل إضافة الصف
+                selectUnitByValue(unitSelect, opts.unitVal);
+
+                var merged = addRowOrMerge(opts.merge);
                 setTimeout(function() {
-                    $('#itmrow tr:last .itmqty').focus().select();
+                    if (opts.focusBarcode) {
+                        barcodeInput.focus();
+                        barcodeInput.select();
+                    } else if (!merged) {
+                        $('#itmrow tr:last .itmqty').focus().select();
+                    }
                 }, 50);
             },
             error: function() {
-                $('#addRow').click();
+                addRowOrMerge(opts.merge);
                 setTimeout(function() {
-                    $('#itmrow tr:last .itmqty').focus().select();
+                    if (opts.focusBarcode) {
+                        barcodeInput.focus();
+                    } else {
+                        $('#itmrow tr:last .itmqty').focus().select();
+                    }
                 }, 50);
             }
         });
@@ -414,59 +533,90 @@ $(document).ready(function() {
         }
     });
 
-    // الباركود - يختار الصنف فوراً بمجرد وقف الكتابة (debounce 400ms)
-    const barcodeInput = document.getElementById('barcodeSearchInput');
+    // ===== الإدخال بالباركود =====
+    const barcodeBox    = barcodeInput.closest('.barcode-scan-box');
+    const barcodeStatus = document.getElementById('barcodeStatus');
     let barcodeTimeout;
+    let barcodeBusy = false;
 
-    barcodeInput.addEventListener('input', function() {
+    function setBarcodeState(state, message) {
+        if (barcodeBox) {
+            barcodeBox.classList.toggle('is-error', state === 'error');
+            barcodeBox.classList.toggle('is-ok', state === 'ok');
+        }
+        if (barcodeStatus) {
+            barcodeStatus.textContent = message || '';
+            barcodeStatus.style.color = state === 'error' ? '#dc2626'
+                                      : state === 'ok'    ? '#16a34a'
+                                      : '#6b7280';
+        }
+    }
+
+    function resetBarcodeState(delay) {
+        setTimeout(function() { setBarcodeState('', ''); }, delay || 1500);
+    }
+
+    function processBarcode() {
         clearTimeout(barcodeTimeout);
-        const barcode = this.value.trim();
+        const barcode = barcodeInput.value.trim();
         if (!barcode) return;
 
-        barcodeTimeout = setTimeout(() => {
-            fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(barcode)}&limit=1&by=barcode`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.items.length > 0) {
-                        const item = data.items[0];
-                        barcodeInput.value = '';
-                        selectItem({ id: item.id, name: item.iname, price: item.price1, barcode: item.barcode });
-                    } else {
-                        barcodeInput.style.borderColor = '#ef4444';
-                        setTimeout(() => barcodeInput.style.borderColor = '', 1000);
-                    }
-                })
-                .catch(() => {
-                    barcodeInput.style.borderColor = '#ef4444';
-                    setTimeout(() => barcodeInput.style.borderColor = '', 1000);
-                });
-        }, 400);
-    });
+        // مسح سريع متتالٍ: أجّل الكود الحالي بدل إسقاطه
+        if (barcodeBusy) {
+            barcodeTimeout = setTimeout(processBarcode, 150);
+            return;
+        }
 
-    // Enter على الباركود كمان يشتغل
-    barcodeInput.addEventListener('keydown', function(e) {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-        clearTimeout(barcodeTimeout);
-        const barcode = this.value.trim();
-        if (!barcode) return;
+        barcodeBusy = true;
+        setBarcodeState('', 'جاري البحث...');
 
-        fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(barcode)}&limit=1&by=barcode`)
+        fetch('ajax/lookup_barcode.php?barcode=' + encodeURIComponent(barcode))
             .then(r => r.json())
             .then(data => {
-                if (data.success && data.items.length > 0) {
-                    const item = data.items[0];
+                if (data.success) {
                     barcodeInput.value = '';
-                    selectItem({ id: item.id, name: item.iname, price: item.price1, barcode: item.barcode });
+                    setBarcodeState('ok', '✓ ' + data.item.iname);
+                    resetBarcodeState();
+                    selectItem(
+                        { id: data.item.id, name: data.item.iname, price: data.item.price1, barcode: data.item.barcode },
+                        { unitVal: data.item.u_val, merge: true, focusBarcode: true }
+                    );
                 } else {
-                    barcodeInput.style.borderColor = '#ef4444';
-                    setTimeout(() => barcodeInput.style.borderColor = '', 1000);
+                    setBarcodeState('error', 'باركود غير موجود: ' + barcode);
+                    barcodeInput.select();
+                    resetBarcodeState(2500);
                 }
             })
             .catch(() => {
-                barcodeInput.style.borderColor = '#ef4444';
-                setTimeout(() => barcodeInput.style.borderColor = '', 1000);
-            });
+                setBarcodeState('error', 'خطأ في الاتصال');
+                resetBarcodeState(2500);
+            })
+            .finally(() => { barcodeBusy = false; });
+    }
+
+    // قارئ الباركود بيكتب بسرعة ثم يرسل Enter - وندعم كمان الكتابة اليدوية بـ debounce
+    barcodeInput.addEventListener('input', function() {
+        clearTimeout(barcodeTimeout);
+        if (!this.value.trim()) {
+            setBarcodeState('', '');
+            return;
+        }
+        barcodeTimeout = setTimeout(processBarcode, 400);
+    });
+
+    barcodeInput.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        e.stopPropagation();
+        processBarcode();
+    });
+
+    // F2 للانتقال السريع لحقل الباركود
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'F2') return;
+        e.preventDefault();
+        barcodeInput.focus();
+        barcodeInput.select();
     });
 }); // end document.ready
 </script>

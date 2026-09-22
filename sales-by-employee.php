@@ -20,19 +20,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' || isset($_GET['search_filter'])) {
 $emp_commission_pct = floatval($rowstg['emp_commission'] ?? 0);
 
 // Query to get sales and returns by employee in one go
+// Returns: 11 = مردود مبيعات, 10 + info مردود مبيعات = مرتجع POS الملابس
 $sql = "SELECT
             h.emp_id,
             a.aname AS emp_name,
             COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) AS total_sales,
-            COALESCE(SUM(CASE WHEN h.pro_tybe = 11       THEN h.pro_value ELSE 0 END), 0) AS total_returns
+            COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 THEN h.pro_value
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
+                ELSE 0 END), 0) AS total_returns
         FROM ot_head h
         LEFT JOIN acc_head a ON h.emp_id = a.id
-        WHERE h.pro_tybe IN (3, 9, 11)
+        WHERE (
+                h.pro_tybe IN (3, 9, 11)
+                OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%')
+              )
           AND (h.isdeleted != 1 OR h.isdeleted IS NULL)
           AND h.pro_date BETWEEN ? AND ?
           AND h.emp_id > 0
         GROUP BY h.emp_id, a.aname
-        ORDER BY (COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN h.pro_tybe = 11 THEN h.pro_value ELSE 0 END), 0)) DESC";
+        ORDER BY (COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) - COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 THEN h.pro_value
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
+                ELSE 0 END), 0)) DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ss", $from, $to);

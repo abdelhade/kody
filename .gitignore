@@ -4,3 +4,4 @@ composer.phar
 .phpunit.result.cache
 .DS_Store
 .env
+config/db_registry.json

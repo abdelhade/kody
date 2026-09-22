@@ -255,11 +255,15 @@ if (!$conn->connect_error) {
                         <i class="fas fa-arrow-right"></i>
                         الدخول للنظام
                     </a>
+                    <button class="btn btn-outline" id="btnMigrate" type="button">
+                        <i class="fas fa-sync-alt"></i>
+                        تحديث قاعدة البيانات (Migrations)
+                    </button>
                 </div>
             <?php else: ?>
                 <div class="status-badge">
                     <i class="fas fa-exclamation-triangle"></i>
-                    قاعدة البيانات (kody2) غير موجودة
+                    قاعدة البيانات (<?= htmlspecialchars($dbname) ?>) غير موجودة
                 </div>
                 <div class="actions">
                     <button class="btn btn-primary" id="btnCreateNew">
@@ -393,6 +397,30 @@ if (!$conn->connect_error) {
                         hideLoading();
                         showAlert('خطأ!', 'حدث خطأ غير متوقع أثناء الرفع', 'error');
                     }
+                });
+            });
+
+            $('#btnMigrate').on('click', function() {
+                showAlert('تحديث القاعدة؟', 'سيتم تطبيق كل الـ migrations الناقصة.', 'warning', function() {
+                    showLoading('جاري تطبيق التحديثات...');
+                    $.ajax({
+                        url: 'ajax/db_setup.php',
+                        type: 'POST',
+                        data: { action: 'migrate' },
+                        dataType: 'json',
+                        success: function(response) {
+                            hideLoading();
+                            if (response.success) {
+                                showAlert('نجاح!', response.message, 'success');
+                            } else {
+                                showAlert('خطأ!', response.message, 'error');
+                            }
+                        },
+                        error: function() {
+                            hideLoading();
+                            showAlert('خطأ!', 'حدث خطأ غير متوقع في الخادم', 'error');
+                        }
+                    });
                 });
             });
         });

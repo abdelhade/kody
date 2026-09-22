@@ -11,6 +11,20 @@ $dbuser = env('DB_USER', 'root');
 $dbpass = env('DB_PASS', '');
 $dbname = env('DB_NAME', 'kody2');
 
+// تعدد المدد: جلسة المستخدم لها أولوية على .env
+if (!empty($_SESSION['active_dbname']) && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) $_SESSION['active_dbname'])) {
+    $dbname = (string) $_SESSION['active_dbname'];
+} else {
+    $registryFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'db_registry.json';
+    if (is_readable($registryFile)) {
+        $reg = json_decode((string) file_get_contents($registryFile), true);
+        if (is_array($reg) && !empty($reg['current']) && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) $reg['current'])) {
+            $dbname = (string) $reg['current'];
+            $_SESSION['active_dbname'] = $dbname;
+        }
+    }
+}
+
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($dbhost, $dbuser, $dbpass);
 
