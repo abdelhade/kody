@@ -132,354 +132,65 @@ try {
     $fat_disc_per = isset($_POST['headdisc_pct']) ? floatval($_POST['headdisc_pct']) : (($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0);
     $fat_plus_per = ($headtotal > 0 && $headplus > 0) ? number_format($headplus/$headtotal*100, 2) : 0;
     
-    // تحديث رأس الفاتورة باستخدام Prepared Statement
-    $stmt = $conn->prepare(
-        "UPDATE ot_head SET 
-            info = ?, pro_date = ?, accural_date = ?, pro_serial = ?, store_id = ?, 
-            emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, fat_cost = 0, 
-            fat_total = ?, fat_disc = ?, fat_disc_per = ?, fat_plus = ?, fat_plus_per = ?, 
-            fat_net = ?, acc_fund = ?, crtime = crtime
-         WHERE id = ?"
-    );
-    
-    if (!$stmt) {
-        throw new Exception('فشل في تحضير استعلام تحديث الفاتورة: ' . $conn->error);
-    }
-    
-    $stmt->bind_param(
-        "ssssiiiidddddddii",
-        $info, $pro_date, $accural_date, $pro_serial, $store_id, $emp_id,
-        $accounts['acc1'], $accounts['acc2'], $headtotal, $headtotal, 
-        $headdisc, $fat_disc_per, $headplus, $fat_plus_per, $headnet, $fund_id, $ot_id
-    );
-    
-    if (!$stmt->execute()) {
-        throw new Exception('فشل في تحديث الفاتورة: ' . $stmt->error);
-    }
-    $stmt->close();
+    // تحديث رأس الفاتورة
+    InvoiceProcessor::updateHeader($conn, (int) $ot_id, [
+        'info' => $info,
+        'pro_date' => $pro_date,
+        'accural_date' => $accural_date,
+        'pro_serial' => $pro_serial,
+        'store_id' => $store_id,
+        'emp_id' => $emp_id,
+        'acc1' => $accounts['acc1'],
+        'acc2' => $accounts['acc2'],
+        'headtotal' => $headtotal,
+        'headdisc' => $headdisc,
+        'fat_disc_per' => $fat_disc_per,
+        'headplus' => $headplus,
+        'fat_plus_per' => $fat_plus_per,
+        'headnet' => $headnet,
+        'fund_id' => $fund_id,
+    ]);
+
     // تحديث القيود المحاسبية لجميع الفواتير الفعلية (ليس الأوامر أو العروض)
     if(!in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
-        // تحديث رأس القيد
-        $stmt = $conn->prepare(
-            "UPDATE journal_heads SET total = ?, jdate = ?, details = ? WHERE op_id = ?"
+        InvoiceProcessor::updateMainJournal(
+            $conn,
+            (int) $ot_id,
+            (int) $pro_tybe,
+            $config,
+            $accounts,
+            (int) $acc2_id,
+            (float) $headnet,
+            (string) $pro_date
         );
-        
-        $details = $config['note'] . " _ " . $ot_id;
-        $stmt->bind_param("dssi", $headnet, $pro_date, $details, $ot_id);
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في تحديث رأس القيد: ' . $stmt->error);
-        }
-        $stmt->close();
-        
-        // الحصول على معرف القيد
-        $stmt = $conn->prepare("SELECT id FROM journal_heads WHERE op_id = ? AND isdeleted = 0");
-        $stmt->bind_param("i", $ot_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row_journal = $result->fetch_assoc();
-        $stmt->close();
-        
-        if ($row_journal) {
-            $op_journal = $row_journal['id'];
-            
-            // تحديد الحسابات حسب نوع الفاتورة للقيد
-            if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS']])) {
-                // فاتورة مبيعات: مدين العميل / دائن المبيعات
-                $debit_account = $acc2_id;
-                $credit_account = 91;
-            } else {
-                // فواتير أخرى (مشتريات، مردودات)
-                $debit_account = $accounts['acc1'];
-                $credit_account = $accounts['acc2'];
-            }
-            
-            // تحديث قيد المدين
-            $stmt = $conn->prepare(
-                "UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 
-                 WHERE journal_id = ? AND tybe = 0"
-            );
-            $stmt->bind_param("idi", $debit_account, $headnet, $op_journal);
-            $stmt->execute();
-            $stmt->close();
-            
-            // تحديث قيد الدائن
-            $stmt = $conn->prepare(
-                "UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? 
-                 WHERE journal_id = ? AND tybe = 1"
-            );
-            $stmt->bind_param("idi", $credit_account, $headnet, $op_journal);
-            $stmt->execute();
-            $stmt->close();
-        }
     }
-
-
-
-
 
     // معالجة المدفوعات
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
-    
-    // البحث عن دفعة موجودة مسبقاً
-    $stmt = $conn->prepare("SELECT * FROM ot_head WHERE op2 = ? AND pro_tybe IN (1, 2)");
-    $stmt->bind_param("i", $ot_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $rowpaid = $result->fetch_assoc();
-    $stmt->close();
-    
-    // تحديد نوع الدفع حسب نوع الفاتورة
-    $paid_type = ($pro_tybe == InvoiceProcessor::INVOICE_TYPES['SALES']) ? InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'] : InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'];
-    
-    if ($paid > 0 && $rowpaid == null) {
-        // إضافة دفعة جديدة - جلب رقم الدفعة التالي
-        $new_paid_op_id = InvoiceProcessor::getNextInvoiceNumber($conn, $paid_type);
-
-        $stmt = $conn->prepare(
-            "INSERT INTO ot_head (
-                pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
-                emp_id, acc1, acc2, pro_value, cost_center, profit, user, op2
-            ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)"
-        );
-        
-        $stmt->bind_param(
-            "iiissiiidii", 
-            $new_paid_op_id, $paid_type, $paid_type, $info, $pro_date, $emp_id,
-            $accounts['acc5'], $accounts['acc6'], $paid, $usid, $ot_id
-        );
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في إضافة الدفعة: ' . $stmt->error);
-        }
-        $last_paid = $conn->insert_id;
-        $stmt->close();
-        
-        // إضافة قيد الدفعة
-        $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
-        $stmt->close();
-        
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
-        );
-        
-        $paid_details = $config['paid_note'] . " _ " . $ot_id;
-        $stmt->bind_param("iidsiii", $journal_id, $last_paid, $paid, $pro_date, $paid_details, $usid, $ot_id);
-        $stmt->execute();
-        $journal_lastid = $conn->insert_id;
-        $stmt->close();
-        
-        // قيد المدين
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-             VALUES (?, ?, ?, 0, 0, ?)"
-        );
-        $stmt->bind_param("iidi", $journal_lastid, $accounts['acc5'], $paid, $ot_id);
-        $stmt->execute();
-        $stmt->close();
-        
-        // قيد الدائن
-        $stmt = $conn->prepare(
-            "INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-             VALUES (?, ?, 0, ?, 1, ?)"
-        );
-        $stmt->bind_param("iidi", $journal_lastid, $accounts['acc6'], $paid, $ot_id);
-        $stmt->execute();
-        $stmt->close();
-        
-    } elseif ($paid > 0 && $rowpaid !== null) {
-        // تحديث دفعة موجودة
-        $stmt = $conn->prepare(
-            "UPDATE ot_head SET info = ?, pro_date = ?, emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, crtime = crtime 
-             WHERE op2 = ? AND pro_tybe = ?"
-        );
-        $stmt->bind_param("ssiiiiii", $info, $pro_date, $emp_id, $accounts['acc5'], $accounts['acc6'], $paid, $ot_id, $paid_type);
-        $stmt->execute();
-        $stmt->close();
-        
-        $stmt = $conn->prepare(
-            "UPDATE journal_heads SET total = ?, jdate = ? WHERE op2 = ? AND op_id IN (
-                SELECT id FROM ot_head WHERE op2 = ? AND pro_tybe = ?
-            )"
-        );
-        $stmt->bind_param("dsiii", $paid, $pro_date, $ot_id, $ot_id, $paid_type);
-        $stmt->execute();
-        $stmt->close();
-        
-        // تحديث قيود الدفعة
-        $stmt = $conn->prepare("SELECT id FROM journal_heads WHERE op2 = ?");
-        $stmt->bind_param("i", $ot_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $stmt->close();
-        
-        if ($row) {
-            $paid_jr = $row['id'];
-            
-            $stmt = $conn->prepare(
-                "UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 
-                 WHERE journal_id = ? AND tybe = 0"
-            );
-            $stmt->bind_param("idi", $accounts['acc5'], $paid, $paid_jr);
-            $stmt->execute();
-            $stmt->close();
-            
-            $stmt = $conn->prepare(
-                "UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? 
-                 WHERE journal_id = ? AND tybe = 1"
-            );
-            $stmt->bind_param("idi", $accounts['acc6'], $paid, $paid_jr);
-            $stmt->execute();
-            $stmt->close();
-        }
-        
-    } elseif ($paid == 0 && $rowpaid !== null) {
-        // حذف الدفعة (موحّد عبر InvoiceProcessor)
-        InvoiceProcessor::softDeleteLinkedPayments($conn, $ot_id, (int) $paid_type);
-        InvoiceProcessor::softDeleteJournalsByOp2($conn, $ot_id);
-    }
+    InvoiceProcessor::syncSimplePayment(
+        $conn,
+        (int) $ot_id,
+        (int) $pro_tybe,
+        $config,
+        $accounts,
+        (string) $info,
+        (string) $pro_date,
+        (int) $emp_id,
+        (int) $usid,
+        (float) $paid
+    );
 
     // تحديث تفاصيل الفاتورة — soft delete ثم إعادة الإدراج
-    InvoiceProcessor::softDeleteDetails($conn, $ot_id);
-
-    // معالجة تفاصيل الفواتير باستخدام Prepared Statements
-    if (isset($_POST['itmname'], $_POST['itmqty'], $_POST['itmprice'], $_POST['itmdisc'])) {
-        // تحضير استعلام إدخال تفاصيل الفاتورة
-        $stmt_details = $conn->prepare(
-            "INSERT INTO fat_details (
-                pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-                discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        );
-        
-        if (!$stmt_details) {
-            throw new Exception('فشل في تحضير استعلام تفاصيل الفاتورة: ' . $conn->error);
-        }
-        
-        // تحضير استعلام الحصول على بيانات الصنف
-        $stmt_item = $conn->prepare("SELECT cost_price, itmqty, price1 FROM myitems WHERE id = ?");
-        if (!$stmt_item) {
-            throw new Exception('فشل في تحضير استعلام بيانات الصنف: ' . $conn->error);
-        }
-        
-        // تحضير استعلام تحديث بيانات الصنف
-        $stmt_update = $conn->prepare("UPDATE myitems SET last_price = ?, cost_price = ?, price1 = ? WHERE id = ?");
-        if (!$stmt_update) {
-            throw new Exception('فشل في تحضير استعلام تحديث الصنف: ' . $conn->error);
-        }
-        
-        // معالجة كل صنف
-        foreach ($_POST['itmname'] as $index => $itmname) {
-            if (empty($itmname)) continue;
-            
-            $itmname = intval($itmname);
-            $itmqty = floatval($_POST['itmqty'][$index]);
-            $itmprice = floatval($_POST['itmprice'][$index]);
-            $itmdisc = floatval($_POST['itmdisc'][$index]);
-            $itmdisc_pct = floatval($_POST['itmdisc_pct'][$index] ?? 0);
-            $itmsellprice = isset($_POST['itmsellprice'][$index]) ? floatval($_POST['itmsellprice'][$index]) : 0; // سعر البيع (فاتورة مشتريات)
-            $u_val = floatval($_POST['u_val'][$index]);
-            if ($u_val <= 0) $u_val = 1; // fallback لو الوحدة مش محددة
-            
-            // تحديد الكميات حسب نوع الفاتورة
-            // أوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14) لا تؤثر على المخزون
-            if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
-                // أوامر الشراء والبيع وعروض الأسعار → لا تؤثر على المخزون
-                $qty_in = 0;
-                $qty_out = 0;
-            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE'], InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']])) {
-                // مشتريات ومردود مبيعات → كمية واردة
-                $qty_in = $itmqty * $u_val;
-                $qty_out = 0;
-            } elseif($pro_tybe === InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN']) {
-                // مردود مشتريات → كمية منصرفة
-                $qty_in = 0;
-                $qty_out = $itmqty * $u_val;
-            } elseif(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS']])) {
-                // مبيعات، كاشير → كمية منصرفة
-                $qty_in = 0;
-                $qty_out = $itmqty * $u_val;
-            } else {
-                $qty_in = 0;
-                $qty_out = 0;
-            }
-            
-            $det_value = $itmqty * ($itmprice - $itmdisc);
-            
-            // الحصول على بيانات الصنف الحالية
-            $stmt_item->bind_param("i", $itmname);
-            $stmt_item->execute();
-            $result = $stmt_item->get_result();
-            $rowbl = $result->fetch_assoc();
-            
-            if (!$rowbl) {
-                throw new Exception('صنف غير موجود: ' . $itmname);
-            }
-            
-            $oldprice = floatval($rowbl['cost_price']);
-            $oldqty = intval($rowbl['itmqty']);
-            $existing_price1 = floatval($rowbl['price1']);
-            $cost_price = $oldprice;
-            $itmprofit = 0;
-            
-            // حساب التكلفة والربح
-            if($pro_tybe == InvoiceProcessor::INVOICE_TYPES['PURCHASE']) {
-                // حساب سعر التكلفة المتوسط
-                $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
-                $oldbalance = $oldprice * $oldqty;
-                $newbalance = $qty_in * $unit_price;
-                $total_balance = $oldbalance + $newbalance;
-                $total_qty = $oldqty + $qty_in;
-                
-                if($total_qty > 0) {
-                    $cost_price = $total_balance / $total_qty;
-                }
-                
-                // سعر البيع للوحدة الأساسية (price1) — يُحفظ فقط إذا أُدخل، وإلا يبقى كما هو
-                $sell_unit_price = ($itmsellprice > 0) ? ($itmsellprice / $u_val) : $existing_price1;
-                
-                // تحديث بيانات الصنف
-                $stmt_update->bind_param("dddi", $unit_price, $cost_price, $sell_unit_price, $itmname);
-                if (!$stmt_update->execute()) {
-                    throw new Exception('فشل في تحديث بيانات الصنف ' . $itmname);
-                }
-                
-                $itmprice = $unit_price;
-                
-            } elseif (in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
-                // حساب الربح للمبيعات
-                $unit_price = ($u_val > 0) ? $itmprice / $u_val : $itmprice;
-                $itmprofit = $itmqty * $u_val * ($unit_price - $oldprice);
-                $itmprice = $unit_price;
-            }
-            
-            // الحصول على crtime الأصلي إذا كان موجوداً
-            $detcrtime = (!empty($_POST['detcrtime'][$index])) ? $_POST['detcrtime'][$index] : date('Y-m-d H:i:s');
-            
-            // إدخال تفاصيل الفاتورة
-            $stmt_details->bind_param(
-                "iiiidddddiiiidds",
-                $pro_tybe, $ot_id, $itmname, $u_val, $qty_in, $qty_out,
-                $itmprice, $itmdisc, $itmdisc_pct, $det_value, $ot_id, $pro_tybe,
-                $store_id, $cost_price, $itmprofit, $detcrtime
-            );
-            
-            if (!$stmt_details->execute()) {
-                throw new Exception('فشل في إدخال تفاصيل الصنف ' . $itmname);
-            }
-        }
-        
-        // إغلاق الاستعلامات
-        $stmt_details->close();
-        $stmt_item->close();
-        $stmt_update->close();
-    }
+    $lines = InvoiceProcessor::linesFromPost($_POST);
+    InvoiceProcessor::replaceDetails(
+        $conn,
+        (int) $ot_id,
+        (int) $pro_tybe,
+        (int) $store_id,
+        $lines,
+        true,
+        true
+    );
     
     // تحديث إجمالي الأرباح للمبيعات
     if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
@@ -489,26 +200,7 @@ try {
     // إتمام المعاملة
     $conn->commit();
     
-    // تحديث كميات الأصناف في جدول myitems بعد المعاملة
-    $update_qty_query = "
-        UPDATE myitems mi
-        SET itmqty = (
-            SELECT COALESCE(SUM(qty_in) - SUM(qty_out), 0)
-            FROM fat_details fd
-            WHERE fd.item_id = mi.id AND fd.isdeleted = 0
-        )
-        WHERE mi.id IN (
-            SELECT DISTINCT item_id
-            FROM fat_details
-            WHERE fatid = ? AND isdeleted = 0
-        )
-    ";
-    $stmt_qty = $conn->prepare($update_qty_query);
-    if ($stmt_qty) {
-        $stmt_qty->bind_param("i", $ot_id);
-        $stmt_qty->execute();
-        $stmt_qty->close();
-    }
+    InvoiceProcessor::syncItemQuantities($conn, (int) $ot_id);
     
     // تسجيل العملية
     $process_types = [

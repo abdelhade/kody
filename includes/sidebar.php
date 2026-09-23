@@ -44,14 +44,7 @@
           </a>
         </li>
 
-        <?php if (($role['sid_visits'] ?? 1) == 1) { ?>
-          <li class="nav-item">
-            <a href="visits.php" class="nav-link">
-              <i class="nav-icon fas fa-user-check"></i>
-              <p><?= $lang_visits ?? 'الزيارات' ?></p>
-            </a>
-          </li>
-        <?php } ?>
+
 
         <!--                                             البيانات الاساسيه                                                                        -->
         <?php if (($role['sid_entry'] ?? 0) == 1) { ?>
@@ -360,6 +353,15 @@
                   <p><?= $lang_closed_sessions ?></p>
                 </a>
               </li>
+
+              <?php if (($role['sid_visits'] ?? 1) == 1) { ?>
+                <li class="nav-item">
+                  <a href="visits.php" class="nav-link">
+                    <i class="nav-icon fas fa-user-check"></i>
+                    <p><?= $lang_visits ?? 'الزيارات' ?></p>
+                  </a>
+                </li>
+              <?php } ?>
 
             </ul>
           </li>

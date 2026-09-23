@@ -37,6 +37,32 @@
     </ul>
 
     <div class="d-flex align-items-center gap-3 ms-auto">
+
+      <?php
+      $activeDbName = $dbname ?? ($_SESSION['active_dbname'] ?? '');
+      $activePeriodLabel = $activeDbName;
+      $registryFile = __DIR__ . '/../config/db_registry.json';
+      if ($activeDbName && is_readable($registryFile)) {
+          $regNav = json_decode((string) file_get_contents($registryFile), true);
+          if (is_array($regNav) && !empty($regNav['databases'])) {
+              foreach ($regNav['databases'] as $dbNav) {
+                  if (($dbNav['name'] ?? '') === $activeDbName) {
+                      $activePeriodLabel = $dbNav['label'] ?: $activeDbName;
+                      break;
+                  }
+              }
+          }
+      }
+      if ($activeDbName):
+      ?>
+      <a href="setting.php" class="badge badge-light border text-dark text-decoration-none d-none d-md-inline-flex align-items-center px-2 py-1"
+         title="المدة / قاعدة البيانات النشطة — اضغط للتبديل"
+         style="font-weight:600; border-radius:999px;">
+        <i class="fas fa-calendar-alt text-primary ml-1"></i>
+        <?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>
+        <span class="text-muted small mr-1">(<?= htmlspecialchars($activeDbName, ENT_QUOTES, 'UTF-8') ?>)</span>
+      </a>
+      <?php endif; ?>
       
       <button id="exportDB" class="btn btn-primary rounded-pill px-3 py-1 fw-semibold d-none d-lg-flex">
         <i class="fas fa-database me-1"></i> حفظ نسخة احتياطية

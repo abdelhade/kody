@@ -260,7 +260,9 @@ if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])
 
 <?php
 $info_text = $rowfat['info'];
-if (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false) {
+if (strpos($info_text, 'دليفري') !== false) {
+    echo '<div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:6px;border:1px dashed #000;padding:4px;">دليفري</div>';
+} elseif (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false) {
     echo '<div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:6px;border:1px dashed #000;padding:2px;">' . htmlspecialchars($info_text) . '</div>';
 }
 

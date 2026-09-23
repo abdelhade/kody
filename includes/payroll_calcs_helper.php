@@ -98,7 +98,9 @@ function ensure_payroll_calcs_schema(mysqli $conn): void
     }
     $done = true;
 
-    $conn->query("CREATE TABLE IF NOT EXISTS `payroll_calcs` (
+    // الاعتماد الأساسي على MigrationRunner (010_add_payroll_calcs.sql).
+    // يبقى إنشاء/توسعة آمنة للتوافق مع قواعد قديمة.
+    @$conn->query("CREATE TABLE IF NOT EXISTS `payroll_calcs` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `snd_id` int(11) NOT NULL,
       `calc_tybe` tinyint(4) NOT NULL DEFAULT 1,
@@ -119,10 +121,9 @@ function ensure_payroll_calcs_schema(mysqli $conn): void
       KEY `emp_date` (`emp_id`, `date`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
 
-    $cols = ['bonus', 'insurance', 'tax', 'deduction', 'net_pay'];
-    $check = $conn->query("SHOW COLUMNS FROM attdocs LIKE 'bonus'");
+    $check = @$conn->query("SHOW COLUMNS FROM attdocs LIKE 'bonus'");
     if ($check && $check->num_rows === 0) {
-        $conn->query("ALTER TABLE attdocs
+        @$conn->query("ALTER TABLE attdocs
             ADD COLUMN bonus double NOT NULL DEFAULT 0 AFTER entitle,
             ADD COLUMN insurance double NOT NULL DEFAULT 0 AFTER bonus,
             ADD COLUMN tax double NOT NULL DEFAULT 0 AFTER insurance,

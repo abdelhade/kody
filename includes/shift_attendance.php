@@ -10,9 +10,11 @@ function ensure_shift_single_fp_schema(mysqli $conn): void
         return;
     }
     $done = true;
-    $check = $conn->query("SHOW COLUMNS FROM shifts LIKE 'single_fp_rule'");
+    // الاعتماد الأساسي على MigrationRunner (011_add_single_fp_rule_to_shifts.sql).
+    // يبقى فحص خفيف للتوافق مع قواعد لم تُرحَّل بعد.
+    $check = @$conn->query("SHOW COLUMNS FROM shifts LIKE 'single_fp_rule'");
     if ($check && $check->num_rows === 0) {
-        $conn->query("ALTER TABLE shifts ADD COLUMN single_fp_rule VARCHAR(20) NOT NULL DEFAULT 'half' AFTER workingdays");
+        @$conn->query("ALTER TABLE shifts ADD COLUMN single_fp_rule VARCHAR(20) NOT NULL DEFAULT 'half' AFTER workingdays");
     }
 }
 
