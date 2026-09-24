@@ -1764,6 +1764,11 @@ body {
         printBtn.prop('disabled', true).html(spinner);
         if (isHold) holdBtn.prop('disabled', true).html(spinner);
 
+        // قبل إخفاء المودال: اعتبر الدفع جارياً حتى لا يُلغى فصل الأصناف بالخطأ
+        if (window.PosTablesPanel && typeof PosTablesPanel.markPaymentSaving === 'function') {
+            PosTablesPanel.markPaymentSaving();
+        }
+
         $('#paymentModal').modal('hide');
 
         const tableId = parseInt($('#selected_table_id').val()) || 0;
@@ -1788,6 +1793,7 @@ body {
                 .then(function(data) {
                     restoreButtons();
                     if (data.success) {
+                        $(document).trigger('pos:payment-saved');
                         let editIdInput = form.querySelector('input[name="edit_id"]');
                         if (!editIdInput) {
                             editIdInput = document.createElement('input');
@@ -1823,11 +1829,13 @@ body {
                         }
                         setTimeout(updateShiftInfoButton, 500);
                     } else {
+                        $(document).trigger('pos:payment-failed');
                         Swal.fire({ icon: 'error', title: 'خطأ', text: data.message || 'فشل الحفظ' });
                     }
                 })
                 .catch(function() {
                     restoreButtons();
+                    $(document).trigger('pos:payment-failed');
                     Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل الاتصال بالخادم' });
                 });
             return true;

@@ -514,7 +514,7 @@ $(document).ready(function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: 'ajax/merge_tables.php',
+                    url: 'ajax/tables_panel.php',
                     method: 'POST',
                     data: { action: 'merge', table_ids: selectedIds },
                     dataType: 'json',
@@ -558,9 +558,9 @@ $(document).ready(function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: 'ajax/merge_tables.php',
+                    url: 'ajax/tables_panel.php',
                     method: 'POST',
-                    data: { action: 'unmerge', table_ids: selectedIds },
+                    data: { action: 'unmerge', table_id: selectedIds[0], table_ids: selectedIds },
                     dataType: 'json',
                     success: function(res) {
                         if (res.success) {
@@ -587,9 +587,9 @@ $(document).ready(function() {
 
     window.unmergeSingleTable = function(tableId) {
         $.ajax({
-            url: 'ajax/merge_tables.php',
+            url: 'ajax/tables_panel.php',
             method: 'POST',
-            data: { action: 'unmerge', table_ids: [tableId] },
+            data: { action: 'unmerge', table_id: tableId, table_ids: [tableId] },
             dataType: 'json',
             success: function(res) {
                 if (res.success) {
@@ -612,20 +612,9 @@ $(document).ready(function() {
     };
 
     window.refreshTablesGrid = function() {
-        $.ajax({
-            url: 'ajax/merge_tables.php',
-            method: 'POST',
-            data: { action: 'get_grid_html' },
-            dataType: 'json',
-            success: function(res) {
-                if (res.success && res.html) {
-                    $('#tablesGrid').html(res.html);
-                    if (window.isMergeMode) {
-                        $('.merge-checkbox-wrapper').show();
-                    }
-                }
-            }
-        });
+        if (window.PosTablesPanel && typeof PosTablesPanel.refresh === 'function') {
+            return PosTablesPanel.refresh();
+        }
     };
 
     $(document).on('click', '.table-merge-checkbox', function(e) {

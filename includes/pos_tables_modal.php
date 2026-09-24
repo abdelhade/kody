@@ -73,6 +73,18 @@
                                         <span>دفع أصناف</span>
                                     </button>
                                 </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-warning w-100 ptp-op-btn" id="ptpBtnMerge" title="دمج طاولات">
+                                        <i class="fas fa-object-group d-block mb-1 fa-lg"></i>
+                                        <span>دمج</span>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-warning w-100 ptp-op-btn" id="ptpBtnUnmerge" disabled>
+                                        <i class="fas fa-unlink d-block mb-1 fa-lg"></i>
+                                        <span>فك الدمج</span>
+                                    </button>
+                                </div>
                                 <div class="col-12">
                                     <button type="button" class="btn btn-info w-100 ptp-op-btn text-white" id="ptpBtnTransfer" disabled>
                                         <i class="fas fa-exchange-alt d-block mb-1 fa-lg"></i>

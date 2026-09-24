@@ -426,16 +426,14 @@ function tpanel_consolidate_group_orders($conn, $primary_id) {
 }
 
 /**
- * تحرير الطاولات المشغولة بلا فاتورة (بقايا طلبات مُغلقة أو محذوفة).
- * بدون ذلك تبقى الطاولة مشغولة للأبد فلا يمكن فتح طلب جديد عليها.
- * الدمج لا يُفكّ هنا: قد تُدمج طاولات قبل الطلب استعداداً لمجموعة كبيرة،
- * وفكّه يقتصر على الإلغاء الصريح أو الإغلاق بعد السداد.
+ * تحرير الطاولات المشغولة بلا فاتورة (بقايا طلبات مُغلقة أو محذوفة)،
+ * وفكّ الدمج الفاضي (مجموعة بلا طلب نشط) حتى لا تبقى الطاولات «مدمجة» للأبد.
  *
- * @return int عدد المجموعات التي حُرِّرت
+ * @return int عدد المجموعات التي حُرِّرت أو فُكّ دمجها
  */
 function tpanel_release_stale_tables($conn) {
     $res = $conn->query(
-        "SELECT id, parent_table_id FROM tables
+        "SELECT id, parent_table_id, is_merged FROM tables
          WHERE isdeleted = 0 AND (table_case <> 0 OR is_merged = 1)"
     );
     if (!$res) return 0;
@@ -458,9 +456,121 @@ function tpanel_release_stale_tables($conn) {
         $stmt->execute();
         if ($stmt->affected_rows > 0) $freed++;
         $stmt->close();
+
+        // دمج بلا فاتورة = بقايا؛ فكّه تلقائياً
+        $primary = tpanel_get_table($conn, $primary_id);
+        if ($primary && intval($primary['is_merged'] ?? 0) === 1) {
+            tpanel_free_merged_group($conn, $primary_id);
+            $freed++;
+        }
     }
 
     return $freed;
+}
+
+/**
+ * إعادة بناء حقل info عند نقل الطاولة — بدون REPLACE الهش على الاسم.
+ */
+function tpanel_rebuild_table_info($existing_info, $new_table_name) {
+    $info = trim((string)$existing_info);
+    // احذف أي مقطع «طاولة: …» سابق
+    $info = preg_replace('/\s*-?\s*طاولة:\s*[^|]*/u', '', $info);
+    $info = trim($info, " \t-");
+    $suffix = 'طاولة: ' . $new_table_name;
+    if ($info === '') {
+        return 'نوع الطلب: طاولة - ' . $suffix;
+    }
+    // لا تكرر «نوع الطلب: طاولة» إن وُجد
+    if (mb_strpos($info, 'نوع الطلب') === false) {
+        $info = 'نوع الطلب: طاولة - ' . $info;
+    }
+    return rtrim($info, ' -') . ' - ' . $suffix;
+}
+
+/**
+ * إرجاع أصناف طلب «سداد أصناف» إلى الطلب الأصلي وإلغاء الفصل.
+ * يُستدعى عند إغلاق مودال الدفع دون إتمام السداد.
+ *
+ * @return array{source_order_id:int, table_id:int}
+ */
+function tpanel_cancel_split($conn, $split_order_id, $source_order_id = 0) {
+    $split_order_id = intval($split_order_id);
+    $source_order_id = intval($source_order_id);
+
+    $stmt = $conn->prepare(
+        "SELECT * FROM ot_head WHERE id = ? AND pro_tybe = 9 AND isdeleted = 0 LIMIT 1"
+    );
+    $stmt->bind_param('i', $split_order_id);
+    $stmt->execute();
+    $split = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$split) {
+        throw new Exception('طلب السداد غير موجود أو مدفوع مسبقاً');
+    }
+    if (($split['order_status'] ?? '') === 'completed') {
+        throw new Exception('الطلب مدفوع بالفعل — لا يمكن الإلغاء');
+    }
+    if (floatval($split['paid_amount'] ?? 0) > 0) {
+        throw new Exception('تم تسجيل دفع جزئي — لا يمكن إرجاع الأصناف تلقائياً');
+    }
+
+    // استخرج رقم الطلب الأصلي من info إن لم يُمرَّر
+    if ($source_order_id <= 0 && preg_match('/#src:(\d+)/', $split['info'] ?? '', $m)) {
+        $source_order_id = intval($m[1]);
+    }
+    if ($source_order_id <= 0) {
+        throw new Exception('تعذر تحديد الطلب الأصلي للإرجاع');
+    }
+
+    // المصدر قد يكون soft-deleted لو نُقلت كل الأصناف
+    $stmt = $conn->prepare("SELECT * FROM ot_head WHERE id = ? AND pro_tybe = 9 LIMIT 1");
+    $stmt->bind_param('i', $source_order_id);
+    $stmt->execute();
+    $source = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$source) {
+        throw new Exception('الطلب الأصلي غير موجود');
+    }
+
+    $conn->begin_transaction();
+
+    $move = $conn->prepare(
+        "UPDATE fat_details SET fatid = ?, pro_id = ?
+         WHERE (fatid = ? OR pro_id = ?) AND isdeleted = 0"
+    );
+    $move->bind_param('iiii', $source_order_id, $source_order_id, $split_order_id, $split_order_id);
+    $move->execute();
+    $move->close();
+
+    $del = $conn->prepare(
+        "UPDATE ot_head SET isdeleted = 1, fat_total = 0, fat_net = 0 WHERE id = ?"
+    );
+    $del->bind_param('i', $split_order_id);
+    $del->execute();
+    $del->close();
+
+    // أعد إحياء المصدر إن كان قد حُذف ناعماً بعد نقل كل الأصناف
+    $revive = $conn->prepare(
+        "UPDATE ot_head SET isdeleted = 0
+         WHERE id = ? AND (order_status IS NULL OR order_status <> 'completed')"
+    );
+    $revive->bind_param('i', $source_order_id);
+    $revive->execute();
+    $revive->close();
+
+    tpanel_recalc_order_totals($conn, $source_order_id);
+
+    $table_id = intval($source['table_id'] ?? 0);
+    if ($table_id > 0) {
+        tpanel_sync_group_case($conn, tpanel_resolve_primary_id($conn, $table_id));
+    }
+
+    $conn->commit();
+
+    return [
+        'source_order_id' => $source_order_id,
+        'table_id' => $table_id,
+    ];
 }
 
 /** توحيد حالة الإشغال على مستوى المجموعة المدمجة. */

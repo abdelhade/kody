@@ -9,8 +9,11 @@
     const state = {
         tables: [],
         selected: null,
-        mode: 'normal', // normal | transfer
+        mode: 'normal', // normal | transfer | merge
         selectedItemIds: [],
+        mergeIds: [],
+        pendingSplit: null, // { split_order_id, source_order_id }
+        paymentSaving: false,
     };
 
     function fmt(n) {
@@ -81,10 +84,12 @@
         state.tables.forEach(function (t) {
             const sel = state.selected && state.selected.table_id === t.id;
             const transferOk = state.mode === 'transfer' && t.status === 'available' && (!state.selected || t.id !== state.selected.table_id);
+            const mergePicked = state.mode === 'merge' && state.mergeIds.indexOf(t.id) >= 0;
 
             let cls = 'ptp-table-card status-' + t.status;
             if (sel && state.mode === 'normal') cls += ' is-selected-panel';
             if (transferOk) cls += ' is-transfer-target';
+            if (mergePicked) cls += ' is-merge-pick';
 
             html += '<div class="col-4 col-md-3">';
             html += '<button type="button" class="' + cls + '" data-id="' + t.id + '" data-order-id="' + (t.order_id || '') + '" data-status="' + t.status + '">';
@@ -102,6 +107,16 @@
             html += '<div class="p-2 text-center border-top mt-2 alert alert-info mb-0">';
             html += '<i class="fas fa-hand-pointer me-1"></i>اختر الطاولة الهدف (متاحة)';
             html += ' <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="ptpCancelMode">إلغاء</button>';
+            html += '</div>';
+        }
+
+        if (state.mode === 'merge') {
+            html += '<div class="p-2 text-center border-top mt-2 ptp-merge-bar alert alert-warning mb-0">';
+            html += '<i class="fas fa-object-group me-1"></i>اختر طاولتين أو أكثر ثم أكّد الدمج';
+            html += ' <strong class="ms-1">(' + state.mergeIds.length + ')</strong>';
+            html += ' <button type="button" class="btn btn-sm btn-warning ms-2" id="ptpConfirmMerge"' +
+                (state.mergeIds.length < 2 ? ' disabled' : '') + '>تأكيد الدمج</button>';
+            html += ' <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="ptpCancelMode">إلغاء</button>';
             html += '</div>';
         }
 
@@ -166,18 +181,22 @@
 
     function updateOps() {
         const hasOrder = state.selected && state.selected.order_id;
-        const hasItems = state.selected && state.selected.items && state.selected.items.length > 0;
         const hasChecked = state.selectedItemIds.length > 0;
+        const isMerged = state.selected && state.selected.is_merged;
 
         $('#ptpBtnPayClose').prop('disabled', !hasOrder);
         $('#ptpBtnPayItems').prop('disabled', !hasChecked);
-        $('#ptpBtnTransfer').prop('disabled', !hasOrder);
+        $('#ptpBtnTransfer').prop('disabled', !hasOrder || state.mode === 'merge');
         $('#ptpBtnPrint').prop('disabled', !hasOrder);
         $('#ptpBtnAddItems').prop('disabled', !state.selected);
+        $('#ptpBtnUnmerge').prop('disabled', !isMerged);
+        $('#ptpBtnMerge').prop('disabled', state.mode === 'transfer');
 
         const badge = $('#ptpModeBadge');
         if (state.mode === 'transfer') {
             badge.removeClass('d-none').text('وضع النقل');
+        } else if (state.mode === 'merge') {
+            badge.removeClass('d-none').text('وضع الدمج');
         } else {
             badge.addClass('d-none').text('');
         }
@@ -185,8 +204,50 @@
 
     function setMode(mode) {
         state.mode = mode;
+        if (mode !== 'merge') state.mergeIds = [];
         renderGrid();
         updateOps();
+    }
+
+    function clearPendingSplit() {
+        state.pendingSplit = null;
+    }
+
+    /** إرجاع الأصناف للطاولة إذا أُغلق الدفع دون إتمام سداد الأصناف */
+    function cancelPendingSplit(silent) {
+        const pend = state.pendingSplit;
+        if (!pend || !pend.split_order_id) return $.Deferred().resolve().promise();
+
+        clearPendingSplit();
+        return post('cancel_split', {
+            split_order_id: pend.split_order_id,
+            source_order_id: pend.source_order_id || 0,
+        }).done(function (data) {
+            if (!silent) {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'تم الإلغاء',
+                        text: 'أُرجعت الأصناف إلى الطاولة',
+                        timer: 1800,
+                        showConfirmButton: false,
+                    });
+                } else {
+                    Swal.fire({ icon: 'warning', text: data.message || 'تعذر إرجاع الأصناف' });
+                }
+            }
+            setFinalizeFlag(false);
+            $('#edit_order_id').val('');
+            $('#selected_order_id').val('');
+            $('#itemData').empty();
+            if (typeof window.updateItemCount === 'function') window.updateItemCount();
+            if (typeof window.updateTotal === 'function') window.updateTotal();
+            updateNavBadge('');
+        }).fail(function () {
+            if (!silent) {
+                Swal.fire({ icon: 'error', text: 'فشل إرجاع الأصناف — راجع لوحة الطاولات' });
+            }
+        });
     }
 
     /** شارة اسم الطاولة في الـ navbar */
@@ -336,6 +397,10 @@
                 return;
             }
             state.selectedItemIds = [];
+            state.pendingSplit = {
+                split_order_id: data.split_order_id,
+                source_order_id: data.source_order_id || sel.order_id,
+            };
             loadOrderIntoPos({
                 detach: true,
                 tableName: data.table_name || sel.table_name,
@@ -350,9 +415,16 @@
     function bindEvents() {
         $(document).on('click', '.ptp-table-card', function () {
             const id = parseInt($(this).data('id'));
-            const orderId = parseInt($(this).data('order-id')) || 0;
             const table = state.tables.find(function (t) { return t.id === id; });
             if (!table) return;
+
+            if (state.mode === 'merge') {
+                const idx = state.mergeIds.indexOf(id);
+                if (idx >= 0) state.mergeIds.splice(idx, 1);
+                else state.mergeIds.push(id);
+                renderGrid();
+                return;
+            }
 
             if (state.mode === 'transfer') {
                 if (table.status !== 'available') {
@@ -433,6 +505,54 @@
             setMode('transfer');
         });
 
+        $('#ptpBtnMerge').on('click', function () {
+            state.mergeIds = state.selected ? [state.selected.table_id] : [];
+            setMode('merge');
+        });
+
+        $('#ptpBtnUnmerge').on('click', function () {
+            if (!state.selected || !state.selected.is_merged) return;
+            const tid = state.selected.primary_table_id || state.selected.table_id;
+            Swal.fire({
+                title: 'فك دمج المجموعة؟',
+                text: 'ستصبح كل طاولة مستقلة',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، فك الدمج',
+                cancelButtonText: 'إلغاء',
+            }).then(function (r) {
+                if (!r.isConfirmed) return;
+                post('unmerge', { table_id: tid }).done(function (data) {
+                    if (data.success) {
+                        applyServerState(data);
+                        Swal.fire({ icon: 'success', title: 'تم فك الدمج', timer: 1200, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', text: data.message });
+                    }
+                });
+            });
+        });
+
+        $(document).on('click', '#ptpConfirmMerge', function () {
+            if (state.mergeIds.length < 2) return;
+            post('merge', { table_ids: state.mergeIds }).done(function (data) {
+                if (data.success) {
+                    setMode('normal');
+                    applyServerState(data);
+                    Swal.fire({ icon: 'success', title: data.message || 'تم الدمج', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', text: data.message });
+                }
+            }).fail(function (xhr) {
+                let msg = 'فشل الدمج';
+                try {
+                    const j = JSON.parse(xhr.responseText);
+                    if (j.message) msg = j.message;
+                } catch (e) { /* ignore */ }
+                Swal.fire({ icon: 'error', text: msg });
+            });
+        });
+
         $(document).on('click', '#ptpCancelMode', function () {
             setMode('normal');
         });
@@ -451,15 +571,41 @@
             loadState();
         });
 
-        // لو صرف النظر عن الدفع، لا يبقى علَم الإغلاق معلّقاً على أي حفظ لاحق
-        $(document).on('click', '#paymentModal [data-bs-dismiss="modal"], #paymentModal .btn-close', function () {
+        // إخفاء المودال: أرجع الـ split فقط إذا لم يكن مسار حفظ جارياً
+        $(document).on('hidden.bs.modal', '#paymentModal', function () {
+            if (state.paymentSaving) {
+                state.paymentSaving = false;
+                setFinalizeFlag(false);
+                return;
+            }
+            if (state.pendingSplit) {
+                cancelPendingSplit(false);
+            } else {
+                setFinalizeFlag(false);
+            }
+        });
+
+        $(document).on('pos:payment-saved', function () {
+            state.paymentSaving = false;
+            clearPendingSplit();
             setFinalizeFlag(false);
+        });
+
+        $(document).on('pos:payment-failed', function () {
+            state.paymentSaving = false;
+            // فشل الحفظ بعد الفصل: أرجع الأصناف للطاولة
+            if (state.pendingSplit) {
+                cancelPendingSplit(true);
+            }
         });
 
         // إلغاء اختيار الطاولة من شارة الـ navbar
         $(document).on('click', '#navClearTable', function (e) {
             e.preventDefault();
             e.stopPropagation();
+            if (state.pendingSplit) {
+                cancelPendingSplit(true);
+            }
             $('#selected_table_id').val(0);
             $('#selected_table_name').val('');
             $('#edit_order_id').val('');
@@ -488,6 +634,11 @@
         setTableBadge: updateNavBadge,
         clearFinalizeFlag: function () {
             setFinalizeFlag(false);
+        },
+        clearPendingSplit: clearPendingSplit,
+        /** يُستدعى قبل إخفاء مودال الدفع عند الحفظ حتى لا يُلغى الـ split */
+        markPaymentSaving: function () {
+            state.paymentSaving = true;
         },
     };
 

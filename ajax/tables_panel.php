@@ -78,7 +78,8 @@ try {
             $table_name = $table['tname'] ?? "طاولة $table_id";
 
             // طلب منفصل بلا table_id حتى تبقى الطاولة مرتبطة بطلبها الأصلي
-            $new_info = "نوع الطلب: طاولة - طاولة: $table_name - سداد أصناف";
+            // #src: يُستخدم لإرجاع الأصناف لو أُلغي الدفع
+            $new_info = "نوع الطلب: طاولة - طاولة: $table_name - سداد أصناف #src:$order_id";
             $user_id = $_SESSION['userid'] ?? 1;
 
             $ins = $conn->prepare(
@@ -138,9 +139,24 @@ try {
                 'success' => true,
                 'message' => 'تم فصل الأصناف — أكمل الدفع',
                 'split_order_id' => $new_head_id,
+                'source_order_id' => $order_id,
                 'split_total' => round($sel_total, 2),
                 'table_name' => $table_name,
             ] + $state);
+            break;
+
+        case 'cancel_split':
+            $split_order_id = intval($_POST['split_order_id'] ?? 0);
+            $source_order_id = intval($_POST['source_order_id'] ?? 0);
+            if ($split_order_id <= 0) {
+                throw new Exception('رقم طلب السداد غير صحيح');
+            }
+            $result = tpanel_cancel_split($conn, $split_order_id, $source_order_id);
+            $state = tpanel_build_state($conn, intval($result['table_id']));
+            tpanel_json_response([
+                'success' => true,
+                'message' => 'تم إرجاع الأصناف للطاولة',
+            ] + $result + $state);
             break;
 
         case 'transfer':
@@ -155,19 +171,25 @@ try {
             $new_table = tpanel_get_table($conn, $new_table_id);
             if (!$old_table || !$new_table) throw new Exception('الطاولة غير موجودة');
 
+            // الهدف يجب أن يكون متاحاً (ليس عليه طلب ولا تابع لمجموعة أخرى)
+            $new_status = tpanel_table_status($conn, $new_table);
+            if ($new_status['status'] !== 'available') {
+                throw new Exception('الطاولة الهدف غير متاحة');
+            }
+
             $order = tpanel_get_active_order($conn, tpanel_resolve_primary_id($conn, $old_table_id));
             if (!$order) throw new Exception('لا يوجد طلب للنقل');
 
             $conn->begin_transaction();
 
-            $old_name = $old_table['tname'];
             $new_name = $new_table['tname'];
             $order_id = intval($order['id']);
+            $new_info = tpanel_rebuild_table_info($order['info'] ?? '', $new_name);
 
             $stmt = $conn->prepare(
-                "UPDATE ot_head SET info = REPLACE(info, ?, ?), table_id = ? WHERE id = ?"
+                "UPDATE ot_head SET info = ?, table_id = ? WHERE id = ?"
             );
-            $stmt->bind_param('ssii', $old_name, $new_name, $new_table_id, $order_id);
+            $stmt->bind_param('sii', $new_info, $new_table_id, $order_id);
             $stmt->execute();
             $stmt->close();
 
@@ -189,9 +211,20 @@ try {
             } else {
                 $table_ids = array_map('intval', array_filter($table_ids));
             }
+            $table_ids = array_values(array_unique($table_ids));
 
             if (count($table_ids) < 2) {
                 throw new Exception('يرجى اختيار طاولتين على الأقل');
+            }
+
+            // منع الدمج عند وجود دفع جزئي على أي طلب في المجموعة
+            foreach ($table_ids as $tid) {
+                $ord = tpanel_get_active_order($conn, $tid);
+                if ($ord && floatval($ord['paid_amount'] ?? 0) > 0) {
+                    $t = tpanel_get_table($conn, $tid);
+                    $tn = $t['tname'] ?? ("#$tid");
+                    throw new Exception("لا يمكن الدمج: $tn عليها دفع جزئي — أكمل السداد أولاً");
+                }
             }
 
             $conn->begin_transaction();
@@ -229,6 +262,14 @@ try {
 
         case 'unmerge':
             $table_id = intval($_POST['table_id'] ?? 0);
+            // توافق مع الواجهة القديمة التي ترسل table_ids[]
+            if ($table_id <= 0) {
+                $ids = $_POST['table_ids'] ?? [];
+                if (!is_array($ids)) {
+                    $ids = array_filter(array_map('intval', explode(',', (string)$ids)));
+                }
+                $table_id = intval($ids[0] ?? 0);
+            }
             if ($table_id <= 0) throw new Exception('رقم الطاولة غير صحيح');
 
             $primary_id = tpanel_resolve_primary_id($conn, $table_id);
