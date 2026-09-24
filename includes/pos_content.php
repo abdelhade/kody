@@ -874,13 +874,14 @@ body {
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">اسم العميل</label>
-                        <input type="text" class="form-control" id="customer_name" placeholder="اسم العميل">
+                        <input type="text" class="form-control" id="customer_name" placeholder="اسم العميل"
+                            autocomplete="off">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">العنوان</label>
                         <textarea class="form-control" id="customer_address" rows="2"
-                            placeholder="عنوان العميل"></textarea>
+                            placeholder="عنوان العميل" autocomplete="off"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -899,14 +900,13 @@ body {
     </div>
 
 
-    <!-- Scripts - jQuery (CDN for reliability) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Scripts (local only — no CDN) -->
     <script>
-        if (typeof jQuery === 'undefined') { 
-            document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); 
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="assets/libs/jquery/jquery-3.6.0.min.js"><\/script>');
         }
     </script>
+    <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     
     <!-- إصلاح مشكلة Service Worker -->
@@ -1282,23 +1282,23 @@ body {
                 isSearchingCustomer = false;
             };
 
-            // بعد التأكيد: نترك بيانات الطيار/العميل في الفورم؛ ننظّف حقول الإدخال فقط عند إعادة الفتح
             $('#deliveryModal').on('hidden.bs.modal', function () {
-                // لا نستدعي clearDeliveryForm() بالكامل حتى لا نفقد الطيار قبل الدفع
                 $('#customer_phone').removeClass('border-success border-info border-danger border-warning');
                 setCustomerStatus('', '');
             });
 
             $('#deliveryModal').on('show.bs.modal', function () {
-                // أعد تعبئة المودال من الفورم لو كانت محفوظة
+                // دائماً من الفورم — لو فاضي يتفضى المودال (ما يفضلش اسم أوردر سابق)
                 const phone = ($('input[name="delivery_customer_phone"]').val() || '').trim();
                 const name = ($('input[name="delivery_customer_name"]').val() || '').trim();
                 const address = ($('input[name="delivery_customer_address"]').val() || '').trim();
                 const driverId = ($('input[name="delivery_person_id"]').val() || '').trim();
-                if (phone) $('#customer_phone').val(phone);
-                if (name) $('#customer_name').val(name);
-                if (address) $('#customer_address').val(address);
-                if (driverId) $('#delivery_person_id').val(driverId);
+                $('#customer_phone').val(phone);
+                $('#customer_name').val(name);
+                $('#customer_address').val(address);
+                if (driverId) {
+                    $('#delivery_person_id').val(driverId);
+                }
             });
 
             $('#deliveryModal').on('shown.bs.modal', function () {
@@ -1407,7 +1407,31 @@ body {
                         input.remove();
                     });
                 });
+                if (typeof clearDeliveryForm === 'function') {
+                    clearDeliveryForm();
+                }
             };
+
+            // بعد نجاح الأوردر: امسح بيانات عميل الدليفري بالكامل
+            window.resetDeliveryCustomerAfterOrder = function () {
+                if (typeof clearDeliveryFieldsFromForm === 'function') {
+                    clearDeliveryFieldsFromForm();
+                } else if (typeof clearDeliveryForm === 'function') {
+                    clearDeliveryForm();
+                }
+            };
+
+            $(document).on('pos:payment-saved', function () {
+                if (typeof resetDeliveryCustomerAfterOrder === 'function') {
+                    resetDeliveryCustomerAfterOrder();
+                }
+            });
+
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted && typeof resetDeliveryCustomerAfterOrder === 'function') {
+                    resetDeliveryCustomerAfterOrder();
+                }
+            });
 
             window.persistDeliveryCustomer = function (phone, name, address, onSuccess) {
                 $.ajax({
@@ -1457,6 +1481,9 @@ body {
 
                 syncDeliveryFieldsToForm(customer.phone, customer.name, customer.address);
                 persistDeliveryCustomer(customer.phone, customer.name, customer.address);
+
+                // امسح حقول المودال بعد مزامنة الفورم — عند إعادة الفتح تتعبّى من الفورم إن لزم
+                clearDeliveryForm();
 
                 $('#deliveryModal').modal('hide');
                 Swal.fire({
@@ -1839,6 +1866,11 @@ body {
                     Swal.fire({ icon: 'error', title: 'خطأ', text: 'فشل الاتصال بالخادم' });
                 });
             return true;
+        }
+
+        // قبل مغادرة الصفحة: امسح مودال الدليفري (بيانات الحفظ موجودة في الحقول المخفية)
+        if (typeof clearDeliveryForm === 'function') {
+            clearDeliveryForm();
         }
 
         form.submit();
