@@ -74,7 +74,11 @@ $offset = ($page - 1) * $limit;
 // Base JOIN query for search support (acc1 = supplier/client, acc2 = opposite account)
 $join_clause = "FROM ot_head ot
     LEFT JOIN acc_head acc1 ON acc1.id = ot.acc1
-    LEFT JOIN acc_head acc2 ON acc2.id = ot.acc2";
+    LEFT JOIN acc_head acc2 ON acc2.id = ot.acc2
+    LEFT JOIN acc_head drv ON drv.id = COALESCE(
+        NULLIF(ot.delivery_person_id, 0),
+        IF(ot.emp2_id IS NOT NULL AND ot.emp2_id <> 0 AND ot.emp2_id <> ot.emp_id AND (ot.order_type = 'delivery' OR ot.info LIKE '%دليفري%' OR ot.info LIKE '%مندوب التوصيل%'), ot.emp2_id, NULL)
+    )";
 
 // Replace date filter to use ot. alias
 $dateFilter = "";
@@ -93,18 +97,18 @@ switch ($q) {
     case "sale_legacy": // للتوافقية
         $report_name = "مشتريات";
         $where_clause = "ot.pro_tybe = 4 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
         $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
         $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
 }
 ?>
 
@@ -220,6 +224,7 @@ switch ($q) {
                                     <th>الحساب المقابل</th>
                                     <th>المخزن</th>
                                     <th>الموظف</th>
+                                    <th>الطيار</th>
                                     <th>الربح</th>
                                     <th>المستخدم</th>
                                     <th>معرف</th>
@@ -238,6 +243,7 @@ switch ($q) {
                                     <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="10" placeholder="فلتر..."></td>
                                     <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="11" placeholder="فلتر..."></td>
                                     <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="12" placeholder="فلتر..."></td>
+                                    <td><input type="text" class="form-control form-control-sm column-filter" data-col-idx="13" placeholder="فلتر..."></td>
                                     <td></td>
                                 </tr>
                             </thead>
@@ -288,6 +294,7 @@ switch ($q) {
                                         <td><?= !empty($rowop['acc2']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc2']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
                                         <td><?= $rowop['store_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['store_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
                                         <td><?= $rowop['emp_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['emp_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
+                                        <td><?= !empty($rowop['driver_name']) ? htmlspecialchars($rowop['driver_name']) : '' ?></td>
                                          <td class="prft"><?= $rowop['profit'] ?></td>
                                         <td><?= !empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '' ?></td>
                                         <td>
