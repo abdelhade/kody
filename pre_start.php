@@ -1,18 +1,24 @@
 <?php
 // pre_start.php - Database Setup Page
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once __DIR__ . '/includes/load_env.php';
+require_once __DIR__ . '/includes/db_name.php';
 
 $dbhost = env('DB_HOST', 'localhost');
 $dbuser = env('DB_USER', 'root');
 $dbpass = env('DB_PASS', '');
-$dbname = env('DB_NAME', 'kody2');
+$dbname = kody_preferred_dbname();
 
 // Check if already connected
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($dbhost, $dbuser, $dbpass);
 $db_exists = false;
 if (!$conn->connect_error) {
-    if ($conn->select_db($dbname)) {
+    $selected = kody_select_existing_db($conn);
+    if ($selected !== null) {
+        $dbname = $selected;
         $db_exists = true;
     }
 }
@@ -243,13 +249,17 @@ if (!$conn->connect_error) {
                 <i class="fas fa-database"></i>
             </div>
             <h1>إعداد النظام</h1>
-            <p class="subtitle">يبدو أن النظام غير جاهز للعمل بعد، يرجى تهيئة قاعدة البيانات</p>
-
             <?php if ($db_exists): ?>
+                <p class="subtitle">قاعدة البيانات <strong><?= htmlspecialchars($dbname) ?></strong> جاهزة — يمكنك الدخول للنظام</p>
                 <div class="status-badge success">
                     <i class="fas fa-check-circle"></i>
                     قاعدة البيانات متصلة وجاهزة
                 </div>
+            <?php else: ?>
+                <p class="subtitle">يبدو أن النظام غير جاهز للعمل بعد، يرجى تهيئة قاعدة البيانات</p>
+            <?php endif; ?>
+
+            <?php if ($db_exists): ?>
                 <div class="actions">
                     <a href="index.php" class="btn btn-primary">
                         <i class="fas fa-arrow-right"></i>
@@ -258,6 +268,10 @@ if (!$conn->connect_error) {
                     <button class="btn btn-outline" id="btnMigrate" type="button">
                         <i class="fas fa-sync-alt"></i>
                         تحديث قاعدة البيانات (Migrations)
+                    </button>
+                    <button class="btn btn-outline" id="btnRestore" type="button">
+                        <i class="fas fa-file-import"></i>
+                        استعادة نسخة احتياطية (SQL)
                     </button>
                 </div>
             <?php else: ?>
@@ -270,13 +284,13 @@ if (!$conn->connect_error) {
                         <i class="fas fa-plus-circle"></i>
                         بدء قاعدة بيانات جديدة (افتراضية)
                     </button>
-                    <button class="btn btn-outline" id="btnRestore">
+                    <button class="btn btn-outline" id="btnRestore" type="button">
                         <i class="fas fa-file-import"></i>
                         استعادة نسخة احتياطية (SQL)
                     </button>
                 </div>
-                <input type="file" id="fileInput" accept=".sql">
             <?php endif; ?>
+            <input type="file" id="fileInput" accept=".sql,application/sql,text/plain" style="display:none;">
 
             <div class="footer-text">
                 نظام كودي 2 &copy; <?= date('Y') ?> - جميع الحقوق محفوظة
@@ -363,19 +377,81 @@ if (!$conn->connect_error) {
                 });
             });
 
+            function validateDbName(name) {
+                name = (name || '').trim();
+                if (!name) return 'أدخل اسم قاعدة البيانات';
+                if (!/^[A-Za-z0-9_]{2,64}$/.test(name)) {
+                    return 'اسم غير صالح: حروف إنجليزية/أرقام/_ فقط، من 2 إلى 64 حرفاً';
+                }
+                var reserved = ['mysql', 'information_schema', 'performance_schema', 'sys'];
+                if (reserved.indexOf(name.toLowerCase()) !== -1) {
+                    return 'لا يمكن استخدام اسم محجوز للنظام';
+                }
+                return '';
+            }
+
+            var pendingRestoreDbName = '';
+
+            function askRestoreDbName(thenOpenFile) {
+                var defaultName = <?= json_encode($dbname, JSON_UNESCAPED_UNICODE) ?>;
+                if (typeof Swal !== 'undefined' && Swal.fire) {
+                    Swal.fire({
+                        title: 'استعادة باسم ماذا؟',
+                        text: 'حروف إنجليزية / أرقام / _ فقط (2–64)',
+                        input: 'text',
+                        inputValue: defaultName,
+                        showCancelButton: true,
+                        confirmButtonText: 'التالي: اختيار الملف',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#4f46e5',
+                        inputValidator: function(value) {
+                            return validateDbName(value) || null;
+                        }
+                    }).then(function(result) {
+                        if (result.isConfirmed || result.value) {
+                            var name = (result.value || '').trim();
+                            if (validateDbName(name)) return;
+                            pendingRestoreDbName = name;
+                            thenOpenFile();
+                        }
+                    });
+                    return;
+                }
+                var name = prompt('استعادة النسخة باسم ماذا؟\n(حروف إنجليزية / أرقام / _ فقط، 2–64)', defaultName);
+                if (name === null) return;
+                var err = validateDbName(name);
+                while (err) {
+                    name = prompt('خطأ: ' + err + '\n\nاستعادة النسخة باسم ماذا؟', name.trim());
+                    if (name === null) return;
+                    err = validateDbName(name);
+                }
+                pendingRestoreDbName = name.trim();
+                thenOpenFile();
+            }
+
             $('#btnRestore').on('click', function() {
-                $('#fileInput').click();
+                askRestoreDbName(function() {
+                    $('#fileInput').val('');
+                    $('#fileInput').click();
+                });
             });
 
             $('#fileInput').on('change', function() {
                 const file = this.files[0];
+                const dbName = pendingRestoreDbName;
+                pendingRestoreDbName = '';
                 if (!file) return;
+                if (validateDbName(dbName)) {
+                    showAlert('خطأ!', validateDbName(dbName), 'error');
+                    return;
+                }
 
                 const formData = new FormData();
                 formData.append('backup_file', file);
                 formData.append('action', 'restore');
+                formData.append('db_name', dbName);
 
-                showLoading('جاري رفع واستعادة النسخة الاحتياطية...');
+                showLoading('جاري رفع واستعادة النسخة إلى ' + dbName + '...');
                 $.ajax({
                     url: 'ajax/db_setup.php',
                     type: 'POST',

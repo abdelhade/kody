@@ -555,9 +555,13 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                       <button type="button" class="btn btn-success" id="btnRunMigrations">
                         <i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات
                       </button>
+                      <button type="button" class="btn btn-outline-warning" id="btnRestoreBackup">
+                        <i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية
+                      </button>
                       <a href="pre_start.php" class="btn btn-outline-primary" target="_blank">
-                        <i class="fas fa-plus-circle ml-1"></i> إنشاء / استعادة قاعدة
+                        <i class="fas fa-plus-circle ml-1"></i> إنشاء قاعدة جديدة
                       </a>
+                      <input type="file" id="backupFileInput" accept=".sql,application/sql,text/plain" style="display:none;">
                     </div>
                     <ul id="db-pending-list" class="mt-3 mb-0 small text-muted"></ul>
                   </div>
@@ -806,6 +810,81 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(function () {
           btnMig.disabled = false;
           btnMig.innerHTML = '<i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات';
+        });
+    });
+  }
+
+  function validateDbName(name) {
+    name = (name || '').trim();
+    if (!name) return 'أدخل اسم قاعدة البيانات';
+    if (!/^[A-Za-z0-9_]{2,64}$/.test(name)) {
+      return 'اسم غير صالح: حروف إنجليزية/أرقام/_ فقط، من 2 إلى 64 حرفاً';
+    }
+    var reserved = ['mysql', 'information_schema', 'performance_schema', 'sys'];
+    if (reserved.indexOf(name.toLowerCase()) !== -1) {
+      return 'لا يمكن استخدام اسم محجوز للنظام';
+    }
+    return '';
+  }
+
+  function askRestoreDbName(defaultName) {
+    var name = prompt('استعادة النسخة باسم ماذا؟\n(حروف إنجليزية / أرقام / _ فقط، 2–64)', defaultName || 'kody2');
+    if (name === null) return null;
+    var err = validateDbName(name);
+    while (err) {
+      name = prompt('خطأ: ' + err + '\n\nاستعادة النسخة باسم ماذا؟', name.trim());
+      if (name === null) return null;
+      err = validateDbName(name);
+    }
+    return name.trim();
+  }
+
+  var btnRestore = document.getElementById('btnRestoreBackup');
+  var backupInput = document.getElementById('backupFileInput');
+  var pendingRestoreDbName = '';
+  if (btnRestore && backupInput) {
+    btnRestore.addEventListener('click', function () {
+      var dbName = askRestoreDbName('kody2');
+      if (!dbName) return;
+      pendingRestoreDbName = dbName;
+      backupInput.value = '';
+      backupInput.click();
+    });
+    backupInput.addEventListener('change', function () {
+      var file = backupInput.files && backupInput.files[0];
+      var dbName = pendingRestoreDbName;
+      pendingRestoreDbName = '';
+      if (!file) return;
+      var nameErr = validateDbName(dbName);
+      if (nameErr) {
+        alert(nameErr);
+        backupInput.value = '';
+        return;
+      }
+      if (!confirm('استعادة الملف:\n' + file.name + '\n\nإلى قاعدة البيانات:\n' + dbName + '\n\nسيتم حقن البيانات وتكملة الجداول الناقصة.')) {
+        backupInput.value = '';
+        return;
+      }
+      btnRestore.disabled = true;
+      btnRestore.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الاستعادة...';
+      var fd = new FormData();
+      fd.append('action', 'restore');
+      fd.append('db_name', dbName);
+      fd.append('backup_file', file);
+      fetch('ajax/db_setup.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          alert(data.message || (data.success ? 'تم الاستعادة' : 'فشلت الاستعادة'));
+          if (data.success) {
+            loadMigrationStatus();
+            if (typeof loadPeriods === 'function') loadPeriods();
+          }
+        })
+        .catch(function () { alert('خطأ في رفع أو استعادة الملف'); })
+        .finally(function () {
+          btnRestore.disabled = false;
+          btnRestore.innerHTML = '<i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية';
+          backupInput.value = '';
         });
     });
   }

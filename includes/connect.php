@@ -5,25 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/load_env.php';
+require_once __DIR__ . '/db_name.php';
 
 $dbhost = env('DB_HOST', 'localhost');
 $dbuser = env('DB_USER', 'root');
 $dbpass = env('DB_PASS', '');
-$dbname = env('DB_NAME', 'kody2');
-
-// تعدد المدد: جلسة المستخدم لها أولوية على .env
-if (!empty($_SESSION['active_dbname']) && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) $_SESSION['active_dbname'])) {
-    $dbname = (string) $_SESSION['active_dbname'];
-} else {
-    $registryFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'db_registry.json';
-    if (is_readable($registryFile)) {
-        $reg = json_decode((string) file_get_contents($registryFile), true);
-        if (is_array($reg) && !empty($reg['current']) && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) $reg['current'])) {
-            $dbname = (string) $reg['current'];
-            $_SESSION['active_dbname'] = $dbname;
-        }
-    }
-}
+$dbname = kody_preferred_dbname();
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = @new mysqli($dbhost, $dbuser, $dbpass);
@@ -37,14 +24,16 @@ if ($conn->connect_error) {
     }
 }
 
-if (!$conn->select_db($dbname)) {
+$selected = kody_select_existing_db($conn);
+if ($selected === null) {
     if (basename($_SERVER['PHP_SELF']) !== 'pre_start.php' && strpos($_SERVER['PHP_SELF'], 'ajax/') === false) {
         header("Location: pre_start.php?reason=db_missing");
         exit;
     } else if (strpos($_SERVER['PHP_SELF'], 'ajax/') !== false) {
-
         die("Database '$dbname' not found. Please run pre_start.php");
     }
+} else {
+    $dbname = $selected;
 }
 
 // Enable SQL error reporting for debugging
@@ -176,3 +165,36 @@ $userErrorMassage = '<div class="alert alert-danger text-center">
     <i class="fas fa-exclamation-triangle"></i> 
     ليس لديك صلاحية للوصول إلى هذه الصفحة
 </div>';
+
+if (!function_exists('getUserDefault')) {
+    /**
+     * Get user specific default or fallback to global myoptions
+     * 
+     * @param string $optionName 'def_fund', 'def_store', 'def_client', 'def_prod', 'def_emp'
+     * @param mysqli $conn
+     * @return mixed
+     */
+    function getUserDefault($optionName, $conn) {
+        $allowed = ['def_fund', 'def_store', 'def_client', 'def_prod', 'def_emp'];
+        if (in_array($optionName, $allowed) && isset($_SESSION['userid'])) {
+            $uid = (int) $_SESSION['userid'];
+            $res = $conn->query("SELECT $optionName FROM users WHERE id = $uid");
+            if ($res && $row = $res->fetch_assoc()) {
+                if (!empty($row[$optionName]) && $row[$optionName] != 0) {
+                    return $row[$optionName];
+                }
+            }
+        }
+        
+        $stmt = $conn->prepare("SELECT cur_value FROM myoptions WHERE oname = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $optionName);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($row = $result->fetch_assoc()) {
+                return $row['cur_value'];
+            }
+        }
+        return null;
+    }
+}

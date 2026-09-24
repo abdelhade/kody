@@ -6,12 +6,13 @@
 session_start();
 
 require_once __DIR__ . '/includes/load_env.php';
+require_once __DIR__ . '/includes/db_name.php';
 
 // -------------------- إعدادات الداتابيس --------------------
 $dbhost = env('DB_HOST', 'localhost');
 $dbuser = env('DB_USER', 'root');
 $dbpass = env('DB_PASS', '');
-$dbname = env('DB_NAME', 'kody2');
+$dbname = kody_preferred_dbname();
 
 // Check connection
 mysqli_report(MYSQLI_REPORT_OFF);
@@ -22,11 +23,13 @@ if ($conn->connect_error) {
     exit;
 }
 
-// Try to select database
-if (!$conn->select_db($dbname)) {
+// Session/registry may point to a DB that doesn't exist on this machine — fall back
+$selected = kody_select_existing_db($conn);
+if ($selected === null) {
     header("Location: pre_start.php?reason=db_missing");
     exit;
 }
+$dbname = $selected;
 
 // Enable SQL error reporting for debugging subsequent queries
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
