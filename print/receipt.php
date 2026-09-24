@@ -285,13 +285,6 @@ if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])
 <div class="invoice-num"><?= date('md', strtotime($rowfat['pro_date'])) . $rowfat['pro_id'] ?></div>
 
 <?php
-$info_text = $rowfat['info'];
-if (strpos($info_text, 'دليفري') !== false) {
-    echo '<div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:6px;border:1px dashed #000;padding:4px;">دليفري</div>';
-} elseif (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false) {
-    echo '<div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:6px;border:1px dashed #000;padding:2px;">' . htmlspecialchars($info_text) . '</div>';
-}
-
 $accid = (int)$rowfat['acc1'];
 $rowacc1 = $conn->query("SELECT aname, phone, address, info from acc_head where id = $accid")->fetch_assoc();
 $employee_name = trim((string)($rowfat['employee_name'] ?? ''));
@@ -306,7 +299,7 @@ $customer_name = $rowacc1 ? $rowacc1['aname'] : '';
 $customer_phone = $rowacc1 ? $rowacc1['phone'] : '';
 $customer_address = $rowacc1 ? $rowacc1['address'] : '';
 
-// الطيار من ot_head (delivery_person_id / emp2_id عبر JOIN)
+// اسم الدليفري من ot_head (delivery_person_id / emp2_id عبر JOIN)
 $driver_name = trim((string)($rowfat['driver_name'] ?? ''));
 if ($driver_name === '' && !empty($rowfat['delivery_person_id'])) {
     $dpid = (int)$rowfat['delivery_person_id'];
@@ -334,23 +327,37 @@ if ($is_delivery) {
     if (isset($ph[1])) $customer_phone = trim($ph[1]);
     if (isset($ad[1])) $customer_address = trim($ad[1]);
 }
+
+$info_text = (string)$rowfat['info'];
+if ($is_delivery) {
+    $delivery_banner = 'دليفري';
+    if ($driver_name !== '') {
+        $delivery_banner .= ' — ' . $driver_name;
+    }
+    echo '<div style="text-align:center;font-weight:bold;font-size:16px;margin-bottom:6px;border:1px dashed #000;padding:4px;">'
+        . htmlspecialchars($delivery_banner, ENT_QUOTES, 'UTF-8')
+        . '</div>';
+} elseif (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false) {
+    echo '<div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:6px;border:1px dashed #000;padding:2px;">' . htmlspecialchars($info_text) . '</div>';
+}
+
 $show_client = !isset($rowstg['receipt_show_client']) || !empty($rowstg['receipt_show_client']);
-if ($show_client && ($customer_name || $customer_phone || $customer_address || $employee_name || $driver_name)):
+if (($show_client && ($customer_name || $customer_phone || $customer_address || $employee_name)) || $driver_name):
 ?>
 <div class="rcpt-customer">
-<?php if ($customer_name): ?>
+<?php if ($show_client && $customer_name): ?>
 <div class="info-row"><span class="info-label">العميل:</span><span class="info-val"><?= htmlspecialchars($customer_name) ?></span></div>
 <?php endif; ?>
-<?php if ($customer_phone): ?>
+<?php if ($show_client && $customer_phone): ?>
 <div class="info-row"><span class="info-label">التليفون:</span><span class="info-val"><?= htmlspecialchars($customer_phone) ?></span></div>
 <?php endif; ?>
-<?php if ($customer_address): ?>
+<?php if ($show_client && $customer_address): ?>
 <div class="info-row"><span class="info-label">العنوان:</span><span class="info-val"><?= htmlspecialchars($customer_address) ?></span></div>
 <?php endif; ?>
 <?php if ($driver_name): ?>
-<div class="info-row"><span class="info-label">الطيار:</span><span class="info-val"><?= htmlspecialchars($driver_name) ?></span></div>
+<div class="info-row"><span class="info-label">الدليفري:</span><span class="info-val"><?= htmlspecialchars($driver_name) ?></span></div>
 <?php endif; ?>
-<?php if ($employee_name): ?>
+<?php if ($show_client && $employee_name): ?>
 <div class="info-row"><span class="info-label">الموظف:</span><span class="info-val"><?= htmlspecialchars($employee_name) ?></span></div>
 <?php endif; ?>
 </div>

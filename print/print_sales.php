@@ -230,7 +230,33 @@ if($tybe == 4){
     $label = "العميل";
 }
 $rowacc1= $conn->query("SELECT aname from acc_head where id = $accid")->fetch_assoc();
-echo "<strong>" . $label . ":</strong> " . $rowacc1['aname'];?>
+echo "<strong>" . $label . ":</strong> " . htmlspecialchars($rowacc1['aname'] ?? '', ENT_QUOTES, 'UTF-8');
+
+// اسم الدليفري من ot_head
+$driver_name = '';
+$dpid = (int)($rowfat['delivery_person_id'] ?? 0);
+if ($dpid <= 0) {
+    $emp2id = (int)($rowfat['emp2_id'] ?? 0);
+    $empid = (int)($rowfat['emp_id'] ?? 0);
+    if ($emp2id > 0 && $emp2id !== $empid) {
+        $dpid = $emp2id;
+    }
+}
+if ($dpid > 0) {
+    $rowdrv = $conn->query("SELECT aname FROM acc_head WHERE id = $dpid")->fetch_assoc();
+    if ($rowdrv) {
+        $driver_name = trim((string)$rowdrv['aname']);
+    }
+}
+if ($driver_name === '' && !empty($rowfat['info'])) {
+    if (preg_match('/مندوب التوصيل:\s*(.+?)(?:\s+-\s+|$)/u', (string)$rowfat['info'], $dr)) {
+        $driver_name = trim($dr[1]);
+    }
+}
+if ($driver_name !== '') {
+    echo '<br><strong>الدليفري:</strong> ' . htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8');
+}
+?>
 </td>
 <td class="text-right info-row">
 <strong>رقم:</strong> #<?=$rowfat['pro_id']?> | <strong>SN:</strong> <?= $rowfat['pro_serial']?>

@@ -9,6 +9,18 @@ $today = date('Y-m-d'); // تعريف اليوم الحالي
 $strtdate = isset($_GET['strtdate']) ? $conn->real_escape_string($_GET['strtdate']) : null;
 $enddate = isset($_GET['enddate']) ? $conn->real_escape_string($_GET['enddate']) : null;
 $search = isset($_GET['search']) ? $_GET['search'] : null;
+$filter_delivery = isset($_GET['delivery_person']) ? intval($_GET['delivery_person']) : 0;
+$filter_order_type = isset($_GET['order_type']) ? trim($_GET['order_type']) : '';
+$allowed_order_types = ['takeaway', 'table', 'delivery', 'dine_in'];
+if (!in_array($filter_order_type, $allowed_order_types, true)) {
+    $filter_order_type = '';
+}
+
+// تأكد من عمود الطيار على ot_head
+$col_dp = @$conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
+if ($col_dp && $col_dp->num_rows == 0) {
+    @$conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
+}
 
 // التحقق من صيغة التاريخ
 if ($strtdate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $strtdate)) $strtdate = null;
@@ -21,6 +33,37 @@ $searchFilter = "";
 if ($search) {
     $search = $conn->real_escape_string($search);
     $searchFilter = "AND (ot.id LIKE '%$search%' OR ot.pro_id LIKE '%$search%' OR ot.info LIKE '%$search%' OR ot.jal_name LIKE '%$search%' OR acc1.aname LIKE '%$search%' OR acc2.aname LIKE '%$search%')";
+}
+
+$extraFilter = "";
+if ($filter_delivery > 0) {
+    $extraFilter .= " AND (
+        ot.delivery_person_id = $filter_delivery
+        OR (
+            (ot.delivery_person_id IS NULL OR ot.delivery_person_id = 0)
+            AND ot.emp2_id = $filter_delivery
+            AND (ot.order_type = 'delivery' OR ot.info LIKE '%دليفري%' OR ot.info LIKE '%مندوب التوصيل%')
+        )
+    )";
+}
+if ($filter_order_type !== '') {
+    if ($filter_order_type === 'delivery') {
+        $extraFilter .= " AND (ot.order_type = 'delivery' OR ot.info LIKE '%نوع الطلب: دليفري%')";
+    } elseif ($filter_order_type === 'table') {
+        $extraFilter .= " AND (ot.order_type = 'table' OR ot.info LIKE '%نوع الطلب: طاولة%' OR ot.info LIKE '%طاولة:%')";
+    } elseif ($filter_order_type === 'takeaway') {
+        $extraFilter .= " AND (
+            ot.order_type = 'takeaway'
+            OR (
+                (ot.order_type IS NULL OR ot.order_type = '')
+                AND (ot.info IS NULL OR ot.info = '' OR ot.info LIKE '%تيك أواي%')
+            )
+        )
+        AND (ot.order_type IS NULL OR ot.order_type = '' OR ot.order_type = 'takeaway')
+        AND (ot.info IS NULL OR (ot.info NOT LIKE '%نوع الطلب: دليفري%' AND ot.info NOT LIKE '%نوع الطلب: طاولة%'))";
+    } elseif ($filter_order_type === 'dine_in') {
+        $extraFilter .= " AND ot.order_type = 'dine_in'";
+    }
 }
 
 // Pagination
@@ -49,18 +92,18 @@ switch ($q) {
     case "purchase":
     case "sale_legacy": // للتوافقية
         $report_name = "مشتريات";
-        $where_clause = "ot.pro_tybe = 4 AND ot.isdeleted != 1 $dateFilter $searchFilter";
+        $where_clause = "ot.pro_tybe = 4 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
-        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter";
+        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
-        $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter";
+        $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT ot.* $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
 }
 ?>
@@ -106,15 +149,40 @@ switch ($q) {
                         ?>
                         <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
                         <div class="row">
-                            <div class="col-md-3 col-sm-6 col-12 mb-2">
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
                                 <label>من</label>
                                 <input class="form-control" type="date" value="<?= $strtdate_display ?>" name="strtdate">
                             </div>
-                            <div class="col-md-3 col-sm-6 col-12 mb-2">
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
                                 <label>إلى</label>
                                 <input class="form-control" type="date" value="<?= $enddate_display ?>" name="enddate">
                             </div>
-                            <div class="col-md-4 col-sm-6 col-12 mb-2">
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
+                                <label>نوع الأوردر</label>
+                                <select class="form-control" name="order_type">
+                                    <option value="">الكل</option>
+                                    <option value="takeaway" <?= $filter_order_type === 'takeaway' ? 'selected' : '' ?>>تيك أواي</option>
+                                    <option value="table" <?= $filter_order_type === 'table' ? 'selected' : '' ?>>طاولة</option>
+                                    <option value="delivery" <?= $filter_order_type === 'delivery' ? 'selected' : '' ?>>دليفري</option>
+                                    <option value="dine_in" <?= $filter_order_type === 'dine_in' ? 'selected' : '' ?>>صالة</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
+                                <label>الدليفري (الطيار)</label>
+                                <select class="form-control" name="delivery_person">
+                                    <option value="">الكل</option>
+                                    <?php
+                                    $res_drivers = $conn->query("SELECT id, aname, code FROM acc_head WHERE code LIKE '126%' AND isdeleted = 0 ORDER BY aname");
+                                    if ($res_drivers) {
+                                        while ($drv = $res_drivers->fetch_assoc()) {
+                                            $sel = ($filter_delivery == (int)$drv['id']) ? 'selected' : '';
+                                            echo '<option value="' . (int)$drv['id'] . '" ' . $sel . '>' . htmlspecialchars($drv['aname']) . '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
                                 <label>بحث (رقم الفاتورة، <?= $q === 'purchase' ? 'المورد' : 'العميل' ?>، البيان)</label>
                                 <input class="form-control" type="text" value="<?= htmlspecialchars($search ?? '') ?>" name="search" placeholder="ابحث هنا...">
                             </div>
@@ -369,6 +437,9 @@ switch ($q) {
                             $filter_params = "q=$q";
                             if (!empty($strtdate)) $filter_params .= "&strtdate=" . urlencode($strtdate);
                             if (!empty($enddate)) $filter_params .= "&enddate=" . urlencode($enddate);
+                            if (!empty($search)) $filter_params .= "&search=" . urlencode($search);
+                            if ($filter_delivery > 0) $filter_params .= "&delivery_person=" . $filter_delivery;
+                            if ($filter_order_type !== '') $filter_params .= "&order_type=" . urlencode($filter_order_type);
                             
                             // زر السابق
                             if ($page > 1): ?>
