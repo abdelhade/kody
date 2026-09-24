@@ -349,8 +349,8 @@ if (!isset($action_url)) {
     </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Scripts (local only) -->
+<script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
 <script src="assets/libs/sweetalert2/sweetalert2.min.js"></script>
 <script>if (typeof jQuery === 'undefined') { document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); }</script>
 <script src="assets/libs/bootstrap.bundle.min.js"></script>

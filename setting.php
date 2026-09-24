@@ -711,11 +711,11 @@ document.addEventListener('DOMContentLoaded', function () {
       if (document.getElementById(id)) return;
       var href = '';
       if (key === 'arabic_script') {
-        href = 'https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap';
+        href = 'assets/libs/amiri-local.css';
       } else if (key === 'cairo') {
-        href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap';
+        href = 'assets/libs/cairo-local.css';
       } else if (key === 'tajawal') {
-        href = 'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap';
+        href = 'assets/libs/tajawal-local.css';
       } else if (key === 'source_sans') {
         href = 'assets/libs/source-sans-pro-local.css';
       }

@@ -385,5 +385,5 @@ if (!isset($action_url)) {
     </div>
 </div>
 
-<!-- مكتبة قارئ الباركود للكاميرا -->
-<script src="https://unpkg.com/html5-qrcode"></script>
+<!-- مكتبة قارئ الباركود للكاميرا (محلية) -->
+<script src="assets/libs/html5-qrcode.min.js"></script>

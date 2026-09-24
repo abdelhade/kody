@@ -97,11 +97,11 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <?php if ($uiFontKey === 'source_sans'): ?>
   <link rel="stylesheet" href="assets/libs/source-sans-pro-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <?php elseif ($uiFontKey === 'arabic_script'): ?>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap">
+  <link rel="stylesheet" href="assets/libs/amiri-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <?php elseif ($uiFontKey === 'cairo'): ?>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="assets/libs/cairo-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <?php elseif ($uiFontKey === 'tajawal'): ?>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap">
+  <link rel="stylesheet" href="assets/libs/tajawal-local.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <?php endif; ?>
   <link rel="stylesheet" href="dist/css/bootstrap4.2.min.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="dist/css/custom.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">

@@ -8,7 +8,7 @@ header('Content-Type: text/html; charset=utf-8');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تشخيص مشكلة الدليفري</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container mt-4">
@@ -120,7 +120,7 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
     <script>
         function testSearch() {
             const phone = $('#test_phone').val();

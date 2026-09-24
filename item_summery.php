@@ -258,7 +258,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
         <?php if (isset($_GET['id'])): ?>

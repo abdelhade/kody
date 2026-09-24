@@ -34,8 +34,8 @@ $banks = $conn->query("SELECT * FROM acc_head WHERE (parent_id = 124 OR code LIK
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تحديث الأرصدة</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="assets/libs/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/libs/fontawesome.min.css">
     <style>
         body { background: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; }
         .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -166,6 +166,6 @@ $banks = $conn->query("SELECT * FROM acc_head WHERE (parent_id = 124 OR code LIK
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/libs/bootstrap.bundle.min.js"></script>
 </body>
 </html>

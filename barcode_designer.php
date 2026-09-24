@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Designer</title>
     <!-- Tailwind is handled via local build if needed -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/libs/jquery/jquery-3.6.0.min.js"></script>
     <script src="js/scripts.js" defer></script>
 </head>
 <body class="bg-gray-100">

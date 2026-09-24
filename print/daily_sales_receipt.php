@@ -211,7 +211,7 @@ if (file_exists($logo_path)) {
 </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="../assets/libs/jquery/jquery-3.6.0.min.js"></script>
 <script>
 // علّم أن صفحة الطباعة تم فتحها
 sessionStorage.setItem('pos_print_page_opened', 'true');
