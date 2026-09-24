@@ -106,6 +106,15 @@ function normalize_backup_statement(string $sql): ?string
         $sql = preg_replace('/^CREATE\s+TABLE\s+/i', 'CREATE TABLE IF NOT EXISTS ', $sql, 1);
     }
 
+    // الباكاب القديم يصدّر NULL كـ "" و UNIQUE على receipt_number يرفض تكرار الفاضي (1062)
+    if (preg_match('/^CREATE\s+TABLE\b/i', $sql)) {
+        $sql = preg_replace(
+            '/UNIQUE\s+KEY\s+`?receipt_number`?\s*\(\s*`?receipt_number`?\s*\)/i',
+            'KEY `receipt_number` (`receipt_number`)',
+            $sql
+        );
+    }
+
     return $sql;
 }
 
@@ -117,6 +126,8 @@ function execute_sql_file($conn, $file_path, bool $continueOnError = false)
     }
 
     $skipped = 0;
+    $errors = [];
+    $errorGroups = []; // key => [errno, error, count, sample_sql]
     foreach ($parsed as $exec_query) {
         if ($continueOnError) {
             $normalized = normalize_backup_statement($exec_query);
@@ -127,13 +138,36 @@ function execute_sql_file($conn, $file_path, bool $continueOnError = false)
         }
 
         if (!$conn->query($exec_query)) {
+            $errno = (int) $conn->errno;
+            $error = (string) $conn->error;
+            $sample = substr($exec_query, 0, 220);
+            $errDetail = [
+                'errno' => $errno,
+                'error' => $error,
+                'sql' => $sample,
+            ];
             if ($continueOnError) {
                 $skipped++;
+                $gkey = $errno . '|' . $error;
+                if (!isset($errorGroups[$gkey])) {
+                    $errorGroups[$gkey] = [
+                        'errno' => $errno,
+                        'error' => $error,
+                        'count' => 0,
+                        'sample_sql' => $sample,
+                    ];
+                }
+                $errorGroups[$gkey]['count']++;
+                if (count($errors) < 25) {
+                    $errors[] = $errDetail;
+                }
                 continue;
             }
             return [
                 'success' => false,
-                'message' => 'خطأ في تنفيذ SQL: ' . $conn->error . ' <br> في الاستعلام: ' . substr($exec_query, 0, 150) . '...',
+                'message' => 'خطأ في تنفيذ SQL [' . $errno . ']: ' . $error
+                    . "\nالاستعلام: " . $sample . '...',
+                'errors' => [$errDetail],
             ];
         }
     }
@@ -142,10 +176,26 @@ function execute_sql_file($conn, $file_path, bool $continueOnError = false)
         ? 'تم استعادة النسخة الاحتياطية بنجاح'
         : 'تم تهيئة قاعدة البيانات بنجاح';
     if ($continueOnError && $skipped > 0) {
-        $msg .= " (تم تجاهل {$skipped} استعلام غير متوافق)";
+        $msg .= "\n\nتم تجاهل {$skipped} استعلام فاشل. أخطاء MySQL:";
+        $i = 0;
+        foreach ($errorGroups as $g) {
+            $i++;
+            if ($i > 15) {
+                $msg .= "\n... وأنواع أخطاء أخرى";
+                break;
+            }
+            $msg .= "\n{$i}) [{$g['errno']}] {$g['error']} (×{$g['count']})"
+                . "\n   مثال SQL: {$g['sample_sql']}...";
+        }
     }
 
-    return ['success' => true, 'message' => $msg, 'skipped' => $skipped];
+    return [
+        'success' => true,
+        'message' => $msg,
+        'skipped' => $skipped,
+        'errors' => $errors,
+        'error_groups' => array_values($errorGroups),
+    ];
 }
 
 /**
@@ -345,19 +395,32 @@ if ($action === 'create') {
 
     // 1) Inject backup without aborting on conflicts / missing drops
     $result = execute_sql_file($conn, $file['tmp_name'], true);
+    $skipped = (int) ($result['skipped'] ?? 0);
     $result['message'] = "تم استعادة النسخة إلى `$dbname` بنجاح"
-        . (isset($result['skipped']) && $result['skipped'] > 0
-            ? " (تم تجاهل {$result['skipped']} استعلام غير متوافق)"
-            : '');
+        . ($skipped > 0 ? " (تم تجاهل {$skipped} استعلام فاشل)" : '');
+
+    // أظهر رسائل MySQL الفعلية مجمّعة (العدّ من كل الـ 2991 وليس عيّنة)
+    $groups = $result['error_groups'] ?? [];
+    if ($skipped > 0 && $groups !== []) {
+        $result['message'] .= "\n\nأخطاء MySQL:";
+        foreach (array_slice($groups, 0, 15) as $i => $g) {
+            $n = $i + 1;
+            $result['message'] .= "\n{$n}) [{$g['errno']}] {$g['error']} (×{$g['count']})"
+                . "\n   مثال SQL: {$g['sample_sql']}...";
+        }
+        if (count($groups) > 15) {
+            $result['message'] .= "\n... وأنواع أخطاء أخرى (" . (count($groups) - 15) . ")";
+        }
+    }
 
     // 2) Compare with base schema used for new DB — create any missing tables
     $schemaFile = resolve_schema_file();
     $ensure = ensure_missing_tables_from_schema($conn, $schemaFile);
     if (!empty($ensure['added'])) {
-        $result['message'] .= ' — ' . $ensure['message'] . ': ' . implode(', ', $ensure['added']);
+        $result['message'] .= "\n\n" . $ensure['message'] . ': ' . implode(', ', $ensure['added']);
         $result['added_tables'] = $ensure['added'];
     } else {
-        $result['message'] .= ' — الهيكل الأساسي مكتمل.';
+        $result['message'] .= "\nالهيكل الأساسي مكتمل.";
         $result['added_tables'] = [];
     }
     $result['database'] = $dbname;

@@ -874,7 +874,13 @@ document.addEventListener('DOMContentLoaded', function () {
       fetch('ajax/db_setup.php', { method: 'POST', body: fd, credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          alert(data.message || (data.success ? 'تم الاستعادة' : 'فشلت الاستعادة'));
+          console.log('restore result', data);
+          var msg = data.message || (data.success ? 'تم الاستعادة' : 'فشلت الاستعادة');
+          if (data.error_groups && data.error_groups.length) {
+            console.table(data.error_groups);
+          }
+          // alert يقطع الرسائل الطويلة — نافذة قابلة للنسخ
+          window.prompt('نتيجة الاستعادة (Ctrl+A ثم Ctrl+C للنسخ):', msg);
           if (data.success) {
             loadMigrationStatus();
             if (typeof loadPeriods === 'function') loadPeriods();
