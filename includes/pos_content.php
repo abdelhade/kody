@@ -850,9 +850,9 @@ body {
                 <div class="modal-body">
                     <!-- مندوب التوصيل -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold">مندوب التوصيل</label>
-                        <select class="form-select" id="delivery_person_id">
-                            <option value="">-- اختر مندوب التوصيل --</option>
+                        <label class="form-label fw-bold">الطيار (مندوب التوصيل)</label>
+                        <select class="form-select" id="delivery_person_id" required>
+                            <option value="">-- اختر الطيار --</option>
                             <?php
                             $resdelivery = $conn->query("SELECT * FROM `acc_head` WHERE code LIKE '126%' AND isdeleted = 0 ORDER BY aname");
                             while ($rowdelivery = $resdelivery->fetch_assoc()) {
@@ -861,20 +861,26 @@ body {
                             ?>
                         </select>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">رقم العميل</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="customer_phone" placeholder="أدخل رقم العميل (البحث يبدأ بعد 3 أرقام)">
-                            <!-- <button class="btn btn-primary" type="button" onclick="searchCustomer()">
-                                <i class="fas fa-search"></i> بحث
-                            </button> -->
-                        </div>
-                        <small class="text-muted">سيتم البحث تلقائياً بعد كتابة 3 أرقام</small>
+                        <input type="text" class="form-control" id="customer_phone"
+                            placeholder="أدخل رقم العميل ثم اخرج من الحقل للبحث"
+                            autocomplete="off">
+                        <small class="text-muted">يتم البحث عند الخروج من حقل التليفون</small>
                     </div>
 
-                    <div id="customer_result">
-                        <!-- سيتم عرض النتيجة هنا -->
+                    <div id="customer_status" class="mb-2"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم العميل</label>
+                        <input type="text" class="form-control" id="customer_name" placeholder="اسم العميل">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">العنوان</label>
+                        <textarea class="form-control" id="customer_address" rows="2"
+                            placeholder="عنوان العميل"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -884,8 +890,7 @@ body {
                     <button type="button" class="btn btn-primary" id="saveCustomerBtn" onclick="saveCustomerData()">
                         <i class="fas fa-save me-1"></i>حفظ
                     </button>
-                    <button type="button" class="btn btn-success" onclick="confirmDeliveryOrder()" style="display:none;"
-                        id="confirmOrderBtn">
+                    <button type="button" class="btn btn-success" id="confirmOrderBtn" onclick="confirmDeliveryOrder()">
                         <i class="fas fa-check me-1"></i>تأكيد الطلب
                     </button>
                 </div>
@@ -1122,105 +1127,120 @@ body {
                 $('#deliveryModal').modal('show');
             };
 
-            // البحث الديناميكي عن العملاء
-            let searchTimeout;
+            // البحث عن العميل عند الخروج من حقل التليفون
             let lastSearchedPhone = '';
-            
-            $('#customer_phone').on('input', function() {
-                const phone = $(this).val().trim();
-                
-                // إزالة الألوان عند بدء الكتابة
+            let isSearchingCustomer = false;
+
+            function setCustomerStatus(type, message) {
+                if (!message) {
+                    $('#customer_status').html('');
+                    return;
+                }
+                const icons = {
+                    success: 'fa-check-circle',
+                    info: 'fa-user-plus',
+                    warning: 'fa-exclamation-triangle',
+                    danger: 'fa-times-circle'
+                };
+                const icon = icons[type] || 'fa-info-circle';
+                $('#customer_status').html(
+                    '<div class="alert alert-' + type + ' mb-0 py-2">' +
+                    '<i class="fas ' + icon + ' me-2"></i>' + message +
+                    '</div>'
+                );
+            }
+
+            $('#customer_phone').on('input', function () {
                 $(this).removeClass('border-success border-info border-danger border-warning');
-                
-                // مسح النتائج السابقة إذا كان الرقم أقل من 3 أرقام
-                if (phone.length < 3) {
-                    $('#customer_result').html('');
-                    $('#saveCustomerBtn').show().html('<i class="fas fa-save me-1"></i>حفظ');
-                    $('#confirmOrderBtn').hide();
+                if ($(this).val().trim() !== lastSearchedPhone) {
                     lastSearchedPhone = '';
+                    setCustomerStatus('', '');
+                }
+            });
+
+            $('#customer_phone').on('blur', function () {
+                const phone = $(this).val().trim();
+                if (!phone || phone.length < 3) {
                     return;
                 }
-                
-                // تجنب البحث المتكرر عن نفس الرقم
-                if (phone === lastSearchedPhone) {
+                if (phone === lastSearchedPhone || isSearchingCustomer) {
                     return;
                 }
-                
-                // إلغاء البحث السابق
-                clearTimeout(searchTimeout);
-                
-                // بدء البحث بعد 500ms من التوقف عن الكتابة
-                searchTimeout = setTimeout(function() {
-                    if (phone.length >= 3 && phone !== lastSearchedPhone) {
-                        lastSearchedPhone = phone;
-                        searchCustomerDynamic(phone);
-                    }
-                }, 500);
+                searchCustomerDynamic(phone);
             });
 
             function searchCustomerDynamic(phone) {
-                // إضافة مؤشر بصري لحقل الإدخال
-                $('#customer_phone').addClass('border-warning').attr('placeholder', 'جاري البحث...');
-                
-                // عرض مؤشر التحميل
-                $('#customer_result').html(`
-                    <div class="text-center py-2">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status">
-                            <span class="visually-hidden">جاري البحث...</span>
-                        </div>
-                        <small class="d-block mt-1 text-muted">جاري البحث عن العميل...</small>
-                    </div>
-                `);
+                isSearchingCustomer = true;
+                lastSearchedPhone = phone;
+
+                $('#customer_phone')
+                    .addClass('border-warning')
+                    .attr('placeholder', 'جاري البحث...');
+                setCustomerStatus('info', 'جاري البحث عن العميل...');
 
                 $.ajax({
                     url: 'do/search_customer.php',
                     method: 'POST',
                     data: { phone: phone },
-                    success: function (data) {
-                        console.log('Dynamic search response:', data);
-                        
-                        // إزالة مؤشر البحث
-                        $('#customer_phone').removeClass('border-warning').attr('placeholder', 'أدخل رقم العميل (البحث يبدأ بعد 3 أرقام)');
-                        
-                        try {
-                            var response = (typeof data === 'object') ? data : JSON.parse(data);
-                            if (response.found) {
-                                // عميل موجود - ملء الحقول
-                                $('#customer_phone').addClass('border-success');
-                                $('#customer_result').html(`
-                                    <div class="alert alert-success mb-3">
-                                        <i class="fas fa-check-circle me-2"></i>تم العثور على العميل
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">رقم الموبايل</label>
-                                        <input type="text" class="form-control" id="customer_phone_display" value="${phone}" readonly>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">اسم العميل</label>
-                                        <input type="text" class="form-control" id="customer_name" value="${response.name}">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-bold">العنوان</label>
-                                        <textarea class="form-control" id="customer_address" rows="2">${response.address}</textarea>
-                                    </div>
-                                `);
-                                $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ التعديل');
-                                $('#confirmOrderBtn').show();
-                            } else {
-                                // عميل غير موجود - عرض حقول الإدخال
-                                $('#customer_phone').addClass('border-info');
-                                showNewCustomerForm();
-                            }
-                        } catch (e) {
-                            console.error('Parse error in dynamic search:', e);
+                    dataType: 'json',
+                    timeout: 15000,
+                    success: function (response) {
+                        $('#customer_phone')
+                            .removeClass('border-warning')
+                            .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
+
+                        if (!response || typeof response !== 'object') {
                             $('#customer_phone').addClass('border-danger');
-                            showNewCustomerForm();
+                            setCustomerStatus('warning', 'استجابة غير متوقعة — يمكنك إدخال البيانات يدوياً');
+                            return;
+                        }
+
+                        if (response.found) {
+                            $('#customer_phone').addClass('border-success');
+                            $('#customer_name').val(response.name || '');
+                            $('#customer_address').val(response.address || '');
+                            setCustomerStatus('success', 'تم العثور على العميل');
+                            $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ التعديل');
+                        } else {
+                            $('#customer_phone').addClass('border-info');
+                            setCustomerStatus('info', 'عميل جديد — يرجى إدخال الاسم والعنوان');
+                            $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ');
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('Dynamic search AJAX Error:', error);
-                        $('#customer_phone').removeClass('border-warning').addClass('border-danger').attr('placeholder', 'خطأ في البحث - حاول مرة أخرى');
-                        showNewCustomerForm();
+                        console.error('Dynamic search AJAX Error:', {
+                            status: status,
+                            http: xhr.status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
+
+                        $('#customer_phone')
+                            .removeClass('border-warning')
+                            .addClass('border-danger')
+                            .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
+
+                        // حاول قراءة JSON من رد 500 إن وُجد
+                        let msg = 'تعذر البحث — يمكنك إدخال البيانات يدوياً';
+                        try {
+                            const errBody = xhr.responseJSON || JSON.parse(xhr.responseText || '{}');
+                            if (errBody && (errBody.message || errBody.error)) {
+                                msg = errBody.message || errBody.error;
+                            }
+                        } catch (e) { /* ignore */ }
+
+                        if (xhr.status === 500) {
+                            msg = 'خطأ في الخادم (500) — ' + msg;
+                        } else if (status === 'timeout') {
+                            msg = 'انتهت مهلة البحث — يمكنك إدخال البيانات يدوياً';
+                        }
+
+                        setCustomerStatus('warning', msg);
+                        // اسمح بإعادة المحاولة عند blur التالي
+                        lastSearchedPhone = '';
+                    },
+                    complete: function () {
+                        isSearchingCustomer = false;
                     }
                 });
             }
@@ -1235,7 +1255,7 @@ body {
                     });
                     return;
                 }
-                
+
                 if (phone.length < 3) {
                     Swal.fire({
                         icon: 'warning',
@@ -1244,51 +1264,46 @@ body {
                     });
                     return;
                 }
-                
+
                 searchCustomerDynamic(phone);
             };
 
-            function showNewCustomerForm() {
-                const currentPhone = $('#customer_phone').val().trim();
-                $('#customer_result').html(`
-                    <div class="alert alert-info mb-3">
-                        <i class="fas fa-user-plus me-2"></i>عميل جديد - يرجى إدخال بياناته
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">رقم الموبايل</label>
-                        <input type="text" class="form-control" id="customer_phone_display" value="${currentPhone}" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">اسم العميل</label>
-                        <input type="text" class="form-control" id="customer_name" placeholder="اسم العميل" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">العنوان</label>
-                        <textarea class="form-control" id="customer_address" rows="2" placeholder="عنوان العميل" required></textarea>
-                    </div>
-                `);
-                $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ');
-                $('#confirmOrderBtn').show();
-            }
-
-            // دالة مساعدة لتنظيف النماذج
+            // دالة مساعدة لتنظيف النماذج (واجهة المودال فقط — بدون مسح الحقول المخفية في الفورم)
             window.clearDeliveryForm = function () {
-                $('#customer_phone').val('').removeClass('border-success border-info border-danger border-warning').attr('placeholder', 'أدخل رقم العميل (البحث يبدأ بعد 3 أرقام)');
+                $('#customer_phone').val('').removeClass('border-success border-info border-danger border-warning')
+                    .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
                 $('#customer_name').val('');
                 $('#customer_address').val('');
-                $('#customer_result').html('');
-                $('#delivery_person_id').val('');
+                setCustomerStatus('', '');
+                // لا تمسح #delivery_person_id هنا — القيمة متزامنة مع الفورم للحفظ/الطباعة
                 $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ').show();
-                $('#confirmOrderBtn').hide();
-                lastSearchedPhone = ''; // إعادة تعيين متغير البحث
-                clearTimeout(searchTimeout); // إلغاء أي بحث معلق
+                $('#confirmOrderBtn').show();
+                lastSearchedPhone = '';
+                isSearchingCustomer = false;
             };
 
-            // دالة لإعادة تعيين نموذج الدليفري عند إغلاق المودال
+            // بعد التأكيد: نترك بيانات الطيار/العميل في الفورم؛ ننظّف حقول الإدخال فقط عند إعادة الفتح
             $('#deliveryModal').on('hidden.bs.modal', function () {
-                clearDeliveryForm();
+                // لا نستدعي clearDeliveryForm() بالكامل حتى لا نفقد الطيار قبل الدفع
+                $('#customer_phone').removeClass('border-success border-info border-danger border-warning');
+                setCustomerStatus('', '');
             });
 
+            $('#deliveryModal').on('show.bs.modal', function () {
+                // أعد تعبئة المودال من الفورم لو كانت محفوظة
+                const phone = ($('input[name="delivery_customer_phone"]').val() || '').trim();
+                const name = ($('input[name="delivery_customer_name"]').val() || '').trim();
+                const address = ($('input[name="delivery_customer_address"]').val() || '').trim();
+                const driverId = ($('input[name="delivery_person_id"]').val() || '').trim();
+                if (phone) $('#customer_phone').val(phone);
+                if (name) $('#customer_name').val(name);
+                if (address) $('#customer_address').val(address);
+                if (driverId) $('#delivery_person_id').val(driverId);
+            });
+
+            $('#deliveryModal').on('shown.bs.modal', function () {
+                $('#customer_phone').trigger('focus');
+            });
             // Listen for changes on the 'age' radio buttons
             $('input[name="age"]').change(function(){
                 if ($(this).val() == '2') {
@@ -1342,9 +1357,6 @@ body {
             window.getDeliveryCustomerData = function () {
                 let phone = ($('#customer_phone').val() || '').trim();
                 if (!phone) {
-                    phone = ($('#customer_phone_display').val() || '').trim();
-                }
-                if (!phone) {
                     phone = ($('input[name="delivery_customer_phone"]').val() || '').trim();
                 }
 
@@ -1365,11 +1377,16 @@ body {
                 const form = document.getElementById('posForm');
                 if (!form) return;
 
+                // لو الـ select فاضي (بعد إغلاق المودال) احتفظ بالقيمة المخفية السابقة
+                const driverFromSelect = ($('#delivery_person_id').val() || '').trim();
+                const driverFromForm = ($('input[name="delivery_person_id"]').val() || '').trim();
+                const driverId = driverFromSelect || driverFromForm;
+
                 const fields = {
                     delivery_customer_name: name,
                     delivery_customer_phone: phone,
                     delivery_customer_address: address,
-                    delivery_person_id: $('#delivery_person_id').val()
+                    delivery_person_id: driverId
                 };
 
                 Object.entries(fields).forEach(function ([fieldName, value]) {
@@ -1397,32 +1414,43 @@ body {
                     url: 'do/save_customer.php',
                     method: 'POST',
                     data: { phone: phone, name: name, address: address },
-                    success: function (data) {
-                        try {
-                            var response = (typeof data === 'object') ? data : JSON.parse(data);
-                            if (response.success && typeof onSuccess === 'function') {
-                                onSuccess(response);
-                            } else if (!response.success) {
-                                console.error('Delivery customer save error:', response.error);
-                            }
-                        } catch (e) {
-                            console.error('Delivery customer response parse error:', e, data);
+                    dataType: 'json',
+                    timeout: 15000,
+                    success: function (response) {
+                        if (response && response.success && typeof onSuccess === 'function') {
+                            onSuccess(response);
+                        } else if (!response || !response.success) {
+                            console.error('Delivery customer save error:', response && (response.error || response.message));
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error('Delivery customer AJAX error:', error);
+                        console.error('Delivery customer AJAX error:', {
+                            status: status,
+                            http: xhr.status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
                     }
                 });
             };
 
             window.confirmDeliveryOrder = function () {
                 const customer = getDeliveryCustomerData();
+                const driverId = ($('#delivery_person_id').val() || '').trim();
 
                 if (!customer.phone || !customer.name || !customer.address) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'تنبيه',
                         text: 'يرجى ملء جميع الحقول'
+                    });
+                    return;
+                }
+                if (!driverId) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'تنبيه',
+                        text: 'يرجى اختيار الطيار'
                     });
                     return;
                 }
@@ -1459,54 +1487,57 @@ body {
                         name: name,
                         address: address
                     },
-                    success: function (data) {
-                        console.log('Response:', data);
-                        try {
-                            var response = (typeof data === 'object') ? data : JSON.parse(data);
-                            console.log('Parsed:', response);
-                            if (response.success) {
-                                syncDeliveryFieldsToForm(phone, name, address);
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'تم بنجاح',
-                                    text: 'تم حفظ بيانات العميل بنجاح',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-                                $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ التعديل');
-                                $('#confirmOrderBtn').show();
-                            } else {
-                                var errorMsg = 'حدث خطأ في حفظ البيانات';
-                                if (response.error) {
-                                    errorMsg += ': ' + response.error;
-                                }
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطأ',
-                                    text: errorMsg
-                                });
-                                console.error('Save error:', response);
-                            }
-                        } catch (e) {
-                            console.log('Parse error:', e);
-                            console.log('Raw response:', data);
+                    dataType: 'json',
+                    timeout: 15000,
+                    success: function (response) {
+                        if (response && response.success) {
+                            syncDeliveryFieldsToForm(phone, name, address);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم بنجاح',
+                                text: 'تم حفظ بيانات العميل بنجاح',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            $('#saveCustomerBtn').html('<i class="fas fa-save me-1"></i>حفظ التعديل');
+                        } else {
+                            var errorMsg = (response && (response.message || response.error))
+                                ? (response.message || response.error)
+                                : 'حدث خطأ في حفظ البيانات';
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطأ',
-                                text: 'حدث خطأ في معالجة الاستجابة. تحقق من وحدة التحكم للتفاصيل.'
+                                text: errorMsg
                             });
+                            console.error('Save error:', response);
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error('AJAX Error:', {
                             status: status,
+                            http: xhr.status,
                             error: error,
                             responseText: xhr.responseText
                         });
+
+                        let errorMsg = 'حدث خطأ في الاتصال';
+                        try {
+                            const errBody = xhr.responseJSON || JSON.parse(xhr.responseText || '{}');
+                            if (errBody && (errBody.message || errBody.error)) {
+                                errorMsg = errBody.message || errBody.error;
+                            }
+                        } catch (e) { /* ignore */ }
+
+                        if (xhr.status === 500) {
+                            errorMsg = 'خطأ في الخادم (500): ' + errorMsg;
+                        } else if (status === 'timeout') {
+                            errorMsg = 'انتهت مهلة الحفظ — حاول مرة أخرى';
+                        }
+
                         Swal.fire({
                             icon: 'error',
                             title: 'خطأ',
-                            text: 'حدث خطأ في الاتصال: ' + error
+                            text: errorMsg
                         });
                     }
                 });
@@ -1549,11 +1580,26 @@ body {
 
         if ($('input[name="age"]:checked').val() == '3' && typeof getDeliveryCustomerData === 'function') {
             const customer = getDeliveryCustomerData();
+            const driverId = (
+                ($('#delivery_person_id').val() || '').trim()
+                || ($('input[name="delivery_person_id"]').val() || '').trim()
+            );
             if (!customer.phone || !customer.name || !customer.address) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'بيانات الدليفري',
                     text: 'يرجى إدخال اسم العميل ورقم الهاتف والعنوان'
+                });
+                if (typeof openDeliveryModal === 'function') {
+                    openDeliveryModal();
+                }
+                return false;
+            }
+            if (!driverId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'الطيار',
+                    text: 'يرجى اختيار الطيار قبل حفظ الطلب'
                 });
                 if (typeof openDeliveryModal === 'function') {
                     openDeliveryModal();

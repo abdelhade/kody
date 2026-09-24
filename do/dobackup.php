@@ -12,7 +12,7 @@ foreach ($tables as $table) {
     $res = $conn->query("SELECT * FROM ".$table);
     $num_fields = mysqli_num_fields($res);
 
-    $return .= 'DROP TABLE '.$table.';';
+    $return .= 'DROP TABLE IF EXISTS '.$table.';';
     $row2 = mysqli_fetch_row(mysqli_query($conn,'SHOW CREATE TABLE '.$table));
     
     $return .= "\n\n".$row2[1].";\n\n";

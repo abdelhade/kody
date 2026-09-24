@@ -106,16 +106,22 @@ if (!empty($order_type_text)) {
 }
 
 // إضافة بيانات العميل للدليفري
+$emp2_id = $emp_id;
+$delivery_person_id = 0;
 if ($order_type == 3) { // دليفري
     $delivery_name = isset($_POST['delivery_customer_name']) ? htmlspecialchars(trim($_POST['delivery_customer_name']), ENT_QUOTES, 'UTF-8') : '';
     $delivery_phone = isset($_POST['delivery_customer_phone']) ? htmlspecialchars(trim($_POST['delivery_customer_phone']), ENT_QUOTES, 'UTF-8') : '';
     $delivery_address = isset($_POST['delivery_customer_address']) ? htmlspecialchars(trim($_POST['delivery_customer_address']), ENT_QUOTES, 'UTF-8') : '';
     $delivery_person_id = isset($_POST['delivery_person_id']) ? intval($_POST['delivery_person_id']) : 0;
+
+    // الطيار يُحفظ في ot_head.emp2_id (رأس العملية)
+    if ($delivery_person_id > 0) {
+        $emp2_id = $delivery_person_id;
+    }
     
     if (!empty($delivery_name) && !empty($delivery_phone) && !empty($delivery_address)) {
         $info .= " - العميل: $delivery_name - الهاتف: $delivery_phone - العنوان: $delivery_address";
         if ($delivery_person_id > 0) {
-            // Fetch delivery person name
             $dp_result = $conn->query("SELECT aname FROM acc_head WHERE id = $delivery_person_id");
             if ($dp_result && $dp_row = $dp_result->fetch_assoc()) {
                 $info .= " - مندوب التوصيل: " . $dp_row['aname'];
@@ -180,6 +186,12 @@ $is_pending_table_order = ($is_table_order && !$finalize_order);
 $col_chk = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'table_id'");
 if ($col_chk && $col_chk->num_rows == 0) {
     $conn->query("ALTER TABLE ot_head ADD COLUMN table_id INT DEFAULT NULL");
+}
+
+// تأكد من وجود عمود delivery_person_id (الطيار على ot_head)
+$col_dp = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
+if ($col_dp && $col_dp->num_rows == 0) {
+    $conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
 }
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
@@ -320,6 +332,7 @@ try {
             'pro_serial' => $pro_serial,
             'store_id' => $store_id,
             'emp_id' => $emp_id,
+            'emp2_id' => $emp2_id,
             'acc1' => $accounts['acc1'],
             'acc2' => $accounts['acc2'],
             'headtotal' => $headtotal,
@@ -376,6 +389,7 @@ try {
             'pro_serial' => $pro_serial,
             'store_id' => $store_id,
             'emp_id' => $emp_id,
+            'emp2_id' => $emp2_id,
             'acc1' => $accounts['acc1'],
             'acc2' => $accounts['acc2'],
             'headtotal' => $headtotal,
@@ -422,6 +436,29 @@ try {
     $stmt_jf->bind_param('ii', $journal_flag, $last_op);
     $stmt_jf->execute();
     $stmt_jf->close();
+
+    // حفظ نوع الطلب + الطيار مباشرة على ot_head
+    $ot_order_type = 'takeaway';
+    if ($order_type == 2) {
+        $ot_order_type = 'table';
+    } elseif ($order_type == 3) {
+        $ot_order_type = 'delivery';
+    }
+    $emp2_save = (int) $emp2_id;
+    if ($order_type == 3 && $delivery_person_id > 0) {
+        $emp2_save = (int) $delivery_person_id;
+        $stmt_ot = $conn->prepare(
+            "UPDATE ot_head SET order_type = ?, emp2_id = ?, delivery_person_id = ? WHERE id = ?"
+        );
+        $stmt_ot->bind_param('siii', $ot_order_type, $emp2_save, $delivery_person_id, $last_op);
+    } else {
+        $stmt_ot = $conn->prepare(
+            "UPDATE ot_head SET order_type = ?, emp2_id = ?, delivery_person_id = NULL WHERE id = ?"
+        );
+        $stmt_ot->bind_param('sii', $ot_order_type, $emp2_save, $last_op);
+    }
+    $stmt_ot->execute();
+    $stmt_ot->close();
 
     // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض أو الطلبات المعلّقة)
     if (!$is_pending_table_order && !in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {

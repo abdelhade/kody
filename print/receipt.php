@@ -12,7 +12,33 @@ if (!isset($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
-$rowfat = $conn->query("SELECT * FROM `ot_head` where id = $id")->fetch_assoc();
+
+// تأكد من عمود الطيار على ot_head
+$col_dp = @$conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
+if ($col_dp && $col_dp->num_rows == 0) {
+    @$conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
+}
+
+$rowfat = null;
+try {
+    $rowfat = $conn->query(
+        "SELECT ot.*,
+                drv.aname AS driver_name,
+                emp.aname AS employee_name
+         FROM ot_head ot
+         LEFT JOIN acc_head emp ON emp.id = ot.emp_id
+         LEFT JOIN acc_head drv ON drv.id = COALESCE(
+             NULLIF(ot.delivery_person_id, 0),
+             IF(ot.emp2_id IS NOT NULL AND ot.emp2_id <> 0 AND ot.emp2_id <> ot.emp_id, ot.emp2_id, NULL)
+         )
+         WHERE ot.id = $id"
+    )->fetch_assoc();
+} catch (Throwable $e) {
+    $rowfat = null;
+}
+if ($rowfat == null) {
+    $rowfat = $conn->query("SELECT * FROM `ot_head` where id = $id")->fetch_assoc();
+}
 if ($rowfat == null) {
     echo "لا يوجد فاتورة بهذا الرقم";
     exit;
@@ -268,24 +294,48 @@ if (strpos($info_text, 'دليفري') !== false) {
 
 $accid = (int)$rowfat['acc1'];
 $rowacc1 = $conn->query("SELECT aname, phone, address, info from acc_head where id = $accid")->fetch_assoc();
-$empid = (int)$rowfat['emp_id'];
-$rowemp = $conn->query("SELECT aname from acc_head where id = $empid")->fetch_assoc();
-$employee_name = $rowemp ? $rowemp['aname'] : '';
-$is_delivery = strpos($rowfat['info'], 'دليفري') !== false;
+$employee_name = trim((string)($rowfat['employee_name'] ?? ''));
+if ($employee_name === '') {
+    $empid = (int)$rowfat['emp_id'];
+    $rowemp = $conn->query("SELECT aname from acc_head where id = $empid")->fetch_assoc();
+    $employee_name = $rowemp ? $rowemp['aname'] : '';
+}
+$is_delivery = (strpos((string)$rowfat['info'], 'دليفري') !== false)
+    || (($rowfat['order_type'] ?? '') === 'delivery');
 $customer_name = $rowacc1 ? $rowacc1['aname'] : '';
 $customer_phone = $rowacc1 ? $rowacc1['phone'] : '';
 $customer_address = $rowacc1 ? $rowacc1['address'] : '';
+
+// الطيار من ot_head (delivery_person_id / emp2_id عبر JOIN)
+$driver_name = trim((string)($rowfat['driver_name'] ?? ''));
+if ($driver_name === '' && !empty($rowfat['delivery_person_id'])) {
+    $dpid = (int)$rowfat['delivery_person_id'];
+    $rowdrv = $conn->query("SELECT aname FROM acc_head WHERE id = $dpid")->fetch_assoc();
+    if ($rowdrv) $driver_name = $rowdrv['aname'];
+}
+if ($driver_name === '') {
+    $emp2id = (int)($rowfat['emp2_id'] ?? 0);
+    $empid = (int)$rowfat['emp_id'];
+    if ($emp2id > 0 && $emp2id !== $empid) {
+        $rowdrv = $conn->query("SELECT aname FROM acc_head WHERE id = $emp2id")->fetch_assoc();
+        if ($rowdrv) $driver_name = $rowdrv['aname'];
+    }
+}
 if ($is_delivery) {
-    $info_d = $rowfat['info'];
-    preg_match('/العميل: ([^-]+)/', $info_d, $nm);
-    preg_match('/الهاتف: ([^-]+)/', $info_d, $ph);
-    preg_match('/العنوان: (.+)$/', $info_d, $ad);
+    $info_d = (string)$rowfat['info'];
+    preg_match('/العميل:\s*(.+?)(?:\s+-\s+الهاتف:|$)/u', $info_d, $nm);
+    preg_match('/الهاتف:\s*(.+?)(?:\s+-\s+العنوان:|$)/u', $info_d, $ph);
+    preg_match('/العنوان:\s*(.+?)(?:\s+-\s+مندوب التوصيل:|\s+-\s+دفع|$)/u', $info_d, $ad);
+    if ($driver_name === '') {
+        preg_match('/مندوب التوصيل:\s*(.+?)(?:\s+-\s+|$)/u', $info_d, $dr);
+        if (isset($dr[1])) $driver_name = trim($dr[1]);
+    }
     if (isset($nm[1])) $customer_name = trim($nm[1]);
     if (isset($ph[1])) $customer_phone = trim($ph[1]);
     if (isset($ad[1])) $customer_address = trim($ad[1]);
 }
 $show_client = !isset($rowstg['receipt_show_client']) || !empty($rowstg['receipt_show_client']);
-if ($show_client && ($customer_name || $customer_phone || $customer_address || $employee_name)):
+if ($show_client && ($customer_name || $customer_phone || $customer_address || $employee_name || $driver_name)):
 ?>
 <div class="rcpt-customer">
 <?php if ($customer_name): ?>
@@ -296,6 +346,9 @@ if ($show_client && ($customer_name || $customer_phone || $customer_address || $
 <?php endif; ?>
 <?php if ($customer_address): ?>
 <div class="info-row"><span class="info-label">العنوان:</span><span class="info-val"><?= htmlspecialchars($customer_address) ?></span></div>
+<?php endif; ?>
+<?php if ($driver_name): ?>
+<div class="info-row"><span class="info-label">الطيار:</span><span class="info-val"><?= htmlspecialchars($driver_name) ?></span></div>
 <?php endif; ?>
 <?php if ($employee_name): ?>
 <div class="info-row"><span class="info-label">الموظف:</span><span class="info-val"><?= htmlspecialchars($employee_name) ?></span></div>

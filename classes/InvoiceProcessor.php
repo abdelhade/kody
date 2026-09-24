@@ -938,6 +938,7 @@ class InvoiceProcessor {
         $serial = $d['pro_serial'] ?? '';
         $storeId = $d['store_id'];
         $empId = $d['emp_id'];
+        $emp2Id = $d['emp2_id'] ?? $empId;
         $acc1 = $d['acc1'];
         $acc2 = $d['acc2'];
         $headtotal = $d['headtotal'];
@@ -963,7 +964,7 @@ class InvoiceProcessor {
             $serial,
             $storeId,
             $empId,
-            $empId,
+            $emp2Id,
             $acc1,
             $acc2,
             $headtotal,
@@ -1066,6 +1067,7 @@ class InvoiceProcessor {
         $serial = $d['pro_serial'] ?? '';
         $storeId = $d['store_id'];
         $empId = $d['emp_id'];
+        $emp2Id = $d['emp2_id'] ?? $empId;
         $acc1 = $d['acc1'];
         $acc2 = $d['acc2'];
         $headtotal = $d['headtotal'];
@@ -1087,7 +1089,7 @@ class InvoiceProcessor {
             $serial,
             $storeId,
             $empId,
-            $empId,
+            $emp2Id,
             $acc1,
             $acc2,
             $headtotal,

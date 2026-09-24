@@ -1,4 +1,4 @@
-DROP TABLE acc_groups;
+DROP TABLE IF EXISTS acc_groups;
 
 CREATE TABLE `acc_groups` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -18,7 +18,7 @@ CREATE TABLE `acc_groups` (
 
 
 
-DROP TABLE acc_head;
+DROP TABLE IF EXISTS acc_head;
 
 CREATE TABLE `acc_head` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -105,7 +105,7 @@ INSERT INTO acc_head VALUES ("283","211002","1","1","مورد احمد","","",""
 
 
 
-DROP TABLE allowances;
+DROP TABLE IF EXISTS allowances;
 
 CREATE TABLE `allowances` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -123,7 +123,7 @@ CREATE TABLE `allowances` (
 
 
 
-DROP TABLE analisys;
+DROP TABLE IF EXISTS analisys;
 
 CREATE TABLE `analisys` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -144,7 +144,7 @@ CREATE TABLE `analisys` (
 
 
 
-DROP TABLE attandance;
+DROP TABLE IF EXISTS attandance;
 
 CREATE TABLE `attandance` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -8276,7 +8276,7 @@ INSERT INTO attandance VALUES ("8110","99","2","2026-06-16","17:01:00","1","2026
 
 
 
-DROP TABLE attdocs;
+DROP TABLE IF EXISTS attdocs;
 
 CREATE TABLE `attdocs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -8390,7 +8390,7 @@ INSERT INTO attdocs VALUES ("519","52","2026-06-20 09:33:10","2026-06-20 09:33:1
 
 
 
-DROP TABLE attlog;
+DROP TABLE IF EXISTS attlog;
 
 CREATE TABLE `attlog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -8985,7 +8985,7 @@ INSERT INTO attlog VALUES ("2593","52","2026-06-16","08:00:00","17:00:00","08:11
 
 
 
-DROP TABLE barcodes;
+DROP TABLE IF EXISTS barcodes;
 
 CREATE TABLE `barcodes` (
   `id` int(11) NOT NULL,
@@ -9001,7 +9001,7 @@ CREATE TABLE `barcodes` (
 
 
 
-DROP TABLE book_tybes;
+DROP TABLE IF EXISTS book_tybes;
 
 CREATE TABLE `book_tybes` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9018,7 +9018,7 @@ CREATE TABLE `book_tybes` (
 
 
 
-DROP TABLE booking_cards;
+DROP TABLE IF EXISTS booking_cards;
 
 CREATE TABLE `booking_cards` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9041,7 +9041,7 @@ CREATE TABLE `booking_cards` (
 
 
 
-DROP TABLE cache;
+DROP TABLE IF EXISTS cache;
 
 CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
@@ -9054,7 +9054,7 @@ CREATE TABLE `cache` (
 
 
 
-DROP TABLE cache_locks;
+DROP TABLE IF EXISTS cache_locks;
 
 CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
@@ -9067,7 +9067,7 @@ CREATE TABLE `cache_locks` (
 
 
 
-DROP TABLE calls;
+DROP TABLE IF EXISTS calls;
 
 CREATE TABLE `calls` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9095,7 +9095,7 @@ CREATE TABLE `calls` (
 
 
 
-DROP TABLE cases;
+DROP TABLE IF EXISTS cases;
 
 CREATE TABLE `cases` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9111,7 +9111,7 @@ CREATE TABLE `cases` (
 
 
 
-DROP TABLE chances;
+DROP TABLE IF EXISTS chances;
 
 CREATE TABLE `chances` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9133,7 +9133,7 @@ CREATE TABLE `chances` (
 
 
 
-DROP TABLE chances_tybes;
+DROP TABLE IF EXISTS chances_tybes;
 
 CREATE TABLE `chances_tybes` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9154,7 +9154,7 @@ INSERT INTO chances_tybes VALUES ("4","صفقه تامه","","2023-11-28 03:27:4
 
 
 
-DROP TABLE cities;
+DROP TABLE IF EXISTS cities;
 
 CREATE TABLE `cities` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9173,7 +9173,7 @@ CREATE TABLE `cities` (
 
 
 
-DROP TABLE clients;
+DROP TABLE IF EXISTS clients;
 
 CREATE TABLE `clients` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9213,7 +9213,7 @@ CREATE TABLE `clients` (
 
 
 
-DROP TABLE closed_orders;
+DROP TABLE IF EXISTS closed_orders;
 
 CREATE TABLE `closed_orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9258,7 +9258,7 @@ INSERT INTO closed_orders VALUES ("5","20260831_1","Master","2026-08-31","","18:
 
 
 
-DROP TABLE cost_centers;
+DROP TABLE IF EXISTS cost_centers;
 
 CREATE TABLE `cost_centers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9277,7 +9277,7 @@ INSERT INTO cost_centers VALUES ("1","المركز الافتراضي","","2024-
 
 
 
-DROP TABLE criminals;
+DROP TABLE IF EXISTS criminals;
 
 CREATE TABLE `criminals` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9308,7 +9308,7 @@ CREATE TABLE `criminals` (
 
 
 
-DROP TABLE crm_style;
+DROP TABLE IF EXISTS crm_style;
 
 CREATE TABLE `crm_style` (
   `id` int(11) NOT NULL,
@@ -9324,7 +9324,7 @@ CREATE TABLE `crm_style` (
 
 
 
-DROP TABLE ctp;
+DROP TABLE IF EXISTS ctp;
 
 CREATE TABLE `ctp` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9342,7 +9342,7 @@ CREATE TABLE `ctp` (
 
 
 
-DROP TABLE cvs;
+DROP TABLE IF EXISTS cvs;
 
 CREATE TABLE `cvs` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9372,7 +9372,7 @@ CREATE TABLE `cvs` (
 
 
 
-DROP TABLE delivery_clients;
+DROP TABLE IF EXISTS delivery_clients;
 
 CREATE TABLE `delivery_clients` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9390,7 +9390,7 @@ CREATE TABLE `delivery_clients` (
 
 
 
-DROP TABLE departments;
+DROP TABLE IF EXISTS departments;
 
 CREATE TABLE `departments` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9433,7 +9433,7 @@ INSERT INTO departments VALUES ("19","مصنع الزخرفة","","2026-06-09 09
 
 
 
-DROP TABLE drugs;
+DROP TABLE IF EXISTS drugs;
 
 CREATE TABLE `drugs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9454,7 +9454,7 @@ CREATE TABLE `drugs` (
 
 
 
-DROP TABLE emp_allowences;
+DROP TABLE IF EXISTS emp_allowences;
 
 CREATE TABLE `emp_allowences` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9473,7 +9473,7 @@ CREATE TABLE `emp_allowences` (
 
 
 
-DROP TABLE emp_kbis;
+DROP TABLE IF EXISTS emp_kbis;
 
 CREATE TABLE `emp_kbis` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9506,7 +9506,7 @@ INSERT INTO emp_kbis VALUES ("12","143","14","20.00","50.00","10.00","1","2026-0
 
 
 
-DROP TABLE emplog;
+DROP TABLE IF EXISTS emplog;
 
 CREATE TABLE `emplog` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9534,7 +9534,7 @@ CREATE TABLE `emplog` (
 
 
 
-DROP TABLE employee_evaluations;
+DROP TABLE IF EXISTS employee_evaluations;
 
 CREATE TABLE `employee_evaluations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9553,7 +9553,7 @@ CREATE TABLE `employee_evaluations` (
 
 
 
-DROP TABLE employee_operations;
+DROP TABLE IF EXISTS employee_operations;
 
 CREATE TABLE `employee_operations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9571,7 +9571,7 @@ CREATE TABLE `employee_operations` (
 
 
 
-DROP TABLE employees;
+DROP TABLE IF EXISTS employees;
 
 CREATE TABLE `employees` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9703,7 +9703,7 @@ INSERT INTO employees VALUES ("100","1012","","عبدالحي حلمي","","2026
 
 
 
-DROP TABLE entitles;
+DROP TABLE IF EXISTS entitles;
 
 CREATE TABLE `entitles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9715,7 +9715,7 @@ CREATE TABLE `entitles` (
 
 
 
-DROP TABLE extras;
+DROP TABLE IF EXISTS extras;
 
 CREATE TABLE `extras` (
   `id` int(11) NOT NULL,
@@ -9733,7 +9733,7 @@ CREATE TABLE `extras` (
 
 
 
-DROP TABLE failed_jobs;
+DROP TABLE IF EXISTS failed_jobs;
 
 CREATE TABLE `failed_jobs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -9750,7 +9750,7 @@ CREATE TABLE `failed_jobs` (
 
 
 
-DROP TABLE fat_details;
+DROP TABLE IF EXISTS fat_details;
 
 CREATE TABLE `fat_details` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9905,7 +9905,7 @@ INSERT INTO fat_details VALUES ("149","9","27","115","3","1.000","0","1","300","
 
 
 
-DROP TABLE fat_tybes;
+DROP TABLE IF EXISTS fat_tybes;
 
 CREATE TABLE `fat_tybes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9933,7 +9933,7 @@ INSERT INTO fat_tybes VALUES ("12","تصنيع نموذجي","","2024-03-06 17:2
 
 
 
-DROP TABLE fats;
+DROP TABLE IF EXISTS fats;
 
 CREATE TABLE `fats` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -9949,7 +9949,7 @@ CREATE TABLE `fats` (
 
 
 
-DROP TABLE fptybes;
+DROP TABLE IF EXISTS fptybes;
 
 CREATE TABLE `fptybes` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -9969,7 +9969,7 @@ INSERT INTO fptybes VALUES ("5","invalid","2023-08-10 07:45:50","","0","0");
 
 
 
-DROP TABLE hiringcontracts;
+DROP TABLE IF EXISTS hiringcontracts;
 
 CREATE TABLE `hiringcontracts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10001,7 +10001,7 @@ CREATE TABLE `hiringcontracts` (
 
 
 
-DROP TABLE holidays;
+DROP TABLE IF EXISTS holidays;
 
 CREATE TABLE `holidays` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10017,7 +10017,7 @@ CREATE TABLE `holidays` (
 
 
 
-DROP TABLE hr_operation_steps;
+DROP TABLE IF EXISTS hr_operation_steps;
 
 CREATE TABLE `hr_operation_steps` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10033,7 +10033,7 @@ CREATE TABLE `hr_operation_steps` (
 
 
 
-DROP TABLE hr_operations;
+DROP TABLE IF EXISTS hr_operations;
 
 CREATE TABLE `hr_operations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10050,7 +10050,7 @@ CREATE TABLE `hr_operations` (
 
 
 
-DROP TABLE imgs;
+DROP TABLE IF EXISTS imgs;
 
 CREATE TABLE `imgs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10070,7 +10070,7 @@ CREATE TABLE `imgs` (
 
 
 
-DROP TABLE imporfplog;
+DROP TABLE IF EXISTS imporfplog;
 
 CREATE TABLE `imporfplog` (
   `id` int(1) DEFAULT NULL,
@@ -10084,7 +10084,7 @@ CREATE TABLE `imporfplog` (
 
 
 
-DROP TABLE item_group;
+DROP TABLE IF EXISTS item_group;
 
 CREATE TABLE `item_group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10106,7 +10106,7 @@ INSERT INTO item_group VALUES ("2","مجموعه 2","","0","2026-07-05 01:04:33"
 
 
 
-DROP TABLE item_group2;
+DROP TABLE IF EXISTS item_group2;
 
 CREATE TABLE `item_group2` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10127,7 +10127,7 @@ INSERT INTO item_group2 VALUES ("2","تصنيف 2","","2026-07-05 01:03:57","202
 
 
 
-DROP TABLE item_group3;
+DROP TABLE IF EXISTS item_group3;
 
 CREATE TABLE `item_group3` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10146,7 +10146,7 @@ CREATE TABLE `item_group3` (
 
 
 
-DROP TABLE item_units;
+DROP TABLE IF EXISTS item_units;
 
 CREATE TABLE `item_units` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10187,7 +10187,7 @@ INSERT INTO item_units VALUES ("16","16","1","1.000","0","0","0","0","0.000","0.
 
 
 
-DROP TABLE job_batches;
+DROP TABLE IF EXISTS job_batches;
 
 CREATE TABLE `job_batches` (
   `id` varchar(255) NOT NULL,
@@ -10206,7 +10206,7 @@ CREATE TABLE `job_batches` (
 
 
 
-DROP TABLE jobs;
+DROP TABLE IF EXISTS jobs;
 
 CREATE TABLE `jobs` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -10223,7 +10223,7 @@ CREATE TABLE `jobs` (
 
 
 
-DROP TABLE joplevels;
+DROP TABLE IF EXISTS joplevels;
 
 CREATE TABLE `joplevels` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10239,7 +10239,7 @@ CREATE TABLE `joplevels` (
 
 
 
-DROP TABLE joprules;
+DROP TABLE IF EXISTS joprules;
 
 CREATE TABLE `joprules` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10262,7 +10262,7 @@ INSERT INTO joprules VALUES ("14","اداري مسئول","                     
 
 
 
-DROP TABLE jops;
+DROP TABLE IF EXISTS jops;
 
 CREATE TABLE `jops` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10296,7 +10296,7 @@ INSERT INTO jops VALUES ("28","قسم الاداري زخرفة","","2026-06-10 
 
 
 
-DROP TABLE joptybes;
+DROP TABLE IF EXISTS joptybes;
 
 CREATE TABLE `joptybes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10312,7 +10312,7 @@ CREATE TABLE `joptybes` (
 
 
 
-DROP TABLE journal_entries;
+DROP TABLE IF EXISTS journal_entries;
 
 CREATE TABLE `journal_entries` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -10557,7 +10557,7 @@ INSERT INTO journal_entries VALUES ("218","109","282","0","250","1","","2026-09-
 
 
 
-DROP TABLE journal_heads;
+DROP TABLE IF EXISTS journal_heads;
 
 CREATE TABLE `journal_heads` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10690,7 +10690,7 @@ INSERT INTO journal_heads VALUES ("109","109","250","2026-09-03","111","","سن�
 
 
 
-DROP TABLE journal_tybes;
+DROP TABLE IF EXISTS journal_tybes;
 
 CREATE TABLE `journal_tybes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10717,7 +10717,7 @@ INSERT INTO journal_tybes VALUES ("8","8","journal","القيود اليومية
 
 
 
-DROP TABLE karta;
+DROP TABLE IF EXISTS karta;
 
 CREATE TABLE `karta` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10734,7 +10734,7 @@ CREATE TABLE `karta` (
 
 
 
-DROP TABLE kbis;
+DROP TABLE IF EXISTS kbis;
 
 CREATE TABLE `kbis` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10770,7 +10770,7 @@ INSERT INTO kbis VALUES ("16","عدد الافكار الجديدة المنفذ
 
 
 
-DROP TABLE migrations;
+DROP TABLE IF EXISTS migrations;
 
 CREATE TABLE `migrations` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -10786,7 +10786,7 @@ INSERT INTO migrations VALUES ("4","2026_09_06_000000_create_tenants_table","1")
 
 
 
-DROP TABLE my_news;
+DROP TABLE IF EXISTS my_news;
 
 CREATE TABLE `my_news` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10806,7 +10806,7 @@ CREATE TABLE `my_news` (
 
 
 
-DROP TABLE myinstallments;
+DROP TABLE IF EXISTS myinstallments;
 
 CREATE TABLE `myinstallments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10836,7 +10836,7 @@ CREATE TABLE `myinstallments` (
 
 
 
-DROP TABLE myitems;
+DROP TABLE IF EXISTS myitems;
 
 CREATE TABLE `myitems` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10890,7 +10890,7 @@ INSERT INTO myitems VALUES ("16","ابنامبما","","16","1","16","-1","","0"
 
 
 
-DROP TABLE myoper_det;
+DROP TABLE IF EXISTS myoper_det;
 
 CREATE TABLE `myoper_det` (
   `oper_det_id` int(11) NOT NULL,
@@ -10925,7 +10925,7 @@ CREATE TABLE `myoper_det` (
 
 
 
-DROP TABLE myoptions;
+DROP TABLE IF EXISTS myoptions;
 
 CREATE TABLE `myoptions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10953,7 +10953,7 @@ INSERT INTO myoptions VALUES ("8","def_disc_acc1","حساب الخصم المك�
 
 
 
-DROP TABLE mypatterns;
+DROP TABLE IF EXISTS mypatterns;
 
 CREATE TABLE `mypatterns` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -10974,7 +10974,7 @@ CREATE TABLE `mypatterns` (
 
 
 
-DROP TABLE mypowers;
+DROP TABLE IF EXISTS mypowers;
 
 CREATE TABLE `mypowers` (
   `power_id` int(11) NOT NULL,
@@ -11015,7 +11015,7 @@ CREATE TABLE `mypowers` (
 
 
 
-DROP TABLE myrents;
+DROP TABLE IF EXISTS myrents;
 
 CREATE TABLE `myrents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11047,7 +11047,7 @@ CREATE TABLE `myrents` (
 
 
 
-DROP TABLE myunits;
+DROP TABLE IF EXISTS myunits;
 
 CREATE TABLE `myunits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11065,7 +11065,7 @@ INSERT INTO myunits VALUES ("2","كيلو","2026-05-07 19:00:08","2026-05-07 19:
 
 
 
-DROP TABLE myvouchers;
+DROP TABLE IF EXISTS myvouchers;
 
 CREATE TABLE `myvouchers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11090,7 +11090,7 @@ CREATE TABLE `myvouchers` (
 
 
 
-DROP TABLE notes;
+DROP TABLE IF EXISTS notes;
 
 CREATE TABLE `notes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11120,7 +11120,7 @@ CREATE TABLE `notes` (
 
 
 
-DROP TABLE oppatterns;
+DROP TABLE IF EXISTS oppatterns;
 
 CREATE TABLE `oppatterns` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11140,7 +11140,7 @@ CREATE TABLE `oppatterns` (
 
 
 
-DROP TABLE order_status;
+DROP TABLE IF EXISTS order_status;
 
 CREATE TABLE `order_status` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11156,7 +11156,7 @@ CREATE TABLE `order_status` (
 
 
 
-DROP TABLE order_types;
+DROP TABLE IF EXISTS order_types;
 
 CREATE TABLE `order_types` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11173,7 +11173,7 @@ CREATE TABLE `order_types` (
 
 
 
-DROP TABLE orders;
+DROP TABLE IF EXISTS orders;
 
 CREATE TABLE `orders` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11197,7 +11197,7 @@ CREATE TABLE `orders` (
 
 
 
-DROP TABLE ot_head;
+DROP TABLE IF EXISTS ot_head;
 
 CREATE TABLE `ot_head` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11400,7 +11400,7 @@ INSERT INTO ot_head VALUES ("115","43","","2","takeaway","9","1","","","0","9","
 
 
 
-DROP TABLE paper_types;
+DROP TABLE IF EXISTS paper_types;
 
 CREATE TABLE `paper_types` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -11416,7 +11416,7 @@ CREATE TABLE `paper_types` (
 
 
 
-DROP TABLE password_reset_tokens;
+DROP TABLE IF EXISTS password_reset_tokens;
 
 CREATE TABLE `password_reset_tokens` (
   `email` varchar(255) NOT NULL,
@@ -11428,7 +11428,7 @@ CREATE TABLE `password_reset_tokens` (
 
 
 
-DROP TABLE patt_cols;
+DROP TABLE IF EXISTS patt_cols;
 
 CREATE TABLE `patt_cols` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11442,7 +11442,7 @@ CREATE TABLE `patt_cols` (
 
 
 
-DROP TABLE payroll_calcs;
+DROP TABLE IF EXISTS payroll_calcs;
 
 CREATE TABLE `payroll_calcs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11539,7 +11539,7 @@ INSERT INTO payroll_calcs VALUES ("178","8","4","2026-06-16","45","أحمد اب
 
 
 
-DROP TABLE permits;
+DROP TABLE IF EXISTS permits;
 
 CREATE TABLE `permits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11561,7 +11561,7 @@ CREATE TABLE `permits` (
 
 
 
-DROP TABLE prescdetails;
+DROP TABLE IF EXISTS prescdetails;
 
 CREATE TABLE `prescdetails` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11580,7 +11580,7 @@ CREATE TABLE `prescdetails` (
 
 
 
-DROP TABLE prescs;
+DROP TABLE IF EXISTS prescs;
 
 CREATE TABLE `prescs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11599,7 +11599,7 @@ CREATE TABLE `prescs` (
 
 
 
-DROP TABLE price_lists;
+DROP TABLE IF EXISTS price_lists;
 
 CREATE TABLE `price_lists` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11615,7 +11615,7 @@ INSERT INTO price_lists VALUES ("2","سعر 2","0","0","0");
 
 
 
-DROP TABLE print;
+DROP TABLE IF EXISTS print;
 
 CREATE TABLE `print` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -11633,7 +11633,7 @@ CREATE TABLE `print` (
 
 
 
-DROP TABLE pro_tybes;
+DROP TABLE IF EXISTS pro_tybes;
 
 CREATE TABLE `pro_tybes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -11667,7 +11667,7 @@ INSERT INTO pro_tybes VALUES ("15","رصيد افتتاحي حسابات","","15
 
 
 
-DROP TABLE process;
+DROP TABLE IF EXISTS process;
 
 CREATE TABLE `process` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12266,7 +12266,7 @@ INSERT INTO process VALUES ("587","add cash","2026-09-21 17:13:50");
 
 
 
-DROP TABLE prods;
+DROP TABLE IF EXISTS prods;
 
 CREATE TABLE `prods` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12282,7 +12282,7 @@ CREATE TABLE `prods` (
 
 
 
-DROP TABLE productions;
+DROP TABLE IF EXISTS productions;
 
 CREATE TABLE `productions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12306,7 +12306,7 @@ CREATE TABLE `productions` (
 
 
 
-DROP TABLE pst_activities;
+DROP TABLE IF EXISTS pst_activities;
 
 CREATE TABLE `pst_activities` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12324,7 +12324,7 @@ CREATE TABLE `pst_activities` (
 
 
 
-DROP TABLE pst_criminals;
+DROP TABLE IF EXISTS pst_criminals;
 
 CREATE TABLE `pst_criminals` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12354,7 +12354,7 @@ CREATE TABLE `pst_criminals` (
 
 
 
-DROP TABLE pst_crmstyles;
+DROP TABLE IF EXISTS pst_crmstyles;
 
 CREATE TABLE `pst_crmstyles` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12372,7 +12372,7 @@ CREATE TABLE `pst_crmstyles` (
 
 
 
-DROP TABLE pst_gangs;
+DROP TABLE IF EXISTS pst_gangs;
 
 CREATE TABLE `pst_gangs` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12390,7 +12390,7 @@ CREATE TABLE `pst_gangs` (
 
 
 
-DROP TABLE pst_issues;
+DROP TABLE IF EXISTS pst_issues;
 
 CREATE TABLE `pst_issues` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12409,7 +12409,7 @@ CREATE TABLE `pst_issues` (
 
 
 
-DROP TABLE pulse_logs;
+DROP TABLE IF EXISTS pulse_logs;
 
 CREATE TABLE `pulse_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12430,7 +12430,7 @@ CREATE TABLE `pulse_logs` (
 
 
 
-DROP TABLE pulse_types;
+DROP TABLE IF EXISTS pulse_types;
 
 CREATE TABLE `pulse_types` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12461,7 +12461,7 @@ INSERT INTO pulse_types VALUES ("15","--","negative","fas fa-star","3","0","2026
 
 
 
-DROP TABLE rays;
+DROP TABLE IF EXISTS rays;
 
 CREATE TABLE `rays` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12482,7 +12482,7 @@ CREATE TABLE `rays` (
 
 
 
-DROP TABLE reservations;
+DROP TABLE IF EXISTS reservations;
 
 CREATE TABLE `reservations` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12511,7 +12511,7 @@ CREATE TABLE `reservations` (
 
 
 
-DROP TABLE salaries;
+DROP TABLE IF EXISTS salaries;
 
 CREATE TABLE `salaries` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12536,7 +12536,7 @@ CREATE TABLE `salaries` (
 
 
 
-DROP TABLE services;
+DROP TABLE IF EXISTS services;
 
 CREATE TABLE `services` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12552,7 +12552,7 @@ CREATE TABLE `services` (
 
 
 
-DROP TABLE session_time;
+DROP TABLE IF EXISTS session_time;
 
 CREATE TABLE `session_time` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12636,7 +12636,7 @@ INSERT INTO session_time VALUES ("82","1","2026-09-21 17:11:56","0","0","0");
 
 
 
-DROP TABLE sessions;
+DROP TABLE IF EXISTS sessions;
 
 CREATE TABLE `sessions` (
   `id` varchar(255) NOT NULL,
@@ -12653,7 +12653,7 @@ CREATE TABLE `sessions` (
 
 
 
-DROP TABLE settings;
+DROP TABLE IF EXISTS settings;
 
 CREATE TABLE `settings` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12702,7 +12702,7 @@ INSERT INTO settings VALUES ("1","focus 2","سمنود - برج زايد - ال�
 
 
 
-DROP TABLE shifts;
+DROP TABLE IF EXISTS shifts;
 
 CREATE TABLE `shifts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12732,7 +12732,7 @@ INSERT INTO shifts VALUES ("1","الصباحية","","2026-06-04 15:11:31","0","
 
 
 
-DROP TABLE shw_optns;
+DROP TABLE IF EXISTS shw_optns;
 
 CREATE TABLE `shw_optns` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12769,7 +12769,7 @@ INSERT INTO shw_optns VALUES ("17","acc_cur","0","50","50","عمله الحسا�
 
 
 
-DROP TABLE sitting_items;
+DROP TABLE IF EXISTS sitting_items;
 
 CREATE TABLE `sitting_items` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12791,7 +12791,7 @@ INSERT INTO sitting_items VALUES ("4","البصمه المفقوده يتم تج
 
 
 
-DROP TABLE skills;
+DROP TABLE IF EXISTS skills;
 
 CREATE TABLE `skills` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12811,7 +12811,7 @@ CREATE TABLE `skills` (
 
 
 
-DROP TABLE system_logs;
+DROP TABLE IF EXISTS system_logs;
 
 CREATE TABLE `system_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12831,7 +12831,7 @@ CREATE TABLE `system_logs` (
 
 
 
-DROP TABLE tables;
+DROP TABLE IF EXISTS tables;
 
 CREATE TABLE `tables` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12862,7 +12862,7 @@ INSERT INTO tables VALUES ("12","طاولة 12","0","2026-08-10 02:49:57","2026-
 
 
 
-DROP TABLE tasks;
+DROP TABLE IF EXISTS tasks;
 
 CREATE TABLE `tasks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12887,7 +12887,7 @@ CREATE TABLE `tasks` (
 
 
 
-DROP TABLE tasktybes;
+DROP TABLE IF EXISTS tasktybes;
 
 CREATE TABLE `tasktybes` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -12908,7 +12908,7 @@ INSERT INTO tasktybes VALUES ("5","كلينت","","2023-12-23 03:44:24","0","0",
 
 
 
-DROP TABLE tenants;
+DROP TABLE IF EXISTS tenants;
 
 CREATE TABLE `tenants` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -12932,7 +12932,7 @@ INSERT INTO tenants VALUES ("10","Stafford and Randolph LLC","","stafford-and-ra
 
 
 
-DROP TABLE test;
+DROP TABLE IF EXISTS test;
 
 CREATE TABLE `test` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12956,7 +12956,7 @@ CREATE TABLE `test` (
 
 
 
-DROP TABLE towns;
+DROP TABLE IF EXISTS towns;
 
 CREATE TABLE `towns` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12972,7 +12972,7 @@ CREATE TABLE `towns` (
 
 
 
-DROP TABLE transactions;
+DROP TABLE IF EXISTS transactions;
 
 CREATE TABLE `transactions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -12989,7 +12989,7 @@ CREATE TABLE `transactions` (
 
 
 
-DROP TABLE users;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE `users` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -13026,7 +13026,7 @@ INSERT INTO users VALUES ("36","Slade Hayes","","","$2y$12$684BYOqR6s62chda.SKtf
 
 
 
-DROP TABLE usr_pwrs;
+DROP TABLE IF EXISTS usr_pwrs;
 
 CREATE TABLE `usr_pwrs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -13241,7 +13241,7 @@ INSERT INTO usr_pwrs VALUES ("29","Shelley Zimmerman","1","0","0","0","1","1","0
 
 
 
-DROP TABLE vacancies;
+DROP TABLE IF EXISTS vacancies;
 
 CREATE TABLE `vacancies` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -13257,7 +13257,7 @@ CREATE TABLE `vacancies` (
 
 
 
-DROP TABLE visits;
+DROP TABLE IF EXISTS visits;
 
 CREATE TABLE `visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -13287,7 +13287,7 @@ CREATE TABLE `visits` (
 
 
 
-DROP TABLE visittybes;
+DROP TABLE IF EXISTS visittybes;
 
 CREATE TABLE `visittybes` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
@@ -13308,7 +13308,7 @@ INSERT INTO visittybes VALUES ("5","private","800","2024-05-04 20:58:28","0","0"
 
 
 
-DROP TABLE zankat;
+DROP TABLE IF EXISTS zankat;
 
 CREATE TABLE `zankat` (
   `id` int(1) NOT NULL AUTO_INCREMENT,
