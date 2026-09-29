@@ -53,10 +53,10 @@
         $jrnlid = $rowjournal['id']; 
         
         // استعلام لإدخالات الدين
-        $resdebit = $conn->query("SELECT * FROM journal_entries WHERE journal_id = '$jrnlid' AND tybe = '0'");
+        $resdebit = $conn->query("SELECT * FROM journal_entries WHERE journal_id = '$jrnlid' AND tybe = '0' AND isdeleted = 0");
         
         // استعلام لإدخالات الائتمان
-        $rescredit = $conn->query("SELECT * FROM journal_entries WHERE journal_id = '$jrnlid' AND tybe = '1'");
+        $rescredit = $conn->query("SELECT * FROM journal_entries WHERE journal_id = '$jrnlid' AND tybe = '1' AND isdeleted = 0");
         
         $x++;
         

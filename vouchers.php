@@ -12,7 +12,7 @@ if (isset($_GET['t'])){
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
-    WHERE pro_tybe = 1
+    WHERE pro_tybe = 1 AND h.isdeleted = 0
     ORDER BY h.id DESC LIMIT 200
 ");
 }elseif($_GET['t'] == 'payment'){
@@ -22,7 +22,7 @@ if (isset($_GET['t'])){
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
-    WHERE pro_tybe = 2
+    WHERE pro_tybe = 2 AND h.isdeleted = 0
     ORDER BY h.id DESC LIMIT 200
 ");
 }}
@@ -34,6 +34,7 @@ $resvoucher = $conn->query("
     FROM ot_head h
     JOIN acc_head acc1 ON h.acc1 = acc1.id
     JOIN acc_head acc2 ON h.acc2 = acc2.id
+    WHERE h.isdeleted = 0
     ORDER BY h.id DESC LIMIT 200
 ");}
 
@@ -69,7 +70,7 @@ if (isset($_POST['tybe'])) {
         FROM ot_head h
         JOIN acc_head acc1 ON h.acc1 = acc1.id
         JOIN acc_head acc2 ON h.acc2 = acc2.id
-        WHERE h.id > 1 $whereClause
+        WHERE h.id > 1 AND h.isdeleted = 0 $whereClause
         ORDER BY h.id DESC LIMIT 200
     ";
 

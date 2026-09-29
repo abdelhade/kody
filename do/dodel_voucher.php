@@ -1,18 +1,35 @@
 <?php
-include("../includes/connect.php");
-$id = $_GET['del'];
+include('../includes/connect.php');
+require_once('../classes/InvoiceProcessor.php');
 
-$sql1 = "SELECT * from  ot_head where id = $id";
-$row = $conn->query($sql1)->fetch_assoc();
-$pro_tybe = $row['pro_tybe'];
-if($pro_tybe != 1 OR $pro_tybe != 2){
-    echo "هذا السند مرتبط بعمليات أخري لا يمكن حذف هذا السند ";die;
-} ;
+$id = isset($_GET['del']) ? intval($_GET['del']) : 0;
+if ($id <= 0) {
+    header('location:../vouchers.php');
+    exit;
+}
 
-$sql2 = "DELETE FROM `journal_entries` WHERE op2  = $id";
-$sql3 = "DELETE FROM `journal_heads` WHERE op2  = $id";
-$sql4 = "DELETE FROM `ot_head` WHERE id  = $id";
+$stmt = $conn->prepare('SELECT pro_tybe FROM ot_head WHERE id = ? AND isdeleted = 0 LIMIT 1');
+$stmt->bind_param('i', $id);
+$stmt->execute();
+$row = $stmt->get_result()->fetch_assoc();
+$stmt->close();
 
-$conn->query($sql2);$conn->query($sql3);$conn->query($sql4);
-if ($pro_tybe == 1){header('location:../vouchers.php?t=receive');}
-if ($pro_tybe == 2){header('location:../vouchers.php?t=payment');}
+if (!$row) {
+    header('location:../vouchers.php');
+    exit;
+}
+
+$pro_tybe = (int) $row['pro_tybe'];
+if ($pro_tybe !== 1 && $pro_tybe !== 2) {
+    echo 'هذا السند مرتبط بعمليات أخرى لا يمكن حذف هذا السند';
+    exit;
+}
+
+InvoiceProcessor::softDelete($conn, $id);
+
+if ($pro_tybe === 1) {
+    header('location:../vouchers.php?t=recive');
+} else {
+    header('location:../vouchers.php?t=payment');
+}
+exit;

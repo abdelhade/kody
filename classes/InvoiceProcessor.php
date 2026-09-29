@@ -243,11 +243,26 @@ class InvoiceProcessor {
         }
 
         try {
+            $relatedIds = self::fetchIds(
+                $conn,
+                'SELECT id FROM ot_head WHERE op2 = ? AND id <> ? AND isdeleted = 0',
+                'ii',
+                [$id, $id]
+            );
+            $opIds = array_merge([$id], $relatedIds);
+            $journalIds = self::fetchJournalHeadIds($conn, $opIds);
+            $accountIds = self::fetchJournalAccountIds($conn, $journalIds, $opIds);
+
+            self::softDeleteJournalEntries($conn, $journalIds, $opIds);
+            self::softDeleteJournalHeadsByIds($conn, $journalIds);
+            foreach ($relatedIds as $relatedId) {
+                self::softDeleteHeader($conn, $relatedId);
+            }
             self::softDeleteDetails($conn, $id);
             self::softDeleteHeader($conn, $id);
-            self::softDeleteJournalsByOpId($conn, $id);
-            self::softDeleteLinkedPayments($conn, $id);
-            self::softDeleteJournalsByOp2($conn, $id);
+            foreach (array_unique($accountIds) as $accountId) {
+                self::recalcAccountBalance($conn, (int) $accountId);
+            }
 
             if ($manageTransaction) {
                 $conn->commit();
@@ -366,6 +381,115 @@ class InvoiceProcessor {
             }
             $stmt->close();
         }
+    }
+
+    /** @param array<int,int|string> $params */
+    private static function fetchIds(mysqli $conn, string $sql, string $types, array $params): array
+    {
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير استعلام الحذف: ' . $conn->error);
+        }
+        if ($types !== '') {
+            $stmt->bind_param($types, ...$params);
+        }
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $ids = [];
+        while ($row = $res->fetch_assoc()) {
+            $ids[] = (int) reset($row);
+        }
+        $stmt->close();
+        return $ids;
+    }
+
+    /** @param int[] $opIds */
+    private static function fetchJournalHeadIds(mysqli $conn, array $opIds): array
+    {
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        if (empty($opIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($opIds), '?'));
+        $types = str_repeat('i', count($opIds) * 2);
+        $sql = "SELECT id FROM journal_heads
+                WHERE isdeleted = 0 AND (op_id IN ($placeholders) OR op2 IN ($placeholders))";
+        return self::fetchIds($conn, $sql, $types, array_merge($opIds, $opIds));
+    }
+
+    /**
+     * @param int[] $journalIds
+     * @param int[] $opIds
+     * @return int[]
+     */
+    private static function fetchJournalAccountIds(mysqli $conn, array $journalIds, array $opIds): array
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        $parts = [];
+        $params = [];
+        if (!empty($journalIds)) {
+            $parts[] = 'journal_id IN (' . implode(',', array_fill(0, count($journalIds), '?')) . ')';
+            $params = array_merge($params, $journalIds);
+        }
+        if (!empty($opIds)) {
+            $ph = implode(',', array_fill(0, count($opIds), '?'));
+            $parts[] = "op_id IN ($ph)";
+            $parts[] = "op2 IN ($ph)";
+            $params = array_merge($params, $opIds, $opIds);
+        }
+        if (empty($parts)) {
+            return [];
+        }
+        $sql = 'SELECT DISTINCT account_id FROM journal_entries WHERE isdeleted = 0 AND (' . implode(' OR ', $parts) . ')';
+        return self::fetchIds($conn, $sql, str_repeat('i', count($params)), $params);
+    }
+
+    /** @param int[] $journalIds @param int[] $opIds */
+    private static function softDeleteJournalEntries(mysqli $conn, array $journalIds, array $opIds): void
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        $parts = [];
+        $params = [];
+        if (!empty($journalIds)) {
+            $parts[] = 'journal_id IN (' . implode(',', array_fill(0, count($journalIds), '?')) . ')';
+            $params = array_merge($params, $journalIds);
+        }
+        if (!empty($opIds)) {
+            $ph = implode(',', array_fill(0, count($opIds), '?'));
+            $parts[] = "op_id IN ($ph)";
+            $parts[] = "op2 IN ($ph)";
+            $params = array_merge($params, $opIds, $opIds);
+        }
+        if (empty($parts)) {
+            return;
+        }
+        $sql = 'UPDATE journal_entries SET isdeleted = 1 WHERE isdeleted = 0 AND (' . implode(' OR ', $parts) . ')';
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف تفاصيل القيود: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    /** @param int[] $journalIds */
+    private static function softDeleteJournalHeadsByIds(mysqli $conn, array $journalIds): void
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        if (empty($journalIds)) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($journalIds), '?'));
+        $stmt = $conn->prepare("UPDATE journal_heads SET isdeleted = 1 WHERE id IN ($placeholders)");
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف القيود: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($journalIds)), ...$journalIds);
+        $stmt->execute();
+        $stmt->close();
     }
 
     /**
