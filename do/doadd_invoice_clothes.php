@@ -230,7 +230,7 @@ try {
         $paid_note = $is_return ? "سند صرف (رد) من فاتورة POS رقم " : "سند قبض من فاتورة POS رقم ";
         $paid_info = $paid_note . $pro_id;
         $paid_pro_id = $pro_id . '-P';
-        $paid_type = $is_return ? 8 : 7; // 8: سند صرف، 7: سند قبض
+        $paid_type = $is_return ? 2 : 1; // 2: سند دفع، 1: سند قبض
         
         $acc1_pay = $is_return ? $acc2_id : $fund_id;
         $acc2_pay = $is_return ? $fund_id : $acc2_id;

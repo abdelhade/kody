@@ -552,6 +552,21 @@ class InvoiceProcessor {
     }
 
     /**
+     * طرفا سند القبض/الدفع.
+     * سند دفع: مدين الطرف (مورد/عميل) ودائن الصندوق أو البنك.
+     * سند قبض: مدين الصندوق أو البنك ودائن الطرف.
+     *
+     * @return array{debit:int,credit:int}
+     */
+    public static function voucherSides(int $paidType, int $partyAccId, int $cashAccId): array
+    {
+        if ($paidType === self::ACCOUNTING_TYPES['PAYMENT']) {
+            return ['debit' => $partyAccId, 'credit' => $cashAccId];
+        }
+        return ['debit' => $cashAccId, 'credit' => $partyAccId];
+    }
+
+    /**
      * إنشاء سند قبض/دفع مرتبط بفاتورة (ot_head.op2) + قيوده.
      *
      * @return int insert_id للسند
@@ -670,36 +685,37 @@ class InvoiceProcessor {
         $display = $proDisplayId ?? $invoiceId;
         $paidType = (int) $config['paid_type'];
         $paidNote = (string) ($config['paid_note'] ?? 'سند');
-        // سند دفع (مشتريات ومردود مبيعات): مدين الطرف ودائن الصندوق/البنك.
-        // سند قبض (مبيعات ومردود مشتريات): مدين الصندوق/البنك ودائن الطرف.
-        $isPayment = ($paidType === self::ACCOUNTING_TYPES['PAYMENT']);
+        $cashSides = self::voucherSides($paidType, $partyAccId, $paymentFundId);
+        $cashMove = ($paidType === self::ACCOUNTING_TYPES['PAYMENT']) ? 'دفع كاش' : 'قبض كاش';
+        $bankMove = ($paidType === self::ACCOUNTING_TYPES['PAYMENT']) ? 'دفع صرافة' : 'قبض صرافة';
 
         if ($calc['actual_cash'] > 0 && $paymentFundId > 0) {
             $created['cash'] = self::createPaymentVoucher($conn, [
                 'paid_type' => $paidType,
                 'amount' => $calc['actual_cash'],
-                'debit_account' => $isPayment ? $partyAccId : $paymentFundId,
-                'credit_account' => $isPayment ? $paymentFundId : $partyAccId,
+                'debit_account' => $cashSides['debit'],
+                'credit_account' => $cashSides['credit'],
                 'invoice_id' => $invoiceId,
                 'pro_date' => $proDate,
                 'emp_id' => $empId,
                 'user_id' => $userId,
-                'info' => $info . ' - دفع كاش',
+                'info' => $info . ' - ' . $cashMove,
                 'details' => $paidNote . ' كاش _ ' . $display,
             ]);
         }
 
         if ($calc['actual_bank'] > 0 && $paymentBankId > 0) {
+            $bankSides = self::voucherSides($paidType, $partyAccId, $paymentBankId);
             $created['bank'] = self::createPaymentVoucher($conn, [
                 'paid_type' => $paidType,
                 'amount' => $calc['actual_bank'],
-                'debit_account' => $isPayment ? $partyAccId : $paymentBankId,
-                'credit_account' => $isPayment ? $paymentBankId : $partyAccId,
+                'debit_account' => $bankSides['debit'],
+                'credit_account' => $bankSides['credit'],
                 'invoice_id' => $invoiceId,
                 'pro_date' => $proDate,
                 'emp_id' => $empId,
                 'user_id' => $userId,
-                'info' => $info . ' - دفع صرافة',
+                'info' => $info . ' - ' . $bankMove,
                 'details' => $paidNote . ' صرافة _ ' . $display,
             ]);
         }
@@ -722,22 +738,40 @@ class InvoiceProcessor {
         int $userId,
         float $paid
     ): void {
-        $paidType = ($proTybe == self::INVOICE_TYPES['SALES'] || $proTybe == self::INVOICE_TYPES['POS'])
-            ? self::ACCOUNTING_TYPES['RECEIPT']
-            : (int) $config['paid_type'];
+        $paidType = (int) $config['paid_type'];
+        $partyAccId = (int) ($paidType === self::ACCOUNTING_TYPES['PAYMENT'] ? $accounts['acc5'] : $accounts['acc6']);
+        $cashAccId = (int) ($paidType === self::ACCOUNTING_TYPES['PAYMENT'] ? $accounts['acc6'] : $accounts['acc5']);
+        $sides = self::voucherSides($paidType, $partyAccId, $cashAccId);
+        $debitAcc = $sides['debit'];
+        $creditAcc = $sides['credit'];
 
-        $stmt = $conn->prepare('SELECT * FROM ot_head WHERE op2 = ? AND pro_tybe IN (1, 2) AND isdeleted = 0 LIMIT 1');
+        $stmt = $conn->prepare(
+            'SELECT id FROM ot_head WHERE op2 = ? AND pro_tybe IN (1, 2) AND isdeleted = 0 ORDER BY id ASC'
+        );
         $stmt->bind_param('i', $invoiceId);
         $stmt->execute();
-        $rowPaid = $stmt->get_result()->fetch_assoc();
+        $res = $stmt->get_result();
+        $voucherIds = [];
+        while ($row = $res->fetch_assoc()) {
+            $voucherIds[] = (int) $row['id'];
+        }
         $stmt->close();
 
-        if ($paid > 0 && $rowPaid === null) {
+        if ($paid <= 0) {
+            if (!empty($voucherIds)) {
+                self::softDeleteLinkedPayments($conn, $invoiceId, self::ACCOUNTING_TYPES['RECEIPT']);
+                self::softDeleteLinkedPayments($conn, $invoiceId, self::ACCOUNTING_TYPES['PAYMENT']);
+                self::softDeleteJournalsByOp2($conn, $invoiceId);
+            }
+            return;
+        }
+
+        if (empty($voucherIds)) {
             self::createPaymentVoucher($conn, [
                 'paid_type' => $paidType,
                 'amount' => $paid,
-                'debit_account' => (int) $accounts['acc5'],
-                'credit_account' => (int) $accounts['acc6'],
+                'debit_account' => $debitAcc,
+                'credit_account' => $creditAcc,
                 'invoice_id' => $invoiceId,
                 'pro_date' => $proDate,
                 'emp_id' => $empId,
@@ -748,51 +782,125 @@ class InvoiceProcessor {
             return;
         }
 
-        if ($paid > 0 && $rowPaid !== null) {
-            $stmt = $conn->prepare(
-                'UPDATE ot_head SET info = ?, pro_date = ?, emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, crtime = crtime
-                 WHERE op2 = ? AND pro_tybe = ? AND isdeleted = 0'
-            );
-            $acc5 = (int) $accounts['acc5'];
-            $acc6 = (int) $accounts['acc6'];
-            $stmt->bind_param('ssiiiiii', $info, $proDate, $empId, $acc5, $acc6, $paid, $invoiceId, $paidType);
-            $stmt->execute();
-            $stmt->close();
+        $keepId = $voucherIds[0];
+        $stmt = $conn->prepare(
+            'UPDATE ot_head SET info = ?, pro_date = ?, emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, pro_tybe = ?, journal_tybe = ?, crtime = crtime
+             WHERE id = ?'
+        );
+        $stmt->bind_param('ssiiidiii', $info, $proDate, $empId, $debitAcc, $creditAcc, $paid, $paidType, $paidType, $keepId);
+        if (!$stmt->execute()) {
+            throw new Exception('فشل تحديث سند الدفع: ' . $stmt->error);
+        }
+        $stmt->close();
 
-            $stmt = $conn->prepare(
-                'UPDATE journal_heads SET total = ?, jdate = ? WHERE op2 = ? AND isdeleted = 0'
-            );
-            $stmt->bind_param('dsi', $paid, $proDate, $invoiceId);
-            $stmt->execute();
-            $stmt->close();
+        $touched = [$debitAcc, $creditAcc];
+        $stmt = $conn->prepare('SELECT id FROM journal_heads WHERE op_id = ? AND isdeleted = 0');
+        $stmt->bind_param('i', $keepId);
+        $stmt->execute();
+        $jres = $stmt->get_result();
+        $journalIds = [];
+        while ($row = $jres->fetch_assoc()) {
+            $journalIds[] = (int) $row['id'];
+        }
+        $stmt->close();
 
-            $stmt = $conn->prepare('SELECT id FROM journal_heads WHERE op2 = ? AND isdeleted = 0 LIMIT 1');
-            $stmt->bind_param('i', $invoiceId);
+        if (empty($journalIds)) {
+            $stmt = $conn->prepare('SELECT id FROM journal_heads WHERE op2 = ? AND op_id <> ? AND isdeleted = 0');
+            $stmt->bind_param('ii', $invoiceId, $invoiceId);
             $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-            if ($row) {
-                $jr = (int) $row['id'];
-                $stmt = $conn->prepare(
-                    'UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 WHERE journal_id = ? AND tybe = 0'
-                );
-                $stmt->bind_param('idi', $acc5, $paid, $jr);
-                $stmt->execute();
-                $stmt->close();
-                $stmt = $conn->prepare(
-                    'UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? WHERE journal_id = ? AND tybe = 1'
-                );
-                $stmt->bind_param('idi', $acc6, $paid, $jr);
-                $stmt->execute();
-                $stmt->close();
+            $jres = $stmt->get_result();
+            while ($row = $jres->fetch_assoc()) {
+                $journalIds[] = (int) $row['id'];
             }
+            $stmt->close();
+        }
+
+        foreach ($journalIds as $jr) {
+            $stmt = $conn->prepare('SELECT account_id FROM journal_entries WHERE journal_id = ? AND isdeleted = 0');
+            $stmt->bind_param('i', $jr);
+            $stmt->execute();
+            $eres = $stmt->get_result();
+            while ($erow = $eres->fetch_assoc()) {
+                $touched[] = (int) $erow['account_id'];
+            }
+            $stmt->close();
+
+            $stmt = $conn->prepare('UPDATE journal_heads SET total = ?, jdate = ? WHERE id = ?');
+            $stmt->bind_param('dsi', $paid, $proDate, $jr);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conn->prepare(
+                'UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 WHERE journal_id = ? AND tybe = 0'
+            );
+            $stmt->bind_param('idi', $debitAcc, $paid, $jr);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conn->prepare(
+                'UPDATE journal_entries SET account_id = ?, debit = 0, credit = ? WHERE journal_id = ? AND tybe = 1'
+            );
+            $stmt->bind_param('idi', $creditAcc, $paid, $jr);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        foreach (array_slice($voucherIds, 1) as $extraId) {
+            $stmt = $conn->prepare('UPDATE ot_head SET isdeleted = 1, crtime = crtime WHERE id = ?');
+            $stmt->bind_param('i', $extraId);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conn->prepare('SELECT id FROM journal_heads WHERE op_id = ? AND isdeleted = 0');
+            $stmt->bind_param('i', $extraId);
+            $stmt->execute();
+            $xres = $stmt->get_result();
+            while ($xrow = $xres->fetch_assoc()) {
+                $xid = (int) $xrow['id'];
+                $s2 = $conn->prepare('SELECT account_id FROM journal_entries WHERE journal_id = ? AND isdeleted = 0');
+                $s2->bind_param('i', $xid);
+                $s2->execute();
+                $ar = $s2->get_result();
+                while ($arow = $ar->fetch_assoc()) {
+                    $touched[] = (int) $arow['account_id'];
+                }
+                $s2->close();
+                $s3 = $conn->prepare('UPDATE journal_entries SET isdeleted = 1 WHERE journal_id = ?');
+                $s3->bind_param('i', $xid);
+                $s3->execute();
+                $s3->close();
+                $s4 = $conn->prepare('UPDATE journal_heads SET isdeleted = 1 WHERE id = ?');
+                $s4->bind_param('i', $xid);
+                $s4->execute();
+                $s4->close();
+            }
+            $stmt->close();
+        }
+
+        foreach (array_unique($touched) as $accId) {
+            self::recalcAccountBalance($conn, (int) $accId);
+        }
+    }
+
+    /** إعادة حساب رصيد حساب من قيوده غير المحذوفة. */
+    public static function recalcAccountBalance(mysqli $conn, int $accountId): void
+    {
+        if ($accountId <= 0) {
             return;
         }
-
-        if ($paid == 0 && $rowPaid !== null) {
-            self::softDeleteLinkedPayments($conn, $invoiceId, $paidType);
-            self::softDeleteJournalsByOp2($conn, $invoiceId);
+        $stmt = $conn->prepare(
+            'UPDATE acc_head SET balance = (
+                SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0)
+                FROM journal_entries
+                WHERE account_id = ? AND isdeleted = 0
+             ) WHERE id = ?'
+        );
+        if (!$stmt) {
+            return;
         }
+        $stmt->bind_param('ii', $accountId, $accountId);
+        $stmt->execute();
+        $stmt->close();
     }
 
     /**

@@ -165,8 +165,7 @@ try {
         );
     }
 
-    // معالجة المدفوعات
-    $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
+    // معالجة المدفوعات — أوامر الشراء والبيع وعروض الأسعار بلا سند
     InvoiceProcessor::syncSimplePayment(
         $conn,
         (int) $ot_id,

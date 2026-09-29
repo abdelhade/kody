@@ -404,7 +404,7 @@ class InvoiceFooter extends InvoiceElementBase
         if ($this->isEditMode && $this->data) {
             try {
                 $invoiceId = intval($this->data['id']);
-                $query = "SELECT COALESCE(SUM(pro_value), 0) as paid FROM ot_head WHERE op2 = ? AND (pro_tybe = 1 OR pro_tybe = 2)";
+                $query = "SELECT COALESCE(SUM(pro_value), 0) as paid FROM ot_head WHERE op2 = ? AND (pro_tybe = 1 OR pro_tybe = 2) AND isdeleted = 0";
                 $result = $this->executeSecureQuery($query, [$invoiceId], 'i');
                 $row = $result->fetch_assoc();
                 return $row ? floatval($row['paid']) : 0;
