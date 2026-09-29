@@ -280,9 +280,9 @@ if (!$conn->connect_error) {
                     قاعدة البيانات (<?= htmlspecialchars($dbname) ?>) غير موجودة
                 </div>
                 <div class="actions">
-                    <button class="btn btn-primary" id="btnCreateNew">
+                    <button class="btn btn-primary" id="btnCreateNew" type="button">
                         <i class="fas fa-plus-circle"></i>
-                        بدء قاعدة بيانات جديدة (افتراضية)
+                        بدء قاعدة بيانات جديدة
                     </button>
                     <button class="btn btn-outline" id="btnRestore" type="button">
                         <i class="fas fa-file-import"></i>
@@ -351,28 +351,64 @@ if (!$conn->connect_error) {
                 $overlay.fadeOut(200);
             }
 
-            $('#btnCreateNew').on('click', function() {
-                showAlert('هل أنت متأكد؟', 'سيتم إنشاء قاعدة بيانات جديدة بالكامل وحذف أي بيانات سابقة بنفس الاسم!', 'warning', function() {
-                    showLoading('جاري إنشاء قاعدة البيانات...');
-                    $.ajax({
-                        url: 'ajax/db_setup.php',
-                        type: 'POST',
-                        data: { action: 'create' },
-                        dataType: 'json',
-                        success: function(response) {
-                            hideLoading();
-                            if (response.success) {
-                                showAlert('نجاح!', response.message, 'success', function() {
-                                    location.reload();
-                                });
-                            } else {
-                                showAlert('خطأ!', response.message, 'error');
-                            }
-                        },
-                        error: function() {
-                            hideLoading();
-                            showAlert('خطأ!', 'حدث خطأ غير متوقع في الخادم', 'error');
+            function askCreateDbName(thenCreate) {
+                var defaultName = <?= json_encode($dbname, JSON_UNESCAPED_UNICODE) ?>;
+                if (typeof Swal !== 'undefined' && Swal.fire) {
+                    Swal.fire({
+                        title: 'اسم قاعدة البيانات',
+                        text: 'حروف إنجليزية / أرقام / _ فقط (2–64)',
+                        input: 'text',
+                        inputValue: defaultName,
+                        showCancelButton: true,
+                        confirmButtonText: 'إنشاء',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#4f46e5',
+                        inputValidator: function(value) {
+                            return validateDbName(value) || null;
                         }
+                    }).then(function(result) {
+                        if (!(result.isConfirmed || result.value)) return;
+                        var name = (result.value || '').trim();
+                        if (validateDbName(name)) return;
+                        thenCreate(name);
+                    });
+                    return;
+                }
+                var name = prompt('اسم قاعدة البيانات الجديدة\n(حروف إنجليزية / أرقام / _ فقط، 2–64)', defaultName);
+                if (name === null) return;
+                var err = validateDbName(name);
+                while (err) {
+                    name = prompt('خطأ: ' + err + '\n\nاسم قاعدة البيانات؟', name.trim());
+                    if (name === null) return;
+                    err = validateDbName(name);
+                }
+                thenCreate(name.trim());
+            }
+
+            $('#btnCreateNew').on('click', function() {
+                askCreateDbName(function(dbName) {
+                    showAlert('هل أنت متأكد؟', 'سيتم إنشاء قاعدة البيانات «' + dbName + '» من الهيكل الافتراضي وتفعيلها.', 'warning', function() {
+                        showLoading('جاري إنشاء قاعدة البيانات ' + dbName + '...');
+                        $.ajax({
+                            url: 'ajax/db_setup.php',
+                            type: 'POST',
+                            data: { action: 'create', db_name: dbName },
+                            dataType: 'json',
+                            success: function(response) {
+                                hideLoading();
+                                if (response.success) {
+                                    showAlert('نجاح!', response.message, 'success', function() {
+                                        location.reload();
+                                    });
+                                } else {
+                                    showAlert('خطأ!', response.message, 'error');
+                                }
+                            },
+                            error: function() {
+                                hideLoading();
+                                showAlert('خطأ!', 'حدث خطأ غير متوقع في الخادم', 'error');
+                            }
+                        });
                     });
                 });
             });

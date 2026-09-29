@@ -209,11 +209,14 @@ class PeriodManager
             'closed_at' => null,
             'parent' => null,
         ];
+        $reg['current'] = $dbName;
         $this->saveRegistry($reg);
+        $_SESSION['active_dbname'] = $dbName;
+        $this->updateEnvDbName($dbName);
 
         return [
             'success' => true,
-            'message' => "تم إنشاء القاعدة `$dbName` بنجاح",
+            'message' => "تم إنشاء القاعدة `$dbName` وتفعيلها",
             'database' => $dbName,
         ];
     }

@@ -336,24 +336,57 @@ function resolve_schema_file(): string
 $action = $_POST['action'] ?? '';
 
 if ($action === 'create') {
+    $requested = trim((string) ($_POST['db_name'] ?? ''));
+    if ($requested !== '') {
+        try {
+            $dbname = kody_validate_dbname($requested);
+        } catch (InvalidArgumentException $e) {
+            echo json_encode(["success" => false, "message" => $e->getMessage()]);
+            exit;
+        }
+    }
+
     $conn = @new mysqli($dbhost, $dbuser, $dbpass);
     if ($conn->connect_error) {
         echo json_encode(["success" => false, "message" => "فشل الاتصال بـ MySQL: " . $conn->connect_error]);
         exit;
     }
 
-    $sql_create = "CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
+    $safeName = $conn->real_escape_string($dbname);
+    $existsRes = $conn->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '$safeName' LIMIT 1");
+    if ($existsRes && $existsRes->num_rows > 0) {
+        echo json_encode([
+            "success" => false,
+            "message" => "قاعدة البيانات `$dbname` موجودة مسبقاً. اختر اسماً آخر.",
+        ]);
+        $conn->close();
+        exit;
+    }
+
+    $sql_create = "CREATE DATABASE `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
     if (!$conn->query($sql_create)) {
         echo json_encode(["success" => false, "message" => "فشل إنشاء قاعدة البيانات: " . $conn->error]);
+        $conn->close();
         exit;
     }
 
     $conn->select_db($dbname);
-    $_SESSION['active_dbname'] = $dbname;
     $conn->query("SET FOREIGN_KEY_CHECKS = 0");
 
     $result = execute_sql_file($conn, resolve_schema_file());
     $conn->query("SET FOREIGN_KEY_CHECKS = 1");
+
+    if (empty($result['success'])) {
+        $conn->query("DROP DATABASE `$dbname`");
+        echo json_encode($result);
+        $conn->close();
+        exit;
+    }
+
+    $label = trim((string) ($_POST['label'] ?? ''));
+    kody_register_dbname($dbname, $label);
+    $result['database'] = $dbname;
+    $result['message'] = "تم إنشاء القاعدة `$dbname` وتفعيلها. " . ($result['message'] ?? '');
 
     echo json_encode(finish_with_migrations($conn, $result));
     $conn->close();

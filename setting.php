@@ -558,9 +558,9 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                       <button type="button" class="btn btn-outline-warning" id="btnRestoreBackup">
                         <i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية
                       </button>
-                      <a href="pre_start.php" class="btn btn-outline-primary" target="_blank">
+                      <button type="button" class="btn btn-outline-primary" id="btnCreateNewDb">
                         <i class="fas fa-plus-circle ml-1"></i> إنشاء قاعدة جديدة
-                      </a>
+                      </button>
                       <input type="file" id="backupFileInput" accept=".sql,application/sql,text/plain" style="display:none;">
                     </div>
                     <ul id="db-pending-list" class="mt-3 mb-0 small text-muted"></ul>
@@ -839,6 +839,65 @@ document.addEventListener('DOMContentLoaded', function () {
     return name.trim();
   }
 
+  function askCreateDbName(defaultName, onOk) {
+    function finish(raw) {
+      if (raw === null || raw === undefined) return;
+      var name = String(raw).trim();
+      var err = validateDbName(name);
+      if (err) {
+        alert(err);
+        return;
+      }
+      onOk(name);
+    }
+    if (typeof Swal !== 'undefined' && Swal.fire) {
+      Swal.fire({
+        title: 'اسم قاعدة البيانات الجديدة',
+        text: 'حروف إنجليزية / أرقام / _ فقط (2–64). ستُنشأ من الهيكل الافتراضي وتصبح القاعدة النشطة.',
+        input: 'text',
+        inputValue: defaultName || '',
+        inputPlaceholder: 'مثال: kody_2026',
+        showCancelButton: true,
+        confirmButtonText: 'إنشاء',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#007bff',
+        inputValidator: function (value) {
+          return validateDbName(value) || null;
+        }
+      }).then(function (result) {
+        if (result.isConfirmed || result.value) finish(result.value);
+      });
+      return;
+    }
+    finish(prompt('اسم قاعدة البيانات الجديدة\n(حروف إنجليزية / أرقام / _ فقط، 2–64)', defaultName || ''));
+  }
+
+  var btnCreateNewDb = document.getElementById('btnCreateNewDb');
+  if (btnCreateNewDb) {
+    var suggestedDb = <?= json_encode(preg_replace('/[^A-Za-z0-9_]/', '', (string) ($dbname ?? 'kody')) . '_' . date('Y'), JSON_UNESCAPED_UNICODE) ?>;
+    btnCreateNewDb.addEventListener('click', function () {
+      askCreateDbName(suggestedDb, function (dbName) {
+        if (!confirm('إنشاء القاعدة «' + dbName + '» من الهيكل الافتراضي والتبديل إليها؟')) return;
+        btnCreateNewDb.disabled = true;
+        btnCreateNewDb.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الإنشاء...';
+        var fd = new FormData();
+        fd.append('action', 'create');
+        fd.append('db_name', dbName);
+        fetch('ajax/db_setup.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            alert(data.message || (data.success ? 'تم إنشاء القاعدة' : 'فشل الإنشاء'));
+            if (data.success) location.reload();
+          })
+          .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+          .finally(function () {
+            btnCreateNewDb.disabled = false;
+            btnCreateNewDb.innerHTML = '<i class="fas fa-plus-circle ml-1"></i> إنشاء قاعدة جديدة';
+          });
+      });
+    });
+  }
+
   var btnRestore = document.getElementById('btnRestoreBackup');
   var backupInput = document.getElementById('backupFileInput');
   var pendingRestoreDbName = '';
@@ -935,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (r) { return r.json(); })
       .then(function (data) {
         alert(data.message || (data.success ? 'تم' : 'فشل'));
-        if (data.success && (action === 'switch' || action === 'close')) {
+        if (data.success && (action === 'switch' || action === 'close' || action === 'create')) {
           location.reload();
           return data;
         }
