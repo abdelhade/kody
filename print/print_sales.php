@@ -229,11 +229,11 @@ if($tybe == 4){
 if($tybe == 4){
     $accid = $rowfat['acc2'];
     $label = "المورد";
-} elseif($tybe == 3 || $tybe == 9){
+} elseif($tybe == 10){
     $accid = $rowfat['acc1'];
-    $label = "العميل";
+    $label = "المورد";
 } else {
-    $accid = $rowfat['acc1'];
+    $accid = $rowfat['acc2'];
     $label = "العميل";
 }
 $rowacc1= $conn->query("SELECT aname from acc_head where id = $accid")->fetch_assoc();

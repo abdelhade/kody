@@ -58,7 +58,7 @@ if (isset($_SESSION['lock_after_print']) && $_SESSION['lock_after_print'] === tr
 }
 $from_invoice = isset($_GET['src']) && $_GET['src'] === 'invoice';
 
-$is_return = (in_array($rowfat['pro_tybe'], [3, 10, 11]) || strpos($rowfat['info'], 'مردود') !== false);
+$is_return = in_array((int)$rowfat['pro_tybe'], [10, 11], true);
 
 $receipt_paper_width = trim((string)($rowstg['receipt_paper_width'] ?? '78mm'));
 if (!in_array($receipt_paper_width, ['78mm', '58mm', '100%'], true)) {
@@ -289,11 +289,25 @@ if (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])
 <?php if (!empty($rowstg['receipt_header_text'])): ?>
 <div style="text-align:center; font-size:11px; margin: 4px 0 6px; white-space: pre-wrap;"><?= nl2br(htmlspecialchars($rowstg['receipt_header_text'], ENT_QUOTES, 'UTF-8')) ?></div>
 <?php endif; ?>
-<div class="invoice-num"><?= date('md', strtotime($rowfat['pro_date'])) . $rowfat['pro_id'] ?></div>
+<div class="invoice-num">#<?= htmlspecialchars((string)$rowfat['pro_id'], ENT_QUOTES, 'UTF-8') ?></div>
 
 <?php
-$accid = (int)$rowfat['acc1'];
-$rowacc1 = $conn->query("SELECT aname, phone, address, info from acc_head where id = $accid")->fetch_assoc();
+// المبيعات والكاشير: العميل في acc2 والصندوق في acc1.
+// المشتريات: المورد في acc2. مردود المشتريات: المورد في acc1.
+$tybe = (int)$rowfat['pro_tybe'];
+if ($tybe === 10) {
+    $partyLabel = 'المورد';
+    $partyId = (int)$rowfat['acc1'];
+} elseif ($tybe === 4) {
+    $partyLabel = 'المورد';
+    $partyId = (int)$rowfat['acc2'];
+} else {
+    $partyLabel = 'العميل';
+    $partyId = (int)$rowfat['acc2'];
+}
+$rowacc1 = $partyId > 0
+    ? $conn->query("SELECT aname, phone, address, info from acc_head where id = $partyId")->fetch_assoc()
+    : null;
 $employee_name = trim((string)($rowfat['employee_name'] ?? ''));
 if ($employee_name === '') {
     $empid = (int)$rowfat['emp_id'];
@@ -353,7 +367,7 @@ if (($show_client && ($customer_name || $customer_phone || $customer_address || 
 ?>
 <div class="rcpt-customer">
 <?php if ($show_client && $customer_name): ?>
-<div class="info-row"><span class="info-label">العميل:</span><span class="info-val"><?= htmlspecialchars($customer_name) ?></span></div>
+<div class="info-row"><span class="info-label"><?= htmlspecialchars($partyLabel) ?>:</span><span class="info-val"><?= htmlspecialchars($customer_name) ?></span></div>
 <?php endif; ?>
 <?php if ($show_client && $customer_phone): ?>
 <div class="info-row"><span class="info-label">التليفون:</span><span class="info-val"><?= htmlspecialchars($customer_phone) ?></span></div>
@@ -381,25 +395,35 @@ if (($show_client && ($customer_name || $customer_phone || $customer_address || 
 </thead>
 <tbody>
 <?php
-$resdet = $conn->query("SELECT * FROM fat_details where fatid = $id");
+$resdet = $conn->query("SELECT * FROM fat_details WHERE isdeleted = 0 AND (fatid = $id OR pro_id = $id) ORDER BY id");
 while ($rowdet = $resdet->fetch_assoc()) {
     $itmid = (int)$rowdet['item_id'];
-    $rowitm = $conn->query("SELECT * FROM myitems where id = $itmid")->fetch_assoc();
-    $qty = $is_return ? $rowdet['qty_in'] : $rowdet['qty_out'];
+    $rowitm = $conn->query("SELECT iname FROM myitems where id = $itmid")->fetch_assoc();
+    $u = (float)$rowdet['u_val'];
+    if ($u <= 0) {
+        $u = 1;
+    }
+    $useIn = in_array($tybe, [4, 11], true);
+    $stock = $useIn ? (float)$rowdet['qty_in'] : (float)$rowdet['qty_out'];
+    if ($stock <= 0) {
+        $stock = $useIn ? (float)$rowdet['qty_out'] : (float)$rowdet['qty_in'];
+    }
+    $qty = $stock / $u;
+    $linePrice = (float)$rowdet['price'] * $u;
     $iname = $rowitm['iname'] ?? '';
 ?>
 <tr>
     <td style="text-align:right; padding-right:4px;"><?= htmlspecialchars($iname) ?></td>
-    <td><?= htmlspecialchars((string)$qty) ?></td>
-    <td><?= htmlspecialchars((string)$rowdet['price']) ?></td>
-    <td><?= htmlspecialchars((string)$rowdet['det_value']) ?></td>
+    <td><?= number_format($qty, 2) ?></td>
+    <td><?= number_format($linePrice, 2) ?></td>
+    <td><?= number_format((float)$rowdet['det_value'], 2) ?></td>
 </tr>
 <?php } ?>
 </tbody>
 </table>
 
 <?php
-$paid_res = $conn->query("SELECT SUM(debit) as paid_amount FROM journal_entries WHERE op2 = $id AND tybe = 0 AND debit > 0");
+$paid_res = $conn->query("SELECT SUM(pro_value) as paid_amount FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
 $paid_row = $paid_res ? $paid_res->fetch_assoc() : null;
 $paid_amount = $paid_row && $paid_row['paid_amount'] ? floatval($paid_row['paid_amount']) : 0;
 $change_amount = $paid_amount - floatval($rowfat['fat_net']);
