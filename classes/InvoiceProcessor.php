@@ -670,13 +670,16 @@ class InvoiceProcessor {
         $display = $proDisplayId ?? $invoiceId;
         $paidType = (int) $config['paid_type'];
         $paidNote = (string) ($config['paid_note'] ?? 'سند');
+        // سند دفع (مشتريات ومردود مبيعات): مدين الطرف ودائن الصندوق/البنك.
+        // سند قبض (مبيعات ومردود مشتريات): مدين الصندوق/البنك ودائن الطرف.
+        $isPayment = ($paidType === self::ACCOUNTING_TYPES['PAYMENT']);
 
         if ($calc['actual_cash'] > 0 && $paymentFundId > 0) {
             $created['cash'] = self::createPaymentVoucher($conn, [
                 'paid_type' => $paidType,
                 'amount' => $calc['actual_cash'],
-                'debit_account' => $paymentFundId,
-                'credit_account' => $partyAccId,
+                'debit_account' => $isPayment ? $partyAccId : $paymentFundId,
+                'credit_account' => $isPayment ? $paymentFundId : $partyAccId,
                 'invoice_id' => $invoiceId,
                 'pro_date' => $proDate,
                 'emp_id' => $empId,
@@ -690,8 +693,8 @@ class InvoiceProcessor {
             $created['bank'] = self::createPaymentVoucher($conn, [
                 'paid_type' => $paidType,
                 'amount' => $calc['actual_bank'],
-                'debit_account' => $paymentBankId,
-                'credit_account' => $partyAccId,
+                'debit_account' => $isPayment ? $partyAccId : $paymentBankId,
+                'credit_account' => $isPayment ? $paymentBankId : $partyAccId,
                 'invoice_id' => $invoiceId,
                 'pro_date' => $proDate,
                 'emp_id' => $empId,
