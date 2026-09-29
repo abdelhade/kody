@@ -1,4 +1,11 @@
-<?php include('includes/header.php') ?>
+<?php
+$id_early = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($id_early > 0 && isset($_COOKIE['invoice_print_cashier']) && $_COOKIE['invoice_print_cashier'] === '1') {
+    header('Location: receipt.php?id=' . $id_early . '&src=invoice');
+    exit;
+}
+include('includes/header.php');
+?>
 <?php
 if (!isset($_GET['id'])) {
     echo "لا يوجد فاتورة بهذا الرقم";die;
@@ -384,10 +391,14 @@ if (!in_array($tybe, [12, 13, 14])):
 </div>
 
 <div class="row no-print">
-<div class="col-12">
+<div class="col-12" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
     <button id="printButton">
 <i class="fas fa-print"></i> طباعة الفاتورة
 </button>
+    <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:0; cursor:pointer; font-weight:bold;">
+        <input type="checkbox" id="printCashierCheck">
+        كاشير
+    </label>
 </div>
 </div>
 
@@ -403,6 +414,21 @@ document.addEventListener('DOMContentLoaded', function() {
         printButton.addEventListener('click', function() {
             console.log('Print button clicked');
             window.print();
+        });
+    }
+
+    var cashierCheck = document.getElementById('printCashierCheck');
+    if (cashierCheck) {
+        cashierCheck.addEventListener('change', function() {
+            if (!cashierCheck.checked) return;
+            var exp = new Date();
+            exp.setFullYear(exp.getFullYear() + 1);
+            document.cookie = 'invoice_print_cashier=1; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+            var params = new URLSearchParams(window.location.search);
+            var id = params.get('id');
+            if (id) {
+                window.location.href = 'receipt.php?id=' + encodeURIComponent(id) + '&src=invoice';
+            }
         });
     }
 });

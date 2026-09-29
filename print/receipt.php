@@ -56,6 +56,7 @@ if (isset($_SESSION['lock_after_print']) && $_SESSION['lock_after_print'] === tr
         $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
     }
 }
+$from_invoice = isset($_GET['src']) && $_GET['src'] === 'invoice';
 
 $is_return = (in_array($rowfat['pro_tybe'], [3, 10, 11]) || strpos($rowfat['info'], 'مردود') !== false);
 
@@ -258,6 +259,12 @@ html, body {
 
 <div class="actions no-print">
     <button type="button" id="printButton">طباعة</button>
+    <?php if ($from_invoice): ?>
+    <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:4px; cursor:pointer; font-weight:bold;">
+        <input type="checkbox" id="printCashierCheck" checked>
+        كاشير
+    </label>
+    <?php endif; ?>
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back">عودة</a>
 </div>
 
@@ -441,6 +448,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (printButton) {
         printButton.addEventListener('click', function() {
             window.print();
+        });
+    }
+    var cashierCheck = document.getElementById('printCashierCheck');
+    if (cashierCheck) {
+        cashierCheck.addEventListener('change', function() {
+            if (cashierCheck.checked) return;
+            var exp = new Date();
+            exp.setFullYear(exp.getFullYear() + 1);
+            document.cookie = 'invoice_print_cashier=0; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+            var params = new URLSearchParams(window.location.search);
+            var id = params.get('id');
+            if (id) {
+                window.location.href = 'print_sales.php?id=' + encodeURIComponent(id);
+            }
         });
     }
     document.addEventListener('keydown', function(event) {

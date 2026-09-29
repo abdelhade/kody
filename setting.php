@@ -68,6 +68,13 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
 
 <?php else: ?>
 
+<?php
+require_once __DIR__ . '/includes/license.php';
+$licenseStatus = kody_license_status();
+$licenseMac = (string) ($licenseStatus['mac'] ?? '');
+$licenseOk = !empty($licenseStatus['licensed']);
+?>
+
 <?php include('includes/navbar.php'); ?>
 <?php include('includes/sidebar.php'); ?>
 
@@ -103,6 +110,18 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
           </ol>
         </div>
       </div>
+      <?php if ($licenseOk): ?>
+      <div class="alert alert-success border-0 shadow-sm mb-3">
+        <i class="fas fa-check-circle ml-2"></i>
+        <strong>النسخة مرخصة</strong>
+        <span class="mr-2">— <?= htmlspecialchars($licenseMac, ENT_QUOTES, 'UTF-8') ?></span>
+      </div>
+      <?php else: ?>
+      <div class="alert alert-danger border-0 shadow-sm mb-3">
+        <i class="fas fa-times-circle ml-2"></i>
+        <strong>النسخة غير مرخصة</strong>
+      </div>
+      <?php endif; ?>
       <div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm">
         <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
         <i class="fas fa-exclamation-triangle ml-2"></i>
@@ -142,6 +161,9 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                   </a>
                   <a class="nav-link py-3 px-4 d-flex align-items-center" id="print-tab" data-toggle="pill" href="#tab-print" role="tab" aria-controls="tab-print" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-print ml-3" style="font-size: 1.1rem; width: 20px;"></i> إعدادات الطباعة
+                  </a>
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="license-tab" data-toggle="pill" href="#tab-license" role="tab" aria-controls="tab-license" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fas fa-key ml-3" style="font-size: 1.1rem; width: 20px;"></i> الترخيص
                   </a>
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="database-tab" data-toggle="pill" href="#tab-database" role="tab" aria-controls="tab-database" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-database ml-3" style="font-size: 1.1rem; width: 20px;"></i> قاعدة البيانات
@@ -538,6 +560,33 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- الترخيص -->
+              <div class="tab-pane fade" id="tab-license" role="tabpanel" aria-labelledby="license-tab">
+                <div class="card card-outline <?= $licenseOk ? 'card-success' : 'card-danger' ?> shadow-sm border-0" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title font-weight-bold mb-0 <?= $licenseOk ? 'text-success' : 'text-danger' ?>">
+                      <i class="fas fa-key ml-2"></i>
+                      <?= $licenseOk ? 'النسخة مرخصة' : 'النسخة غير مرخصة' ?>
+                    </h3>
+                  </div>
+                  <div class="card-body">
+                    <p class="text-muted">الترخيص مرتبط بعنوان MAC لهذا الجهاز. انسخ العنوان، ولّد المفتاح من صفحة التوليد، ثم أدخله هنا.</p>
+                    <div class="form-group">
+                      <label>عنوان MAC للجهاز</label>
+                      <input type="text" class="form-control" id="machineMac" readonly value="<?= htmlspecialchars($licenseMac !== '' ? $licenseMac : 'تعذر قراءة MAC', ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <div class="form-group mb-0">
+                      <label for="licenseKeyInput">مفتاح الترخيص</label>
+                      <input type="text" class="form-control" id="licenseKeyInput" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" value="<?= htmlspecialchars((string) ($licenseStatus['key'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3" id="btnSaveLicense">
+                      <i class="fas fa-check ml-1"></i> تفعيل الترخيص
+                    </button>
+                    <div id="licenseSaveMsg" class="mt-3"></div>
                   </div>
                 </div>
               </div>
@@ -1038,6 +1087,33 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!name) { alert('أدخل اسم القاعدة'); return; }
       if (!confirm('إنشاء قاعدة جديدة فارغة باسم ' + name + '؟')) return;
       postPeriod('create', { db_name: name, label: label }, btnCreateDb);
+    });
+  }
+
+  var btnSaveLicense = document.getElementById('btnSaveLicense');
+  if (btnSaveLicense) {
+    btnSaveLicense.addEventListener('click', function () {
+      var input = document.getElementById('licenseKeyInput');
+      var msg = document.getElementById('licenseSaveMsg');
+      var key = input ? input.value.trim() : '';
+      if (!key) {
+        alert('أدخل مفتاح الترخيص');
+        return;
+      }
+      btnSaveLicense.disabled = true;
+      var fd = new FormData();
+      fd.append('license_key', key);
+      fetch('ajax/save_license.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (msg) {
+            msg.className = 'mt-3 alert ' + (data.licensed ? 'alert-success' : 'alert-danger');
+            msg.textContent = data.licensed ? 'النسخة مرخصة' : (data.message || 'فشل التفعيل');
+          }
+          if (data.licensed) location.reload();
+        })
+        .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+        .finally(function () { btnSaveLicense.disabled = false; });
     });
   }
 });

@@ -662,7 +662,16 @@ if ($submit == 'print') {
         $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
     }
     error_log('CONDITION MATCHED: submit == print');
-    $redirect_url = "../print/print_sales.php?id=$last_op";
+    $use_cashier = isset($_POST['print_cashier']) && (string) $_POST['print_cashier'] === '1';
+    if ($use_cashier) {
+        $ref = $_SERVER['HTTP_REFERER'] ?? '';
+        if ($ref !== '' && strpos($ref, 'pos_') === false) {
+            $_SESSION['pos_back_page'] = $ref;
+        }
+        $redirect_url = "../print/receipt.php?id=$last_op&src=invoice";
+    } else {
+        $redirect_url = "../print/print_sales.php?id=$last_op";
+    }
     error_log('Redirecting to: ' . $redirect_url);
     header("Location: $redirect_url");
     error_log('Header sent - this should not appear if redirect works');

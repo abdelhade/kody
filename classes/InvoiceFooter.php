@@ -298,10 +298,52 @@ class InvoiceFooter extends InvoiceElementBase
                 type="submit" name="submit" value="save">
             <?php echo $saveText; ?> (F12)
         </button>
-        <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
-                type="submit" formtarget="_blank" name="submit" value="print">
-            <?php echo $saveText; ?> وطباعة (F11)
-        </button>
+        <div class="d-flex align-items-stretch" style="gap:6px;">
+            <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-lg dis flex-grow-1" 
+                    type="submit" formtarget="_blank" name="submit" value="print">
+                <i class="fas fa-print"></i> <?php echo $saveText; ?> وطباعة (F11)
+            </button>
+            <label for="printCashierCheck" class="mb-0 d-flex align-items-center px-2 border rounded bg-white" style="gap:4px; white-space:nowrap; cursor:pointer;" title="طباعة إيصال كاشير بدل ورقة A4">
+                <input type="checkbox" id="printCashierCheck">
+                <span>كاشير</span>
+            </label>
+        </div>
+        <input type="hidden" name="print_cashier" id="printCashierField" value="0">
+        <script>
+        (function() {
+            var COOKIE = 'invoice_print_cashier';
+            function readCookie() {
+                var m = document.cookie.match(/(?:^|; )invoice_print_cashier=([^;]*)/);
+                return m ? decodeURIComponent(m[1]) : '0';
+            }
+            function writeCookie(value) {
+                var exp = new Date();
+                exp.setFullYear(exp.getFullYear() + 1);
+                document.cookie = COOKIE + '=' + encodeURIComponent(value) + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+            }
+            function applyLinks(on) {
+                document.querySelectorAll('.invoice-print-link').forEach(function(a) {
+                    var href = on ? a.getAttribute('data-cashier') : a.getAttribute('data-a4');
+                    if (href) a.setAttribute('href', href);
+                });
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+                var cb = document.getElementById('printCashierCheck');
+                var field = document.getElementById('printCashierField');
+                if (!cb) return;
+                var on = readCookie() === '1';
+                cb.checked = on;
+                if (field) field.value = on ? '1' : '0';
+                applyLinks(on);
+                cb.addEventListener('change', function() {
+                    var v = cb.checked ? '1' : '0';
+                    writeCookie(v);
+                    if (field) field.value = v;
+                    applyLinks(cb.checked);
+                });
+            });
+        })();
+        </script>
         <?php
     }
 

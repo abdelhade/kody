@@ -200,8 +200,12 @@ switch ($q) {
                                         <i class="fa fa-filter"></i>
                                     </button>
                                     <button class="btn btn-dark" type="button" onclick="printBrutal()" style="flex: 1;" title="طباعة بتنسيق Brutal">
-                                        <i class="fas fa-file-pdf"></i>
+                                        <i class="fas fa-print"></i>
                                     </button>
+                                    <label class="btn btn-outline-secondary mb-0 d-flex align-items-center justify-content-center" style="flex: 1.6; gap: 4px; cursor: pointer;" title="طباعة الفاتورة كإيصال كاشير بدل A4">
+                                        <input type="checkbox" id="printCashierCheck">
+                                        <span>كاشير</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -260,7 +264,16 @@ switch ($q) {
                                         <td><?= $x ?></td>
                                         <td><?= $rowop['crtime'] ?></td>
                                         <td>
-                                            <a class="btn btn-block btn-light border" href="print/<?= ($tybe == 4 || $tybe == 3 || $tybe == 2) ? 'print_sales' : 'receipt' ?>.php?id=<?= $proid ?>" target="_blank">
+                                            <?php
+                                            $use_a4 = in_array((int) $tybe, [2, 3, 4], true);
+                                            $a4_href = 'print/print_sales.php?id=' . (int) $proid;
+                                            $cashier_href = 'print/receipt.php?id=' . (int) $proid . '&src=invoice';
+                                            $print_href = $use_a4 ? $a4_href : ('print/receipt.php?id=' . (int) $proid);
+                                            ?>
+                                            <a class="btn btn-block btn-light border<?= $use_a4 ? ' invoice-print-link' : '' ?>"
+                                               href="<?= $print_href ?>"
+                                               <?= $use_a4 ? 'data-a4="' . $a4_href . '" data-cashier="' . $cashier_href . '"' : '' ?>
+                                               target="_blank">
                                                 <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?>
                                             </a>
                                         </td>
@@ -686,6 +699,35 @@ switch ($q) {
 function printBrutal() {
     window.print();
 }
+(function() {
+    var COOKIE = 'invoice_print_cashier';
+    function readCookie() {
+        var m = document.cookie.match(/(?:^|; )invoice_print_cashier=([^;]*)/);
+        return m ? decodeURIComponent(m[1]) : '0';
+    }
+    function writeCookie(value) {
+        var exp = new Date();
+        exp.setFullYear(exp.getFullYear() + 1);
+        document.cookie = COOKIE + '=' + encodeURIComponent(value) + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+    }
+    function applyLinks(on) {
+        document.querySelectorAll('.invoice-print-link').forEach(function(a) {
+            var href = on ? a.getAttribute('data-cashier') : a.getAttribute('data-a4');
+            if (href) a.setAttribute('href', href);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var cb = document.getElementById('printCashierCheck');
+        var on = readCookie() === '1';
+        applyLinks(on);
+        if (!cb) return;
+        cb.checked = on;
+        cb.addEventListener('change', function() {
+            writeCookie(cb.checked ? '1' : '0');
+            applyLinks(cb.checked);
+        });
+    });
+})();
 </script>
 
 <style>

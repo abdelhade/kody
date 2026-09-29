@@ -43,8 +43,10 @@
                             <tr>
                                     <th><?= $x ?></th>
                                     <th>
-                                        <a class="btn btn-block btn-light border" 
-                                           href="print/print_sales.php?id=<?= $rowop['id']?>" 
+                                        <a class="btn btn-block btn-light border invoice-print-link" 
+                                           href="print/print_sales.php?id=<?= (int) $rowop['id'] ?>"
+                                           data-a4="print/print_sales.php?id=<?= (int) $rowop['id'] ?>"
+                                           data-cashier="print/receipt.php?id=<?= (int) $rowop['id'] ?>&src=invoice"
                                            target="_blank">
                                             <p><?= htmlspecialchars($rowop['pro_tybe_name'] ?? 'غير محدد') ?></p>
                                         </a>
