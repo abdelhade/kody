@@ -3,6 +3,10 @@ header('Content-Type: application/json; charset=utf-8');
 
 try {
     include(__DIR__ . '/../includes/connect.php');
+    // فك قفل الجلسة فوراً حتى لا تعلق طلبات AJAX المتزامنة
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
 
     $phone = trim($_POST['phone'] ?? '');
 

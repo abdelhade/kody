@@ -1178,6 +1178,18 @@ body {
                     .attr('placeholder', 'جاري البحث...');
                 setCustomerStatus('info', 'جاري البحث عن العميل...');
 
+                // أمان: لو الـ AJAX اتعطل لأي سبب، فك التعليق بعد 16 ثانية
+                const safetyTimer = setTimeout(function () {
+                    if (!isSearchingCustomer) return;
+                    isSearchingCustomer = false;
+                    lastSearchedPhone = '';
+                    $('#customer_phone')
+                        .removeClass('border-warning')
+                        .addClass('border-danger')
+                        .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
+                    setCustomerStatus('warning', 'تعذر البحث — يمكنك إدخال البيانات يدوياً');
+                }, 16000);
+
                 $.ajax({
                     url: 'do/search_customer.php',
                     method: 'POST',
@@ -1185,6 +1197,7 @@ body {
                     dataType: 'json',
                     timeout: 15000,
                     success: function (response) {
+                        clearTimeout(safetyTimer);
                         $('#customer_phone')
                             .removeClass('border-warning')
                             .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
@@ -1208,6 +1221,7 @@ body {
                         }
                     },
                     error: function (xhr, status, error) {
+                        clearTimeout(safetyTimer);
                         console.error('Dynamic search AJAX Error:', {
                             status: status,
                             http: xhr.status,
@@ -1220,7 +1234,6 @@ body {
                             .addClass('border-danger')
                             .attr('placeholder', 'أدخل رقم العميل ثم اخرج من الحقل للبحث');
 
-                        // حاول قراءة JSON من رد 500 إن وُجد
                         let msg = 'تعذر البحث — يمكنك إدخال البيانات يدوياً';
                         try {
                             const errBody = xhr.responseJSON || JSON.parse(xhr.responseText || '{}');
@@ -1236,10 +1249,10 @@ body {
                         }
 
                         setCustomerStatus('warning', msg);
-                        // اسمح بإعادة المحاولة عند blur التالي
                         lastSearchedPhone = '';
                     },
                     complete: function () {
+                        clearTimeout(safetyTimer);
                         isSearchingCustomer = false;
                     }
                 });

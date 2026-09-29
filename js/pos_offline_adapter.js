@@ -107,66 +107,100 @@ class POSOfflineAdapter {
         
         // حفظ المرجع الأصلي للاستخدام في المزامنة
         this.originalAjax = originalAjax;
+
+        // طلبات السيرفر المحلي (XAMPP) تشتغل من غير إنترنت — لا نقطعها بـ navigator.onLine
+        const isLocalUrl = function (url) {
+            if (!url || typeof url !== 'string') return true;
+            if (!/^https?:\/\//i.test(url)) return true;
+            try {
+                return new URL(url, window.location.href).origin === window.location.origin;
+            } catch (e) {
+                return true;
+            }
+        };
         
         $.ajax = function(options) {
-            console.log('🌐 AJAX Request:', options.url, 'Online:', self.isOnline);
+            const opts = options || {};
+            console.log('🌐 AJAX Request:', opts.url, 'Online:', self.isOnline);
             
-            // السماح بالمرور للمزامنة
-            if (options._bypassOffline) {
-                return originalAjax.call(this, options);
+            // السماح بالمرور للمزامنة أو لأي endpoint محلي
+            if (opts._bypassOffline || isLocalUrl(opts.url)) {
+                return originalAjax.call(this, opts).done(function(data) {
+                    try { self.cacheResponse(opts.url, data); } catch (e) { /* ignore */ }
+                });
             }
             
             if (!self.isOnline) {
                 console.log('📴 Handling offline request');
-                return self.handleOfflineRequest(options);
+                return self.handleOfflineRequest(opts);
             }
             
-            return originalAjax.call(this, options).done(function(data) {
-                self.cacheResponse(options.url, data);
+            return originalAjax.call(this, opts).done(function(data) {
+                try { self.cacheResponse(opts.url, data); } catch (e) { /* ignore */ }
             });
         };
     }
 
+    /** يستدعي success/error/complete يدوياً لأن Deferred المخصص لا يمرّ على خيارات jQuery */
+    _finishAjax(options, deferred, result, isError) {
+        const xhr = { status: isError ? 503 : 200, responseText: '' };
+        try {
+            if (isError) {
+                if (typeof options.error === 'function') {
+                    options.error(xhr, 'error', result && result.statusText ? result.statusText : 'Offline');
+                }
+                deferred.reject(result || xhr);
+            } else {
+                if (typeof options.success === 'function') {
+                    options.success(result, 'success', xhr);
+                }
+                deferred.resolve(result);
+            }
+        } finally {
+            if (typeof options.complete === 'function') {
+                options.complete(xhr, isError ? 'error' : 'success');
+            }
+        }
+    }
+
     handleOfflineRequest(options) {
         const deferred = $.Deferred();
+        const self = this;
         
         if (options.url && options.url.includes('search_customer.php')) {
             this.handleCustomerSearch(options, deferred);
         } else if (options.url && options.url.includes('doadd_invoice.php')) {
             this.handleOrderSave(options, deferred);
         } else if (options.url && options.url.includes('get_items.php')) {
-            this.handleItemsRequest(deferred);
+            this.handleItemsRequest(options, deferred);
         } else {
-            deferred.reject({
-                status: 503,
-                statusText: 'Service Unavailable - Offline Mode'
-            });
+            setTimeout(function () {
+                self._finishAjax(options, deferred, {
+                    status: 503,
+                    statusText: 'Service Unavailable - Offline Mode'
+                }, true);
+            }, 0);
         }
         
         return deferred.promise();
     }
 
     handleCustomerSearch(options, deferred) {
-        const phone = options.data.phone;
-        const customer = this.offlineData.customers.find(c => c.phone.includes(phone));
+        const self = this;
+        const phone = (options.data && options.data.phone) ? String(options.data.phone) : '';
+        const customer = this.offlineData.customers.find(c => c.phone && c.phone.includes(phone));
         
-        setTimeout(() => {
-            if (customer) {
-                deferred.resolve(JSON.stringify({
-                    found: true,
-                    name: customer.name,
-                    address: customer.address
-                }));
-            } else {
-                deferred.resolve(JSON.stringify({
-                    found: false
-                }));
-            }
-        }, 500);
+        setTimeout(function () {
+            const result = customer
+                ? { found: true, name: customer.name, address: customer.address }
+                : { found: false };
+            self._finishAjax(options, deferred, result, false);
+        }, 100);
     }
 
     handleOrderSave(options, deferred) {
         console.log('💾 Saving order offline...', options);
+        const self = this;
         
         const order = {
             id: Date.now(),
@@ -183,16 +217,17 @@ class POSOfflineAdapter {
         console.log('✅ Order saved offline:', order.id);
         console.log('📊 Total offline orders:', this.offlineData.orders.length);
         
-        setTimeout(() => {
-            deferred.resolve('success');
-            this.showOfflineNotification(`تم حفظ الطلب محلياً (#${order.id}) - سيتم إرساله عند الاتصال`);
-        }, 500);
+        setTimeout(function () {
+            self.showOfflineNotification(`تم حفظ الطلب محلياً (#${order.id}) - سيتم إرساله عند الاتصال`);
+            self._finishAjax(options, deferred, { success: true, offline: true, id: order.id }, false);
+        }, 100);
     }
 
-    handleItemsRequest(deferred) {
-        setTimeout(() => {
-            deferred.resolve(JSON.stringify(this.offlineData.items));
-        }, 300);
+    handleItemsRequest(options, deferred) {
+        const self = this;
+        setTimeout(function () {
+            self._finishAjax(options, deferred, self.offlineData.items || [], false);
+        }, 100);
     }
 
     showOfflineNotification(message) {
