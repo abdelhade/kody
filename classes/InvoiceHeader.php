@@ -11,6 +11,7 @@ class InvoiceHeader extends InvoiceElementBase
     private $accounts = [];
     private $stores = [];
     private $employees = [];
+    private $priceLists = [];
 
     public function __construct($invoiceType, $isEditMode = false, $data = null, $conn = null)
     {
@@ -44,6 +45,9 @@ class InvoiceHeader extends InvoiceElementBase
             $result = $this->executeSecureQuery($query);
             $this->employees = $result->fetch_all(MYSQLI_ASSOC);
 
+            require_once __DIR__ . '/InvoiceProcessor.php';
+            $this->priceLists = InvoiceProcessor::priceLists($this->conn);
+
         } catch (Exception $e) {
             error_log("Error loading select options: " . $e->getMessage());
         }
@@ -67,7 +71,7 @@ class InvoiceHeader extends InvoiceElementBase
                         <?php echo $clientLabel; ?>
                         <button type="button" class="btn bg-lime-200 btn-sm"
                             data-toggle="modal"
-                            data-target="<?php echo (in_array((int)$this->invoiceType, [4,10,11,12])) ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
+                            data-target="<?php echo ($this->getClientType() === 'supplier') ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
                     </label>
                     <div class="tooltext">إضافة جديد</div>
                 </div>
@@ -89,6 +93,14 @@ class InvoiceHeader extends InvoiceElementBase
                 <label for="">الموظف</label>
                 <select class="form-control form-control-sm" name="emp_id">
                     <?php $this->renderEmployeeOptions(); ?>
+                </select>
+            </div>
+
+            <!-- الفئة السعرية -->
+            <div class="col-md-2">
+                <label for="invoicePriceList">الفئة السعرية</label>
+                <select class="form-control form-control-sm" name="price_list" id="invoicePriceList">
+                    <?php $this->renderPriceListOptions(); ?>
                 </select>
             </div>
 
@@ -304,13 +316,25 @@ class InvoiceHeader extends InvoiceElementBase
     }
 
     /**
+     * حساب الطرف في الفاتورة المحفوظة.
+     * مردود المشتريات يخزن المورد في acc1، وباقي الفواتير تخزن الطرف في acc2.
+     */
+    private function getPartyAccountId()
+    {
+        if ((int)$this->invoiceType === 10) {
+            return $this->data['acc1'] ?? null;
+        }
+        return $this->data['acc2'] ?? null;
+    }
+
+    /**
      * عرض خيارات العملاء/الموردين
      */
     private function renderAccountOptions()
     {
         foreach ($this->accounts as $account) {
             $selected = '';
-            if ($this->isEditMode && $this->data && $this->data['acc2'] == $account['id']) {
+            if ($this->isEditMode && $this->data && $this->getPartyAccountId() == $account['id']) {
                 $selected = 'selected';
             }
             echo "<option value='{$account['id']}' {$selected}>{$this->sanitizeInput($account['aname'])}</option>";
@@ -342,6 +366,30 @@ class InvoiceHeader extends InvoiceElementBase
                 $selected = 'selected';
             }
             echo "<option value='{$employee['id']}' {$selected}>{$this->sanitizeInput($employee['aname'])}</option>";
+        }
+    }
+
+    /**
+     * عرض الفئات السعرية (قطاعي / جملة / السوق)
+     */
+    private function renderPriceListOptions()
+    {
+        $selectedId = 1;
+        if ($this->isEditMode && $this->data && !empty($this->data['price_list'])) {
+            $selectedId = (int) $this->data['price_list'];
+        }
+        $lists = $this->priceLists;
+        if (!$lists) {
+            $lists = [
+                ['id' => 1, 'pname' => 'قطاعي'],
+                ['id' => 2, 'pname' => 'جملة'],
+                ['id' => 3, 'pname' => 'السوق'],
+            ];
+        }
+        foreach ($lists as $list) {
+            $id = (int) $list['id'];
+            $selected = ($id === $selectedId) ? 'selected' : '';
+            echo "<option value='{$id}' {$selected}>{$this->sanitizeInput($list['pname'])}</option>";
         }
     }
 

@@ -41,6 +41,7 @@ $pro_date = isset($_POST['pro_date']) ? htmlspecialchars($_POST['pro_date'], ENT
 $accural_date = isset($_POST['accural_date']) ? htmlspecialchars($_POST['accural_date'], ENT_QUOTES, 'UTF-8') : '';
 $pro_id = isset($_POST['pro_id']) ? htmlspecialchars($_POST['pro_id'], ENT_QUOTES, 'UTF-8') : '';
 $pro_serial = isset($_POST['pro_serial']) ? htmlspecialchars(trim($_POST['pro_serial']), ENT_QUOTES, 'UTF-8') : '';
+$price_list = isset($_POST['price_list']) ? max(1, intval($_POST['price_list'])) : 1;
 $headtotal = isset($_POST['headtotal']) ? floatval($_POST['headtotal']) : 0;
 $headdisc = isset($_POST['headdisc']) ? floatval($_POST['headdisc']) : 0;
 $headplus = isset($_POST['headplus']) ? floatval($_POST['headplus']) : 0;
@@ -138,6 +139,7 @@ try {
         'pro_date' => $pro_date,
         'accural_date' => $accural_date,
         'pro_serial' => $pro_serial,
+        'price_list' => $price_list,
         'store_id' => $store_id,
         'emp_id' => $emp_id,
         'acc1' => $accounts['acc1'],

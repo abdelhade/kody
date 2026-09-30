@@ -224,6 +224,15 @@
                 </a>
               </li>
 
+              <li class="nav-item" id="deleteditems">
+                <a href="deleted_items.php" class="nav-link">
+                  <i class="nav-icon fas fa-trash-alt"></i>
+                  <p>
+                    <?= $lang_deleted_items ?? 'الاصناف المحذوفه' ?>
+                  </p>
+                </a>
+              </li>
+
 
               <li class="nav-item">
                 <a href="myunits.php" class="nav-link">
@@ -1512,6 +1521,11 @@
       if (window.location.href.includes('myitems.php')) {
         $('#stock').show().addClass('bg-slate-100');
         $('#myitems').addClass('bg-slate-200');
+      }
+
+      if (window.location.href.includes('deleted_items.php')) {
+        $('#stock').show().addClass('bg-slate-100');
+        $('#deleteditems').addClass('bg-slate-200');
       }
 
       if (window.location.href.includes('reservations.php')) {

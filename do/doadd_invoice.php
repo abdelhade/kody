@@ -44,6 +44,7 @@ require_once('../classes/InvoiceProcessor.php');
 $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 0;
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
 $pro_serial = isset($_POST['pro_serial']) ? htmlspecialchars(trim($_POST['pro_serial']), ENT_QUOTES, 'UTF-8') : '';
+$price_list = isset($_POST['price_list']) ? max(1, intval($_POST['price_list'])) : 1;
 $pro_date = isset($_POST['pro_date']) ? htmlspecialchars($_POST['pro_date'], ENT_QUOTES, 'UTF-8') : date('Y-m-d');
 $accural_date = isset($_POST['accural_date']) ? htmlspecialchars($_POST['accural_date'], ENT_QUOTES, 'UTF-8') : '';
 $acc2_id = isset($_POST['acc2_id']) ? intval($_POST['acc2_id']) : 0;
@@ -330,6 +331,7 @@ try {
             'info' => $info,
             'accural_date' => $accural_date,
             'pro_serial' => $pro_serial,
+            'price_list' => $price_list,
             'store_id' => $store_id,
             'emp_id' => $emp_id,
             'emp2_id' => $emp2_id,
@@ -387,6 +389,7 @@ try {
             'pro_date' => $pro_date,
             'accural_date' => $accural_date,
             'pro_serial' => $pro_serial,
+            'price_list' => $price_list,
             'store_id' => $store_id,
             'emp_id' => $emp_id,
             'emp2_id' => $emp2_id,

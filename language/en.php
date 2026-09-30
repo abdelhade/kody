@@ -315,6 +315,7 @@ $lang_towns = "Cities";
 $lang_inventory_management = "Inventory Management";
 $lang_new_item = "New Item";
 $lang_items = "Items";
+$lang_deleted_items = "Deleted Items";
 $lang_units = "Units";
 $lang_groups = "Groups";
 $lang_categories = "Categories";

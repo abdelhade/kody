@@ -172,6 +172,30 @@ body {
                                 <input type="hidden" id="selected_order_id" name="edit" value="0">
                             </div>
 
+                            <!-- الفئة السعرية على مستوى الفاتورة -->
+                            <?php
+                            if (!class_exists('InvoiceProcessor')) {
+                                require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+                            }
+                            $posPriceLists = InvoiceProcessor::priceLists($conn);
+                            $posPriceListId = 1;
+                            if (isset($rowed['price_list']) && (int) $rowed['price_list'] > 0) {
+                                $posPriceListId = (int) $rowed['price_list'];
+                            }
+                            ?>
+                            <div class="row g-0 mb-0">
+                                <div class="col-12">
+                                    <select name="price_list" id="invoicePriceList" class="form-select form-select-sm"
+                                        title="الفئة السعرية" style="font-size: 0.75rem;">
+                                        <?php foreach ($posPriceLists as $pl) {
+                                            $plId = (int) $pl['id'];
+                                            $plSelected = ($plId === $posPriceListId) ? 'selected' : '';
+                                            echo '<option value="' . $plId . '" ' . $plSelected . '>' . htmlspecialchars($pl['pname']) . '</option>';
+                                        } ?>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- الحقول الصغيرة -->
                             <div class="row g-0 mb-0">
                                 <!-- المخزن -->
@@ -476,12 +500,21 @@ body {
                                     $itemId = isset($rowitem['id']) ? $rowitem['id'] : '';
                                     $itemName = isset($rowitem['iname']) ? htmlspecialchars($rowitem['iname']) : 'صنف غير محدد';
                                     
-                                    // تحديد السعر - جرب price1 أو price
-                                    $itemPrice = 0;
-                                    if (isset($rowitem['price1']) && !empty($rowitem['price1'])) {
-                                        $itemPrice = floatval($rowitem['price1']);
-                                    } elseif (isset($rowitem['price']) && !empty($rowitem['price'])) {
-                                        $itemPrice = floatval($rowitem['price']);
+                                    $itemPrice1 = floatval($rowitem['price1'] ?? 0);
+                                    $itemPrice2 = floatval($rowitem['price2'] ?? 0);
+                                    $itemPrice3 = floatval($rowitem['price3'] ?? 0);
+                                    if ($itemPrice3 <= 0) {
+                                        $itemPrice3 = floatval($rowitem['market_price'] ?? 0);
+                                    }
+                                    if (!isset($posPriceListId)) {
+                                        $posPriceListId = 1;
+                                    }
+                                    if ($posPriceListId === 2) {
+                                        $itemPrice = $itemPrice2 > 0 ? $itemPrice2 : $itemPrice1;
+                                    } elseif ($posPriceListId >= 3) {
+                                        $itemPrice = $itemPrice3 > 0 ? $itemPrice3 : $itemPrice1;
+                                    } else {
+                                        $itemPrice = $itemPrice1;
                                     }
                                     
                                     $itemBarcode = isset($rowitem['barcode']) ? htmlspecialchars($rowitem['barcode']) : '';
@@ -499,7 +532,11 @@ body {
                                     data-category="<?= $itemCategory ?>">
                                     <div class="card item-card itemButton  shadow-sm border-0"
                                         data-item-id="<?= $itemId ?>" data-item-name="<?= $itemName ?>"
-                                        data-item-price="<?= $itemPrice ?>" data-item-barcode="<?= $itemBarcode ?>"
+                                        data-item-price="<?= $itemPrice ?>"
+                                        data-price1="<?= $itemPrice1 ?>"
+                                        data-price2="<?= $itemPrice2 ?>"
+                                        data-price3="<?= $itemPrice3 ?>"
+                                        data-item-barcode="<?= $itemBarcode ?>"
                                         data-item-desc="<?= $itemDesc ?>" style="cursor: pointer;">
                                         <div class="card-body p-2 text-center">
                                             <!-- الصورة -->
@@ -526,7 +563,7 @@ body {
                                             <!-- السعر -->
                                             <div class="bg-primary rounded px-2 py-1 mb-2">
                                                 <p class="card-text fw-bold text-white mb-0" style="font-size: 1.1rem;">
-                                                    <?= number_format($itemPrice, 2) ?> <span
+                                                    <span class="item-card-price"><?= number_format($itemPrice, 2) ?></span> <span
                                                         class="text-white opacity-75">ج.م</span>
                                                 </p>
                                             </div>

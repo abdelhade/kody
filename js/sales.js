@@ -73,6 +73,34 @@ $(document).ready(function() {
         updateTotal();
     });
 
+    // تغيير الفئة السعرية يعيد تسعير أصناف فاتورة المبيعات
+    $(document).on('change', '#invoicePriceList', function() {
+        if (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice()) {
+            return;
+        }
+        const listId = parseInt(this.value, 10) || 1;
+        $('#itmrow tr').each(function() {
+            const $row = $(this);
+            const itemId = $row.find('input[name="itmname[]"]').val();
+            if (!itemId) return;
+            const unitVal = $row.find('select[name="u_val[]"]').val();
+            $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
+                if (!data || data.error) return;
+                const unit = (data.units || []).find(function(u) {
+                    return Math.abs((parseFloat(u.unit_value) || 0) - (parseFloat(unitVal) || 0)) < 0.0001;
+                });
+                const price = unit
+                    ? window.invoicePriceFor(unit, listId, true)
+                    : window.invoicePriceFor(data, listId, false);
+                const qty = parseFloat($row.find('.itmqty').val()) || 0;
+                const pct = parseFloat($row.find('.itmdisc_pct').val()) || 0;
+                $row.find('.itmprice').val(price);
+                $row.find('.itmdisc').val(((qty * price * pct) / 100).toFixed(3));
+                $row.find('.itmprice').trigger('input');
+            });
+        });
+    });
+
     // دالة مساعدة لحساب وتحديث الباقي
     function updateChange() {
         const paid = parseFloat($('#paid').val()) || 0;
@@ -162,8 +190,13 @@ function fetchItemInfo(itemId, row) {
         dataType: 'json',
         cache: true, // تفعيل الكاش
         success: function(data) {
-            const isSale = getParameterByName('q') === 'sale';
-            const price = isSale ? data.last_price : data.price1;
+            const purchase = (typeof window.isPurchaseInvoice === 'function')
+                ? window.isPurchaseInvoice()
+                : getParameterByName('q') === 'purchase';
+            const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
+            const price = purchase
+                ? (parseFloat(data.cost_price) || parseFloat(data.last_price) || 0)
+                : ((typeof window.invoicePriceFor === 'function') ? window.invoicePriceFor(data, listId, false) : (parseFloat(data.price1) || 0));
             // تحديث الحقول دفعة واحدة
             row.find("#itmprice").val(price);
             row.find("#itmval").val(price);
@@ -196,7 +229,10 @@ function fetchItemInfo(itemId, row) {
                 unitSelect.off('change').on('change', function() {
                     const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
                     if (selectedUnit) {
-                        const newPrice = isSale ? data.last_price * selectedUnit.unit_value : selectedUnit.uprice1;
+                        const activeList = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : listId;
+                        const newPrice = purchase
+                            ? (parseFloat(selectedUnit.ucost) || 0)
+                            : ((typeof window.invoicePriceFor === 'function') ? window.invoicePriceFor(selectedUnit, activeList, true) : (parseFloat(selectedUnit.uprice1) || 0));
                         row.find("#itmprice").val(newPrice);
                         row.find("#itmqty").val(1);
                         

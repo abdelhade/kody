@@ -185,6 +185,31 @@ class InvoiceDetails extends InvoiceElementBase
 </style>
 <script>
 window.SHOW_PROFIT_COLS = <?php echo $showProfit ? 'true' : 'false'; ?>;
+
+window.currentInvoicePriceList = function() {
+    return parseInt($('#invoicePriceList').val(), 10) || 1;
+};
+
+window.invoicePriceFor = function(source, listId, isUnit) {
+    listId = parseInt(listId, 10) || 1;
+    var key = isUnit
+        ? ({1: 'uprice1', 2: 'uprice2', 3: 'uprice3', 4: 'uprice4'}[listId] || 'uprice1')
+        : ({1: 'price1', 2: 'price2', 3: 'price3', 4: 'price4'}[listId] || 'price1');
+    var val = parseFloat(source && source[key]);
+    if (!(val > 0) && listId === 3 && source) {
+        val = parseFloat(isUnit ? source.uprice3 : (source.market_price || source.price3));
+    }
+    if (!(val > 0) && source) {
+        val = parseFloat(isUnit ? source.uprice1 : source.price1) || 0;
+    }
+    return val || 0;
+};
+
+window.isPurchaseInvoice = function() {
+    var t = parseInt($('input[name="pro_tybe"]').val(), 10);
+    return t === 4 || t === 10 || t === 12;
+};
+
 $(document).ready(function() {
     const searchInput = document.getElementById('itemSearchInput');
     const searchResults = document.getElementById('searchResults');
@@ -276,16 +301,19 @@ $(document).ready(function() {
                     if (data.success && data.items.length > 0) {
                         let html = '';
                         data.items.forEach(item => {
+                            const listPrice = window.isPurchaseInvoice()
+                                ? (parseFloat(item.price1) || 0)
+                                : window.invoicePriceFor(item, window.currentInvoicePriceList(), false);
                             html += `
                                 <div class="search-result-item"
                                      data-id="${item.id}"
                                      data-name="${item.iname}"
-                                     data-price="${item.price1}"
+                                     data-price="${listPrice}"
                                      data-barcode="${item.barcode}"
                                      style="padding:10px; cursor:pointer; border-bottom:1px solid #eee;">
                                     <strong>${item.iname}</strong>
                                     ${item.name2 ? ' // ' + item.name2 : ''}
-                                    <span style="float:left; color:#10b981;">${item.price1} ج.م</span>
+                                    <span style="float:left; color:#10b981;">${listPrice} ج.م</span>
                                 </div>
                             `;
                         });
@@ -428,7 +456,7 @@ $(document).ready(function() {
         clearHighlight();
 
         // جلب بيانات الصنف الكاملة وتحديث الحقول مباشرة
-        const isPurchase = window.location.href.indexOf('q=purchase') !== -1;
+        const isPurchase = window.isPurchaseInvoice();
 
         $.ajax({
             url: 'get/get_iteminfo.php?id=' + item.id,
@@ -440,18 +468,22 @@ $(document).ready(function() {
                     console.error('get_iteminfo error:', data.error, '| item id:', item.id);
                     return;
                 }
-                // في المشتريات: ucost من الوحدة الأولى | في المبيعات: price1
+                // في المشتريات: تكلفة الوحدة | في المبيعات: سعر الفئة المختارة على الفاتورة
                 const defaultUnitCost = (data.units && data.units.length) ? (parseFloat(data.units[0].ucost) || 0) : 0;
+                const listId = window.currentInvoicePriceList();
+                const listPrice = (data.units && data.units.length)
+                    ? window.invoicePriceFor(data.units[0], listId, true)
+                    : window.invoicePriceFor(data, listId, false);
                 const price = isPurchase
                     ? (defaultUnitCost || parseFloat(data.cost_price) || 0)
-                    : (parseFloat(data.price1) || 0);
+                    : listPrice;
 
                 // تحديث حقول صف الإدخال
                 $('#itmprice').val(price);
                 $('#itmqty').val(1);
                 $('#itmdisc').val('0');
                 $('#itmval').val(price);
-                $('#itmsprice_stg').val(data.price1 || 0);
+                $('#itmsprice_stg').val(listPrice || 0);
 
                 // تحديث حقول المعلومات
                 $('#storeqty').text(data.itmqty ? parseFloat(data.itmqty).toFixed(2) : '0');
@@ -472,9 +504,10 @@ $(document).ready(function() {
                     unitSelect.off('change').on('change', function() {
                         const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
                         if (selectedUnit) {
+                            const unitListPrice = window.invoicePriceFor(selectedUnit, window.currentInvoicePriceList(), true);
                             const newPrice = isPurchase
                                 ? (parseFloat(selectedUnit.ucost) || 0)
-                                : (parseFloat(selectedUnit.uprice1) || 0);
+                                : unitListPrice;
                             $('#itmprice').val(newPrice);
                             $('#itmqty').val(1);
                             $('#itmval').val(newPrice);
@@ -484,9 +517,7 @@ $(document).ready(function() {
                             $('#market_price').text(selectedUnit.uprice3);
                             $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
                             $('#last_price').text(data.last_price * selectedUnit.unit_value);
-                            if (isPurchase) {
-                                $('#itmsprice_stg').val(parseFloat(selectedUnit.uprice1) || 0);
-                            }
+                            $('#itmsprice_stg').val(unitListPrice || 0);
                         }
                     });
                 } else {

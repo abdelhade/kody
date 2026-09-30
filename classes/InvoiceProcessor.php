@@ -1145,6 +1145,59 @@ class InvoiceProcessor {
     }
 
     /**
+     * فئات السعر: قطاعي / جملة / السوق.
+     * يعيد تسمية القيم الافتراضية القديمة (سعر 1 / سعر 2) ويضيف الناقص.
+     */
+    public static function priceLists(mysqli $conn): array
+    {
+        $defaults = [1 => 'قطاعي', 2 => 'جملة', 3 => 'السوق'];
+        $legacy = [1 => 'سعر 1', 2 => 'سعر 2'];
+        $fallback = [
+            ['id' => 1, 'pname' => 'قطاعي'],
+            ['id' => 2, 'pname' => 'جملة'],
+            ['id' => 3, 'pname' => 'السوق'],
+        ];
+
+        try {
+            foreach ($defaults as $id => $name) {
+                $stmt = $conn->prepare('SELECT pname FROM price_lists WHERE id = ? LIMIT 1');
+                if (!$stmt) {
+                    return $fallback;
+                }
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+
+                if (!$row) {
+                    $ins = $conn->prepare('INSERT INTO price_lists (id, pname, isdeleted) VALUES (?, ?, 0)');
+                    if ($ins) {
+                        $ins->bind_param('is', $id, $name);
+                        $ins->execute();
+                        $ins->close();
+                    }
+                } elseif (isset($legacy[$id]) && trim((string) $row['pname']) === $legacy[$id]) {
+                    $upd = $conn->prepare('UPDATE price_lists SET pname = ? WHERE id = ?');
+                    if ($upd) {
+                        $upd->bind_param('si', $name, $id);
+                        $upd->execute();
+                        $upd->close();
+                    }
+                }
+            }
+
+            $res = $conn->query('SELECT id, pname FROM price_lists WHERE isdeleted = 0 ORDER BY id');
+            if (!$res) {
+                return $fallback;
+            }
+            $rows = $res->fetch_all(MYSQLI_ASSOC);
+            return $rows ?: $fallback;
+        } catch (Throwable $e) {
+            return $fallback;
+        }
+    }
+
+    /**
      * إدخال رأس فاتورة جديدة — يُرجع insert_id.
      */
     public static function insertHeader(mysqli $conn, array $d): int
@@ -1157,7 +1210,7 @@ class InvoiceProcessor {
                 fat_total, fat_disc, fat_disc_per, fat_plus, fat_plus_per,
                 fat_tax, fat_tax_per, fat_net, user, jal_name, jal_notes, jal_amount
             ) VALUES (
-                ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, 1, ?, ?, ?, ?, ?, ?, 0, 1, 0,
+                ?, ?, 1, 1, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 0,
                 ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?
             )"
         );
@@ -1171,6 +1224,7 @@ class InvoiceProcessor {
         $proDate = $d['pro_date'];
         $accural = $d['accural_date'] ?? '';
         $serial = $d['pro_serial'] ?? '';
+        $priceList = (string) max(1, (int) ($d['price_list'] ?? 1));
         $storeId = $d['store_id'];
         $empId = $d['emp_id'];
         $emp2Id = $d['emp2_id'] ?? $empId;
@@ -1189,7 +1243,7 @@ class InvoiceProcessor {
 
         // مطابق لـ doadd الأصلي (كل المعاملات كـ strings في bind)
         $stmt->bind_param(
-            'sssssssssssssssssssssss',
+            'ssssssssssssssssssssssss',
             $proId,
             $proTybe,
             $proTybe,
@@ -1197,6 +1251,7 @@ class InvoiceProcessor {
             $proDate,
             $accural,
             $serial,
+            $priceList,
             $storeId,
             $empId,
             $emp2Id,
@@ -1226,7 +1281,7 @@ class InvoiceProcessor {
     {
         $stmt = $conn->prepare(
             "UPDATE ot_head SET
-                info = ?, pro_date = ?, accural_date = ?, pro_serial = ?, store_id = ?,
+                info = ?, pro_date = ?, accural_date = ?, pro_serial = ?, price_list = ?, store_id = ?,
                 emp_id = ?, acc1 = ?, acc2 = ?, pro_value = ?, fat_cost = 0,
                 fat_total = ?, fat_disc = ?, fat_disc_per = ?, fat_plus = ?, fat_plus_per = ?,
                 fat_net = ?, acc_fund = ?, crtime = crtime
@@ -1239,6 +1294,7 @@ class InvoiceProcessor {
         $proDate = $d['pro_date'];
         $accural = $d['accural_date'] ?? '';
         $serial = $d['pro_serial'] ?? '';
+        $priceList = max(1, (int) ($d['price_list'] ?? 1));
         $storeId = (int) $d['store_id'];
         $empId = (int) $d['emp_id'];
         $acc1 = (int) $d['acc1'];
@@ -1252,11 +1308,12 @@ class InvoiceProcessor {
         $fundId = (int) ($d['fund_id'] ?? 0);
 
         $stmt->bind_param(
-            'ssssiiiidddddddii',
+            'ssssiiiiiidddddddii',
             $info,
             $proDate,
             $accural,
             $serial,
+            $priceList,
             $storeId,
             $empId,
             $acc1,
@@ -1286,7 +1343,7 @@ class InvoiceProcessor {
         $stmt = $conn->prepare(
             "UPDATE ot_head SET
                 pro_tybe = ?, info = ?, accural_date = ?,
-                pro_serial = ?, store_id = ?, emp_id = ?, emp2_id = ?,
+                pro_serial = ?, price_list = ?, store_id = ?, emp_id = ?, emp2_id = ?,
                 acc1 = ?, acc2 = ?, pro_value = ?, fat_total = ?,
                 fat_disc = ?, fat_disc_per = ?, fat_plus = ?, fat_plus_per = ?,
                 fat_net = ?, user = ?, jal_name = ?, jal_notes = ?, jal_amount = ?
@@ -1300,6 +1357,7 @@ class InvoiceProcessor {
         $info = $d['info'] ?? '';
         $accural = $d['accural_date'] ?? '';
         $serial = $d['pro_serial'] ?? '';
+        $priceList = (string) max(1, (int) ($d['price_list'] ?? 1));
         $storeId = $d['store_id'];
         $empId = $d['emp_id'];
         $emp2Id = $d['emp2_id'] ?? $empId;
@@ -1317,11 +1375,12 @@ class InvoiceProcessor {
         $jalAmount = $d['jal_amount'] ?? 0;
 
         $stmt->bind_param(
-            'sssssssssssssssssssss',
+            'ssssssssssssssssssssss',
             $proTybe,
             $info,
             $accural,
             $serial,
+            $priceList,
             $storeId,
             $empId,
             $emp2Id,

@@ -82,6 +82,7 @@ $lang_towns = "المدن";
 $lang_inventory_management = "ادارة المخزون";
 $lang_new_item = "صنف جديد";
 $lang_items = "الاصناف";
+$lang_deleted_items = "الاصناف المحذوفه";
 $lang_units = "الوحدات";
 $lang_groups = "المجموعات";
 $lang_categories = "التصنيفات";

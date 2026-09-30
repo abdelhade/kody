@@ -189,7 +189,7 @@ $(document).ready(function() {
                     addItemToOrder(
                         response.item.id,
                         response.item.name,
-                        response.item.price,
+                        priceFromItem(response.item),
                         response.item.barcode,
                         qty,
                         response.item.u_val || 1
@@ -204,6 +204,47 @@ $(document).ready(function() {
         });
     }
 
+    function selectedPosPriceList() {
+        return parseInt($('#invoicePriceList').val(), 10) || 1;
+    }
+
+    function priceFromValues(p1, p2, p3, listId) {
+        p1 = parseFloat(p1) || 0;
+        p2 = parseFloat(p2) || 0;
+        p3 = parseFloat(p3) || 0;
+        listId = parseInt(listId, 10) || 1;
+        if (listId === 2) return p2 > 0 ? p2 : p1;
+        if (listId >= 3) return p3 > 0 ? p3 : p1;
+        return p1;
+    }
+
+    function priceFromCard(card) {
+        return priceFromValues(card.data('price1'), card.data('price2'), card.data('price3'), selectedPosPriceList());
+    }
+
+    function priceFromItem(item) {
+        if (!item) return 0;
+        var picked = priceFromValues(item.price1, item.price2, item.price3, selectedPosPriceList());
+        if (picked > 0) return picked;
+        return parseFloat(item.price) || 0;
+    }
+
+    $(document).on('change', '#invoicePriceList', function() {
+        $('.item-card').each(function() {
+            var card = $(this);
+            var price = priceFromCard(card);
+            card.data('item-price', price);
+            card.find('.item-card-price').text(price.toFixed(2));
+        });
+        $('#itemData .item-card-order').each(function() {
+            var row = $(this);
+            var id = row.find('input[name="itmname[]"]').val();
+            var card = $('.item-card[data-item-id="' + id + '"]');
+            if (!card.length) return;
+            row.find('.priceInput').val(priceFromCard(card).toFixed(2)).trigger('input');
+        });
+    });
+
     // ========================================
     // Item Click Events
     // ========================================
@@ -216,7 +257,7 @@ $(document).ready(function() {
         let card = $(this);
         let itemId = card.data('item-id');
         let itemName = card.data('item-name');
-        let itemPrice = parseFloat(card.data('item-price')) || 0;
+        let itemPrice = priceFromCard(card);
         let itemBarcode = card.data('item-barcode');
         
         addItemToOrder(itemId, itemName, itemPrice, itemBarcode);
@@ -229,7 +270,7 @@ $(document).ready(function() {
         let card = $(this).closest('.item-card');
         let itemId = card.data('item-id');
         let itemName = card.data('item-name');
-        let itemPrice = card.data('item-price');
+        let itemPrice = priceFromCard(card);
         let itemBarcode = card.data('item-barcode');
         let itemDesc = card.data('item-desc') || 'لا يوجد وصف';
         

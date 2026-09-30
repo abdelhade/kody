@@ -69,10 +69,10 @@ abstract class InvoiceElementBase
     protected function getClientType()
     {
         // أنواع الفواتير التي تتطلب موردين
-        $supplierTypes = [4, 11, 12]; // مشتريات، مردود مبيعات، أمر شراء
+        $supplierTypes = [4, 10, 12]; // مشتريات، مردود مشتريات، أمر شراء
         
         // أنواع الفواتير التي تتطلب عملاء
-        $clientTypes = [3, 10, 13, 14];   // مبيعات، مردود مشتريات، أمر بيع، عرض سعر
+        $clientTypes = [3, 11, 13, 14];   // مبيعات، مردود مبيعات، أمر بيع، عرض سعر
         
         if (in_array($this->invoiceType, $supplierTypes)) {
             return 'supplier';

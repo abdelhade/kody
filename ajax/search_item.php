@@ -53,12 +53,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
             $price = floatval($item['price1']);
         }
         
+        $price3 = floatval($item['price3'] ?? 0);
+        if ($price3 <= 0) {
+            $price3 = floatval($item['market_price'] ?? 0);
+        }
         echo json_encode([
             'success' => true,
             'item' => [
                 'id' => $item['id'],
                 'name' => $item['iname'],
                 'price' => $price,
+                'price1' => floatval($item['price1'] ?? 0),
+                'price2' => floatval($item['price2'] ?? 0),
+                'price3' => $price3,
                 'barcode' => $item['barcode'],
                 'u_val' => 1,
                 'balance' => floatval($item['balance'] ?? 0)
@@ -66,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
         ]);
     } else {
         // البحث في باركود الوحدات (item_units)
-        $sql_units = "SELECT iu.item_id, m.iname, iu.unit_barcode, iu.price1, iu.u_val, u.uname as unit_name,
+        $sql_units = "SELECT iu.item_id, m.iname, iu.unit_barcode, iu.price1, iu.price2, iu.price3, iu.u_val, u.uname as unit_name,
                              $balance_subquery_units as balance
                       FROM item_units iu
                       JOIN myitems m ON m.id = iu.item_id
@@ -92,6 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['barcode'])) {
                     'id' => $unit_row['item_id'],
                     'name' => $item_name,
                     'price' => floatval($unit_row['price1']),
+                    'price1' => floatval($unit_row['price1'] ?? 0),
+                    'price2' => floatval($unit_row['price2'] ?? 0),
+                    'price3' => floatval($unit_row['price3'] ?? 0),
                     'barcode' => $unit_row['unit_barcode'],
                     'u_val' => floatval($unit_row['u_val']),
                     'balance' => floatval($unit_row['balance'] ?? 0)

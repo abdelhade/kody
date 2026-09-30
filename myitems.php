@@ -68,7 +68,19 @@ $resitm = $stmtData->get_result();
     <section class="content-header">
         <div class="container-fluid">
 
-            <?php if (isset($_GET['recost']) && $_GET['recost'] === 'ok'): ?>
+            <?php if (isset($_GET['deleted']) && $_GET['deleted'] === '1'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-check-circle"></i>
+                    تم نقل الصنف إلى <a href="deleted_items.php">الأصناف المحذوفة</a>. تقدر ترجعه من هناك.
+                </div>
+            <?php elseif (isset($_GET['pass'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    كلمة المرور غير صحيحة.
+                </div>
+            <?php elseif (isset($_GET['recost']) && $_GET['recost'] === 'ok'): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
                     <i class="fas fa-check-circle"></i>
@@ -90,6 +102,7 @@ $resitm = $stmtData->get_result();
                 <div class="col">
                     <div class="d-flex gap-2 justify-content-end">
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
+                        <a href="deleted_items.php" class="btn btn-outline-danger btn-sm">الاصناف المحذوفه</a>
                         <a href="items_factory.php" class="btn btn-info btn-sm"><i class="fas fa-magic"></i> مصنع الأصناف</a>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
                         <button id="reset-manual-prices" class="btn btn-warning btn-sm">إعادة تعيين الحماية</button>
@@ -189,7 +202,8 @@ $resitm = $stmtData->get_result();
 
                                         <div class="modal-body">
 
-                                            <p> هل تريد بالتأكيد الحذف <?= $rowitm['iname']?> </p>
+                                            <p>هل تريد نقل الصنف <b><?= htmlspecialchars((string) $rowitm['iname'], ENT_QUOTES, 'UTF-8') ?></b> إلى الأصناف المحذوفة؟</p>
+                                            <p>الصنف مش هيتمسح نهائياً. لو عليه حركة هيفضل محفوظ وتقدر ترجعه من شاشة الأصناف المحذوفة.</p>
                                                
                                             <form action="do/dodel_item.php?id=<?= $rowitm['id'] ?>" method="post">
                                             <input type="password" class="form-control" name="password" id="password">

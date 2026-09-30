@@ -35,7 +35,7 @@ try {
     }
     
     // استعلام محسّن - جلب الأعمدة المطلوبة فقط
-    $query = "SELECT id, iname, name2, price1, barcode 
+    $query = "SELECT id, iname, name2, price1, price2, price3, market_price, barcode 
               FROM myitems 
               WHERE {$where} 
               ORDER BY iname 
@@ -64,6 +64,9 @@ try {
             'iname' => $row['iname'],
             'name2' => $row['name2'] ?? '',
             'price1' => floatval($row['price1'] ?? 0),
+            'price2' => floatval($row['price2'] ?? 0),
+            'price3' => floatval($row['price3'] ?? 0) > 0 ? floatval($row['price3']) : floatval($row['market_price'] ?? 0),
+            'market_price' => floatval($row['market_price'] ?? 0),
             'barcode' => $row['barcode'] ?? ''
         ];
     }

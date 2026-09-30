@@ -287,13 +287,37 @@ class InvoiceFooter extends InvoiceElementBase
     }
 
     /**
+     * رابط فاتورة فاضية من نفس النوع
+     */
+    private function getNewInvoiceUrl()
+    {
+        $queries = [
+            3 => 'sale',
+            4 => 'purchase',
+            10 => 'resale',
+            11 => 'rebuy',
+            12 => 'po',
+            13 => 'so',
+            14 => 'offer',
+        ];
+        $q = $queries[(int) $this->invoiceType] ?? 'sale';
+        return 'sales.php?q=' . $q;
+    }
+
+    /**
      * عرض أزرار التحكم
      */
     private function renderActionButtons()
     {
         $buttonClass = $this->getBackgroundClass();
         $saveText = $this->isEditMode ? 'تحديث' : 'حفظ';
+        $newUrl = $this->getNewInvoiceUrl();
         ?>
+        <a id="newInvoiceBtn" href="<?php echo htmlspecialchars($newUrl); ?>"
+           class="btn btn-light border btn-block btn-lg mb-1"
+           onclick="return confirmNewInvoice();">
+            <i class="fas fa-plus"></i> جديد
+        </a>
         <button id="submit" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
                 type="submit" name="submit" value="save">
             <?php echo $saveText; ?> (F12)
@@ -310,6 +334,11 @@ class InvoiceFooter extends InvoiceElementBase
         </div>
         <input type="hidden" name="print_cashier" id="printCashierField" value="0">
         <script>
+        function confirmNewInvoice() {
+            var rows = document.querySelectorAll('#itmrow tr');
+            if (rows.length === 0) return true;
+            return confirm('فتح فاتورة جديدة؟ البيانات غير المحفوظة هتتمسح.');
+        }
         (function() {
             var COOKIE = 'invoice_print_cashier';
             function readCookie() {

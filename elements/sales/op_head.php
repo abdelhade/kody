@@ -14,9 +14,9 @@
                             </div>
                             <select class="select2 form-control form-control-sm" name="acc2_id" id="mySelectEmp">
                             <?php
-                            if ($pro_tybe == '4' OR $pro_tybe == '11' OR $pro_tybe == '12') {
+                            if ($pro_tybe == '4' OR $pro_tybe == '10' OR $pro_tybe == '12') {
                                 $resclients = $conn->query("SELECT * FROM `acc_head` WHERE code like '211%'  AND is_basic = 0 AND isdeleted = 0 order by id ;");
-                            }elseif ($pro_tybe == '3' OR $pro_tybe == '10' OR $pro_tybe == '13') {
+                            }elseif ($pro_tybe == '3' OR $pro_tybe == '11' OR $pro_tybe == '13') {
                                 $resclients = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0 order by id ;");
                             }
 
@@ -29,7 +29,12 @@
                              ?>
                   
 
-                             <?php if (isset($_GET['e']) && $rowedit['acc2'] == $rowclients['id'] ){echo "selected";}?>
+                             <?php
+                             if (isset($_GET['e'])) {
+                                 $partyId = ($pro_tybe == '10') ? ($rowedit['acc1'] ?? null) : ($rowedit['acc2'] ?? null);
+                                 if ($partyId == $rowclients['id']) { echo "selected"; }
+                             }
+                             ?>
 
                             
                              value="<?= $rowclients['id'] ?>"><?= $rowclients['aname'] ?></option>
