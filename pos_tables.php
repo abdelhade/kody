@@ -234,6 +234,16 @@ if ($tables_count == 0) {
                             </div>
                             
                             <div class="form-group mb-2">
+                                <label for="invoicePriceList">الفئة السعرية</label>
+                                <?php
+                                if (!class_exists('InvoiceProcessor')) {
+                                    require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                                }
+                                InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control');
+                                ?>
+                            </div>
+
+                            <div class="form-group mb-2">
                                 <label>قارئ الباركود</label>
                                 <input type="text" class="form-control" id="barcode-input" placeholder="امسح الباركود...">
                             </div>
@@ -367,6 +377,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<script src="js/invoice_price_list.js"></script>
 <script src="js/pos_tables.js"></script>
 
 <?php include('includes/footer.php');?>

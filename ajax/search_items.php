@@ -24,10 +24,10 @@ try {
     $category_cond = $category_id > 0 ? " AND group1 = $category_id" : "";
 
     if (empty($search)) {
-        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 $category_cond ORDER BY id DESC LIMIT 200";
+        $query = "SELECT id, iname as name, price1, price2, price3, market_price, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 $category_cond ORDER BY id DESC LIMIT 200";
     } else {
         $s = $conn->real_escape_string($search);
-        $query = "SELECT id, iname as name, price1 as price, barcode, $balance_subquery as balance FROM myitems 
+        $query = "SELECT id, iname as name, price1, price2, price3, market_price, price1 as price, barcode, $balance_subquery as balance FROM myitems 
                   WHERE (iname LIKE '%$s%' OR barcode LIKE '%$s%' OR id = '$s') 
                   AND isdeleted = 0 
                   $category_cond
@@ -41,10 +41,17 @@ try {
     
     $items = [];
     while ($row = $result->fetch_assoc()) {
+        $price3 = (float) ($row['price3'] ?? 0);
+        if ($price3 <= 0) {
+            $price3 = (float) ($row['market_price'] ?? 0);
+        }
         $items[] = [
             'id' => (int)$row['id'],
             'name' => $row['name'],
             'price' => (float)$row['price'],
+            'price1' => (float)($row['price1'] ?? 0),
+            'price2' => (float)($row['price2'] ?? 0),
+            'price3' => $price3,
             'balance' => (float)($row['balance'] ?? 0)
         ];
     }

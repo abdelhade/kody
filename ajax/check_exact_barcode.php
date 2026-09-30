@@ -11,7 +11,7 @@ if (isset($_POST['barcode'])) {
     }
 
     // 1. Search in main items table by barcode or code
-    $sql = "SELECT id, iname as name, barcode, price1 as price, 1 as u_val, '' as unit_name 
+    $sql = "SELECT id, iname as name, barcode, price1, price2, price3, market_price, price1 as price, 1 as u_val, '' as unit_name 
             FROM myitems 
             WHERE (barcode = '$barcode' OR code = '$barcode') AND isdeleted = 0 LIMIT 1";
             
@@ -19,13 +19,16 @@ if (isset($_POST['barcode'])) {
     
     if ($result && $result->num_rows > 0) {
         $row = $result->fetch_assoc();
+        if ((float) ($row['price3'] ?? 0) <= 0) {
+            $row['price3'] = $row['market_price'] ?? 0;
+        }
         echo json_encode(['success' => true, 'item' => $row]);
         exit;
     }
     
     // 2. Search in item units table
     $sql_units = "SELECT iu.item_id as id, m.iname as name, iu.unit_barcode as barcode, 
-                         iu.price1 as price, iu.u_val as u_val
+                         iu.price1, iu.price2, iu.price3, iu.price1 as price, iu.u_val as u_val
                   FROM item_units iu
                   JOIN myitems m ON m.id = iu.item_id
                   WHERE iu.unit_barcode = '$barcode' AND m.isdeleted = 0 LIMIT 1";

@@ -45,6 +45,12 @@ try {
         $stmt = $conn->prepare($updateQuery);
         $stmt->bind_param("siidddi", $orderDate, $storeId, $empId, $total, $discount, $net, $orderId);
         $stmt->execute();
+        $priceList = max(1, intval($data['price_list'] ?? 1));
+        $stmtList = $conn->prepare('UPDATE ot_head SET price_list = ? WHERE id = ?');
+        if ($stmtList) {
+            $stmtList->bind_param('ii', $priceList, $orderId);
+            $stmtList->execute();
+        }
         
         // حذف الأصناف القديمة
         $deleteItems = "UPDATE fat_details SET isdeleted = 1 WHERE pro_id = ?";
@@ -69,6 +75,12 @@ try {
         );
         $stmt->execute();
         $orderId = $conn->insert_id;
+        $priceList = max(1, intval($data['price_list'] ?? 1));
+        $stmtList = $conn->prepare('UPDATE ot_head SET price_list = ? WHERE id = ?');
+        if ($stmtList) {
+            $stmtList->bind_param('ii', $priceList, $orderId);
+            $stmtList->execute();
+        }
         
         // تحديث حالة الطاولة
         $updateTable = "UPDATE tables SET table_case = 1 WHERE id = ?";

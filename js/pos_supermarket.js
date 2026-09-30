@@ -156,7 +156,7 @@ $(document).ready(function() {
                                 <strong class="text-dark d-block">${item.item.name}</strong>
                                 <small class="text-muted">${item.item.barcode || 'بدون باركود'}</small>
                             </div>
-                            <span class="badge bg-primary fs-6">${parseFloat(item.item.price).toFixed(2)} ج.م</span>
+                            <span class="badge bg-primary fs-6">${priceFromItem(item.item).toFixed(2)} ج.م</span>
                          </div>`)
                 .appendTo(ul);
         };
@@ -266,10 +266,11 @@ $(document).ready(function() {
             qtyInput.trigger('input');
         } else {
             let rowCount = table.find('tr').length + 1;
-            let subtotal = qtyToAdd * parseFloat(item.price);
+            let linePrice = priceFromItem(item);
+            let subtotal = qtyToAdd * linePrice;
             
             let html = `
-                <tr class="item-card-order" data-itemid="${item.barcode}">
+                <tr class="item-card-order" data-itemid="${item.barcode}" data-price1="${parseFloat(item.price1 != null ? item.price1 : item.price) || 0}" data-price2="${parseFloat(item.price2) || 0}" data-price3="${parseFloat(item.price3) || 0}">
                     <td class="text-center fw-bold text-muted">${rowCount}</td>
                     <td>
                         <input type="hidden" value='${item.id}' name="itmname[]">
@@ -284,7 +285,7 @@ $(document).ready(function() {
                     </td>
                     <td>
                         <input type="number" class="form-control text-center priceInput fw-bold" 
-                               value="${parseFloat(item.price).toFixed(2)}" name="itmprice[]" step="0.01" readonly>
+                               value="${linePrice.toFixed(2)}" name="itmprice[]" step="0.01" readonly>
                     </td>
                     <td>
                         <input type="hidden" name="itmdisc[]" value="0">
@@ -300,6 +301,14 @@ $(document).ready(function() {
             updateTotal();
         }
     }
+
+    $(document).on('change', '#invoicePriceList', function() {
+        $('#itemData tr').each(function() {
+            var row = $(this);
+            var price = priceFromValues(row.data('price1'), row.data('price2'), row.data('price3'), selectedInvoicePriceList());
+            row.find('.priceInput').val(price.toFixed(2)).trigger('input');
+        });
+    });
 
     function updateTotal() {
         let total = 0;

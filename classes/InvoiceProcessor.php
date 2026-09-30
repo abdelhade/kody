@@ -1197,6 +1197,41 @@ class InvoiceProcessor {
         }
     }
 
+    public static function echoPriceListSelect(mysqli $conn, int $selected = 1, string $class = 'form-control form-control-sm', string $style = ''): void
+    {
+        $styleAttr = $style !== '' ? ' style="' . htmlspecialchars($style, ENT_QUOTES, 'UTF-8') . '"' : '';
+        echo '<select name="price_list" id="invoicePriceList" class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '"' . $styleAttr . '>';
+        foreach (self::priceLists($conn) as $plist) {
+            $id = (int) ($plist['id'] ?? 0);
+            if ($id < 1 || $id > 3) {
+                continue;
+            }
+            $sel = $id === $selected ? ' selected' : '';
+            echo '<option value="' . $id . '"' . $sel . '>' . htmlspecialchars((string) $plist['pname'], ENT_QUOTES, 'UTF-8') . '</option>';
+        }
+        echo '</select>';
+    }
+
+    public static function tierPrice(array $row, int $listId): float
+    {
+        $p1 = (float) ($row['price1'] ?? 0);
+        $p2 = (float) ($row['price2'] ?? 0);
+        $p3 = (float) ($row['price3'] ?? 0);
+        if ($p3 <= 0) {
+            $p3 = (float) ($row['market_price'] ?? 0);
+        }
+        $picked = $p1;
+        if ($listId === 2) {
+            $picked = $p2;
+        } elseif ($listId >= 3) {
+            $picked = $p3;
+        }
+        if ($picked <= 0) {
+            $picked = $p1;
+        }
+        return $picked;
+    }
+
     /**
      * إدخال رأس فاتورة جديدة — يُرجع insert_id.
      */

@@ -90,6 +90,13 @@ if ($check_tables) {
                 </div>
                 <div class="card-body p-3">
                     <form action="do/doadd_invoice.php" method="post" id="myForm">
+                        <label class="small d-block mb-0">الفئة السعرية</label>
+                        <?php
+                        if (!class_exists('InvoiceProcessor')) {
+                            require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                        }
+                        InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm mb-2');
+                        ?>
                         <?php include('elements/pos/right0.php') ?> 
                         <?php include('elements/pos/right1.php') ?> 
                         <?php include('elements/pos/right2.php') ?> 
@@ -174,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
     })
 </script>
 
+<script src="js/invoice_price_list.js"></script>
 <script src="js/pos.js"></script>
 
 

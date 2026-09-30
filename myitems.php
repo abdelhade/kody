@@ -97,7 +97,16 @@ $resitm = $stmtData->get_result();
         <div class="card">
             <div class="card-header">
                 <div class="row">
-                <div class="col"><h3>الاصناف</h3></div>
+                <div class="col">
+                    <h3>الاصناف</h3>
+                    <label for="invoicePriceList" class="small text-muted mb-0">الفئة السعرية</label>
+                    <?php
+                    if (!class_exists('InvoiceProcessor')) {
+                        require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                    }
+                    InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
+                    ?>
+                </div>
                 <div class="col-md-6"><input type="text" id="search" class="form-control frst" placeholder="بحث... (اضغط Enter للبحث الشامل)" value="<?= htmlspecialchars($search) ?>"></div>
                 <div class="col">
                     <div class="d-flex gap-2 justify-content-end">
@@ -125,7 +134,7 @@ $resitm = $stmtData->get_result();
                                 <th>الكميه</th>
                                 <th>الوحدة</th>
                                 <th>الوصف</th>
-                                <th>سعر البيع</th>
+                                <th id="sellPriceTitle">قطاعي</th>
                                 <th>سعر الشراء</th>
                                 <th>سعر التكلفة</th>
                                 <th>عمليات</th>
@@ -177,7 +186,13 @@ $resitm = $stmtData->get_result();
                                 </select>
                                 </td>
                                 <td><?= $rowitm['info'] ?></td>
-                                <td><b><?= $rowitm['price1'] ?></b></td>
+                                <?php
+                                    $sell3 = (float) ($rowitm['price3'] ?? 0);
+                                    if ($sell3 <= 0) {
+                                        $sell3 = (float) ($rowitm['market_price'] ?? 0);
+                                    }
+                                ?>
+                                <td class="sell-price" data-price1="<?= (float) $rowitm['price1'] ?>" data-price2="<?= (float) ($rowitm['price2'] ?? 0) ?>" data-price3="<?= $sell3 ?>"><b><?= $rowitm['price1'] ?></b></td>
                                 <td><b><?= $rowitm['last_price'] ?></b></td>
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
                                
@@ -307,6 +322,7 @@ $(document).ready(function() {
             $('#table-container').css('opacity', '0.5');
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
+                if (typeof applySellPriceList === 'function') applySellPriceList();
             });
             window.history.pushState(null, '', url);
         }, 300);
@@ -327,6 +343,7 @@ $(document).ready(function() {
             $('#table-container').css('opacity', '0.5');
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
+                if (typeof applySellPriceList === 'function') applySellPriceList();
             });
             window.history.pushState(null, '', url);
         }
@@ -393,6 +410,18 @@ $(document).ready(function() {
     });
 });
 
+</script>
+<script src="js/invoice_price_list.js"></script>
+<script>
+function applySellPriceList() {
+    var label = $('#invoicePriceList option:selected').text();
+    $('#sellPriceTitle').text(label);
+    $('.sell-price').each(function() {
+        var price = priceFromValues($(this).data('price1'), $(this).data('price2'), $(this).data('price3'), selectedInvoicePriceList());
+        $(this).find('b').text(price);
+    });
+}
+$('#invoicePriceList').on('change', applySellPriceList);
 </script>
 
 <?php include('includes/footer.php') ?>

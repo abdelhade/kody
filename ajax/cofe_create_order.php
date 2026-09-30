@@ -119,7 +119,7 @@ foreach ($cofeItems as $cofeItem) {
 
     // البحث بـ cofe_item_id أو barcode أو id
     $stmt = $conn->prepare(
-        "SELECT id, iname, price1, cost_price, itmqty, barcode
+        "SELECT id, iname, price1, price2, price3, market_price, cost_price, itmqty, barcode
          FROM myitems
          WHERE (cofe_item_id = ? OR barcode = ? OR id = ?)
            AND (isdeleted = 0 OR isdeleted IS NULL)
@@ -141,7 +141,11 @@ foreach ($cofeItems as $cofeItem) {
         exit;
     }
 
-    $price      = floatval($item['price1']);
+    if (!class_exists('InvoiceProcessor')) {
+        require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+    }
+    $cofePriceList = max(1, intval($data['price_list'] ?? 1));
+    $price      = InvoiceProcessor::tierPrice($item, $cofePriceList);
     $headtotal += $price * $qty;
 
     $orderItems[] = [
@@ -232,6 +236,12 @@ try {
     }
     $last_op = $conn->insert_id;
     $stmt->close();
+    $stmtList = $conn->prepare('UPDATE ot_head SET price_list = ? WHERE id = ?');
+    if ($stmtList) {
+        $stmtList->bind_param('ii', $cofePriceList, $last_op);
+        $stmtList->execute();
+        $stmtList->close();
+    }
 
     // ===== القيود المحاسبية =====
     // رقم القيد التالي

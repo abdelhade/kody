@@ -412,7 +412,98 @@ function calcProfitPct(row) {
             });
         }
 
+        function newInvoiceRequestUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q') || 'sale';
+            return 'sales.php?q=' + encodeURIComponent(q);
+        }
+
+        function openSavedInvoicePrint(orderId) {
+            const cashier = document.getElementById('printCashierField');
+            const useCashier = cashier && cashier.value === '1';
+            const url = useCashier
+                ? ('print/receipt.php?id=' + orderId + '&src=invoice')
+                : ('print/print_sales.php?id=' + orderId);
+            window.open(url, '_blank');
+        }
+
+        function handleInvoiceFinish() {
+            let pendingSubmit = 'save';
+            $(document).on('click', '#submit, #submit2', function() {
+                pendingSubmit = this.value || 'save';
+            });
+
+            $('#myForm2').on('submit', function(event) {
+                const form = this;
+                const action = form.getAttribute('action') || '';
+                if (action.indexOf('doadd_invoice.php') === -1) return;
+
+                event.preventDefault();
+                formSubmitting = true;
+                allowLeave = true;
+
+                const $buttons = $('#submit, #submit2');
+                $buttons.prop('disabled', true);
+
+                const formData = new FormData(form);
+                formData.set('submit', pendingSubmit);
+                formData.set('ajax_save', '1');
+
+                $.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'text'
+                }).done(function(raw) {
+                    let response = null;
+                    try {
+                        response = JSON.parse(raw);
+                    } catch (e) {
+                        response = null;
+                    }
+                    if (!response || !response.success) {
+                        formSubmitting = false;
+                        allowLeave = false;
+                        $buttons.prop('disabled', false);
+                        Swal.fire({
+                            type: 'error',
+                            title: 'خطأ',
+                            text: (response && response.message) ? response.message : (raw || 'فشل الحفظ')
+                        });
+                        return;
+                    }
+                    if (pendingSubmit === 'print' && response.order_id) {
+                        openSavedInvoicePrint(response.order_id);
+                    }
+                    Swal.fire({
+                        type: 'success',
+                        title: 'تم بنجاح',
+                        text: response.message || 'تم الحفظ بنجاح',
+                        confirmButtonText: 'حسناً',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(function(result) {
+                        if (result.value === true || result.isConfirmed === true) {
+                            window.location.href = newInvoiceRequestUrl();
+                        }
+                    });
+                }).fail(function() {
+                    formSubmitting = false;
+                    allowLeave = false;
+                    $buttons.prop('disabled', false);
+                    Swal.fire({
+                        type: 'error',
+                        title: 'خطأ',
+                        text: 'فشل الاتصال بالخادم'
+                    });
+                });
+            });
+        }
+
         function handleFormSubmission() {
+            handleInvoiceFinish();
             $('#addItemForm').on('submit', function(event) {
                 event.preventDefault();
                 const formData = new FormData(this);

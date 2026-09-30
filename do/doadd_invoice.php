@@ -34,6 +34,15 @@ $usid = $_SESSION['userid'];
 require_once('../classes/InvoiceElementFactory.php');
 require_once('../classes/InvoiceProcessor.php');
 
+function invoice_fail($message) {
+    if (isset($_POST['ajax_save']) && $_POST['ajax_save'] == '1') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'message' => $message], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    die($message);
+}
+
 // تعريف ثوابت أنواع الفواتير
 
 
@@ -226,7 +235,7 @@ if ($pro_tybe == 0 || $store_id == 0 || $acc2_id == 0 || $emp_id == 0) {
         echo json_encode(['success' => false, 'message' => $err_msg], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    die($err_msg);
+    invoice_fail($err_msg);
 }
 
 // التحقق من وجود أصناف
@@ -239,7 +248,7 @@ if (isset($_POST['itmname'])) {
 }
 if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_filter($_POST['itmname']))) {
     error_log('VALIDATION FAILED: No items in order');
-    die('خطأ: يجب إضافة صنف واحد على الأقل');
+    invoice_fail('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
 
@@ -253,7 +262,7 @@ $config = InvoiceProcessor::getInvoiceConfig($pro_tybe);
 error_log('Invoice config for pro_tybe ' . $pro_tybe . ': ' . print_r($config, true));
 if (!$config) {
     error_log('VALIDATION FAILED: Invalid invoice type');
-    die('خطأ: نوع فاتورة غير صحيح');
+    invoice_fail('خطأ: نوع فاتورة غير صحيح');
 }
 
 // تحديد الحسابات المحاسبية
@@ -271,7 +280,7 @@ try {
     $disc_op_id = InvoiceProcessor::getNextInvoiceNumber($conn, $config['disc_type']);
     $paid_op_id = InvoiceProcessor::getNextInvoiceNumber($conn, $config['paid_type']);
 } catch (Exception $e) {
-    die('خطأ في الحصول على أرقام العمليات: ' . $e->getMessage());
+    invoice_fail('خطأ في الحصول على أرقام العمليات: ' . $e->getMessage());
 }
 // حساب النسب المئوية للخصم والإضافي
 $fat_disc_per = isset($_POST['headdisc_pct']) ? floatval($_POST['headdisc_pct']) : (($headtotal > 0 && $headdisc > 0) ? number_format($headdisc/$headtotal*100, 2) : 0);
@@ -631,10 +640,16 @@ try {
         echo json_encode(['success' => false, 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    die('حدث خطأ أثناء معالجة الفاتورة: ' . $e->getMessage());
+    invoice_fail('حدث خطأ أثناء معالجة الفاتورة: ' . $e->getMessage());
 }
 
 if (!empty($ajax_save)) {
+    $ajax_message = $finalize_order
+        ? 'تم الدفع وإغلاق الطاولة'
+        : ($is_pending_table_order
+            ? 'تم الحفظ كطلب معلّق — بلا قيود حتى السداد'
+            : ('تم الحفظ بنجاح - رقم الفاتورة: ' . $pro_id));
+    unset($_SESSION['success_message']);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'success' => true,
@@ -643,9 +658,7 @@ if (!empty($ajax_save)) {
         'pro_id' => $pro_id,
         'finalized' => $finalize_order,
         'pending' => $is_pending_table_order,
-        'message' => $finalize_order
-            ? 'تم الدفع وإغلاق الطاولة'
-            : ($is_pending_table_order ? 'تم الحفظ كطلب معلّق — بلا قيود حتى السداد' : 'تم الحفظ بنجاح'),
+        'message' => $ajax_message,
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

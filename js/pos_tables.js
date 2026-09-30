@@ -145,6 +145,7 @@ function loadItems() {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
+                window._tableItems = response.items;
                 displayItems(response.items);
             }
         }
@@ -153,15 +154,19 @@ function loadItems() {
 
 // عرض الأصناف
 function displayItems(items) {
+    window._tableCatalog = {};
     let html = '';
     items.forEach(function(item) {
+        window._tableCatalog[item.id] = item;
+        var price = priceFromItem(item);
+        var safeName = String(item.iname || '').replace(/'/g, '');
         html += `
             <div class="col-md-4 col-lg-3 mb-3">
-                <div class="card item-card" data-category="${item.group1}" onclick="addItemToOrder(${item.id}, '${item.iname}', ${item.price1}, '${item.barcode}')">
+                <div class="card item-card" data-category="${item.group1}" onclick="addItemToOrder(${item.id}, '${safeName}', ${price}, '${item.barcode || ''}')">
                     <div class="card-body text-center">
                         <i class="fas fa-utensils fa-2x mb-2"></i>
                         <h6>${item.iname}</h6>
-                        <p class="mb-0 text-success font-weight-bold">${parseFloat(item.price1).toFixed(2)} ج</p>
+                        <p class="mb-0 text-success font-weight-bold">${price.toFixed(2)} ج</p>
                     </div>
                 </div>
             </div>
@@ -188,10 +193,14 @@ function addItemToOrder(itemId, itemName, price, barcode) {
         existingItem.subtotal = existingItem.qty * existingItem.price;
     } else {
         // إضافة صنف جديد
+        var source = (window._tableCatalog && window._tableCatalog[itemId]) || {};
         currentOrder.items.push({
             id: itemId,
             name: itemName,
             price: parseFloat(price),
+            price1: parseFloat(source.price1 != null ? source.price1 : price) || 0,
+            price2: parseFloat(source.price2) || 0,
+            price3: parseFloat(source.price3 || source.market_price) || 0,
             qty: 1,
             subtotal: parseFloat(price),
             barcode: barcode
@@ -316,7 +325,8 @@ function saveOrder() {
         items: currentOrder.items,
         total: currentOrder.total,
         discount: currentOrder.discount,
-        net: currentOrder.net
+        net: currentOrder.net,
+        price_list: selectedInvoicePriceList()
     };
     
     $('#save-order').addClass('loading').prop('disabled', true);
@@ -476,10 +486,12 @@ function addItemByBarcode(barcode) {
             if (response.error) {
                 alert('لا يوجد صنف بهذا الباركود');
             } else {
+                if (!window._tableCatalog) window._tableCatalog = {};
+                window._tableCatalog[response.id] = response;
                 addItemToOrder(
                     response.id,
                     response.iname,
-                    response.price1,
+                    priceFromItem(response),
                     response.barcode
                 );
             }
@@ -590,3 +602,21 @@ function selectTableFromModal(tableId, tableName) {
         selectTable(tableId, tableName);
     }
 }
+
+$(document).on('change', '#invoicePriceList', function() {
+    if (window._tableItems) {
+        displayItems(window._tableItems);
+    }
+    if (typeof currentOrder === 'undefined' || !currentOrder.items) return;
+    currentOrder.items.forEach(function(line) {
+        var src = window._tableCatalog && window._tableCatalog[line.id];
+        var p1 = src ? src.price1 : line.price1;
+        var p2 = src ? src.price2 : line.price2;
+        var p3 = src ? (parseFloat(src.price3) > 0 ? src.price3 : src.market_price) : line.price3;
+        if (p1 == null && p2 == null && p3 == null) return;
+        line.price = priceFromValues(p1, p2, p3, selectedInvoicePriceList());
+        line.subtotal = line.qty * line.price;
+    });
+    displayOrderItems();
+    calculateTotal();
+});

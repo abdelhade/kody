@@ -59,6 +59,16 @@ if (!isset($action_url)) {
                     </div>
 
                     <!-- الحقول الصغيرة (مخزن، موظف، عميل، صندوق) -->
+                    <div class="mb-2">
+                        <label class="form-label mb-0" style="font-size: 10px;">الفئة السعرية</label>
+                        <?php
+                        if (!class_exists('InvoiceProcessor')) {
+                            require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+                        }
+                        $posListId = (isset($rowed['price_list']) && (int) $rowed['price_list'] > 0) ? (int) $rowed['price_list'] : 1;
+                        InvoiceProcessor::echoPriceListSelect($conn, $posListId, 'form-select form-select-sm');
+                        ?>
+                    </div>
                     <div class="row g-1">
                         <div class="col-6">
                             <select name="store_id" class="form-select form-select-sm" required>

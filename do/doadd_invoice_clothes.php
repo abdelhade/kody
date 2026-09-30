@@ -130,6 +130,13 @@ try {
     
     $last_op = $conn->insert_id;
     $stmt->close();
+    $price_list = isset($_POST['price_list']) ? max(1, intval($_POST['price_list'])) : 1;
+    $stmtList = $conn->prepare('UPDATE ot_head SET price_list = ? WHERE id = ?');
+    if ($stmtList) {
+        $stmtList->bind_param('ii', $price_list, $last_op);
+        $stmtList->execute();
+        $stmtList->close();
+    }
     
     // إدخال تفاصيل الفاتورة
     $stmt_details = $conn->prepare("

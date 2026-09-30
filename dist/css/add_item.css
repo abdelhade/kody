@@ -18,12 +18,12 @@
 }
 
 .add-item-page .page-title-compact {
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 700;
 }
 
 .add-item-page .breadcrumb-xs {
-    font-size: 0.72rem;
+    font-size: 0.95rem;
 }
 
 .add-item-page .modern-card {
@@ -52,16 +52,16 @@
 }
 
 .add-item-page .ifld > label {
-    font-size: 0.65rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: #64748b;
-    margin: 0 0 1px;
+    margin: 0 0 2px;
     white-space: nowrap;
-    line-height: 1.1;
+    line-height: 1.2;
 }
 
-.add-item-page .ifld-code  { flex: 0 0 46px; width: 46px; }
-.add-item-page .ifld-barcode { flex: 0 0 78px; width: 78px; }
+.add-item-page .ifld-code  { flex: 0 0 62px; width: 62px; }
+.add-item-page .ifld-barcode { flex: 0 0 108px; width: 108px; }
 .add-item-page .ifld-name  { flex: 2 1 120px; min-width: 90px; }
 .add-item-page .ifld-name2 { flex: 1 1 70px; min-width: 60px; max-width: 110px; }
 .add-item-page .ifld-group { flex: 1 1 85px; min-width: 75px; max-width: 130px; }
@@ -69,9 +69,9 @@
 .add-item-page .ifld-img   { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 3px; padding-bottom: 1px; }
 
 .add-item-page .form-control-sm {
-    height: calc(1.4em + 0.35rem + 2px);
-    padding: 0.1rem 0.3rem;
-    font-size: 0.78rem;
+    height: calc(1.5em + 0.45rem + 2px);
+    padding: 0.18rem 0.4rem;
+    font-size: 1.05rem;
 }
 
 .add-item-page .select2-container {
@@ -80,23 +80,23 @@
 }
 
 .add-item-page .select2-container--bootstrap4 .select2-selection--single {
-    height: calc(1.4em + 0.35rem + 2px) !important;
+    height: calc(1.5em + 0.45rem + 2px) !important;
     min-height: unset !important;
-    padding: 0.05rem 0.25rem;
-    font-size: 0.78rem;
+    padding: 0.12rem 0.3rem;
+    font-size: 1.05rem;
 }
 
 .add-item-page .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-    line-height: calc(1.4em + 0.1rem);
+    line-height: calc(1.5em + 0.15rem);
     padding-right: 0;
-    font-size: 0.78rem;
+    font-size: 1.05rem;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .add-item-page .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
-    height: calc(1.4em + 0.25rem);
-    width: 14px;
+    height: calc(1.5em + 0.35rem);
+    width: 16px;
 }
 
 .add-item-page .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow b {
@@ -104,10 +104,14 @@
     margin-top: -2px;
 }
 
+.select2-container--bootstrap4 .select2-results__option {
+    font-size: 1.05rem;
+}
+
 /* Image pick */
 .add-item-page .item-thumb {
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
     border: 1px solid #e2e8f0;
     border-radius: 3px;
@@ -126,22 +130,22 @@
 
 .add-item-page .item-thumb .thumb-empty {
     color: #cbd5e1;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
 }
 
 .add-item-page .btn-img-pick {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     margin: 0;
     padding: 0;
     border: 1px solid #cbd5e1;
     border-radius: 3px;
     background: #fff;
     color: #64748b;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     cursor: pointer;
 }
 
@@ -157,7 +161,7 @@
 }
 
 .add-item-page .card-title-compact {
-    font-size: 0.78rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #334155 !important;
     margin: 0;
@@ -173,7 +177,7 @@
     table-layout: fixed;
     width: 100%;
     margin-bottom: 0;
-    font-size: 0.75rem;
+    font-size: 1rem;
 }
 
 .add-item-page .units-table col.c-unit { width: 14%; }
@@ -188,7 +192,7 @@
     z-index: 2;
     background: #f1f5f9;
     border-bottom: 1px solid #cbd5e1;
-    font-size: 0.68rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: #475569;
     padding: 0.15rem 0.1rem;
@@ -210,9 +214,9 @@
     width: 100%;
     min-width: 0;
     max-width: 100%;
-    padding: 0.05rem 0.1rem;
-    font-size: 0.72rem;
-    height: calc(1.35em + 0.25rem + 2px);
+    padding: 0.12rem 0.15rem;
+    font-size: 1rem;
+    height: calc(1.45em + 0.35rem + 2px);
 }
 
 .add-item-page .units-table input[type="number"]::-webkit-inner-spin-button,
@@ -229,15 +233,15 @@
 .add-item-page .btn-del-row {
     padding: 0;
     line-height: 1;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
 }
 
 .add-item-page .units-tip {
     background: #f8fafc;
     border-top: 1px solid #e2e8f0;
     color: #94a3b8;
-    font-size: 0.65rem;
-    padding: 0.15rem 0.4rem;
+    font-size: 0.88rem;
+    padding: 0.2rem 0.45rem;
 }
 
 /* Action bar */
@@ -265,7 +269,7 @@
 .add-item-page .alert {
     padding: 0.3rem 0.5rem;
     margin-bottom: 0.35rem;
-    font-size: 0.8rem;
+    font-size: 1.05rem;
 }
 
 .add-item-page #importItemsModal .modal-header,
@@ -275,6 +279,11 @@
 }
 
 .add-item-page #importItemsModal .modal-title {
+    font-size: 1.05rem;
+}
+
+.add-item-page .btn-sm,
+.add-item-page .btn-xs {
     font-size: 0.95rem;
 }
 

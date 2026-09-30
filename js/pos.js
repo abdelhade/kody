@@ -53,7 +53,7 @@ const fetchData = (barcode) => {
 
 const addOrUpdateRow = (itemData) => {
     const barcode = itemData.barcode;
-    const price = parseFloat(itemData.price1);
+    const price = (typeof priceFromItem === 'function') ? priceFromItem(itemData) : parseFloat(itemData.price1);
 
     if (isNaN(price)) {
         alert('تم استلام سعر غير صالح من الخادم.');
@@ -83,7 +83,7 @@ const addNewRow = (itemData, price) => {
     const qty = 1;
     const subtotal = qty * price;
     const newRow = `
-        <tr data-itemid="${itemData.barcode}">
+        <tr data-itemid="${itemData.barcode}" data-price1="${parseFloat(itemData.price1) || 0}" data-price2="${parseFloat(itemData.price2) || 0}" data-price3="${parseFloat(itemData.price3) > 0 ? parseFloat(itemData.price3) : (parseFloat(itemData.market_price) || 0)}">
             <td>${rownum}</td>
             <td class="barcode" hidden>${itemData.barcode}</td>
             <td class="iname"><input hidden value='${itemData.id}' name="itmname[]">${itemData.iname}</td>
@@ -160,6 +160,19 @@ $(document).ready(() => {
     $(SELECTORS.DISCOUNT).on('input focusout', handleDiscountChange);
     $('#calcNum .btn-num').on('click', handleCalcButtonClick);
     $(SELECTORS.BARCODE_INPUT).on('keypress', handleBarcodeInput);
+    $(document).on('change', '#invoicePriceList', function() {
+        $('#items .itemButton').each(function() {
+            var btn = $(this);
+            var price = priceFromValues(btn.data('price1'), btn.data('price2'), btn.data('price3'), selectedInvoicePriceList());
+            btn.find('.item-card-price').text(price + ' ج');
+        });
+        $(SELECTORS.ITEM_DATA + ' tr').each(function() {
+            var row = $(this);
+            if (row.data('price1') == null) return;
+            var price = priceFromValues(row.data('price1'), row.data('price2'), row.data('price3'), selectedInvoicePriceList());
+            row.find('.priceInput').val(price.toFixed(2)).trigger('input');
+        });
+    });
 
     updateTotal();
     updateNetValue();

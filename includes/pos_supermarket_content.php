@@ -33,6 +33,16 @@ if (!isset($action_url)) {
                                     placeholder="بحث باسم الصنف (Alt+S)" autocomplete="off">
                             </div>
                         </div>
+                        <div style="width: 150px;">
+                            <label for="invoicePriceList" class="small text-muted mb-0 d-block">الفئة السعرية</label>
+                            <?php
+                            if (!class_exists('InvoiceProcessor')) {
+                                require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+                            }
+                            $posListId = (isset($rowed['price_list']) && (int) $rowed['price_list'] > 0) ? (int) $rowed['price_list'] : 1;
+                            InvoiceProcessor::echoPriceListSelect($conn, $posListId, 'form-select form-select-sm');
+                            ?>
+                        </div>
                     </div>
 
                     <!-- جدول الفاتورة (كبير وواضح) -->
@@ -54,7 +64,7 @@ if (!isset($action_url)) {
                                     <?php
                                     if (isset($_GET['edit'])){
                                         $id = intval($_GET['edit']);
-                                        $sqldet = "SELECT fd.*, m.iname as item_name, m.barcode 
+                                        $sqldet = "SELECT fd.*, m.iname as item_name, m.barcode, m.price1, m.price2, m.price3, m.market_price
                                                   FROM fat_details fd 
                                                   LEFT JOIN myitems m ON m.id = fd.item_id 
                                                   WHERE fd.pro_id = $id AND fd.isdeleted = 0";
@@ -68,8 +78,12 @@ if (!isset($action_url)) {
                                             $subtotal = floatval($rowdet['det_value']);
                                             $barcode = $rowdet['barcode'] ?: $rowdet['item_id'];
                                             $u_val = floatval($rowdet['u_val']) ?: 1;
+                                            $rowPrice3 = floatval($rowdet['price3'] ?? 0);
+                                            if ($rowPrice3 <= 0) {
+                                                $rowPrice3 = floatval($rowdet['market_price'] ?? 0);
+                                            }
                                     ?>
-                                        <tr class="item-card-order" data-itemid="<?= htmlspecialchars($barcode) ?>">
+                                        <tr class="item-card-order" data-itemid="<?= htmlspecialchars($barcode) ?>" data-price1="<?= floatval($rowdet['price1'] ?? $price) ?>" data-price2="<?= floatval($rowdet['price2'] ?? 0) ?>" data-price3="<?= $rowPrice3 ?>">
                                             <td class="text-center fw-bold text-muted"><?= $x ?></td>
                                             <td>
                                                 <input type="hidden" value='<?= $rowdet['item_id'] ?>' name="itmname[]">
@@ -355,4 +369,5 @@ if (!isset($action_url)) {
 <script>if (typeof jQuery === 'undefined') { document.write('<script src="plugins/jquery/jquery.min.js"><\/script>'); }</script>
 <script src="assets/libs/bootstrap.bundle.min.js"></script>
 <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
+<script src="js/invoice_price_list.js?v=<?= time() ?>"></script>
 <script src="js/pos_supermarket.js?v=<?= time() ?>"></script>

@@ -88,6 +88,13 @@ $resitm = $stmtData->get_result();
                     <div class="row align-items-center">
                         <div class="col">
                             <h3 class="mb-0"><?= $lang_deleted_items ?? 'الاصناف المحذوفه' ?></h3>
+                            <label for="invoicePriceList" class="small text-muted mb-0">الفئة السعرية</label>
+                            <?php
+                            if (!class_exists('InvoiceProcessor')) {
+                                require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                            }
+                            InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
+                            ?>
                         </div>
                         <div class="col-md-5">
                             <input type="text" id="search" class="form-control" placeholder="بحث في الأصناف المحذوفة" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
@@ -109,7 +116,7 @@ $resitm = $stmtData->get_result();
                                     <th>الباركود</th>
                                     <th>الاسم</th>
                                     <th>الكمية</th>
-                                    <th>سعر البيع</th>
+                                    <th id="sellPriceTitle">قطاعي</th>
                                     <th>الحركة</th>
                                     <th>عمليات</th>
                                 </tr>
@@ -130,7 +137,13 @@ $resitm = $stmtData->get_result();
                                     <td><?= htmlspecialchars((string) ($rowitm['barcode'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                     <td><b><?= htmlspecialchars((string) $rowitm['iname'], ENT_QUOTES, 'UTF-8') ?></b></td>
                                     <td><?= htmlspecialchars((string) $rowitm['itmqty'], ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars((string) $rowitm['price1'], ENT_QUOTES, 'UTF-8') ?></td>
+                                    <?php
+                                        $sell3 = (float) ($rowitm['price3'] ?? 0);
+                                        if ($sell3 <= 0) {
+                                            $sell3 = (float) ($rowitm['market_price'] ?? 0);
+                                        }
+                                    ?>
+                                    <td class="sell-price" data-price1="<?= (float) $rowitm['price1'] ?>" data-price2="<?= (float) ($rowitm['price2'] ?? 0) ?>" data-price3="<?= $sell3 ?>"><?= htmlspecialchars((string) $rowitm['price1'], ENT_QUOTES, 'UTF-8') ?></td>
                                     <td>
                                         <?php if ($moves > 0): ?>
                                             <a class="btn btn-sm btn-light" href="item_summery.php?id=<?= (int) $rowitm['id'] ?>"><?= $moves ?> حركة</a>
@@ -203,6 +216,7 @@ $(document).ready(function() {
             $('#table-container').css('opacity', '0.5');
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
+                if (typeof applyDeletedPriceList === 'function') applyDeletedPriceList();
             });
             window.history.pushState(null, '', url);
         }, 300);
@@ -223,10 +237,23 @@ $(document).ready(function() {
         $('#table-container').css('opacity', '0.5');
         $('#table-container').load(url + ' #table-container > *', function() {
             $('#table-container').css('opacity', '1');
+            if (typeof applyDeletedPriceList === 'function') applyDeletedPriceList();
         });
         window.history.pushState(null, '', url);
     });
 });
+</script>
+<script src="js/invoice_price_list.js"></script>
+<script>
+function applyDeletedPriceList() {
+    var label = $('#invoicePriceList option:selected').text();
+    $('#sellPriceTitle').text(label);
+    $('.sell-price').each(function() {
+        var price = priceFromValues($(this).data('price1'), $(this).data('price2'), $(this).data('price3'), selectedInvoicePriceList());
+        $(this).text(price);
+    });
+}
+$('#invoicePriceList').on('change', applyDeletedPriceList);
 </script>
 
 <?php include('includes/footer.php') ?>

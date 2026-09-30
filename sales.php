@@ -298,22 +298,24 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 }
 
 if (isset($_GET['success']) && $_GET['success'] == '1') {
+    $saved_message = $_SESSION['success_message'] ?? 'تم الحفظ بنجاح';
+    unset($_SESSION['success_message']);
+    $new_q = $_GET['q'] ?? 'sale';
     echo "<script>
     document.addEventListener('DOMContentLoaded', function() {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: 'تم بنجاح',
-                text: 'تم الحفظ بنجاح',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            
-            // تنظيف الرابط من البارامترات
-            const url = new URL(window.location);
-            url.searchParams.delete('success');
-            window.history.replaceState({}, '', url);
-        }
+        if (typeof Swal === 'undefined') return;
+        Swal.fire({
+            type: 'success',
+            title: 'تم بنجاح',
+            text: " . json_encode($saved_message, JSON_UNESCAPED_UNICODE) . ",
+            confirmButtonText: 'حسناً',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        }).then(function(result) {
+            if (result.value === true || result.isConfirmed === true) {
+                window.location.href = 'sales.php?q=' + encodeURIComponent(" . json_encode($new_q, JSON_UNESCAPED_UNICODE) . ");
+            }
+        });
     });
     </script>";
 }

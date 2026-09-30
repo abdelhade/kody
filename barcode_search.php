@@ -9,6 +9,13 @@
     <!-- داخل card-body -->
     <div class="min-h-screen bg-gradient-to-b from-zinc-50 to-sky-100">
     <center class="pt-20">
+        <label for="invoicePriceList" class="d-block mb-1">الفئة السعرية</label>
+        <?php
+        if (!class_exists('InvoiceProcessor')) {
+            require_once __DIR__ . '/classes/InvoiceProcessor.php';
+        }
+        InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control mb-3', 'max-width:280px;margin:0 auto;');
+        ?>
         <input type="text" name="iname" class="form form-control blocked frst focus:bg-orange-200 text-navey-400 selected" id="searchItem" placeholder="امسح الباركود هنا">
         <br>
         <p id="itemName" style="font-size: 4vw" class="text-red-500">اسم الصنف</p>
@@ -29,7 +36,7 @@
                 .removeClass('cake cake-headShake')
             $price
                 .removeClass('cake cake-bounce')     // إزالة الكلاسات
-                .text(data.price1|| "_____");        // تحديث السعر
+                .text((typeof priceFromItem === 'function' ? priceFromItem(data) : data.price1) || "_____");
             setTimeout(function () {
                 $price.addClass('cake cake-bounce');
                 $iname.addClass('cake cake-headShake');
@@ -43,4 +50,5 @@
     </div>
 
 
+<script src="js/invoice_price_list.js"></script>
 <?php include('includes/footer.php') ?>

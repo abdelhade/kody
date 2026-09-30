@@ -136,6 +136,7 @@ include('includes/pos_mobile_content.php');
 </div>
 
 <!-- إضافة السكريبت الخاص بنقطة بيع الموبايل -->
+<script src="js/invoice_price_list.js?v=<?= time() ?>"></script>
 <script src="js/pos_mobile.js?v=<?= time() ?>"></script>
 
 <?php include('includes/pos_simple_footer.php');?>

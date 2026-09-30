@@ -73,9 +73,28 @@
                     }
             ?>
 
+                <?php
+                    if (!class_exists('InvoiceProcessor')) {
+                        require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                    }
+                    $opPriceLists = InvoiceProcessor::priceLists($conn);
+                ?>
                 <div class="card-header d-flex align-items-center gap-3 flex-wrap justify-content-between">
                     <div class="d-flex align-items-center gap-3 flex-wrap">
                         <h3 class="mb-0"><?= $isAll ? 'كل الأصناف' : 'العمليات علي الفاتورة' ?></h3>
+                        <div>
+                            <label for="invPriceList" class="small text-muted mb-0 d-block">الفئة السعرية</label>
+                            <select id="invPriceList" class="form-control form-control-sm">
+                                <?php foreach ($opPriceLists as $plist):
+                                    $plistId = (int) $plist['id'];
+                                    if ($plistId < 1 || $plistId > 3) {
+                                        continue;
+                                    }
+                                ?>
+                                    <option value="<?= $plistId ?>"><?= htmlspecialchars($plist['pname'], ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                         <button class="btn btn-sm btn-outline-info btn-toggle-panel" type="button" data-target="#filtersPanel">
                             <i class="fas fa-filter"></i> فلاتر
                         </button>
@@ -116,12 +135,21 @@
                                 <select id="bp-base-price" class="form-control form-control-sm">
                                     <option value="last_price">سعر الشراء الأخير</option>
                                     <option value="cost_price">سعر الشراء المتوسط</option>
+                                    <?php foreach ($opPriceLists as $plist):
+                                        $plistId = (int) $plist['id'];
+                                        if ($plistId < 1 || $plistId > 3) {
+                                            continue;
+                                        }
+                                        $baseField = $plistId === 2 ? 'price2' : ($plistId === 3 ? 'price3' : 'price1');
+                                    ?>
+                                        <option value="<?= $baseField ?>"><?= htmlspecialchars($plist['pname'], ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-2 mb-2">
                                 <label class="small text-muted mb-1">سعر النتيجة</label>
                                 <select id="bp-target-price" class="form-control form-control-sm">
-                                    <option value="price1">سعر البيع</option>
+                                    <option value="price1">قطاعي</option>
                                 </select>
                             </div>
                             <div class="col-md-2 mb-2">
@@ -155,7 +183,7 @@
                 <th>اسم الصنف</th>
                 <th>سعر الشراء الاخير</th>
                 <th>سعر الشراء المتوسط</th>
-                <th>سعر البيع <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
+                <th><span id="sellPriceTitle">قطاعي</span> <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
                 <th>الكمية</th>
                 <th>العدد المطلوب طباعته</th>
             </tr>
@@ -167,15 +195,21 @@
                 $rowunt = $conn->query("SELECT unit_barcode FROM item_units WHERE item_id = $iid LIMIT 1")->fetch_assoc();
                 $dispCode = !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $rowop2['barcode'];
                 $searchVal = strtolower($rowop2['iname'] . ' ' . $rowop2['barcode'] . ' ' . $dispCode);
+                $sell1 = (float) $rowop2['price1'];
+                $sell2 = (float) ($rowop2['price2'] ?? 0);
+                $sell3 = (float) ($rowop2['price3'] ?? 0);
+                if ($sell3 <= 0) {
+                    $sell3 = (float) ($rowop2['market_price'] ?? 0);
+                }
             ?>
-            <tr id="item-<?= $iid ?>" class="inv-row" data-search="<?= htmlspecialchars($searchVal, ENT_QUOTES) ?>" data-group="<?= (int)$rowop2['group1'] ?>" data-item-id="<?= $iid ?>">
+            <tr id="item-<?= $iid ?>" class="inv-row" data-search="<?= htmlspecialchars($searchVal, ENT_QUOTES) ?>" data-group="<?= (int)$rowop2['group1'] ?>" data-item-id="<?= $iid ?>" data-price1="<?= $sell1 ?>" data-price2="<?= $sell2 ?>" data-price3="<?= $sell3 ?>">
                 <th><?= $x + 1 ?></th>
                 <th><input readonly type="text" value="<?= htmlspecialchars($dispCode) ?>" name="code[]" class="form-control form-control-sm border-0 bg-transparent"></th>
                 <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['barcode']) ?>" name="barcode[]" class="form-control form-control-sm border-0 bg-transparent"></th>
                 <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['iname']) ?>" name="iname[]" class="form-control form-control-sm border-0 bg-transparent"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['last_price'] ?>" name="last_price[]" class="form-control form-control-sm border-0 bg-transparent base-last-price"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['cost_price'] ?>" name="cost_price[]" class="form-control form-control-sm border-0 bg-transparent base-cost-price"></th>
-                <th><input type="number" step="0.01" value="<?= (float)$rowop2['price1'] ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price"></th>
+                <th><input type="number" step="0.01" value="<?= $sell1 ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['itmqty'] ?>" class="form-control form-control-sm border-0 bg-transparent text-center"></th>
                 <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]" class="form-control form-control-sm"></th>
             </tr>
@@ -219,11 +253,20 @@
 
 
 <script>
+    function invPriceField() {
+        var id = parseInt($('#invPriceList').val(), 10) || 1;
+        if (id === 2) return 'price2';
+        if (id === 3) return 'price3';
+        return 'price1';
+    }
+
     function updatePrice(itemId, newPrice) {
+    var field = invPriceField();
+    $('#item-' + itemId).data(field, parseFloat(newPrice) || 0);
     $.ajax({
         url: 'js/ajax/update_price.php',
         method: 'POST',
-        data: { id: itemId, price: newPrice },
+        data: { id: itemId, price: newPrice, field: field },
         success: function(response) {
             console.log('Price updated successfully');
             $('#msg').html("تم تغيير السعر بنجاح").show();
@@ -282,6 +325,17 @@ $(document).ready(function() {
     });
     $('#inv-group-filter').on('change', applyFilters);
 
+    $('#invPriceList').on('change', function() {
+        var field = invPriceField();
+        var label = $(this).find('option:selected').text();
+        $('#sellPriceTitle').text(label);
+        $('#bp-target-price option').text(label);
+        $('#inv-table tbody tr.inv-row').each(function() {
+            var value = parseFloat($(this).data(field)) || 0;
+            $(this).find('.target-price').val(value);
+        });
+    });
+
     // Bulk Pricing Logic
     $('#btn-bp-apply').on('click', function() {
         var basePriceField = $('#bp-base-price').val();
@@ -289,8 +343,16 @@ $(document).ready(function() {
         var amount = parseFloat($('#bp-amount').val()) || 0;
 
         $('#inv-table tbody tr.inv-row:visible').each(function() {
-            var baseInput = basePriceField === 'last_price' ? $(this).find('.base-last-price') : $(this).find('.base-cost-price');
-            var baseVal = parseFloat(baseInput.val()) || 0;
+            var baseVal = 0;
+            if (basePriceField === 'last_price') {
+                baseVal = parseFloat($(this).find('.base-last-price').val()) || 0;
+            } else if (basePriceField === 'cost_price') {
+                baseVal = parseFloat($(this).find('.base-cost-price').val()) || 0;
+            } else if (basePriceField === invPriceField()) {
+                baseVal = parseFloat($(this).find('.target-price').val()) || 0;
+            } else {
+                baseVal = parseFloat($(this).data(basePriceField)) || 0;
+            }
             var newPrice = baseVal;
             
             if (method === 'percent') {
@@ -300,6 +362,7 @@ $(document).ready(function() {
             }
             
             $(this).find('.target-price').val(newPrice.toFixed(2));
+            $(this).data(invPriceField(), newPrice);
         });
         
         $('#msg').html("تم تطبيق الحسابات على الجدول، اضغط تأكيد للحفظ").show();
@@ -309,11 +372,13 @@ $(document).ready(function() {
     $('#btn-bp-confirm').on('click', function() {
         if (!confirm("سيتم تغيير جميع الأصناف الظاهرة في الفلتر، هل أنت متأكد؟")) return;
 
+        var field = invPriceField();
         var itemsToUpdate = [];
         $('#inv-table tbody tr.inv-row:visible').each(function() {
             var id = $(this).data('item-id');
             var price = parseFloat($(this).find('.target-price').val()) || 0;
-            itemsToUpdate.push({ id: id, price1: price });
+            $(this).data(field, price);
+            itemsToUpdate.push({ id: id, price: price });
         });
 
         if (itemsToUpdate.length === 0) {
@@ -324,7 +389,7 @@ $(document).ready(function() {
         $.ajax({
             url: 'js/ajax/bulk_update_prices.php',
             method: 'POST',
-            data: { items: itemsToUpdate },
+            data: { items: itemsToUpdate, field: field },
             success: function(res) {
                 console.log(res);
                 var data = JSON.parse(res);

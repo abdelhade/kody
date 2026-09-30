@@ -52,14 +52,16 @@ $(document).ready(function() {
                                 <div class="search-result-item d-flex justify-content-between align-items-center" 
                                      data-id="${item.id}" 
                                      data-name="${item.iname}" 
-                                     data-price="${item.price1 || 0}" 
+                                     data-price1="${item.price1 || 0}"
+                                     data-price2="${item.price2 || 0}"
+                                     data-price3="${item.price3 || 0}"
                                      data-barcode="${item.barcode || ''}">
                                     <div>
                                         <div class="item-title">${item.iname} ${item.name2 ? '<small class="text-muted">/ ' + item.name2 + '</small>' : ''}</div>
                                         <div class="item-barcode"><i class="fas fa-barcode"></i> ${item.barcode || 'بدون باركود'}</div>
                                     </div>
                                     <div class="text-end">
-                                        <div class="item-price">${parseFloat(item.price1 || 0).toFixed(2)}</div>
+                                        <div class="item-price">${priceFromItem(item).toFixed(2)}</div>
                                         <button class="btn btn-sm btn-primary rounded-pill px-3 mt-1 add-this-item">إضافة <i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
@@ -91,9 +93,12 @@ $(document).ready(function() {
         const item = {
             id: parent.data('id'),
             name: parent.data('name'),
-            price: parseFloat(parent.data('price') || 0),
+            price1: parent.data('price1'),
+            price2: parent.data('price2'),
+            price3: parent.data('price3'),
             barcode: parent.data('barcode')
         };
+        item.price = priceFromItem(item);
 
         addItemToCart(item);
         
@@ -125,7 +130,7 @@ $(document).ready(function() {
         } else {
             // Add new row
             const html = `
-                <div class="card item-card-order shadow-sm border-start border-4 border-primary position-relative" data-itemid="${item.barcode}">
+                <div class="card item-card-order shadow-sm border-start border-4 border-primary position-relative" data-itemid="${item.barcode}" data-price1="${parseFloat(item.price1) || 0}" data-price2="${parseFloat(item.price2) || 0}" data-price3="${parseFloat(item.price3) || 0}">
                     <div class="card-body p-2">
                         <input type="hidden" value='${item.id}' name="itmname[]">
                         <input type="hidden" class="barcode" value="${item.barcode}">
@@ -305,14 +310,26 @@ $(document).ready(function() {
                     const item = {
                         id: itemData.id,
                         name: itemData.iname,
-                        price: parseFloat(itemData.price1 || 0),
+                        price1: itemData.price1,
+                        price2: itemData.price2,
+                        price3: itemData.price3,
                         barcode: itemData.barcode
                     };
+                    item.price = priceFromItem(item);
                     addItemToCart(item);
                 }
             }
         });
     }
+
+    $(document).on('change', '#invoicePriceList', function() {
+        $('#itemData .item-card-order').each(function() {
+            var row = $(this);
+            var price = priceFromValues(row.data('price1'), row.data('price2'), row.data('price3'), selectedInvoicePriceList());
+            row.find('.priceInput').val(price.toFixed(2));
+            updateItemRow(row);
+        });
+    });
 
     // Initialize totals on load
     calculateTotals();

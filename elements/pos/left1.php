@@ -28,7 +28,13 @@
         $resitem = $conn->query("SELECT * FROM myitems where isdeleted = 0");
         while ($rowitem = $resitem->fetch_assoc()) {
     ?>
-    <button title="<?= $rowitem['info']?>" class="itemButton cat rounded p-3 m-2 bg-slate-50 transition duration-300 ease-in-out hover:bg-pink-600 border hover:text-slate-50" itemid="<?= $rowitem['barcode']?>" data-category="<?= $rowitem['group1']?>">
+    <?php
+        $cardPrice3 = floatval($rowitem['price3'] ?? 0);
+        if ($cardPrice3 <= 0) {
+            $cardPrice3 = floatval($rowitem['market_price'] ?? 0);
+        }
+    ?>
+    <button title="<?= $rowitem['info']?>" class="itemButton cat rounded p-3 m-2 bg-slate-50 transition duration-300 ease-in-out hover:bg-pink-600 border hover:text-slate-50" itemid="<?= $rowitem['barcode']?>" data-category="<?= $rowitem['group1']?>" data-price1="<?= floatval($rowitem['price1']) ?>" data-price2="<?= floatval($rowitem['price2'] ?? 0) ?>" data-price3="<?= $cardPrice3 ?>">
         <div class="itemlogo">
             <center>
             <i class="fa fa-star text-lg"></i>
@@ -38,7 +44,7 @@
             <input type="text" id="itemCat<?= $rowitem['id']?>" value="<?= $rowitem['group1']?>" hidden>
             <input type="text" id="itemId<?= $rowitem['barcode']?>" value="<?= $rowitem['barcode']?>" hidden>
             <p class="font-normal text-sm text-navy"><?= $rowitem['iname']?></p>
-            <p class="text-sm"><?= $rowitem['price1']?> ج</p>
+            <p class="text-sm item-card-price"><?= $rowitem['price1']?> ج</p>
         </div>
     </button>
     <?php } ?>

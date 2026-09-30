@@ -14,7 +14,7 @@ if ($order_id <= 0 || $item_id <= 0 || $qty <= 0) {
 
 try {
     // جلب الطلب
-    $stmt = $conn->prepare("SELECT id, store_id, fat_disc, fat_plus FROM ot_head WHERE id = ? AND pro_tybe = 9 AND isdeleted = 0");
+    $stmt = $conn->prepare("SELECT id, store_id, fat_disc, fat_plus, price_list FROM ot_head WHERE id = ? AND pro_tybe = 9 AND isdeleted = 0");
     $stmt->bind_param('i', $order_id);
     $stmt->execute();
     $order = $stmt->get_result()->fetch_assoc();
@@ -24,7 +24,7 @@ try {
     }
 
     // جلب الصنف
-    $stmt = $conn->prepare("SELECT id, iname, price1, cost_price FROM myitems WHERE id = ? AND isdeleted = 0");
+    $stmt = $conn->prepare("SELECT id, iname, price1, price2, price3, market_price, cost_price FROM myitems WHERE id = ? AND isdeleted = 0");
     $stmt->bind_param('i', $item_id);
     $stmt->execute();
     $item = $stmt->get_result()->fetch_assoc();
@@ -43,7 +43,10 @@ try {
         if ($r && $r->num_rows > 0) $store_id = intval($r->fetch_assoc()['id']);
     }
 
-    $price      = floatval($item['price1']);
+    if (!class_exists('InvoiceProcessor')) {
+        require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+    }
+    $price      = InvoiceProcessor::tierPrice($item, (int) ($order['price_list'] ?? 1));
     $cost_price = floatval($item['cost_price']);
     $det_value  = $qty * $price;
     $itmprofit  = $qty * ($price - $cost_price);

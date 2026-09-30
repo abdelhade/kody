@@ -36,6 +36,16 @@ if (!empty($rowstg['def_pos_store'])) {
             </div>
             
             <div class="mb-2">
+                <label for="invoicePriceList" class="form-label" style="font-size: 0.75rem;">الفئة السعرية</label>
+                <?php
+                if (!class_exists('InvoiceProcessor')) {
+                    require_once __DIR__ . '/../../classes/InvoiceProcessor.php';
+                }
+                InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-select form-select-sm', 'font-size: 0.75rem;');
+                ?>
+            </div>
+
+            <div class="mb-2">
                 <div class="btn-group w-100" role="group">
                     <input type="radio" class="btn-check" id="age1" name="age" value="1" checked>
                     <label class="btn btn-outline-secondary btn-sm" for="age1">

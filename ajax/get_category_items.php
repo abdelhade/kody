@@ -11,16 +11,23 @@ $category_id = intval($_GET['category_id']);
 $store_id = isset($_GET['store_id']) ? intval($_GET['store_id']) : 0;
 $balance_subquery = $store_id > 0 ? "COALESCE((SELECT SUM(qty_in - qty_out) FROM fat_details WHERE item_id = myitems.id AND det_store = $store_id), 0)" : "0";
 
-$sql = "SELECT id, iname as name, price1 as price, $balance_subquery as balance FROM myitems WHERE group1 = $category_id AND isdeleted = 0 ORDER BY iname";
+$sql = "SELECT id, iname as name, price1, price2, price3, market_price, price1 as price, $balance_subquery as balance FROM myitems WHERE group1 = $category_id AND isdeleted = 0 ORDER BY iname";
 $result = $conn->query($sql);
 
 $items = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
+        $price3 = floatval($row['price3'] ?? 0);
+        if ($price3 <= 0) {
+            $price3 = floatval($row['market_price'] ?? 0);
+        }
         $items[] = [
             'id' => intval($row['id']),
             'name' => $row['name'],
             'price' => floatval($row['price'] ?: 0),
+            'price1' => floatval($row['price1'] ?? 0),
+            'price2' => floatval($row['price2'] ?? 0),
+            'price3' => $price3,
             'balance' => floatval($row['balance'] ?? 0)
         ];
     }

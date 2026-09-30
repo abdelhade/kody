@@ -147,7 +147,7 @@ function searchByBarcode() {
                 console.log('Barcode response:', data);
                 if (data.success && data.item) {
                     const item = data.item;
-                    addItemToOrder(item.id, item.name, item.price, item.balance);
+                    addItemToOrder(item.id, item.name, priceFromItem(item), item.balance, item);
                     document.getElementById('barcodeSearch').value = '';
                     document.getElementById('barcodeSearch').focus();
                 } else {
@@ -368,17 +368,20 @@ function displayItems(items) {
         return;
     }
     
+    window._clothesCatalog = window._clothesCatalog || {};
+    window._clothesLastItems = items;
     let html = '';
     items.forEach(item => {
+        window._clothesCatalog[item.id] = item;
         html += `
             <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-2">
-                <div class="item-card" onclick="addItemToOrder(${item.id}, \`${item.name}\`, ${item.price}, ${item.balance})">
+                <div class="item-card" onclick="addItemToOrder(${item.id}, \`${item.name.replace(/`/g, '')}\`, ${priceFromItem(item)}, ${item.balance}, window._clothesCatalog[${item.id}])">
                     <div class="item-image">
                         <i class="fas fa-tshirt" style="color: var(--soft-gray);"></i>
                     </div>
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
-                        <div class="item-price">${parseFloat(item.price).toFixed(2)} ج.م</div>
+                        <div class="item-price">${priceFromItem(item).toFixed(2)} ج.م</div>
                         <div class="item-balance text-muted" style="font-size: 0.85rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
                     </div>
                 </div>
@@ -390,7 +393,7 @@ function displayItems(items) {
 }
 
 // إضافة صنف للطلب
-function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0) {
+function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0, source) {
     const existingItemIndex = selectedItems.findIndex(item => item.id === itemId);
     
     if (existingItemIndex !== -1) {
@@ -400,6 +403,9 @@ function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0) {
             id: itemId,
             name: itemName,
             price: parseFloat(itemPrice),
+            price1: source ? parseFloat(source.price1 != null ? source.price1 : source.price) || 0 : parseFloat(itemPrice),
+            price2: source ? parseFloat(source.price2) || 0 : 0,
+            price3: source ? parseFloat(source.price3) || 0 : 0,
             quantity: 1,
             balance: parseFloat(itemBalance) || 0
         });
@@ -867,4 +873,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+
+document.addEventListener('change', function(e) {
+    if (!e.target || e.target.id !== 'invoicePriceList') return;
+    selectedItems.forEach(function(line) {
+        line.price = priceFromValues(line.price1, line.price2, line.price3, selectedInvoicePriceList());
+    });
+    if (typeof updateOrderDisplay === 'function') updateOrderDisplay();
+    if (window._clothesLastItems && typeof displayItems === 'function') {
+        displayItems(window._clothesLastItems);
+    }
 });

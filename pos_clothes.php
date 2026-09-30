@@ -80,6 +80,7 @@ if(isset($_SESSION['success_message'])){
     <script src="assets/libs/bootstrap.bundle.min.js"></script>
     <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="plugins/select2/js/select2.full.min.js"></script>
+    <script src="js/invoice_price_list.js?v=<?= time() ?>"></script>
     <script src="components/pos_clothes/scripts.js?v=<?= time() ?>"></script>
 </body>
 

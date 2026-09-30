@@ -265,7 +265,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                             <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]"
                                                    value="<?= htmlspecialchars($unitRow['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>"
                                                    data-id="<?= $isEdit ? $editId : 0 ?>">
-                                            <small class="text-danger d-none unit-barcode-error" style="font-size:0.65rem;">مستخدم</small>
+                                            <small class="text-danger d-none unit-barcode-error" style="font-size:0.85rem;">مستخدم</small>
                                         </td>
                                         <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['cost_price'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>
                                         <td><input type="number" name="price1[]" class="form-control form-control-sm" value="<?= htmlspecialchars($unitRow['price1'], ENT_QUOTES, 'UTF-8') ?>" step="0.001" min="0"></td>

@@ -88,6 +88,13 @@
             <input type="text" name="pro_id" value="1" hidden>
             <input type="date" name="pro_date" value="<?php echo date('Y-m-d'); ?>">
             <input type="date" name="accural_date" value="<?php echo date('Y-m-d'); ?>">
+            <label class="small d-block mb-0">الفئة السعرية</label>
+            <?php
+            if (!class_exists('InvoiceProcessor')) {
+                require_once __DIR__ . '/classes/InvoiceProcessor.php';
+            }
+            InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
+            ?>
             <select name="store_id" class="" id="">
                 <?php
                 $resstore = $conn->query("SELECT * FROM `acc_head` WHERE is_stock =1 AND isdeleted = 0;");
@@ -238,7 +245,13 @@
         $resitem = $conn->query("SELECT * FROM myitems where isdeleted = 0");
         while ($rowitem = $resitem->fetch_assoc()) {
     ?>
-    <button title="<?= $rowitem['info']?>" class="itemButton cat border-2 border-red shadow align-middle p-0 m-0 min-h-20 rounded bg-slate-100 transition duration-300 ease-in-out hover:bg-pink-600 hover:text-slate-50" itemid="<?= $rowitem['barcode']?>" data-category="<?= $rowitem['group1']?>">
+    <?php
+        $cardPrice3 = floatval($rowitem['price3'] ?? 0);
+        if ($cardPrice3 <= 0) {
+            $cardPrice3 = floatval($rowitem['market_price'] ?? 0);
+        }
+    ?>
+    <button title="<?= $rowitem['info']?>" class="itemButton cat border-2 border-red shadow align-middle p-0 m-0 min-h-20 rounded bg-slate-100 transition duration-300 ease-in-out hover:bg-pink-600 hover:text-slate-50" itemid="<?= $rowitem['barcode']?>" data-category="<?= $rowitem['group1']?>" data-price1="<?= floatval($rowitem['price1']) ?>" data-price2="<?= floatval($rowitem['price2'] ?? 0) ?>" data-price3="<?= $cardPrice3 ?>">
         <div class="itemlogo">
             <center>
                 <img class="max-h-10 max-w-10" src="assets/logo/hors.png" alt="" onerror="this.onerror=null;this.src='assets/logo/hors.png';">
@@ -248,7 +261,7 @@
             <input type="text" id="itemCat<?= $rowitem['id']?>" value="<?= $rowitem['group1']?>" hidden>
             <input type="text" id="itemId<?= $rowitem['barcode']?>" value="<?= $rowitem['barcode']?>" hidden>
             <p class="font-normal text-lg text-navy"><?= $rowitem['iname']?></p>
-            <p class="text-lg"><?= $rowitem['price1']?> ج</p>
+            <p class="text-lg item-card-price"><?= $rowitem['price1']?> ج</p>
         </div>
     </button>
     <?php } ?>
@@ -341,6 +354,7 @@ $('.tab').click(function() {
 });
 
 </script>
+<script src="js/invoice_price_list.js"></script>
 <script src="js/pos.js"></script>
 
 
