@@ -1,6 +1,12 @@
 /* أنماط الجداول والعناصر */
 #itmrow tr {
     height: 40px !important; /* تعيين ارتفاع الصف إلى 40 بكسل */
+    cursor: pointer;
+}
+
+#itmrow tr.item-row-active > td {
+    background: #e0e7ff !important;
+    box-shadow: inset 3px 0 0 #4B5694;
 }
 
 .itemlight1{

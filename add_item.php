@@ -54,6 +54,48 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
     <section class="content pt-0">
         <div class="item-page-wrap">
 
+            <?php
+            $importReport = (isset($_GET['imported']) && is_array($_SESSION['import_report'] ?? null))
+                ? $_SESSION['import_report']
+                : null;
+            ?>
+            <?php if ($importReport): ?>
+                <?php
+                $importOk = (int) ($importReport['ok'] ?? 0);
+                $importFailed = (int) ($importReport['failed'] ?? 0);
+                $importErrors = is_array($importReport['errors'] ?? null) ? $importReport['errors'] : [];
+                ?>
+                <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <div class="d-flex flex-wrap align-items-center" style="gap:0.75rem;">
+                        <span><i class="fas fa-check-circle text-success ml-1"></i> اترفعت: <strong><?= $importOk ?></strong></span>
+                        <span><i class="fas fa-times-circle text-danger ml-1"></i> ما اترفعوش: <strong><?= $importFailed ?></strong></span>
+                        <?php if ($importErrors !== []): ?>
+                            <a href="do/import_errors.php" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-file-excel"></i> تحميل الأصناف اللي فيها خطأ
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($importErrors !== []): ?>
+                        <ul class="mb-0 mt-2">
+                            <?php foreach (array_slice($importErrors, 0, 15) as $importError): ?>
+                                <li>
+                                    <?php if (is_array($importError)): ?>
+                                        صف <?= htmlspecialchars((string) ($importError['row'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                        — <?= htmlspecialchars((string) ($importError['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>:
+                                        <?= htmlspecialchars((string) ($importError['reason'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                    <?php else: ?>
+                                        <?= htmlspecialchars((string) $importError, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                            <?php if (count($importErrors) > 15): ?>
+                                <li>و <?= count($importErrors) - 15 ?> صنف آخر في ملف الإكسل.</li>
+                            <?php endif; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
             <?php if (isset($_GET['saved']) && $_GET['saved'] === '1'): ?>
                 <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
@@ -83,6 +125,10 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                         echo 'بيانات الوحدة غير صالحة. اختر وحدة ومعاملاً أكبر من صفر.';
                     } elseif ($err === 'unit_in_use') {
                         echo 'لا يمكن حذف هذه الوحدة أو تغيير معاملها لأنها مستخدمة في فواتير.';
+                    } elseif ($err === 'import_type') {
+                        echo 'صيغة الملف غير مدعومة. استخدم xlsx أو csv من النموذج.';
+                    } elseif ($err === 'import_failed') {
+                        echo 'تعذّر سحب الأصناف من الملف.';
                     } else {
                         echo 'حدث خطأ أثناء الحفظ.';
                     }
@@ -295,8 +341,11 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                             <a href="myitems.php" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-right"></i> رجوع</a>
                             <?php if (!$isEdit): ?>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#importItemsModal">
-                                <i class="fas fa-file-excel"></i> استيراد
+                                <i class="fas fa-file-excel"></i> سحب الاصناف
                             </button>
+                            <a href="do/items_template.php" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-download"></i> تحميل النموذج
+                            </a>
                             <?php endif; ?>
                             <small class="text-muted d-none d-md-inline">F2</small>
                         </div>
@@ -324,10 +373,13 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                 <div class="modal-body py-3">
                                     <label for="excel-file" class="lbl-sm d-block mb-1">ملف Excel</label>
                                     <div class="custom-file custom-file-sm">
-                                        <input type="file" class="custom-file-input" name="file" id="excel-file" required accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+                                        <input type="file" class="custom-file-input" name="file" id="excel-file" required accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
                                         <label class="custom-file-label" for="excel-file" data-browse="استعراض">اختر ملف</label>
                                     </div>
-                                    <small class="text-muted d-block mt-2">xlsx, xls, csv</small>
+                                    <small class="text-muted d-block mt-2">xlsx أو csv بنفس أعمدة النموذج</small>
+                                    <a href="do/items_template.php" class="btn btn-outline-success btn-sm btn-block mt-2">
+                                        <i class="fas fa-download ml-1"></i> تحميل النموذج
+                                    </a>
                                 </div>
                                 <div class="modal-footer py-2">
                                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">إلغاء</button>

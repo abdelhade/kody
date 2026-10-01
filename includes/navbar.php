@@ -9,29 +9,33 @@
       </li>
 
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="index.php" class="nav-link active fw-bold"><?=$lang_sidemain?></a>
-      </li>
-
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="chances.php" class="nav-link">CRM</a>
+        <a href="index.php" class="nav-link active fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= htmlspecialchars($lang_sidemain, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars($lang_sidemain, ENT_QUOTES, 'UTF-8') ?>">
+          <i class="fas fa-home"></i>
+        </a>
       </li>
 
       <?php if($role['show_users'] == 1){ ?>
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="users.php" class="nav-link">المستخدمين</a>
+        <a href="users.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="المستخدمين" aria-label="المستخدمين">
+          <i class="fas fa-users"></i>
+        </a>
       </li>
       <?php } ?>
 
-      <li class="nav-item dropdown d-none d-md-inline-block">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              الإدارة
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="setting.php">إعدادات النظام</a></li>
-              <li><a class="dropdown-item" href="about.php">بيانات الشركة</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="roadmap.php">خطة العمل</a></li>
-          </ul>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="setting.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="إعدادات النظام" aria-label="إعدادات النظام">
+          <i class="fas fa-cog"></i>
+        </a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="about.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="بيانات الشركة" aria-label="بيانات الشركة">
+          <i class="fas fa-building"></i>
+        </a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="roadmap.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="خطة العمل" aria-label="خطة العمل">
+          <i class="fas fa-map"></i>
+        </a>
       </li>
       
     </ul>
@@ -55,17 +59,16 @@
       }
       if ($activeDbName):
       ?>
-      <a href="setting.php" class="badge badge-light border text-dark text-decoration-none d-none d-md-inline-flex align-items-center px-2 py-1"
-         title="المدة / قاعدة البيانات النشطة — اضغط للتبديل"
-         style="font-weight:600; border-radius:999px;">
-        <i class="fas fa-calendar-alt text-primary ml-1"></i>
-        <?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>
-        <span class="text-muted small mr-1">(<?= htmlspecialchars($activeDbName, ENT_QUOTES, 'UTF-8') ?>)</span>
+      <a href="setting.php" class="btn btn-light rounded-circle p-2 shadow-sm border d-none d-md-inline-flex align-items-center justify-content-center"
+         data-bs-toggle="tooltip" data-bs-placement="bottom"
+         title="<?= htmlspecialchars($activePeriodLabel . ' (' . $activeDbName . ')', ENT_QUOTES, 'UTF-8') ?>"
+         aria-label="<?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>">
+        <i class="fas fa-calendar-alt text-primary"></i>
       </a>
       <?php endif; ?>
       
-      <button id="exportDB" class="btn btn-primary rounded-pill px-3 py-1 fw-semibold d-none d-lg-flex">
-        <i class="fas fa-database me-1"></i> حفظ نسخة احتياطية
+      <button id="exportDB" class="btn btn-light rounded-circle p-2 shadow-sm border" data-bs-toggle="tooltip" data-bs-placement="bottom" title="حفظ نسخة احتياطية" aria-label="حفظ نسخة احتياطية">
+        <i class="fas fa-database text-primary"></i>
       </button>
 
       <button id="fullscreenBtn" class="btn btn-light rounded-circle p-2 shadow-sm border" data-bs-toggle="tooltip" data-bs-placement="bottom" title="وضع ملء الشاشة">
@@ -75,7 +78,7 @@
    
 
       <a href="do/do_logout.php" class="logout-link d-flex align-items-center px-2 py-1 rounded-pill" data-bs-toggle="tooltip" data-bs-placement="bottom" title="تسجيل الخروج">
-        <i class="fas fa-sign-out-alt me-1"></i> <span class="d-none d-sm-inline-block"><?=$lang_navlogout?></span>
+        <i class="fas fa-sign-out-alt"></i>
       </a>
     </div>
   </div>

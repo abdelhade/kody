@@ -30,6 +30,20 @@
             <?php
                 $q = isset($_GET['q']) ? $_GET['q'] : '';
                 $isAll = ($q === 'all');
+                $search = isset($_GET['search']) ? trim((string) $_GET['search']) : '';
+                $groupFilter = isset($_GET['group']) ? (int) $_GET['group'] : 0;
+                $filtersOpen = ($search !== '' || $groupFilter > 0);
+
+                $invListParams = ['q' => $isAll ? 'all' : $q];
+                if (!$isAll && isset($_GET['h'])) {
+                    $invListParams['h'] = (string) $_GET['h'];
+                }
+                if ($search !== '') {
+                    $invListParams['search'] = $search;
+                }
+                if ($groupFilter > 0) {
+                    $invListParams['group'] = $groupFilter;
+                }
 
                 if (!$isAll) {
                     // الوضع الأصلي: فاتورة محددة بـ hash
@@ -54,12 +68,50 @@
                         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
                         $limit = 500;
                         $offset = ($page - 1) * $limit;
-                        
-                        $totalRes = $conn->query("SELECT count(*) as cnt FROM myitems WHERE isdeleted = 0");
-                        $totalRow = $totalRes->fetch_assoc();
-                        $totalPages = ceil($totalRow['cnt'] / $limit);
 
-                        $resAll = $conn->query("SELECT * FROM myitems WHERE isdeleted = 0 ORDER BY id DESC LIMIT $limit OFFSET $offset");
+                        $where = 'm.isdeleted = 0';
+                        $types = '';
+                        $params = [];
+                        if ($groupFilter > 0) {
+                            $where .= ' AND m.group1 = ?';
+                            $types .= 'i';
+                            $params[] = $groupFilter;
+                        }
+                        if ($search !== '') {
+                            $like = '%' . $search . '%';
+                            $where .= ' AND (m.iname LIKE ? OR m.barcode LIKE ? OR m.code LIKE ? OR EXISTS (SELECT 1 FROM item_units iu WHERE iu.item_id = m.id AND iu.unit_barcode LIKE ?))';
+                            $types .= 'ssss';
+                            $params[] = $like;
+                            $params[] = $like;
+                            $params[] = $like;
+                            $params[] = $like;
+                        }
+
+                        $bindFilter = function ($stmt) use ($types, &$params) {
+                            if ($types === '') {
+                                return;
+                            }
+                            $stmt->bind_param($types, ...$params);
+                        };
+
+                        $stmtCount = $conn->prepare("SELECT COUNT(*) AS cnt FROM myitems m WHERE $where");
+                        $bindFilter($stmtCount);
+                        $stmtCount->execute();
+                        $totalRow = $stmtCount->get_result()->fetch_assoc();
+                        $totalPages = (int) ceil(((int) $totalRow['cnt']) / $limit);
+                        if ($totalPages > 0 && $page > $totalPages) {
+                            $page = $totalPages;
+                            $offset = ($page - 1) * $limit;
+                        }
+
+                        $stmtAll = $conn->prepare("SELECT m.* FROM myitems m WHERE $where ORDER BY m.id DESC LIMIT ? OFFSET ?");
+                        $listTypes = $types . 'ii';
+                        $listParams = $params;
+                        $listParams[] = $limit;
+                        $listParams[] = $offset;
+                        $stmtAll->bind_param($listTypes, ...$listParams);
+                        $stmtAll->execute();
+                        $resAll = $stmtAll->get_result();
                         while ($r = $resAll->fetch_assoc()) {
                             $rows[] = ['item' => $r, 'qty_in' => 1];
                         }
@@ -68,7 +120,24 @@
                             $itm  = (int)$rowop['item_id'];
                             $res2 = $conn->query("SELECT * FROM myitems WHERE id = $itm");
                             $r2   = $res2->fetch_assoc();
-                            if ($r2) $rows[] = ['item' => $r2, 'qty_in' => $rowop['qty_in']];
+                            if (!$r2) {
+                                continue;
+                            }
+                            if ($groupFilter > 0 && (int) $r2['group1'] !== $groupFilter) {
+                                continue;
+                            }
+                            if ($search !== '') {
+                                $rowunt = $conn->query("SELECT unit_barcode FROM item_units WHERE item_id = $itm LIMIT 1")->fetch_assoc();
+                                $dispCode = !empty($rowunt['unit_barcode']) ? $rowunt['unit_barcode'] : $r2['barcode'];
+                                $hay = $r2['iname'] . ' ' . $r2['barcode'] . ' ' . ($r2['code'] ?? '') . ' ' . $dispCode;
+                                $found = function_exists('mb_stripos')
+                                    ? mb_stripos($hay, $search, 0, 'UTF-8') !== false
+                                    : stripos($hay, $search) !== false;
+                                if (!$found) {
+                                    continue;
+                                }
+                            }
+                            $rows[] = ['item' => $r2, 'qty_in' => $rowop['qty_in']];
                         }
                     }
             ?>
@@ -104,27 +173,40 @@
                     </div>
                 </div>
                 
-                <div style="display: none;" id="filtersPanel">
-                    <div class="card-body border-bottom bg-light">
-                        <div class="row">
+                <div id="filtersPanel"<?= $filtersOpen ? '' : ' style="display: none;"' ?>>
+                    <form method="get" action="inv_operations.php" id="invFiltersForm" class="card-body border-bottom bg-light">
+                        <?php foreach ($invListParams as $paramKey => $paramVal):
+                            if ($paramKey === 'search' || $paramKey === 'group') {
+                                continue;
+                            }
+                        ?>
+                            <input type="hidden" name="<?= htmlspecialchars($paramKey, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string) $paramVal, ENT_QUOTES, 'UTF-8') ?>">
+                        <?php endforeach; ?>
+                        <div class="row align-items-end">
                             <div class="col-md-4 mb-2">
-                                <label class="small text-muted mb-1">بحث</label>
-                                <input type="text" id="inv-search" class="form-control form-control-sm" placeholder="بحث باسم الصنف أو الباركود...">
+                                <label class="small text-muted mb-1" for="inv-search">بحث</label>
+                                <input type="text" name="search" id="inv-search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm" placeholder="بحث باسم الصنف أو الباركود...">
                             </div>
                             <div class="col-md-4 mb-2">
-                                <label class="small text-muted mb-1">المجموعة</label>
-                                <select id="inv-group-filter" class="form-control form-control-sm">
+                                <label class="small text-muted mb-1" for="inv-group-filter">المجموعة</label>
+                                <select name="group" id="inv-group-filter" class="form-control form-control-sm">
                                     <option value="">-- كل المجموعات --</option>
                                     <?php
                                     $resgroup = $conn->query('SELECT * FROM item_group WHERE isdeleted = 0');
                                     while ($rowgroup = $resgroup->fetch_assoc()) {
-                                        echo '<option value="' . (int)$rowgroup['id'] . '">' . htmlspecialchars($rowgroup['gname'], ENT_QUOTES) . '</option>';
+                                        $gid = (int) $rowgroup['id'];
+                                        $sel = ($gid === $groupFilter) ? ' selected' : '';
+                                        echo '<option value="' . $gid . '"' . $sel . '>' . htmlspecialchars($rowgroup['gname'], ENT_QUOTES) . '</option>';
                                     }
                                     ?>
                                 </select>
                             </div>
+                            <div class="col-md-4 mb-2">
+                                <button type="submit" class="btn btn-sm btn-primary">بحث</button>
+                                <a class="btn btn-sm btn-outline-secondary" href="?<?= htmlspecialchars(http_build_query(array_diff_key($invListParams, ['search' => 1, 'group' => 1])), ENT_QUOTES, 'UTF-8') ?>">مسح</a>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
 
                 <div style="display: none;" id="bulkPricingPanel">
@@ -209,7 +291,12 @@
                 <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['iname']) ?>" name="iname[]" class="form-control form-control-sm border-0 bg-transparent"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['last_price'] ?>" name="last_price[]" class="form-control form-control-sm border-0 bg-transparent base-last-price"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['cost_price'] ?>" name="cost_price[]" class="form-control form-control-sm border-0 bg-transparent base-cost-price"></th>
-                <th><input type="number" step="0.01" value="<?= $sell1 ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price"></th>
+                <th>
+                  <input type="number" step="0.01" value="<?= $sell1 ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price">
+                  <input type="hidden" name="plist1[]" value="<?= $sell1 ?>">
+                  <input type="hidden" name="plist2[]" value="<?= $sell2 ?>">
+                  <input type="hidden" name="plist3[]" value="<?= $sell3 ?>">
+                </th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['itmqty'] ?>" class="form-control form-control-sm border-0 bg-transparent text-center"></th>
                 <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]" class="form-control form-control-sm"></th>
             </tr>
@@ -221,18 +308,25 @@
 <?php if ($isAll && isset($totalPages) && $totalPages > 1): ?>
     <nav aria-label="Page navigation" class="mt-3">
       <ul class="pagination justify-content-center flex-wrap">
+        <?php
+          $invPageHref = function ($pageNum) use ($invListParams) {
+              $params = $invListParams;
+              $params['page'] = $pageNum;
+              return '?' . htmlspecialchars(http_build_query($params), ENT_QUOTES, 'UTF-8');
+          };
+        ?>
         <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-          <a class="page-link" href="?q=all&page=<?= $page - 1 ?>">السابق</a>
+          <a class="page-link" href="<?= $invPageHref($page - 1) ?>">السابق</a>
         </li>
         
         <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
             <li class="page-item <?= ($p == $page) ? 'active' : '' ?>">
-              <a class="page-link" href="?q=all&page=<?= $p ?>"><?= $p ?></a>
+              <a class="page-link" href="<?= $invPageHref($p) ?>"><?= $p ?></a>
             </li>
         <?php endfor; ?>
         
         <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-          <a class="page-link" href="?q=all&page=<?= $page + 1 ?>">التالي</a>
+          <a class="page-link" href="<?= $invPageHref($page + 1) ?>">التالي</a>
         </li>
       </ul>
     </nav>
@@ -294,36 +388,22 @@ $(document).ready(function() {
         }
     });
 
-    // Filter Logic
-    function applyFilters() {
-        var textVal = $('#inv-search').val().toLowerCase();
-        var groupVal = $('#inv-group-filter').val();
-        
-        $('#inv-table tbody tr.inv-row').each(function() {
-            var s = $(this).data('search') || '';
-            var g = $(this).data('group') || '';
-            
-            var matchText = s.indexOf(textVal) !== -1;
-            var matchGroup = (groupVal === "" || g.toString() === groupVal);
-            
-            if (matchText && matchGroup) {
-                $(this).show();
-            } else {
-                $(this).hide();
+    $('#invFiltersForm').on('submit', function() {
+        $(this).find('[name="search"], [name="group"]').each(function() {
+            if ($(this).val() === '') {
+                $(this).prop('disabled', true);
             }
         });
-    }
-
-    $('#inv-search').on('input', applyFilters);
-    $('#inv-search, #bp-amount').on('keydown', function(e) {
+    });
+    $('#inv-group-filter').on('change', function() {
+        $('#invFiltersForm').trigger('submit');
+    });
+    $('#bp-amount').on('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            if ($(this).attr('id') === 'bp-amount') {
-                $('#btn-bp-apply').click();
-            }
+            $('#btn-bp-apply').click();
         }
     });
-    $('#inv-group-filter').on('change', applyFilters);
 
     $('#invPriceList').on('change', function() {
         var field = invPriceField();

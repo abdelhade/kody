@@ -151,6 +151,12 @@ $(document).ready(function() {
         updateTotal();
     }, 500);
     
+    // الضغط على سطر الصنف يعرض بياناته أسفل الفاتورة
+    $(document).on('click', '#itmrow tr', function(e) {
+        if ($(e.target).closest('.deleteRow').length) return;
+        showInvoiceLineInfo($(this));
+    });
+
     // تغيير وحدة السطر يحدّث سعر السطر وبيانات الصنف أسفل الفاتورة
     $(document).on('change', '#itmrow select[name="u_val[]"]', function() {
         const $select = $(this);
@@ -196,6 +202,26 @@ $(document).ready(function() {
         }, 200);
     });
 });
+
+function showInvoiceLineInfo($row) {
+    const itemId = $row.find('input[name="itmname[]"]').val();
+    if (!itemId) return;
+
+    $('#itmrow tr').removeClass('item-row-active');
+    $row.addClass('item-row-active');
+
+    const unitVal = $row.find('select[name="u_val[]"]').val();
+    const fallbackName = $.trim($row.find('td').eq(1).find('p').text());
+    if (fallbackName) $('#selectedLineName').text(fallbackName);
+
+    $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
+        if (!data || data.error || typeof window.applyUnitItemInfo !== 'function') return;
+        const unit = (typeof window.findInvoiceUnit === 'function')
+            ? window.findInvoiceUnit(data.units, unitVal)
+            : null;
+        window.applyUnitItemInfo(data, unit || ((data.units && data.units.length) ? data.units[0] : null));
+    });
+}
 
 function setInvoiceRowPrice($row, price) {
     const qty = parseFloat($row.find('.itmqty').val()) || 0;

@@ -13,3 +13,20 @@
     </section>
   </div>
 <?php include('includes/footer.php') ?>
+<?php if (!empty($_SESSION['settings_saved_message'])):
+    $settingsSavedMessage = (string) $_SESSION['settings_saved_message'];
+    unset($_SESSION['settings_saved_message']);
+?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Swal === 'undefined') return;
+    Swal.fire({
+        type: 'success',
+        title: 'تم الحفظ',
+        text: <?= json_encode($settingsSavedMessage, JSON_UNESCAPED_UNICODE) ?>,
+        confirmButtonText: 'حسناً',
+        timer: 4000
+    });
+});
+</script>
+<?php endif; ?>

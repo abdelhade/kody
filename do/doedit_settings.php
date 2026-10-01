@@ -3,6 +3,7 @@ error_log('[Settings] doedit_settings.php accessed - Method: ' . $_SERVER['REQUE
 error_log('[Settings] POST data: ' . print_r($_POST, true));
 
 include('../includes/connect.php');
+require_once __DIR__ . '/../includes/barcode_design.php';
 
 // التحقق من طريقة الطلب
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -47,6 +48,7 @@ $receipt_footer_text = trim($_POST['receipt_footer_text'] ?? '❤ perfect place 
 $receipt_show_client = isset($_POST['receipt_show_client']) ? 1 : 0;
 $receipt_header_text = trim($_POST['receipt_header_text'] ?? '');
 $receipt_notes_text  = trim($_POST['receipt_notes_text']  ?? '');
+$barcode_design_json = kody_barcode_design_json(kody_barcode_design_from_post($_POST));
 
 // رفع اللوجو
 $company_logo = '';
@@ -126,6 +128,8 @@ if ($col_logo_check && $col_logo_check->num_rows === 0) {
     }
 }
 
+kody_barcode_design_ensure_column($conn);
+
 // إضافة أعمدة النصوص الإضافية للفاتورة إذا لم تكن موجودة
 $col_extra_check = $conn->query("SHOW COLUMNS FROM settings LIKE 'receipt_header_text'");
 if ($col_extra_check && $col_extra_check->num_rows === 0) {
@@ -169,13 +173,25 @@ SET company_name = ?,
     receipt_footer_text = ?,
     receipt_show_client = ?,
     receipt_header_text = ?,
-    receipt_notes_text  = ?
+    receipt_notes_text  = ?,
+    barcode_design = ?
     " . ($company_logo !== '' ? ", company_logo = ?" : "") . "
 WHERE 1";
 
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississss",
+        $companyname, $companyadd, $companytel, $edit_pass, $lang,
+        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
+        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+        $showpulse, $emp_commission, $user_commission,
+        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
+        $receipt_footer_text, $receipt_show_client,
+        $receipt_header_text, $receipt_notes_text, $barcode_design_json, $company_logo
+    );
+} else {
     $stmt->bind_param("sssssiiiisiiiiiisiiddiississs",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
@@ -184,26 +200,17 @@ if ($company_logo !== '') {
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
         $receipt_footer_text, $receipt_show_client,
-        $receipt_header_text, $receipt_notes_text, $company_logo
-    );
-} else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississ",
-        $companyname, $companyadd, $companytel, $edit_pass, $lang,
-        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
-        $showrent, $showclinc, $def_pos_client, $def_pos_store,
-        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
-        $showpulse, $emp_commission, $user_commission,
-        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
-        $receipt_footer_text, $receipt_show_client,
-        $receipt_header_text, $receipt_notes_text
+        $receipt_header_text, $receipt_notes_text, $barcode_design_json
     );
 }
 
 if ($stmt->execute()) {
+    $_SESSION['settings_saved_message'] = 'تم حفظ الإعدادات بنجاح';
+    $stmt->close();
     header('location:../dashboard.php');
-} else {
-    echo "Error updating settings: " . $conn->error;
+    exit();
 }
 
+echo "Error updating settings: " . $conn->error;
 $stmt->close();
 ?>

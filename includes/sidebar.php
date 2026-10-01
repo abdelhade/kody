@@ -1396,7 +1396,7 @@
 
 
         <?php if (($role['sid_reports'] ?? 0) == 1) { ?>
-          <li class="nav-item has-treeview">
+          <li class="nav-item has-treeview" id="reports-menu">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-chart-line"></i>
               <p>
@@ -1405,100 +1405,200 @@
               </p>
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-              <li class="nav-item">
-                <a href="summary.php" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p><?= $lang_account_statement ?></p>
+
+              <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-chart-bar"></i>
+                  <p>
+                    <?= $lang_sales_reports ?>
+                    <i class="fas fa-angle-left right"></i>
+                  </p>
                 </a>
+                <ul class="nav nav-treeview" style="display: none;">
+                  <li class="nav-item">
+                    <a href="operations_summary.php?q=sale" class="nav-link">
+                      <i class="nav-icon fas fa-calendar-day"></i>
+                      <p>المبيعات اليومية</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="items_summery.php" class="nav-link">
+                      <i class="nav-icon fas fa-boxes"></i>
+                      <p><?= $lang_sales_items_report ?></p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-group.php" class="nav-link">
+                      <i class="nav-icon fas fa-layer-group"></i>
+                      <p>المبيعات مجموعات</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-hour.php" class="nav-link">
+                      <i class="nav-icon fas fa-clock"></i>
+                      <p>المبيعات بالساعة</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-day.php" class="nav-link">
+                      <i class="nav-icon fas fa-calendar-alt"></i>
+                      <p>المبيعات باليوم</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-week.php" class="nav-link">
+                      <i class="nav-icon fas fa-calendar-week"></i>
+                      <p>المبيعات بالأسبوع</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-month.php" class="nav-link">
+                      <i class="nav-icon fas fa-calendar"></i>
+                      <p>المبيعات بالشهر</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales_returns_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-undo"></i>
+                      <p>مردود المبيعات</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="top_products_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-chart-line"></i>
+                      <p>تحليلي مبيعات</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="stagnant-items-report.php" class="nav-link">
+                      <i class="nav-icon fas fa-exclamation-triangle"></i>
+                      <p>الأصناف الراكدة</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-employee.php" class="nav-link">
+                      <i class="nav-icon fas fa-user-tie"></i>
+                      <p>تحقيق مبيعات الموظفين</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="sales-by-user.php" class="nav-link">
+                      <i class="nav-icon fas fa-users-cog"></i>
+                      <p>تحقيق مبيعات المستخدمين</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="emp_targets_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-bullseye"></i>
+                      <p>تارجيت الموظفين</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="shift_sales_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-cash-register"></i>
+                      <p>مبيعات الشيفت</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="z_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-file-invoice"></i>
+                      <p>تقرير إغلاق الشيفت</p>
+                    </a>
+                  </li>
+                </ul>
               </li>
 
+              <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-shopping-cart"></i>
+                  <p>
+                    تقارير المشتريات
+                    <i class="fas fa-angle-left right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" style="display: none;">
+                  <li class="nav-item">
+                    <a href="operations_summary.php?q=purchase" class="nav-link">
+                      <i class="nav-icon fas fa-calendar-day"></i>
+                      <p>المشتريات اليومية</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="monthly_purchases.php" class="nav-link">
+                      <i class="nav-icon fas fa-calendar"></i>
+                      <p>المشتريات بالشهر</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="purchase_returns_report.php" class="nav-link">
+                      <i class="nav-icon fas fa-undo-alt"></i>
+                      <p><?= $lang_purchase_return ?? 'فاتورة مردود مشتريات' ?></p>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-balance-scale"></i>
+                  <p>
+                    تقارير مالية
+                    <i class="fas fa-angle-left right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" style="display: none;">
+                  <li class="nav-item">
+                    <a href="summary.php" class="nav-link">
+                      <i class="nav-icon fas fa-file-alt"></i>
+                      <p><?= $lang_account_statement ?></p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="balance_sheet.php" class="nav-link">
+                      <i class="nav-icon fas fa-balance-scale"></i>
+                      <p><?= $lang_balance_sheet ?? 'تقرير الميزانية' ?></p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="profit_loss.php" class="nav-link">
+                      <i class="nav-icon fas fa-chart-line"></i>
+                      <p><?= $lang_profit_loss ?? 'الأرباح والخسائر' ?></p>
+                    </a>
+                  </li>
+                </ul>
+              </li>
 
               <li class="nav-item">
                 <a href="reps_cl.php" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                  <i class="nav-icon fas fa-clinic-medical"></i>
                   <p><?= $lang_clinic_reports ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="reports.php?t=rents" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                  <i class="nav-icon fas fa-building"></i>
                   <p><?= $lang_rent_reports ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="visits_stats.php" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-chart-bar"></i> </i>
+                  <i class="nav-icon fas fa-chart-bar"></i>
                   <p>إحصائيات الزيارات</p>
                 </a>
               </li>
 
               <li class="nav-item">
-                <a href="sales-reports.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_sales_reports ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="purchase-reports.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_purchase_invoices_report ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="purchase_returns_report.php" class="nav-link">
-                  <i class="nav-icon fas fa-undo-alt"></i>
-                  <p>
-                    <?= $lang_purchase_return ?? 'فاتورة مردود مشتريات' ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="sales_returns_report.php" class="nav-link">
-                  <i class="nav-icon fas fa-undo"></i>
-                  <p>فاتورة مردود مبيعات</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="items_summery.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_sales_items_report ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <!-- <li class="nav-item">
-                <a href="sales-by-employee.php" class="nav-link">
-                  <i class="nav-icon fas fa-user-tie"></i>
-                  <p>مبيعات الموظفين</p>
-                </a>
-              </li> -->
-
-              <li class="nav-item">
-                <a href="emp_targets_report.php" class="nav-link">
-                  <i class="nav-icon fas fa-bullseye"></i>
-                  <p>تارجيت الموظفين</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
                 <a href="prints.php" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                  <i class="nav-icon fas fa-money-check-alt"></i>
                   <p><?= $lang_sidesalariesreports ?></p>
                 </a>
               </li>
 
             </ul>
-          <?php } ?>
+          </li>
+        <?php } ?>
 
 
 
@@ -1516,6 +1616,20 @@
     $(function () {
       if (window.location.href.includes('acc_report.php')) {
         $('#acc-report').show().addClass('bg-slate-100');
+      }
+
+      var reportPages = [
+        'operations_summary.php', 'items_summery.php', 'sales-by-', 'sales_returns_report.php',
+        'top_products_report.php', 'stagnant-items-report.php', 'emp_targets_report.php',
+        'shift_sales_report.php', 'z_report.php', 'monthly_purchases.php', 'purchase_returns_report.php',
+        'summary.php', 'balance_sheet.php', 'profit_loss.php', 'reps_cl.php', 'reports.php',
+        'visits_stats.php', 'sales-reports.php', 'purchase-reports.php'
+      ];
+      var here = window.location.href;
+      if (reportPages.some(function (page) { return here.indexOf(page) !== -1; })) {
+        var $reports = $('#reports-menu');
+        $reports.addClass('menu-open');
+        $reports.children('.nav-treeview').show();
       }
 
       if (window.location.href.includes('myitems.php')) {

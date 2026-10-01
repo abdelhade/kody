@@ -159,8 +159,11 @@ $licenseOk = !empty($licenseStatus['licensed']);
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="sidebar-tab" data-toggle="pill" href="#tab-sidebar" role="tab" aria-controls="tab-sidebar" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-eye ml-3" style="font-size: 1.1rem; width: 20px;"></i> الشريط الجانبي
                   </a>
-                  <a class="nav-link py-3 px-4 d-flex align-items-center" id="print-tab" data-toggle="pill" href="#tab-print" role="tab" aria-controls="tab-print" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="print-tab" data-toggle="pill" href="#tab-print" role="tab" aria-controls="tab-print" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-print ml-3" style="font-size: 1.1rem; width: 20px;"></i> إعدادات الطباعة
+                  </a>
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="barcode-tab" data-toggle="pill" href="#tab-barcode" role="tab" aria-controls="tab-barcode" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fas fa-barcode ml-3" style="font-size: 1.1rem; width: 20px;"></i> تصميم الباركود
                   </a>
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="license-tab" data-toggle="pill" href="#tab-license" role="tab" aria-controls="tab-license" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-key ml-3" style="font-size: 1.1rem; width: 20px;"></i> الترخيص
@@ -564,6 +567,10 @@ $licenseOk = !empty($licenseStatus['licensed']);
                 </div>
               </div>
 
+              <div class="tab-pane fade" id="tab-barcode" role="tabpanel" aria-labelledby="barcode-tab">
+                <?php include __DIR__ . '/includes/barcode_design_form.php'; ?>
+              </div>
+
               <!-- الترخيص -->
               <div class="tab-pane fade" id="tab-license" role="tabpanel" aria-labelledby="license-tab">
                 <div class="card card-outline <?= $licenseOk ? 'card-success' : 'card-danger' ?> shadow-sm border-0" style="border-radius: 12px;">
@@ -683,7 +690,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
               <div class="card-body d-flex flex-wrap align-items-center justify-content-between py-3">
                 <div class="mb-2 mb-md-0 text-right">
                   <strong class="text-dark"><i class="fas fa-save ml-2 text-success"></i> حفظ جميع التغييرات</strong>
-                  <span class="text-muted d-block small mt-1">بعد حفظ التعديلات سيتم توجيهك إلى لوحة التحكم الرئيسية.</span>
+                  <span class="text-muted d-block small mt-1">بعد الحفظ تظهر رسالة تأكيد، ثم يتم توجيهك إلى لوحة التحكم الرئيسية.</span>
                 </div>
                 <button type="submit" class="btn btn-success btn-lg px-5 font-weight-bold" style="border-radius: 8px;">
                   <i class="fas fa-check ml-2"></i> تأكيد الحفظ

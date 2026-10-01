@@ -243,6 +243,9 @@ window.formatInvoiceMoney = function(n) {
 // أسعار بيانات الصنف أسفل الفاتورة حسب الوحدة المختارة
 window.applyUnitItemInfo = function(data, unit) {
     if (!data) return;
+    var label = data.iname || '';
+    if (data.barcode) label += (label ? ' — ' : '') + data.barcode;
+    $('#selectedLineName').text(label);
     var factor = unit ? (parseFloat(unit.unit_value) || 1) : 1;
     var sell = unit ? parseFloat(unit.uprice1) : NaN;
     if (!(sell > 0)) sell = (parseFloat(data.price1) || 0) * factor;

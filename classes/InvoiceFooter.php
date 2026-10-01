@@ -43,14 +43,20 @@ class InvoiceFooter extends InvoiceElementBase
             <!-- حقل نوع الفاتورة المخفي -->
             <input type="text" name="pro_tybe" hidden value="<?php echo $this->invoiceType; ?>">
             
-            <!-- معلومات الصنف -->
-            <div class="col-md-3">
-                <?php $this->renderItemInfo(); ?>
-            </div>
-            
-            <!-- معلومات التكلفة -->
-            <div class="col-md-3">
-                <?php $this->renderCostInfo(); ?>
+            <!-- معلومات الصنف والتكلفة -->
+            <div class="col-md-6" id="itemDataCols">
+                <label for="showItemDataCheck" class="mb-1 d-inline-flex align-items-center px-2 border rounded bg-white" style="gap:6px; cursor:pointer; font-weight:600;">
+                    <input type="checkbox" id="showItemDataCheck">
+                    <span>بيانات الصنف</span>
+                </label>
+                <div id="itemDataPanel" class="row">
+                    <div class="col-md-6">
+                        <?php $this->renderItemInfo(); ?>
+                    </div>
+                    <div class="col-md-6">
+                        <?php $this->renderCostInfo(); ?>
+                    </div>
+                </div>
             </div>
             
             <!-- إجماليات الفاتورة -->
@@ -77,6 +83,33 @@ class InvoiceFooter extends InvoiceElementBase
                 <div class="btn">إظهار الفواتير السابقة</div>
             </div>
         </div>
+        <script>
+        (function() {
+            var COOKIE = 'invoice_show_item_data';
+            function readCookie() {
+                var m = document.cookie.match(/(?:^|; )invoice_show_item_data=([^;]*)/);
+                return m ? decodeURIComponent(m[1]) : '1';
+            }
+            function writeCookie(value) {
+                var exp = new Date();
+                exp.setFullYear(exp.getFullYear() + 1);
+                document.cookie = COOKIE + '=' + encodeURIComponent(value) + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+            }
+            function applyItemData(on) {
+                var panel = document.getElementById('itemDataPanel');
+                if (panel) panel.style.display = on ? '' : 'none';
+            }
+            var cb = document.getElementById('showItemDataCheck');
+            if (!cb) return;
+            var on = readCookie() !== '0';
+            cb.checked = on;
+            applyItemData(on);
+            cb.addEventListener('change', function() {
+                writeCookie(cb.checked ? '1' : '0');
+                applyItemData(cb.checked);
+            });
+        })();
+        </script>
         <?php
         return ob_get_clean();
     }
@@ -87,6 +120,13 @@ class InvoiceFooter extends InvoiceElementBase
     private function renderItemInfo()
     {
         ?>
+        <div class="row">
+            <div class="col bg-light">الصنف</div>
+            <div class="col border border-light">
+                <h6 id="selectedLineName" class="mb-0" style="font-weight:700; color:#1e293b;"></h6>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col bg-light">الكمية</div>
             <div class="col border border-light">
@@ -125,14 +165,14 @@ class InvoiceFooter extends InvoiceElementBase
         <div class="row">
             <div class="col bg-light">سعر الشراء المتوسط</div>
             <div class="col border border-light" id="cost_price_div">
-                <h6 id="cost_price" class="text-white hover:bg-slate-400"></h6>
+                <h6 id="cost_price" class="mb-0" style="color:#1e293b;"></h6>
             </div>
         </div>
         
         <div class="row">
             <div class="col bg-light">سعر الشراء الأخير</div>
             <div class="col border border-light">
-                <h6 id="last_price" class="text-white hover:bg-slate-400"></h6>
+                <h6 id="last_price" class="mb-0" style="color:#1e293b;"></h6>
             </div>
         </div>
         <?php
