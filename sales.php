@@ -288,20 +288,13 @@ document.getElementById('showKeyboardHelp')?.addEventListener('click', function(
 </style>
 
 <?php 
-include('includes/footer.php');
-
-// قياس الأداء (في وضع التطوير فقط)
-if (defined('DEBUG_MODE') && DEBUG_MODE) {
-    $page_end_time = microtime(true);
-    $page_load_time = ($page_end_time - $page_start_time) * 1000;
-    error_log("Sales page load time: " . number_format($page_load_time, 2) . " ms");
-}
+$extra_footer_scripts = '';
 
 if (isset($_GET['success']) && $_GET['success'] == '1') {
     $saved_message = $_SESSION['success_message'] ?? 'تم الحفظ بنجاح';
     unset($_SESSION['success_message']);
     $new_q = $_GET['q'] ?? 'sale';
-    echo "<script>
+    $extra_footer_scripts .= "<script>
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof Swal === 'undefined') return;
         Swal.fire({
@@ -320,20 +313,20 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
     </script>";
 }
 
-// إنهاء Output Buffering وإرسال المحتوى
+$salesJsVer = filemtime('js/sales.js');
+$sales0JsVer = filemtime('js/sales0.js');
+$extra_footer_scripts .= '
+<script src="js/sales.js?v=' . $salesJsVer . '"></script>
+<script src="js/sales0.js?v=' . $sales0JsVer . '"></script>
+<script src="js/keyboard_navigation.js"></script>
+';
+
+include('includes/footer.php');
+
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    $page_end_time = microtime(true);
+    $page_load_time = ($page_end_time - $page_start_time) * 1000;
+    error_log("Sales page load time: " . number_format($page_load_time, 2) . " ms");
+}
+
 ob_end_flush();
-?>
-
-<!-- Preload JavaScript Files -->
-<link rel="preload" href="js/sales.js?v=<?php echo filemtime('js/sales.js'); ?>" as="script">
-<link rel="preload" href="js/sales0.js?v=<?php echo filemtime('js/sales0.js'); ?>" as="script">
-<link rel="preload" href="js/keyboard_navigation.js" as="script">
-
-<!-- Load JavaScript Async with defer -->
-<script src="js/sales.js?v=<?php echo filemtime('js/sales.js'); ?>" defer></script>
-<script src="js/sales0.js?v=<?php echo filemtime('js/sales0.js'); ?>" defer></script>
-<script src="js/keyboard_navigation.js" defer></script>
-
-<!-- Prefetch للصفحات المحتملة -->
-<link rel="prefetch" href="do/doadd_invoice.php">
-<link rel="prefetch" href="do/doedit_invoice.php">

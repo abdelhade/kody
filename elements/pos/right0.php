@@ -92,7 +92,7 @@
                     while ($rowclient = $resclient->fetch_assoc()) { ?>
                         <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo " selected ";} ?>
                                 <?php if(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){echo " selected ";} ?>
-                                value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                                value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $rowclient['aname'] ?></option>
                     <?php } ?>
                 </select>
             </div>

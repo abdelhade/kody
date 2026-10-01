@@ -15,6 +15,24 @@ $quantities = $_POST['qty'] ?? [];
 $plist1 = $_POST['plist1'] ?? [];
 $plist2 = $_POST['plist2'] ?? [];
 $plist3 = $_POST['plist3'] ?? [];
+$printSource = (string) ($_POST['print_price_source'] ?? 'price1');
+if (!in_array($printSource, ['price1', 'price2', 'price3'], true)) {
+    $printSource = 'price1';
+}
+
+$pickPrinted = function ($index) use ($printSource, $plist1, $plist2, $plist3, $prices) {
+    if ($printSource === 'price2') {
+        $picked = $plist2[$index] ?? '';
+    } elseif ($printSource === 'price3') {
+        $picked = $plist3[$index] ?? '';
+    } else {
+        $picked = $plist1[$index] ?? '';
+    }
+    if ($picked === '' || $picked === null) {
+        $picked = $prices[$index] ?? '';
+    }
+    return $picked;
+};
 
 if (!is_array($codes)) {
     exit;
@@ -28,7 +46,7 @@ if (empty($design['enabled'])) {
     foreach ($codes as $index => $code) {
         $name = htmlspecialchars((string) ($names[$index] ?? ''), ENT_QUOTES, 'UTF-8');
         $barcode = htmlspecialchars((string) ($barcodes[$index] ?? ''), ENT_QUOTES, 'UTF-8');
-        $price = htmlspecialchars((string) ($prices[$index] ?? ''), ENT_QUOTES, 'UTF-8');
+        $price = htmlspecialchars((string) $pickPrinted($index), ENT_QUOTES, 'UTF-8');
         $quantity = (int) ($quantities[$index] ?? 0);
         for ($i = 0; $i < $quantity; $i++) {
             echo "<center>";
@@ -112,7 +130,7 @@ foreach ($codes as $index => $itemCodeRaw) {
         continue;
     }
     $priceBag = [
-        'printed' => $prices[$index] ?? '',
+        'printed' => $pickPrinted($index),
         'price1' => $plist1[$index] ?? '',
         'price2' => $plist2[$index] ?? '',
         'price3' => $plist3[$index] ?? '',

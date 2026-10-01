@@ -125,7 +125,7 @@ if (!isset($action_url)) {
                                     }
                                     $first_client = false;
                                 ?>
-                                <option <?= $selected ?> value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                                <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $rowclient['aname'] ?></option>
                                 <?php } ?>
                             </select>
                         </div>

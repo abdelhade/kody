@@ -15,6 +15,10 @@ $aname       = isset($_POST['aname'])       ? trim($_POST['aname'])       : '';
 $phone       = isset($_POST['phone'])       ? trim($_POST['phone'])       : '';
 $address     = isset($_POST['address'])     ? trim($_POST['address'])     : '';
 $info        = isset($_POST['info'])        ? trim($_POST['info'])        : '';
+$price_list  = 1;
+if ($parent_code === '122') {
+    $price_list = max(1, min(3, (int) ($_POST['price_list'] ?? $_POST['client_price_list'] ?? 1)));
+}
 
 if (empty($parent_code) || empty($aname)) {
     echo json_encode(['success' => false, 'error' => 'الاسم مطلوب']);
@@ -52,13 +56,13 @@ try {
 
     // إدخال الحساب
     $stmt = $conn->prepare(
-        "INSERT INTO acc_head (code, aname, parent_id, is_basic, info, phone, address)
-         VALUES (?, ?, ?, 0, ?, ?, ?)"
+        "INSERT INTO acc_head (code, aname, parent_id, is_basic, info, phone, address, price_list)
+         VALUES (?, ?, ?, 0, ?, ?, ?, ?)"
     );
     if (!$stmt) {
         throw new Exception('prepare failed: ' . $conn->error);
     }
-    $stmt->bind_param('ssisss', $new_code, $aname, $parent_id, $info, $phone, $address);
+    $stmt->bind_param('ssisssi', $new_code, $aname, $parent_id, $info, $phone, $address, $price_list);
     if (!$stmt->execute()) {
         throw new Exception('فشل حفظ الحساب: ' . $stmt->error);
     }
@@ -70,8 +74,9 @@ try {
     echo json_encode([
         'success' => true,
         'id'      => $account_id,
-        'aname'   => $aname,
-        'code'    => $new_code
+        'aname'      => $aname,
+        'code'       => $new_code,
+        'price_list' => ($parent_code === '122') ? $price_list : null
     ]);
 
 } catch (Exception $e) {

@@ -65,6 +65,28 @@ $rowacc = $conn->query("SELECT * FROM acc_head where id = $id")->fetch_assoc();
                 </div>
             </div>
 
+            <?php
+            $isClientAccount = isset($rowacc['code'])
+                && strpos((string) $rowacc['code'], '122') === 0
+                && (int) $rowacc['is_basic'] === 0;
+            if ($isClientAccount) {
+                if (!class_exists('InvoiceProcessor')) {
+                    require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                }
+                $clientPriceList = max(1, (int) ($rowacc['price_list'] ?? 1));
+            ?>
+            <div class="row">
+                <div class="col col-4">
+                    <div class="form-group">
+                        <label for="price_list">الفئة السعرية</label>
+                        <select class="form-control" name="price_list" id="price_list">
+                            <?php InvoiceProcessor::echoPriceListOptions($conn, $clientPriceList); ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
+
             <div class="row">
                 <div class="col col-4">
                 <div class="form-group">

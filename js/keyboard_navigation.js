@@ -165,7 +165,12 @@
         if (_isHandling) return;
 
         const activeElement = document.activeElement;
+        if (!activeElement) return;
         const tagName = activeElement.tagName;
+
+        // الكتابة والأسهم جوه قائمة البحث (مورد / عميل / مخزن)
+        if (activeElement.classList && activeElement.classList.contains('select2-search__field')) return;
+        if (document.querySelector('.select2-container--open')) return;
         
         // تجاهل إذا كان في textarea
         if (tagName === 'TEXTAREA') return;

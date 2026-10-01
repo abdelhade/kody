@@ -37,7 +37,7 @@
                              ?>
 
                             
-                             value="<?= $rowclients['id'] ?>"><?= $rowclients['aname'] ?></option>
+                             value="<?= $rowclients['id'] ?>"<?php if (in_array((string) $pro_tybe, ['3', '11', '13'], true)) { echo ' data-price-list="' . max(1, (int) ($rowclients['price_list'] ?? 1)) . '"'; } ?>><?= $rowclients['aname'] ?></option>
                             <?php } ?>
                         </select>
       </div>
@@ -173,6 +173,17 @@
             <label class="small">ملاحظات</label>
             <input type="text" name="info" class="form-control form-control-sm" placeholder="اختياري">
           </div>
+          <div class="form-group mb-0">
+            <label class="small">الفئة السعرية</label>
+            <select name="client_price_list" class="form-control form-control-sm">
+              <?php
+              if (!class_exists('InvoiceProcessor')) {
+                  require_once __DIR__ . '/../../classes/InvoiceProcessor.php';
+              }
+              InvoiceProcessor::echoPriceListOptions($conn, 1);
+              ?>
+            </select>
+          </div>
         </form>
       </div>
       <div class="modal-footer">
@@ -211,6 +222,9 @@
           // إضافة الخيار للقائمة واختياره
           const select = document.getElementById(selectId);
           const opt = new Option(res.aname, res.id, true, true);
+          if (res.price_list) {
+            opt.setAttribute('data-price-list', String(res.price_list));
+          }
           select.appendChild(opt);
           $(select).trigger('change');
           form.reset();

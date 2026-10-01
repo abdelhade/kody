@@ -3,6 +3,7 @@
 <?php include('includes/sidebar.php') ?>
 
 <style>
+    .price-col-active { background: #fff7ed; }
     #msg{
         display: none;
         position: absolute;
@@ -147,20 +148,32 @@
                         require_once __DIR__ . '/classes/InvoiceProcessor.php';
                     }
                     $opPriceLists = InvoiceProcessor::priceLists($conn);
+                    $invPriceCols = [];
+                    foreach ($opPriceLists as $plist) {
+                        $plistId = (int) $plist['id'];
+                        if ($plistId >= 1 && $plistId <= 3) {
+                            $invPriceCols[$plistId] = (string) $plist['pname'];
+                        }
+                    }
+                    if (!$invPriceCols) {
+                        $invPriceCols = [1 => 'سعر 1', 2 => 'سعر 2', 3 => 'سعر 3'];
+                    }
+                    ksort($invPriceCols);
                 ?>
                 <div class="card-header d-flex align-items-center gap-3 flex-wrap justify-content-between">
                     <div class="d-flex align-items-center gap-3 flex-wrap">
                         <h3 class="mb-0"><?= $isAll ? 'كل الأصناف' : 'العمليات علي الفاتورة' ?></h3>
-                        <div>
+                        <div style="min-width: 160px;">
+                            <label for="printPriceSource" class="small text-muted mb-0 d-block">سعر الطباعة</label>
+                            <select id="printPriceSource" class="form-control form-control-sm mb-2">
+                                <?php foreach ($invPriceCols as $plistId => $plistName): ?>
+                                    <option value="price<?= (int) $plistId ?>"><?= htmlspecialchars($plistName, ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
                             <label for="invPriceList" class="small text-muted mb-0 d-block">الفئة السعرية</label>
                             <select id="invPriceList" class="form-control form-control-sm">
-                                <?php foreach ($opPriceLists as $plist):
-                                    $plistId = (int) $plist['id'];
-                                    if ($plistId < 1 || $plistId > 3) {
-                                        continue;
-                                    }
-                                ?>
-                                    <option value="<?= $plistId ?>"><?= htmlspecialchars($plist['pname'], ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php foreach ($invPriceCols as $plistId => $plistName): ?>
+                                    <option value="<?= (int) $plistId ?>"><?= htmlspecialchars($plistName, ENT_QUOTES, 'UTF-8') ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -254,7 +267,8 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <form action="print/br2538.php" method="post" target="_blank">
+                    <form action="print/br2538.php" method="post" target="_blank" id="barcodePrintForm">
+    <input type="hidden" name="print_price_source" id="printPriceSourceField" value="price1">
     <div class="mb-2"><button type="submit" class="btn btn-success btn-sm">طباعة الباركود</button></div>
     <table class="font-thin table table-hover table-bordered table-sm" id="inv-table">
         <thead>
@@ -265,7 +279,13 @@
                 <th>اسم الصنف</th>
                 <th>سعر الشراء الاخير</th>
                 <th>سعر الشراء المتوسط</th>
-                <th><span id="sellPriceTitle">قطاعي</span> <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span></th>
+                <?php foreach ($invPriceCols as $plistId => $plistName): ?>
+                <th class="price-head" data-field="price<?= (int) $plistId ?>">
+                    <?= htmlspecialchars($plistName, ENT_QUOTES, 'UTF-8') ?>
+                    <span class="text-slate-500 font-thin text-sm">(قابل للتغيير)</span>
+                    <span class="print-mark text-success small" style="display:none">للطباعة</span>
+                </th>
+                <?php endforeach; ?>
                 <th>الكمية</th>
                 <th>العدد المطلوب طباعته</th>
             </tr>
@@ -291,13 +311,22 @@
                 <th><input readonly type="text" value="<?= htmlspecialchars($rowop2['iname']) ?>" name="iname[]" class="form-control form-control-sm border-0 bg-transparent"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['last_price'] ?>" name="last_price[]" class="form-control form-control-sm border-0 bg-transparent base-last-price"></th>
                 <th><input readonly type="text" value="<?= (float)$rowop2['cost_price'] ?>" name="cost_price[]" class="form-control form-control-sm border-0 bg-transparent base-cost-price"></th>
+                <?php
+                  $sellVals = ['price1' => $sell1, 'price2' => $sell2, 'price3' => $sell3];
+                  foreach ($invPriceCols as $plistId => $plistName):
+                    $field = 'price' . (int) $plistId;
+                ?>
                 <th>
-                  <input type="number" step="0.01" value="<?= $sell1 ?>" name="price[]" onchange="updatePrice(<?= $iid ?>, this.value)" class="form-control form-control-sm price target-price">
-                  <input type="hidden" name="plist1[]" value="<?= $sell1 ?>">
-                  <input type="hidden" name="plist2[]" value="<?= $sell2 ?>">
-                  <input type="hidden" name="plist3[]" value="<?= $sell3 ?>">
+                  <input type="number" step="0.01" value="<?= $sellVals[$field] ?>" data-field="<?= $field ?>" onchange="updatePrice(<?= $iid ?>, this)" class="form-control form-control-sm price price-col">
                 </th>
-                <th><input readonly type="text" value="<?= (float)$rowop2['itmqty'] ?>" class="form-control form-control-sm border-0 bg-transparent text-center"></th>
+                <?php endforeach; ?>
+                <th>
+                  <input readonly type="text" value="<?= (float)$rowop2['itmqty'] ?>" class="form-control form-control-sm border-0 bg-transparent text-center">
+                  <input type="hidden" name="price[]" class="print-price" value="<?= $sell1 ?>">
+                  <input type="hidden" name="plist1[]" class="plist-price1" value="<?= $sell1 ?>">
+                  <input type="hidden" name="plist2[]" class="plist-price2" value="<?= $sell2 ?>">
+                  <input type="hidden" name="plist3[]" class="plist-price3" value="<?= $sell3 ?>">
+                </th>
                 <th><input type="number" value="<?= $isAll ? 0 : (int)$row['qty_in'] ?>" name="qty[]" class="form-control form-control-sm"></th>
             </tr>
             <?php endforeach; ?>
@@ -354,9 +383,12 @@
         return 'price1';
     }
 
-    function updatePrice(itemId, newPrice) {
-    var field = invPriceField();
-    $('#item-' + itemId).data(field, parseFloat(newPrice) || 0);
+    function updatePrice(itemId, input) {
+    var field = $(input).data('field') || invPriceField();
+    var newPrice = $(input).val();
+    var row = $('#item-' + itemId);
+    row.data(field, parseFloat(newPrice) || 0);
+    row.find('.plist-' + field).val(newPrice);
     $.ajax({
         url: 'js/ajax/update_price.php',
         method: 'POST',
@@ -378,15 +410,51 @@ $(document).ready(function() {
         $(target).slideToggle();
     });
 
-    $('input[name^="price"]').on('keydown', function(event) {
+    function syncPrintMarks() {
+        var src = $('#printPriceSource').val() || 'price1';
+        $('#printPriceSourceField').val(src);
+        $('#inv-table .print-mark').hide();
+        $('#inv-table .price-head[data-field="' + src + '"] .print-mark').show();
+    }
+
+    function syncRowPrices($row) {
+        $row.find('.price-col').each(function() {
+            var field = $(this).data('field');
+            var value = $(this).val();
+            $row.find('.plist-' + field).val(value);
+            $row.data(field, parseFloat(value) || 0);
+        });
+        var src = $('#printPriceSource').val() || 'price1';
+        $row.find('.print-price').val($row.find('.price-col[data-field="' + src + '"]').val());
+    }
+
+    function markActivePrice() {
+        var field = invPriceField();
+        $('#inv-table .price-col, #inv-table .price-head').removeClass('price-col-active');
+        $('#inv-table .price-col[data-field="' + field + '"], #inv-table .price-head[data-field="' + field + '"]').addClass('price-col-active');
+    }
+
+    $('.price-col').on('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
+            var field = $(this).data('field');
             var nextRow = $(this).closest('tr').next('tr');
             if (nextRow.length) {
-                nextRow.find('input[name^="price"]').focus();
+                nextRow.find('.price-col[data-field="' + field + '"]').focus();
             }
         }
     });
+
+    $('#printPriceSource').on('change', syncPrintMarks);
+    $('#barcodePrintForm').on('submit', function() {
+        syncPrintMarks();
+        $('#inv-table tbody tr.inv-row').each(function() {
+            syncRowPrices($(this));
+        });
+    });
+    syncPrintMarks();
+    markActivePrice();
+    $('#bp-target-price option').text($('#invPriceList option:selected').text());
 
     $('#invFiltersForm').on('submit', function() {
         $(this).find('[name="search"], [name="group"]').each(function() {
@@ -406,14 +474,9 @@ $(document).ready(function() {
     });
 
     $('#invPriceList').on('change', function() {
-        var field = invPriceField();
         var label = $(this).find('option:selected').text();
-        $('#sellPriceTitle').text(label);
         $('#bp-target-price option').text(label);
-        $('#inv-table tbody tr.inv-row').each(function() {
-            var value = parseFloat($(this).data(field)) || 0;
-            $(this).find('.target-price').val(value);
-        });
+        markActivePrice();
     });
 
     // Bulk Pricing Logic
@@ -428,10 +491,8 @@ $(document).ready(function() {
                 baseVal = parseFloat($(this).find('.base-last-price').val()) || 0;
             } else if (basePriceField === 'cost_price') {
                 baseVal = parseFloat($(this).find('.base-cost-price').val()) || 0;
-            } else if (basePriceField === invPriceField()) {
-                baseVal = parseFloat($(this).find('.target-price').val()) || 0;
             } else {
-                baseVal = parseFloat($(this).data(basePriceField)) || 0;
+                baseVal = parseFloat($(this).find('.price-col[data-field="' + basePriceField + '"]').val()) || 0;
             }
             var newPrice = baseVal;
             
@@ -441,8 +502,10 @@ $(document).ready(function() {
                 newPrice = baseVal + amount;
             }
             
-            $(this).find('.target-price').val(newPrice.toFixed(2));
-            $(this).data(invPriceField(), newPrice);
+            var targetField = invPriceField();
+            $(this).find('.price-col[data-field="' + targetField + '"]').val(newPrice.toFixed(2));
+            $(this).find('.plist-' + targetField).val(newPrice.toFixed(2));
+            $(this).data(targetField, newPrice);
         });
         
         $('#msg').html("تم تطبيق الحسابات على الجدول، اضغط تأكيد للحفظ").show();
@@ -456,8 +519,9 @@ $(document).ready(function() {
         var itemsToUpdate = [];
         $('#inv-table tbody tr.inv-row:visible').each(function() {
             var id = $(this).data('item-id');
-            var price = parseFloat($(this).find('.target-price').val()) || 0;
+            var price = parseFloat($(this).find('.price-col[data-field="' + field + '"]').val()) || 0;
             $(this).data(field, price);
+            $(this).find('.plist-' + field).val(price);
             itemsToUpdate.push({ id: id, price: price });
         });
 

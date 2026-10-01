@@ -908,6 +908,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = $('#ajax_client_name').val().trim();
         const phone = $('#ajax_client_phone').val().trim();
         const address = $('#ajax_client_address').val().trim();
+        const priceList = $('#ajax_client_price_list').val() || '1';
 
         if (name === '') {
             Swal.fire({
@@ -925,7 +926,8 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 name: name,
                 phone: phone,
-                address: address
+                address: address,
+                price_list: priceList
             },
             dataType: 'json',
             success: function(response) {
@@ -945,7 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         value: response.id,
                         text: displayText,
                         selected: true
-                    }).attr('data-phone', displayPhone);
+                    }).attr('data-phone', displayPhone).attr('data-price-list', response.price_list || priceList);
                     
                     $('#clientSelect').append($newOption).trigger('change');
 

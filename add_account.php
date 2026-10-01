@@ -119,6 +119,23 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
 
 
             
+            <?php if ($parent == '122') {
+                if (!class_exists('InvoiceProcessor')) {
+                    require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                }
+            ?>
+            <div class="row">
+                <div class="col col-4">
+                    <div class="form-group">
+                        <label for="price_list">الفئة السعرية</label>
+                        <select class="form-control font-bold" name="price_list" id="price_list">
+                            <?php InvoiceProcessor::echoPriceListOptions($conn, 1); ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
+
             <div class="row">
                 <div class="col col-4">
                     

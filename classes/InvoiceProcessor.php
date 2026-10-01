@@ -1197,10 +1197,8 @@ class InvoiceProcessor {
         }
     }
 
-    public static function echoPriceListSelect(mysqli $conn, int $selected = 1, string $class = 'form-control form-control-sm', string $style = ''): void
+    public static function echoPriceListOptions(mysqli $conn, int $selected = 1): void
     {
-        $styleAttr = $style !== '' ? ' style="' . htmlspecialchars($style, ENT_QUOTES, 'UTF-8') . '"' : '';
-        echo '<select name="price_list" id="invoicePriceList" class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '"' . $styleAttr . '>';
         foreach (self::priceLists($conn) as $plist) {
             $id = (int) ($plist['id'] ?? 0);
             if ($id < 1 || $id > 3) {
@@ -1209,6 +1207,13 @@ class InvoiceProcessor {
             $sel = $id === $selected ? ' selected' : '';
             echo '<option value="' . $id . '"' . $sel . '>' . htmlspecialchars((string) $plist['pname'], ENT_QUOTES, 'UTF-8') . '</option>';
         }
+    }
+
+    public static function echoPriceListSelect(mysqli $conn, int $selected = 1, string $class = 'form-control form-control-sm', string $style = ''): void
+    {
+        $styleAttr = $style !== '' ? ' style="' . htmlspecialchars($style, ENT_QUOTES, 'UTF-8') . '"' : '';
+        echo '<select name="price_list" id="invoicePriceList" class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '"' . $styleAttr . '>';
+        self::echoPriceListOptions($conn, $selected);
         echo '</select>';
     }
 

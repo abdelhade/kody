@@ -14,6 +14,7 @@ $parent_id = (int)($_POST['parent_id'] ?? 0);
 $phone = trim($_POST['phone'] ?? '');
 $address = trim($_POST['address'] ?? '');
 $q = (int)($_POST['q'] ?? 0);
+$price_list = ($q === 122) ? max(1, min(3, (int)($_POST['price_list'] ?? 1))) : 1;
 
 // التحقق من صحة البيانات المطلوبة
 if (empty($code) || empty($aname)) {
@@ -73,8 +74,8 @@ if (isset($_POST['is_fund'])) {
 
 
 // إدراج الحساب الجديد باستخدام prepared statement
-$insert_stmt = $conn->prepare("INSERT INTO acc_head (code, aname, is_basic, rentable, is_fund, parent_id, is_stock, secret, kind, phone, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$insert_stmt->bind_param("ssiiiiiiiss", $code, $aname, $is_basic, $rentable, $is_fund, $parent_id, $is_stock, $secret, $kind, $phone, $address);
+$insert_stmt = $conn->prepare("INSERT INTO acc_head (code, aname, is_basic, rentable, is_fund, parent_id, is_stock, secret, kind, phone, address, price_list) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$insert_stmt->bind_param("ssiiiiiiiissi", $code, $aname, $is_basic, $rentable, $is_fund, $parent_id, $is_stock, $secret, $kind, $phone, $address, $price_list);
 
 if ($insert_stmt->execute()) {
     // تسجيل العملية في الجدول القديم

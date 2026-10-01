@@ -1,3 +1,31 @@
+function applyClientPriceList(selectEl) {
+    if (!selectEl || !selectEl.options || selectEl.selectedIndex < 0) return;
+    var opt = selectEl.options[selectEl.selectedIndex];
+    if (!opt) return;
+    var list = parseInt(opt.getAttribute('data-price-list'), 10);
+    if (!list) return;
+    var priceSel = document.getElementById('invoicePriceList');
+    if (!priceSel || String(priceSel.value) === String(list)) return;
+    priceSel.value = String(list);
+    if (window.jQuery) {
+        window.jQuery(priceSel).trigger('change');
+    }
+}
+
+if (window.jQuery) {
+    window.jQuery(document).on('change', 'select[name="acc2_id"]', function() {
+        if (this.id === 'mySelectEmp') return;
+        applyClientPriceList(this);
+    });
+    window.jQuery(function() {
+        if (/[?&](e|edit|edit_id)=/.test(location.search)) return;
+        var sel = document.querySelector('select[name="acc2_id"]');
+        if (sel && sel.id !== 'mySelectEmp') {
+            applyClientPriceList(sel);
+        }
+    });
+}
+
 function selectedInvoicePriceList() {
     var el = document.getElementById('invoicePriceList');
     return el ? (parseInt(el.value, 10) || 1) : 1;

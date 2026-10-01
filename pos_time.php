@@ -115,7 +115,7 @@
                 <?php
                 $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0;");
                 while ($rowclient = $resclient->fetch_assoc()) { ?>
-                <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo "selected";} ?> value="<?= $rowclient['id'] ?>"><?= $rowclient['aname'] ?></option>
+                <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo "selected";} ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $rowclient['aname'] ?></option>
                 <?php } ?>
             </select>
 

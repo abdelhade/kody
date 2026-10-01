@@ -3,19 +3,7 @@
 <?php include('includes/sidebar.php'); ?>
 
 <?php
-/**
- * نصوص تعريفية مؤقتة.
- * تُستبدل بالبيانات الحقيقية عند توفرها.
- * الاسم والهاتف والعنوان والشعار تُقرأ من إعدادات النظام إن كانت محفوظة.
- */
-$companyName = trim((string) ($rowstg['company_name'] ?? ''));
-$companyTel = trim((string) ($rowstg['company_tel'] ?? ''));
-$companyAdd = trim((string) ($rowstg['company_add'] ?? ''));
-$companyEmail = trim((string) ($rowstg['company_email'] ?? ''));
-
-if ($companyName === '') {
-    $companyName = 'اسم الشركة';
-}
+$companyName = 'KODY POS';
 
 $currentLogo = $rowstg['company_logo'] ?? '';
 $logoSrc = '';
@@ -26,28 +14,27 @@ if ($currentLogo !== '' && is_file(__DIR__ . '/assets/logo/' . $currentLogo)) {
 }
 
 $about = [
-    'tagline' => 'شريكك في إدارة الأعمال اليومية بوضوح وسهولة',
-    'intro' => 'نص تعريفي مؤقت عن الشركة. يُستبدل لاحقاً بنبذة حقيقية توضّح نشاط الشركة، وسنة التأسيس، والمجال الذي تعمل فيه، وما يميّزها عن غيرها.',
-    'story' => 'هنا تُكتب قصة الشركة باختصار: كيف بدأت، ولمن تقدّم خدماتها، وما الذي يسعى فريق العمل إلى تحقيقه مع العملاء كل يوم. هذا النص مؤقت إلى حين إرسال البيانات الحقيقية.',
-    'vision' => 'أن نكون الخيار الأول لعملائنا من خلال خدمة دقيقة، وتعامل واضح، ونتائج يمكن الاعتماد عليها.',
-    'mission' => 'تقديم منتجات وخدمات بجودة ثابتة، مع متابعة احتياجات العميل والالتزام بالمواعيد المتفق عليها.',
+    'tagline' => 'إحدى إصدارات URCA_EG',
+    'intro' => 'KODY POS إحدى إصدارات URCA_EG، ونظام نقاط بيع يقدّم للعميل خدمة واضحة وسعراً مناسباً وجودة يمكن الاعتماد عليها في الوقت نفسه.',
+    'story' => 'بدأت الشركة لتعالج الخدمة غير الاحترافية التي يجدها العميل عند بعض الشركات المنافسة، وتعوّضه بخدمة وسعر وجودة معاً.',
+    'vision' => 'أن يحصل كل عميل على تعامل احترافي، من غير أن يضطر للاختيار بين الخدمة الجيدة والسعر المناسب.',
+    'mission' => 'تقديم KODY POS بدعم حقيقي، وسعر عادل، وجودة ثابتة، حتى يشعر العميل أن ما دفعه يقابله عمل يُنجز كما ينبغي.',
     'values' => [
-        ['icon' => 'fa-handshake', 'title' => 'الالتزام', 'text' => 'نفي بما نعد به، ونحرص على إتمام العمل في وقته.'],
-        ['icon' => 'fa-gem', 'title' => 'الجودة', 'text' => 'نهتم بتفاصيل الخدمة حتى تكون النتيجة مرضية للعميل.'],
-        ['icon' => 'fa-users', 'title' => 'الثقة', 'text' => 'نبني علاقة طويلة مع العميل على أساس الوضوح والاحترام.'],
-        ['icon' => 'fa-lightbulb', 'title' => 'التطوير', 'text' => 'نراجع أسلوب العمل باستمرار لنقدّم خدمة أفضل.'],
+        ['icon' => 'fa-headset', 'title' => 'الخدمة', 'text' => 'تعامل مباشر وواضح، بعيد عن الخدمة غير الاحترافية التي تضيّع وقت العميل.'],
+        ['icon' => 'fa-tags', 'title' => 'السعر', 'text' => 'سعر يناسب العميل، من غير أن يكون على حساب مستوى العمل.'],
+        ['icon' => 'fa-gem', 'title' => 'الجودة', 'text' => 'جودة تبقى مع الخدمة والسعر في وقت واحد، وهذا ما تأسست الشركة من أجله.'],
     ],
     'activities' => [
-        ['icon' => 'fa-store', 'title' => 'النشاط الرئيسي', 'text' => 'وصف مختصر للنشاط الأساسي للشركة. يُستبدل بالبيان الحقيقي.'],
-        ['icon' => 'fa-boxes', 'title' => 'المنتجات والخدمات', 'text' => 'قائمة أو نبذة عن أهم ما تقدمه الشركة لعملائها.'],
-        ['icon' => 'fa-map-marker-alt', 'title' => 'نطاق العمل', 'text' => 'المدينة أو المنطقة التي تغطيها الشركة، والفروع إن وُجدت.'],
+        ['icon' => 'fa-cash-register', 'title' => 'KODY POS', 'text' => 'إصدار لنقاط البيع ضمن منظومة URCA_EG، موجه لإدارة البيع اليومي ببساطة.'],
+        ['icon' => 'fa-globe', 'title' => 'URCA_EG', 'text' => 'الشركة الأم للإصدار، وموقعها urca-eg.com.'],
+        ['icon' => 'fa-map-marker-alt', 'title' => 'المكتب الإقليمي', 'text' => 'سمنود، ميدان النحاس، برج زايد، الدور الخامس.'],
     ],
 ];
 
 $contacts = [
-    ['icon' => 'fa-phone-alt', 'label' => 'الهاتف', 'value' => $companyTel !== '' ? $companyTel : 'سيُضاف رقم الهاتف'],
-    ['icon' => 'fa-map-marker-alt', 'label' => 'العنوان', 'value' => $companyAdd !== '' ? $companyAdd : 'سيُضاف عنوان الشركة'],
-    ['icon' => 'fa-envelope', 'label' => 'البريد', 'value' => $companyEmail !== '' ? $companyEmail : 'سيُضاف البريد الإلكتروني'],
+    ['icon' => 'fa-phone-alt', 'label' => 'الهاتف', 'value' => '01005366038', 'href' => 'tel:01005366038'],
+    ['icon' => 'fa-map-marker-alt', 'label' => 'المكتب الإقليمي', 'value' => 'سمنود، ميدان النحاس، برج زايد، الدور الخامس'],
+    ['icon' => 'fa-globe', 'label' => 'الموقع', 'value' => 'urca-eg.com', 'href' => 'https://urca-eg.com'],
 ];
 ?>
 
@@ -142,7 +129,11 @@ $contacts = [
               <span class="about-icon ml-3"><i class="fas <?= htmlspecialchars($contact['icon'], ENT_QUOTES, 'UTF-8') ?>"></i></span>
               <div>
                 <div class="text-muted small"><?= htmlspecialchars($contact['label'], ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="font-weight-bold text-dark"><?= htmlspecialchars($contact['value'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php if (!empty($contact['href'])): ?>
+                  <a class="font-weight-bold text-dark" href="<?= htmlspecialchars($contact['href'], ENT_QUOTES, 'UTF-8') ?>"<?= strpos($contact['href'], 'http') === 0 ? ' target="_blank" rel="noopener"' : '' ?>><?= htmlspecialchars($contact['value'], ENT_QUOTES, 'UTF-8') ?></a>
+                <?php else: ?>
+                  <div class="font-weight-bold text-dark"><?= htmlspecialchars($contact['value'], ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
               </div>
             </div>
           </div>
@@ -178,7 +169,7 @@ $contacts = [
       <h3 class="h5 font-weight-bold mb-3">قيمنا</h3>
       <div class="row mb-4">
         <?php foreach ($about['values'] as $value): ?>
-          <div class="col-md-6 col-xl-3 mb-3">
+          <div class="col-md-4 mb-3">
             <div class="card about-card">
               <div class="card-body p-4">
                 <span class="about-icon mb-3"><i class="fas <?= htmlspecialchars($value['icon'], ENT_QUOTES, 'UTF-8') ?>"></i></span>

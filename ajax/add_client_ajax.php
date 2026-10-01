@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $aname = trim($_POST['name'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 $address = trim($_POST['address'] ?? '');
+$price_list = max(1, min(3, (int) ($_POST['price_list'] ?? 1)));
 
 if (empty($aname)) {
     echo json_encode(['success' => false, 'message' => 'اسم العميل مطلوب']);
@@ -54,8 +55,8 @@ if ($parent_row = $parent_res->fetch_assoc()) {
 $conn->begin_transaction();
 try {
     // 1. الإدراج في جدول الحسابات
-    $insert_stmt = $conn->prepare("INSERT INTO acc_head (code, aname, is_basic, parent_id, kind, phone, address, is_stock, secret, rentable, is_fund) VALUES (?, ?, 0, ?, ?, ?, ?, 0, 0, 0, 0)");
-    $insert_stmt->bind_param("ssisss", $last_id, $aname, $parent_id, $kind, $phone, $address);
+    $insert_stmt = $conn->prepare("INSERT INTO acc_head (code, aname, is_basic, parent_id, kind, phone, address, is_stock, secret, rentable, is_fund, price_list) VALUES (?, ?, 0, ?, ?, ?, ?, 0, 0, 0, 0, ?)");
+    $insert_stmt->bind_param("ssisssi", $last_id, $aname, $parent_id, $kind, $phone, $address, $price_list);
     if (!$insert_stmt->execute()) {
         throw new Exception("خطأ أثناء إضافة الحساب: " . $conn->error);
     }
@@ -83,6 +84,7 @@ try {
         'name' => $aname,
         'phone' => $phone,
         'code' => $last_id,
+        'price_list' => $price_list,
         'message' => 'تم إضافة العميل "' . $aname . '" بنجاح بكود: ' . $last_id
     ]);
 } catch (Exception $e) {

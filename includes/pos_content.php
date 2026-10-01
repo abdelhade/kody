@@ -264,7 +264,7 @@ body {
                                             }
                                             $first_client = false;
                                         ?>
-                                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>">
+                                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>">
                                             <?= $rowclient['aname'] ?></option>
                                         <?php } ?>
                                     </select>

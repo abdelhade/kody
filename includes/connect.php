@@ -139,6 +139,11 @@ if ($colSidCards && $colSidCards->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN sid_cards INT(11) NOT NULL DEFAULT 1 AFTER sid_rents');
 }
 
+$colAccPriceList = $conn->query("SHOW COLUMNS FROM acc_head LIKE 'price_list'");
+if ($colAccPriceList && $colAccPriceList->num_rows === 0) {
+    $conn->query('ALTER TABLE acc_head ADD COLUMN price_list INT NOT NULL DEFAULT 1');
+}
+
 $colEditUserPasswords = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'edit_user_passwords'");
 if ($colEditUserPasswords && $colEditUserPasswords->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN edit_user_passwords INT(11) NOT NULL DEFAULT 0 AFTER sid_cards');

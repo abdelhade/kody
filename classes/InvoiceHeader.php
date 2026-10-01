@@ -202,6 +202,21 @@ class InvoiceHeader extends InvoiceElementBase
                     <label class="small">ملاحظات</label>
                     <input type="text" data-field="info" class="form-control form-control-sm" placeholder="اختياري">
                   </div>
+                  <div class="form-group mb-0">
+                    <label class="small">الفئة السعرية</label>
+                    <select data-field="price_list" class="form-control form-control-sm">
+                      <?php
+                      foreach ($this->priceLists as $list) {
+                          $listId = (int) ($list['id'] ?? 0);
+                          if ($listId < 1 || $listId > 3) {
+                              continue;
+                          }
+                          $sel = $listId === 1 ? 'selected' : '';
+                          echo '<option value="' . $listId . '" ' . $sel . '>' . $this->sanitizeInput($list['pname']) . '</option>';
+                      }
+                      ?>
+                    </select>
+                  </div>
               </div>
               <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">إلغاء</button>
@@ -243,9 +258,14 @@ class InvoiceHeader extends InvoiceElementBase
                             $('#' + msgId).html('<div class="alert alert-success py-1 mb-1">✓ تم الحفظ: <strong>' + res.aname + '</strong></div>');
                             // إضافة الخيار لقائمة المورد/العميل واختياره
                             const $sel = $('#mySelectEmp');
-                            $sel.append(new Option(res.aname, res.id, true, true)).trigger('change');
+                            const opt = new Option(res.aname, res.id, true, true);
+                            if (res.price_list) {
+                                opt.setAttribute('data-price-list', String(res.price_list));
+                            }
+                            $sel.append(opt).trigger('change');
                             // مسح الحقول
-                            $modal.find('[data-field]').not('[type="hidden"]').val('');
+                            $modal.find('[data-field]').not('[type="hidden"]').not('select').val('');
+                            $modal.find('select[data-field="price_list"]').val('1');
                             setTimeout(() => $(modalId).modal('hide'), 700);
                         } else {
                             $('#' + msgId).html('<div class="alert alert-danger py-1 mb-1">' + (res.error || 'حدث خطأ') + '</div>');
@@ -337,7 +357,12 @@ class InvoiceHeader extends InvoiceElementBase
             if ($this->isEditMode && $this->data && $this->getPartyAccountId() == $account['id']) {
                 $selected = 'selected';
             }
-            echo "<option value='{$account['id']}' {$selected}>{$this->sanitizeInput($account['aname'])}</option>";
+            $priceAttr = '';
+            if ($this->getClientType() !== 'supplier') {
+                $clientPrice = max(1, (int) ($account['price_list'] ?? 1));
+                $priceAttr = " data-price-list=\"{$clientPrice}\"";
+            }
+            echo "<option value='{$account['id']}' {$selected}{$priceAttr}>{$this->sanitizeInput($account['aname'])}</option>";
         }
     }
 

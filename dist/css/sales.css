@@ -21,9 +21,27 @@
     height: 300px;
     overflow: scroll;}
 
-    .select2-search__field{
-color:red !important;
-background-color: aquamarine ;
+.select2-container {
+    width: 100% !important;
+}
+.select2-container--open {
+    z-index: 10050;
+}
+.select2-dropdown {
+    z-index: 10050;
+}
+.select2-search--dropdown {
+    display: block;
+    padding: 6px;
+}
+.select2-search__field {
+    color: #111 !important;
+    background-color: #fff !important;
+    width: 100% !important;
+    min-height: 32px;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px;
+    padding: 4px 8px !important;
 }
 .select2-results__options{
 color:navy;

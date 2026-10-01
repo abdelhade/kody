@@ -533,6 +533,7 @@ $(document).ready(function() {
 
 </script>
 
+<?php if (!empty($extra_footer_scripts)) { echo $extra_footer_scripts; } ?>
 
 </body>
 

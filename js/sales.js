@@ -68,11 +68,28 @@ $(document).ready(function() {
     handleFormSubmission();
     handleKeyboardShortcuts();
 
-    // عند تغيير العميل/المورد → أعد حساب paid/change، وفي المردود أعد التسعير
+    function applyClientPriceList(selectEl) {
+        if (!selectEl || !selectEl.options || selectEl.selectedIndex < 0) return;
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (!opt) return;
+        const list = parseInt(opt.getAttribute('data-price-list'), 10);
+        if (!list) return;
+        const priceSel = document.getElementById('invoicePriceList');
+        if (!priceSel || String(priceSel.value) === String(list)) return;
+        priceSel.value = String(list);
+        $(priceSel).trigger('change');
+    }
+
+    // عند تغيير العميل/المورد → طبّق فئته السعرية، ثم أعد حساب paid/change، وفي المردود أعد التسعير
     $(document).on('change', '#mySelectEmp', function() {
+        applyClientPriceList(this);
         updateTotal();
         repriceSalesReturnLines();
     });
+
+    if (!/[?&](e|edit_id)=/.test(location.search)) {
+        applyClientPriceList(document.getElementById('mySelectEmp'));
+    }
 
     // تغيير الفئة السعرية يعيد تسعير أصناف فاتورة المبيعات
     $(document).on('change', '#invoicePriceList', function() {
@@ -268,10 +285,28 @@ function repriceSalesReturnLines() {
     });
 }
 
+function normalizeInvoiceSearch(value) {
+    return String(value || '')
+        .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
+function invoiceSelectMatcher(params, data) {
+    const term = normalizeInvoiceSearch(params.term);
+    if (!term) return data;
+    if (!data || typeof data.text === 'undefined') return null;
+    return normalizeInvoiceSearch(data.text).indexOf(term) > -1 ? data : null;
+}
+
 function initializeSelect2() {
     $('#mySelectEmp, #invoiceStore').each(function() {
         const $el = $(this);
-        if (!$el.length) return;
+        if (!$el.length || !$.fn.select2) return;
         if ($el.hasClass('select2-hidden-accessible')) {
             $el.select2('destroy');
         }
@@ -279,13 +314,27 @@ function initializeSelect2() {
             dir: 'rtl',
             width: '100%',
             theme: 'bootstrap4',
+            dropdownParent: $(document.body),
+            minimumResultsForSearch: 0,
+            matcher: invoiceSelectMatcher,
             language: {
                 noResults: function() { return 'لا توجد نتائج'; },
                 searching: function() { return 'جاري البحث...'; }
             }
         });
+        $el.off('select2:open.invoiceSearch').on('select2:open.invoiceSearch', function() {
+            window.setTimeout(function() {
+                const field = document.querySelector('.select2-dropdown .select2-search__field');
+                if (!field) return;
+                field.placeholder = 'ابحث بالاسم...';
+                field.focus();
+            }, 0);
+        });
     });
 
+    if (!$('#mySelectitm').length || !$.fn.select2) {
+        return;
+    }
     if ($('#mySelectitm').hasClass('select2-hidden-accessible')) {
         $('#mySelectitm').select2('destroy');
     }
@@ -833,6 +882,7 @@ function handleKeyboardShortcuts() {
 
         if (event.key !== 'Enter') return;
         const $target = $(event.target);
+        if ($target.hasClass('select2-search__field') || $target.closest('.select2-dropdown, .select2-container').length) return;
         if (!$target.is('input, select')) return;
 
         // هل الحقل داخل صف فاتورة في #itmrow؟

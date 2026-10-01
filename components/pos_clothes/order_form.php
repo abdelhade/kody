@@ -102,7 +102,7 @@ if (!empty($rowstg['def_pos_store'])) {
                     </div>
                     <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-client" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
-                        $resclient = $conn->query("SELECT id, aname, phone FROM `acc_head` WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                        $resclient = $conn->query("SELECT id, aname, phone, price_list FROM `acc_head` WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
                         $first_client = true;
                         while ($rowclient = $resclient->fetch_assoc()) { 
                             $selected = '';
@@ -115,7 +115,7 @@ if (!empty($rowstg['def_pos_store'])) {
                             $phone = htmlspecialchars($rowclient['phone'] ?? '');
                             $displayName = htmlspecialchars($rowclient['aname']);
                         ?>
-                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-phone="<?= $phone ?>"><?= $displayName ?><?= $phone ? ' - ' . $phone : '' ?></option>
+                        <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-phone="<?= $phone ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?><?= $phone ? ' - ' . $phone : '' ?></option>
                         <?php } ?>
                     </select>
                 </div>
@@ -188,6 +188,17 @@ if (!empty($rowstg['def_pos_store'])) {
                     <div class="mb-3">
                         <label for="ajax_client_address" class="form-label fw-bold" style="font-size: 0.85rem;">العنوان</label>
                         <input type="text" class="form-control form-control-sm" id="ajax_client_address" name="address" placeholder="مثال: القاهرة، مصر" style="font-size: 0.85rem;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="ajax_client_price_list" class="form-label fw-bold" style="font-size: 0.85rem;">الفئة السعرية</label>
+                        <select class="form-control form-control-sm" id="ajax_client_price_list" name="price_list" style="font-size: 0.85rem;">
+                            <?php
+                            if (!class_exists('InvoiceProcessor')) {
+                                require_once __DIR__ . '/../../classes/InvoiceProcessor.php';
+                            }
+                            InvoiceProcessor::echoPriceListOptions($conn, 1);
+                            ?>
+                        </select>
                     </div>
                 </form>
             </div>
