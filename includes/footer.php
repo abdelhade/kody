@@ -464,6 +464,22 @@ $(document).ready(function() {
 <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
 <script src="dist/js/adminlte.js"></script>
+<script>
+(function () {
+  function setSidebarCookie(state) {
+    var exp = new Date();
+    exp.setFullYear(exp.getFullYear() + 1);
+    document.cookie = 'sidebar_state=' + state + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+  }
+  if (typeof jQuery === 'undefined') return;
+  jQuery(document).on('collapsed.lte.pushmenu', function () {
+    setSidebarCookie('collapsed');
+  });
+  jQuery(document).on('shown.lte.pushmenu', function () {
+    setSidebarCookie('open');
+  });
+})();
+</script>
 <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
 <script src="dist/js/pages/dashboard.js"></script>
 <!-- AdminLTE for demo purposes -->

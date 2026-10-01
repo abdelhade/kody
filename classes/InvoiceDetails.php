@@ -586,6 +586,7 @@ $(document).ready(function() {
 
                     selectUnitByValue(unitSelect, opts.unitVal);
 
+                    window._pendingItemUnits = data.units || [];
                     var merged = addRowOrMerge(opts.merge);
                     setTimeout(function() {
                         if (opts.focusBarcode) {

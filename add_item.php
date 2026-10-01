@@ -77,6 +77,12 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                         echo 'صيغة الصورة غير مسموحة. استخدم jpg أو png أو gif أو jpeg أو webp.';
                     } elseif ($err === 'no_units') {
                         echo 'لا يمكن حفظ صنف بدون وحدات.';
+                    } elseif ($err === 'duplicate_unit') {
+                        echo 'لا يمكن تكرار نفس الوحدة أو نفس المعامل.';
+                    } elseif ($err === 'invalid_unit') {
+                        echo 'بيانات الوحدة غير صالحة. اختر وحدة ومعاملاً أكبر من صفر.';
+                    } elseif ($err === 'unit_in_use') {
+                        echo 'لا يمكن حذف هذه الوحدة أو تغيير معاملها لأنها مستخدمة في فواتير.';
                     } else {
                         echo 'حدث خطأ أثناء الحفظ.';
                     }
@@ -128,6 +134,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                 $itemUnitRows = [];
                 if (!$isEdit) {
                     $itemUnitRows[] = [
+                        'id' => 0,
                         'unit_id' => (int) ($allUnits[0]['id'] ?? 0),
                         'u_val' => '1',
                         'unit_barcode' => (string) $newBarcode,
@@ -140,6 +147,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                     $resunt = $conn->query('SELECT * FROM item_units WHERE item_id = ' . $editId . ' ORDER BY id');
                     while ($rowunt = $resunt->fetch_assoc()) {
                         $itemUnitRows[] = [
+                            'id' => (int) $rowunt['id'],
                             'unit_id' => (int) $rowunt['unit_id'],
                             'u_val' => (string) $rowunt['u_val'],
                             'unit_barcode' => (string) $rowunt['unit_barcode'],
@@ -250,6 +258,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                 <?php foreach ($itemUnitRows as $unitIdx => $unitRow) { ?>
                                     <tr class="urow">
                                         <td>
+                                            <input type="hidden" name="iu_id[]" value="<?= (int) ($unitRow['id'] ?? 0) ?>">
                                             <select name="unit_id[]" class="form-control form-control-sm">
                                                 <?php foreach ($allUnits as $rowunit) { ?>
                                                     <option <?= ((int) $rowunit['id'] === (int) $unitRow['unit_id']) ? 'selected' : '' ?> value="<?= (int) $rowunit['id'] ?>"><?= htmlspecialchars($rowunit['uname'], ENT_QUOTES, 'UTF-8') ?></option>
@@ -347,5 +356,5 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
     </section>
 </div>
 
-<script src="js/additem.js"></script>
+<script src="js/additem.js?v=<?= (int) (@filemtime(__DIR__ . '/js/additem.js') ?: time()) ?>"></script>
 <?php include('includes/footer.php') ?>

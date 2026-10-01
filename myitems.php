@@ -112,10 +112,7 @@ $resitm = $stmtData->get_result();
                     <div class="d-flex gap-2 justify-content-end">
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
                         <a href="deleted_items.php" class="btn btn-outline-danger btn-sm">الاصناف المحذوفه</a>
-                        <a href="items_factory.php" class="btn btn-info btn-sm"><i class="fas fa-magic"></i> مصنع الأصناف</a>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
-                        <button id="reset-manual-prices" class="btn btn-warning btn-sm">إعادة تعيين الحماية</button>
-                        <button id="reindex" class="btn btn-secondary btn-sm">اعادة الفهرسة</button>
                     </div>
                 </div>
                 </div> 

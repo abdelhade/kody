@@ -82,6 +82,23 @@ $(document).ready(function() {
         if (duplicateFound) {
             e.preventDefault();
             alert('غير مسموح بتكرار الوحدات');
+            return;
+        }
+        var coeffValues = [];
+        var duplicateCoeff = false;
+        $('input[name="u_val[]"]').each(function() {
+            var coeff = parseFloat($(this).val());
+            if (!isFinite(coeff) || coeff <= 0) {
+                duplicateCoeff = true;
+                return;
+            }
+            var key = coeff.toFixed(3);
+            if (coeffValues.indexOf(key) !== -1) duplicateCoeff = true;
+            coeffValues.push(key);
+        });
+        if (duplicateCoeff) {
+            e.preventDefault();
+            alert('غير مسموح بتكرار معامل الوحدة، ويجب أن يكون أكبر من صفر');
         }
     });
 
@@ -117,30 +134,28 @@ $(document).ready(function() {
         // Clone the first row
         var clone = $('.urow').first().clone();
 
-        // Reset specific fields in the cloned row
-        clone.find('input[name="u_val[]"]').val('6').prop('readonly', false); // Reset u_val
-        clone.find('input[name="unit_barcode[]"]').val(''); // Clear barcode
-        clone.find('input[name="unit_barcode[]"]').removeClass('is-valid is-invalid'); // Clear validation classes
-        clone.find('.unit-barcode-error').addClass('d-none'); // Hide error span
-
-        // Get the value of the 'u_val' field in the main row (the first row)
-        var u_val_main = parseFloat($('.urow').first().find('input[name="u_val[]"]').val()) || 1;
-
-        // Multiply the values in the cloned row by u_val of the first row
-        clone.find('input[name="cost_price[]"]').val(function() {
-            return (parseFloat($('.urow').first().find('input[name="cost_price[]"]').val()) * u_val_main).toFixed(3);
+        var factor = 6;
+        var usedUnits = {};
+        $('select[name="unit_id[]"]').each(function() {
+            usedUnits[$(this).val()] = true;
         });
 
-        clone.find('input[name="price1[]"]').val(function() {
-            return (parseFloat($('.urow').first().find('input[name="price1[]"]').val()) * u_val_main).toFixed(3);
+        clone.find('input[name="iu_id[]"]').val('0');
+        clone.find('input[name="u_val[]"]').val(String(factor)).prop('readonly', false);
+        clone.find('input[name="unit_barcode[]"]').val('').removeClass('is-valid is-invalid');
+        clone.find('.unit-barcode-error').addClass('d-none');
+
+        var $unitSelect = clone.find('select[name="unit_id[]"]');
+        $unitSelect.find('option').each(function() {
+            if (!usedUnits[$(this).val()]) {
+                $unitSelect.val($(this).val());
+                return false;
+            }
         });
 
-        clone.find('input[name="price2[]"]').val(function() {
-            return (parseFloat($('.urow').first().find('input[name="price2[]"]').val()) * u_val_main).toFixed(3);
-        });
-
-        clone.find('input[name="market_price[]"]').val(function() {
-            return (parseFloat($('.urow').first().find('input[name="market_price[]"]').val()) * u_val_main).toFixed(3);
+        ['cost_price', 'price1', 'price2', 'market_price'].forEach(function(fieldName) {
+            var base = parseFloat($('.urow').first().find('input[name="' + fieldName + '[]"]').val()) || 0;
+            clone.find('input[name="' + fieldName + '[]"]').val((base * factor).toFixed(3));
         });
 
         // Append the cloned row after the last row

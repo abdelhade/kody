@@ -1,8 +1,13 @@
 <?php
 session_start();
 include('../includes/connect.php');
+require_once('../includes/item_unit_sync.php');
 
-$item_id = $_GET['edit'];
+$item_id = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+if ($item_id < 1) {
+    header('Location: ../add_item.php?error=save_failed');
+    exit;
+}
 $usid = $_SESSION['userid'];
 
 // Ensure user is authenticated
@@ -121,9 +126,12 @@ $name2 = $_POST['name2'];
 $group1 = $_POST['group1']; 
 $group2 = $_POST['group2']; 
 $info = $_POST['info']; 
-$cost_price = $_POST['cost_price'][0]; 
-$price1 = $_POST['price1'][0];
-$price2 = $_POST['price2'][0]; 
+$cost_price = isset($_POST['cost_price'][0]) ? (float) $_POST['cost_price'][0] : 0;
+$price1 = isset($_POST['price1'][0]) ? (float) $_POST['price1'][0] : 0;
+$price2 = isset($_POST['price2'][0]) ? (float) $_POST['price2'][0] : 0;
+$market_price = isset($_POST['market_price'][0]) ? (float) $_POST['market_price'][0] : 0;
+$group1 = (int) $group1;
+$group2 = (int) $group2;
 
 
 
@@ -148,44 +156,76 @@ if (isset($_FILES['imgs']) && !empty($_FILES['imgs']['name'][0])) {
     }
 }
 
-// تحديث الجدول الرئيسي
-$sql = "UPDATE myitems SET iname='$iname', name2='$name2', code='$code', info='$info', cost_price='$cost_price', group1='$group1', group2='$group2', price1='$price1' WHERE id='$item_id'";
-
-// إضافة العمود إذا لم يكن موجوداً
+// إضافة العمود إذا لم يكن موجوداً (DDL يُنهي أي معاملة مفتوحة)
 $checkColumn = $conn->query("SHOW COLUMNS FROM myitems LIKE 'manual_price_edit'");
 if ($checkColumn->num_rows == 0) {
     $conn->query("ALTER TABLE myitems ADD COLUMN manual_price_edit TINYINT(1) DEFAULT 0");
 }
 
-// تعيين علامة التعديل اليدوي
-$conn->query("UPDATE myitems SET manual_price_edit=1 WHERE id='$item_id'");
-if (!$conn->query($sql)) {
-    header('Location: ../add_item.php?edit=' . (int) $item_id . '&error=save_failed');
+$postedUnits = isset($_POST['unit_id']) && is_array($_POST['unit_id']) ? $_POST['unit_id'] : [];
+if ($postedUnits === []) {
+    header('Location: ../add_item.php?edit=' . $item_id . '&error=no_units');
     exit;
 }
 
-// تحديث وحدات الصنف
-foreach ($_POST['unit_id'] as $index => $unit_id) {
-    $u_val = $_POST['u_val'][$index];
-    $unit_barcode = !empty($_POST['unit_barcode'][$index]) ? $_POST['unit_barcode'][$index] : "99" . $index . $_POST['unit_barcode'][0];
-    $cost_price_unit = $_POST['cost_price'][$index];
-    $price1_unit = $_POST['price1'][$index];
-    $price2_unit = $_POST['price2'][$index];
-    $market_price_unit = isset($_POST['price3'][$index]) ? $_POST['price3'][$index] : (isset($_POST['market_price'][$index]) ? $_POST['market_price'][$index] : 0);
-    
-    $sqlunit = "UPDATE item_units SET 
-                cost_price='$cost_price_unit',
-                price1='$price1_unit',
-                price2='$price2_unit',
-                price3='$market_price_unit', 
-                u_val='$u_val',
-                unit_barcode='$unit_barcode' 
-                WHERE item_id='$item_id' AND unit_id='$unit_id'";
-    
-    $conn->query($sqlunit);
+$unitRows = [];
+foreach ($postedUnits as $index => $unit_id) {
+    $unit_barcode = trim((string) ($_POST['unit_barcode'][$index] ?? ''));
+    if ($unit_barcode === '') {
+        $baseBarcode = trim((string) ($_POST['unit_barcode'][0] ?? ''));
+        $unit_barcode = '99' . $index . $baseBarcode;
+    }
+    $unitRows[] = [
+        'iu_id' => (int) ($_POST['iu_id'][$index] ?? 0),
+        'unit_id' => (int) $unit_id,
+        'u_val' => $_POST['u_val'][$index] ?? 1,
+        'barcode' => $unit_barcode,
+        'cost' => (float) ($_POST['cost_price'][$index] ?? 0),
+        'price1' => (float) ($_POST['price1'][$index] ?? 0),
+        'price2' => (float) ($_POST['price2'][$index] ?? 0),
+        'price3' => (float) ($_POST['market_price'][$index] ?? ($_POST['price3'][$index] ?? 0)),
+    ];
 }
 
+$conn->begin_transaction();
+try {
+    $stmtItem = $conn->prepare(
+        'UPDATE myitems SET iname = ?, name2 = ?, code = ?, info = ?, cost_price = ?, price1 = ?, price2 = ?, market_price = ?, group1 = ?, group2 = ?, manual_price_edit = 1 WHERE id = ?'
+    );
+    $stmtItem->bind_param(
+        'ssssddddiii',
+        $iname,
+        $name2,
+        $code,
+        $info,
+        $cost_price,
+        $price1,
+        $price2,
+        $market_price,
+        $group1,
+        $group2,
+        $item_id
+    );
+    $stmtItem->execute();
+    $stmtItem->close();
 
-    header('Location: ../add_item.php?edit=' . (int) $item_id . '&saved=1');
+    kody_sync_item_units($conn, $item_id, $unitRows);
+    $conn->commit();
+} catch (RuntimeException $e) {
+    $conn->rollback();
+    $code = $e->getMessage();
+    $allowed = ['no_units', 'duplicate_unit', 'invalid_unit', 'unit_in_use', 'duplicate_barcode'];
+    if (!in_array($code, $allowed, true)) {
+        $code = 'save_failed';
+    }
+    header('Location: ../add_item.php?edit=' . $item_id . '&error=' . $code);
     exit;
+} catch (Throwable $e) {
+    $conn->rollback();
+    header('Location: ../add_item.php?edit=' . $item_id . '&error=save_failed');
+    exit;
+}
+
+header('Location: ../add_item.php?edit=' . $item_id . '&saved=1');
+exit;
 ?>

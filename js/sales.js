@@ -329,6 +329,62 @@ function fetchItemInfo(itemId, row) {
     });
 }
         
+function fillRowUnitSelect($select, fallbackVal, fallbackName) {
+    const units = Array.isArray(window._pendingItemUnits) ? window._pendingItemUnits : [];
+    const selectedVal = $('#inputUnitSelect').val();
+    const selectEl = $select[0];
+    if (!selectEl) return;
+
+    function addUnitOption(name, value, attrs) {
+        if (value === undefined || value === null || String(value) === '') return;
+        const opt = new Option(name || '-', String(value));
+        if (attrs) {
+            Object.keys(attrs).forEach(function(key) {
+                opt.setAttribute(key, attrs[key] == null ? 0 : attrs[key]);
+            });
+        }
+        selectEl.appendChild(opt);
+    }
+
+    if (units.length) {
+        units.forEach(function(unit) {
+            addUnitOption(unit.unit_name, unit.unit_value, {
+                'data-ucost': unit.ucost,
+                'data-uprice1': unit.uprice1,
+                'data-uprice2': unit.uprice2,
+                'data-uprice3': unit.uprice3,
+                'data-uprice4': unit.uprice4
+            });
+        });
+    } else {
+        $('#inputUnitSelect option').each(function() {
+            if (this.value === '') return;
+            addUnitOption(this.text, this.value, {
+                'data-ucost': this.getAttribute('data-ucost'),
+                'data-uprice1': this.getAttribute('data-uprice1'),
+                'data-uprice2': this.getAttribute('data-uprice2'),
+                'data-uprice3': this.getAttribute('data-uprice3'),
+                'data-uprice4': this.getAttribute('data-uprice4')
+            });
+        });
+    }
+
+    if (!selectEl.options.length) {
+        addUnitOption(fallbackName || '-', fallbackVal || 1, null);
+    }
+
+    const target = parseFloat(selectedVal);
+    let matched = false;
+    Array.prototype.forEach.call(selectEl.options, function(opt) {
+        if (!matched && Math.abs((parseFloat(opt.value) || 0) - target) < 0.0001) {
+            opt.selected = true;
+            matched = true;
+        }
+    });
+    if (!matched) selectEl.selectedIndex = 0;
+    window._pendingItemUnits = null;
+}
+
         function handleRowAddition() {
             $(document).off("click", "#addRow").on("click", "#addRow", function(e) {
                 e.preventDefault();
@@ -379,16 +435,7 @@ function fetchItemInfo(itemId, row) {
                 <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 
-            const $rowUnit = newRow.find('select[name="u_val[]"]');
-            const $srcUnits = $('#inputUnitSelect');
-            $srcUnits.find('option').each(function() {
-                if (!this.value) return;
-                $rowUnit.append($(this).clone());
-            });
-            if (!$rowUnit.children().length) {
-                $rowUnit.append($('<option>', { value: unitVal, text: unitName || '-' }));
-            }
-            $rowUnit.val($srcUnits.val() || String(unitVal));
+            fillRowUnitSelect(newRow.find('select[name="u_val[]"]'), unitVal, unitName);
 
             newRow.appendTo("#itmrow");
 

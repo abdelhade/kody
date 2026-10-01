@@ -63,6 +63,9 @@ if ($uiFontKey === '' || !isset($uiFontPresets[$uiFontKey])) {
 }
 $uiFontFamily = $uiFontPresets[$uiFontKey];
 
+$sidebarState = isset($_COOKIE['sidebar_state']) ? (string) $_COOKIE['sidebar_state'] : 'collapsed';
+$sidebarCollapsed = ($sidebarState !== 'open');
+
 $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
     ? (string) filemtime(__DIR__ . '/../dist/css/custom.css')
     : '1';
@@ -217,5 +220,5 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <script src="dist/js/js.js"></script>
 </head>
 
-<body class="hold-transition sidebar-mini sidebar-collapse layout-fixed font-semibold" style="font-family: <?= htmlspecialchars($uiFontFamily, ENT_QUOTES, 'UTF-8') ?>;" data-ui-font="<?= htmlspecialchars($uiFontKey, ENT_QUOTES, 'UTF-8') ?>">
+<body class="hold-transition sidebar-mini<?= $sidebarCollapsed ? ' sidebar-collapse' : '' ?> layout-fixed font-semibold" style="font-family: <?= htmlspecialchars($uiFontFamily, ENT_QUOTES, 'UTF-8') ?>;" data-ui-font="<?= htmlspecialchars($uiFontKey, ENT_QUOTES, 'UTF-8') ?>">
   <div class="wrapper">
