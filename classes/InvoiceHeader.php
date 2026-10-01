@@ -83,7 +83,7 @@ class InvoiceHeader extends InvoiceElementBase
             <!-- المخزن -->
             <div class="col-md-2">
                 <label for="">المخزن</label>
-                <select name="store_id" class="form-control form-control-sm">
+                <select name="store_id" id="invoiceStore" class="select2 form-control form-control-sm">
                     <?php $this->renderStoreOptions(); ?>
                 </select>
             </div>

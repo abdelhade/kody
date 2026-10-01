@@ -147,7 +147,9 @@ function searchByBarcode() {
                 console.log('Barcode response:', data);
                 if (data.success && data.item) {
                     const item = data.item;
-                    addItemToOrder(item.id, item.name, priceFromItem(item), item.balance, item);
+                    applyClothesLinePrice(item, priceFromItem(item), function(price) {
+                        addItemToOrder(item.id, item.name, price, item.balance, item);
+                    });
                     document.getElementById('barcodeSearch').value = '';
                     document.getElementById('barcodeSearch').focus();
                 } else {
@@ -375,7 +377,7 @@ function displayItems(items) {
         window._clothesCatalog[item.id] = item;
         html += `
             <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-2">
-                <div class="item-card" onclick="addItemToOrder(${item.id}, \`${item.name.replace(/`/g, '')}\`, ${priceFromItem(item)}, ${item.balance}, window._clothesCatalog[${item.id}])">
+                <div class="item-card" data-item-id="${item.id}" onclick="addClothesItem(${item.id})">
                     <div class="item-image">
                         <i class="fas fa-tshirt" style="color: var(--soft-gray);"></i>
                     </div>
@@ -390,6 +392,95 @@ function displayItems(items) {
     });
     
     itemsGrid.innerHTML = html;
+    paintClothesReturnPrices(items);
+}
+
+function isClothesReturn() {
+    const el = document.querySelector('input[name="age"]:checked');
+    return !!(el && el.value === '4');
+}
+
+function clothesClientId() {
+    const el = document.getElementById('clientSelect');
+    return el ? el.value : '';
+}
+
+function applyClothesLinePrice(item, listPrice, done) {
+    if (!isClothesReturn() || !item) {
+        done(listPrice);
+        return;
+    }
+    $.getJSON('ajax/last_sale_price.php', { client_id: clothesClientId(), item_id: item.id })
+        .done(function(res) {
+            const base = res && res.prices ? parseFloat(res.prices[item.id]) : 0;
+            done(base > 0 ? base : listPrice);
+        })
+        .fail(function() { done(listPrice); });
+}
+
+function addClothesItem(itemId) {
+    const item = window._clothesCatalog && window._clothesCatalog[itemId];
+    if (!item) return;
+    applyClothesLinePrice(item, priceFromItem(item), function(price) {
+        addItemToOrder(item.id, item.name, price, item.balance, item);
+    });
+}
+
+function paintClothesReturnPrices(items) {
+    if (!isClothesReturn() || !items || !items.length) return;
+    const ids = items.map(function(item) { return item.id; }).join(',');
+    $.getJSON('ajax/last_sale_price.php', { client_id: clothesClientId(), item_ids: ids })
+        .done(function(res) {
+            const prices = (res && res.prices) || {};
+            items.forEach(function(item) {
+                const base = parseFloat(prices[item.id]);
+                if (!(base > 0)) return;
+                const card = document.querySelector('.item-card[data-item-id="' + item.id + '"] .item-price');
+                if (card) card.textContent = base.toFixed(2) + ' ج.م';
+            });
+        });
+}
+
+function repriceClothesOrder() {
+    const restoreList = function() {
+        selectedItems.forEach(function(line) {
+            line.price = priceFromValues(line.price1, line.price2, line.price3, selectedInvoicePriceList());
+        });
+        if (typeof updateOrderDisplay === 'function') updateOrderDisplay();
+    };
+
+    if (!isClothesReturn()) {
+        restoreList();
+        if (window._clothesLastItems && typeof displayItems === 'function') {
+            displayItems(window._clothesLastItems);
+        }
+        return;
+    }
+
+    if (!selectedItems.length) {
+        if (window._clothesLastItems && typeof displayItems === 'function') {
+            displayItems(window._clothesLastItems);
+        }
+        return;
+    }
+
+    const ids = selectedItems.map(function(line) { return line.id; }).join(',');
+    $.getJSON('ajax/last_sale_price.php', { client_id: clothesClientId(), item_ids: ids })
+        .done(function(res) {
+            const prices = (res && res.prices) || {};
+            selectedItems.forEach(function(line) {
+                const base = parseFloat(prices[line.id]);
+                line.price = base > 0
+                    ? base
+                    : priceFromValues(line.price1, line.price2, line.price3, selectedInvoicePriceList());
+            });
+            if (typeof updateOrderDisplay === 'function') updateOrderDisplay();
+        })
+        .fail(restoreList);
+
+    if (window._clothesLastItems && typeof displayItems === 'function') {
+        displayItems(window._clothesLastItems);
+    }
 }
 
 // إضافة صنف للطلب
@@ -398,6 +489,9 @@ function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0, source) {
     
     if (existingItemIndex !== -1) {
         selectedItems[existingItemIndex].quantity += 1;
+        if (isClothesReturn()) {
+            selectedItems[existingItemIndex].price = parseFloat(itemPrice);
+        }
     } else {
         selectedItems.push({
             id: itemId,
@@ -799,6 +893,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // تغيير ستايل الصفحة كاملاً حسب نوع التاب المختار
     $('input[name="age"]').on('change', function() {
         applyTabStyle($(this).val());
+        repriceClothesOrder();
+    });
+
+    $('#clientSelect').on('change', function() {
+        if (isClothesReturn()) repriceClothesOrder();
     });
 
     // تطبيق الستايل الافتراضي عند تحميل الصفحة (بيع)
@@ -877,6 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.addEventListener('change', function(e) {
     if (!e.target || e.target.id !== 'invoicePriceList') return;
+    if (isClothesReturn()) return;
     selectedItems.forEach(function(line) {
         line.price = priceFromValues(line.price1, line.price2, line.price3, selectedInvoicePriceList());
     });

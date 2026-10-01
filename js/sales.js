@@ -68,14 +68,19 @@ $(document).ready(function() {
     handleFormSubmission();
     handleKeyboardShortcuts();
 
-    // عند تغيير المورد → أعد حساب paid/change
+    // عند تغيير العميل/المورد → أعد حساب paid/change، وفي المردود أعد التسعير
     $(document).on('change', '#mySelectEmp', function() {
         updateTotal();
+        repriceSalesReturnLines();
     });
 
     // تغيير الفئة السعرية يعيد تسعير أصناف فاتورة المبيعات
     $(document).on('change', '#invoicePriceList', function() {
         if (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice()) {
+            return;
+        }
+        if (typeof window.isSalesReturn === 'function' && window.isSalesReturn()) {
+            repriceSalesReturnLines();
             return;
         }
         const listId = parseInt(this.value, 10) || 1;
@@ -86,9 +91,11 @@ $(document).ready(function() {
             const unitVal = $row.find('select[name="u_val[]"]').val();
             $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
                 if (!data || data.error) return;
-                const unit = (data.units || []).find(function(u) {
-                    return Math.abs((parseFloat(u.unit_value) || 0) - (parseFloat(unitVal) || 0)) < 0.0001;
-                });
+                const unit = (typeof window.findInvoiceUnit === 'function')
+                    ? window.findInvoiceUnit(data.units, unitVal)
+                    : (data.units || []).find(function(u) {
+                        return Math.abs((parseFloat(u.unit_value) || 0) - (parseFloat(unitVal) || 0)) < 0.0001;
+                    });
                 const price = unit
                     ? window.invoicePriceFor(unit, listId, true)
                     : window.invoicePriceFor(data, listId, false);
@@ -144,6 +151,44 @@ $(document).ready(function() {
         updateTotal();
     }, 500);
     
+    // تغيير وحدة السطر يحدّث سعر السطر وبيانات الصنف أسفل الفاتورة
+    $(document).on('change', '#itmrow select[name="u_val[]"]', function() {
+        const $select = $(this);
+        const $row = $select.closest('tr');
+        const itemId = $row.find('input[name="itmname[]"]').val();
+        if (!itemId) return;
+
+        $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
+            if (!data || data.error || typeof window.findInvoiceUnit !== 'function') return;
+            const unit = window.findInvoiceUnit(data.units, $select.val());
+            if (!unit) return;
+
+            window.applyUnitItemInfo(data, unit);
+
+            const purchase = (typeof window.isPurchaseInvoice === 'function') && window.isPurchaseInvoice();
+            const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
+            const unitListPrice = (typeof window.invoicePriceFor === 'function')
+                ? window.invoicePriceFor(unit, listId, true)
+                : (parseFloat(unit.uprice1) || 0);
+            let newPrice = purchase ? (parseFloat(unit.ucost) || 0) : unitListPrice;
+            if (!(newPrice > 0)) {
+                const base = purchase
+                    ? (parseFloat(data.cost_price) || parseFloat(data.last_price) || 0)
+                    : (parseFloat(data.price1) || 0);
+                newPrice = base * (parseFloat(unit.unit_value) || 1);
+            }
+            const qty = parseFloat($row.find('.itmqty').val()) || 0;
+            const pct = parseFloat($row.find('.itmdisc_pct').val()) || 0;
+
+            $row.find('.itmprice').val(newPrice);
+            if (purchase) {
+                $row.find('.itmsellprice').val(unitListPrice || 0);
+            }
+            $row.find('.itmdisc').val(((qty * newPrice * pct) / 100).toFixed(3));
+            $row.find('.itmprice').trigger('input');
+        });
+    });
+
     // تحديث فوري عند أي تغيير في الصفوف
     $(document).on('input', '.itmqty, .itmprice, .itmdisc', function() {
         setTimeout(function() {
@@ -152,7 +197,69 @@ $(document).ready(function() {
     });
 });
 
+function setInvoiceRowPrice($row, price) {
+    const qty = parseFloat($row.find('.itmqty').val()) || 0;
+    const pct = parseFloat($row.find('.itmdisc_pct').val()) || 0;
+    const shown = (typeof window.formatInvoiceMoney === 'function')
+        ? window.formatInvoiceMoney(price)
+        : price;
+    $row.find('.itmprice').val(shown);
+    $row.find('.itmdisc').val(((qty * price * pct) / 100).toFixed(3));
+    $row.find('.itmprice').trigger('input');
+}
+
+function repriceSalesReturnLines() {
+    if (typeof window.isSalesReturn !== 'function' || !window.isSalesReturn()) return;
+    if (typeof window.fetchLastSaleBases !== 'function') return;
+
+    const rows = [];
+    $('#itmrow tr').each(function() {
+        const id = $(this).find('input[name="itmname[]"]').val();
+        if (id) rows.push({ row: $(this), id: id });
+    });
+    if (!rows.length) return;
+
+    window.fetchLastSaleBases(rows.map(function(r) { return r.id; }), function(map) {
+        const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
+        rows.forEach(function(entry) {
+            const unitVal = parseFloat(entry.row.find('select[name="u_val[]"]').val()) || 1;
+            const base = parseFloat(map[entry.id]);
+            if (base > 0) {
+                setInvoiceRowPrice(entry.row, base * unitVal);
+                return;
+            }
+            $.getJSON('get/get_iteminfo.php', { id: entry.id }, function(data) {
+                if (!data || data.error) return;
+                const unit = (typeof window.findInvoiceUnit === 'function')
+                    ? window.findInvoiceUnit(data.units, unitVal)
+                    : null;
+                const price = unit
+                    ? window.invoicePriceFor(unit, listId, true)
+                    : window.invoicePriceFor(data, listId, false);
+                setInvoiceRowPrice(entry.row, price);
+            });
+        });
+    });
+}
+
 function initializeSelect2() {
+    $('#mySelectEmp, #invoiceStore').each(function() {
+        const $el = $(this);
+        if (!$el.length) return;
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
+        $el.select2({
+            dir: 'rtl',
+            width: '100%',
+            theme: 'bootstrap4',
+            language: {
+                noResults: function() { return 'لا توجد نتائج'; },
+                searching: function() { return 'جاري البحث...'; }
+            }
+        });
+    });
+
     if ($('#mySelectitm').hasClass('select2-hidden-accessible')) {
         $('#mySelectitm').select2('destroy');
     }
@@ -202,19 +309,9 @@ function fetchItemInfo(itemId, row) {
             row.find("#itmval").val(price);
             row.find("#itmqty").val(1);
             
-            // تحديث العناصر بدون استخدام .html() المتكرر
-            const updates = {
-                '#storeqty': data.itmqty ? parseFloat(data.itmqty.toFixed(2)) : '0',
-                '#price1': data.price1 || '0',
-                '#market_price': data.market_price || '0',
-                '#storemdtime': data.mdtime || '',
-                '#cost_price': data.cost_price || '0',
-                '#last_price': data.last_price || '0'
-            };
-            
-            Object.entries(updates).forEach(([selector, value]) => {
-                $(selector).text(value);
-            });
+            if (typeof window.applyUnitItemInfo === 'function') {
+                window.applyUnitItemInfo(data, (data.units && data.units.length) ? data.units[0] : null);
+            }
             
             const unitSelect = row.find('select[name="u_val[]"]');
             unitSelect.empty();
@@ -224,28 +321,6 @@ function fetchItemInfo(itemId, row) {
                     `<option value="${unit.unit_value}">${unit.unit_name}</option>`
                 ).join('');
                 unitSelect.html(options);
-                
-                // Unit change event - استخدام off قبل on لمنع التكرار
-                unitSelect.off('change').on('change', function() {
-                    const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
-                    if (selectedUnit) {
-                        const activeList = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : listId;
-                        const newPrice = purchase
-                            ? (parseFloat(selectedUnit.ucost) || 0)
-                            : ((typeof window.invoicePriceFor === 'function') ? window.invoicePriceFor(selectedUnit, activeList, true) : (parseFloat(selectedUnit.uprice1) || 0));
-                        row.find("#itmprice").val(newPrice);
-                        row.find("#itmqty").val(1);
-                        
-                        $('#storeqty').text(parseFloat((data.itmqty/selectedUnit.unit_value).toFixed(2)) + " (" + selectedUnit.unit_value + ")");
-                        $('#price1').text(selectedUnit.uprice1);
-                        $('#market_price').text(selectedUnit.uprice3);
-                        $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
-                        $('#last_price').text(data.last_price * selectedUnit.unit_value);
-                        
-                        calculateItemValue(row);
-                        updateTotal();
-                    }
-                });
             }
         },
         error: function(xhr, status, error) {
@@ -293,9 +368,7 @@ function fetchItemInfo(itemId, row) {
                     <input type="number" name="itmname[]" hidden value="${itemId}">
                 </td>
                 <td>
-                    <select name="u_val[]" class="form-control form-control-sm" style="width:100px;">
-                        <option value="${unitVal}">${unitName}</option>
-                    </select>
+                    <select name="u_val[]" class="form-control form-control-sm" style="width:100px;"></select>
                 </td>
                 <td><input type="number" name="itmqty[]"     value="${qty}"            class="itmqty     form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
                 <td><input type="number" name="itmprice[]"  value="${price}"           class="itmprice   form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
@@ -305,6 +378,17 @@ function fetchItemInfo(itemId, row) {
                 <td><input type="number" name="itmval[]"    value="${parseFloat(val.toFixed(3))}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
                 <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
+
+            const $rowUnit = newRow.find('select[name="u_val[]"]');
+            const $srcUnits = $('#inputUnitSelect');
+            $srcUnits.find('option').each(function() {
+                if (!this.value) return;
+                $rowUnit.append($(this).clone());
+            });
+            if (!$rowUnit.children().length) {
+                $rowUnit.append($('<option>', { value: unitVal, text: unitName || '-' }));
+            }
+            $rowUnit.val($srcUnits.val() || String(unitVal));
 
             newRow.appendTo("#itmrow");
 
@@ -333,6 +417,27 @@ function handleInputChanges() {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
         }
+    });
+
+    // تغيير وحدة صف الفاتورة يحدّث سعر الصف حسب الوحدة المختارة
+    $(document).off('change.rowunit').on('change.rowunit', '#itmrow select[name="u_val[]"]', function() {
+        const $sel = $(this);
+        const row = $sel.closest('tr');
+        const unit = unitFromOption($sel.find('option:selected'));
+        if (unit) {
+            applyUnitToRow(row, unit);
+            return;
+        }
+        const itemId = row.find('input[name="itmname[]"]').val();
+        const unitVal = parseFloat($sel.val()) || 0;
+        if (!itemId) return;
+        $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
+            if (!data || data.error || !data.units) return;
+            const found = data.units.find(function(u) {
+                return Math.abs((parseFloat(u.unit_value) || 0) - unitVal) < 0.0001;
+            });
+            if (found) applyUnitToRow(row, found);
+        });
     });
 
     // معالج واحد فقط (namespace) لتفادي تكرار الـ handlers
@@ -369,6 +474,52 @@ function handleInputChanges() {
             updateTotal();
         }, 150);
     });
+}
+
+function unitFromOption($opt) {
+    if (!$opt.length) return null;
+    if ($opt.attr('data-uprice1') === undefined && $opt.attr('data-ucost') === undefined) return null;
+    return {
+        ucost: $opt.attr('data-ucost'),
+        uprice1: $opt.attr('data-uprice1'),
+        uprice2: $opt.attr('data-uprice2'),
+        uprice3: $opt.attr('data-uprice3'),
+        uprice4: $opt.attr('data-uprice4'),
+        unit_value: $opt.val()
+    };
+}
+
+function applyUnitToRow(row, unit) {
+    const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    const listId = typeof window.currentInvoicePriceList === 'function' ? window.currentInvoicePriceList() : 1;
+    const listPrice = typeof window.invoicePriceFor === 'function'
+        ? window.invoicePriceFor(unit, listId, true)
+        : (parseFloat(unit.uprice1) || 0);
+    const unitVal = parseFloat(unit.unit_value) || 1;
+
+    function writePrice(price) {
+        row.find('.itmprice').val(price);
+        if (row.find('.itmsellprice').length) {
+            row.find('.itmsellprice').val(listPrice || price);
+            calcProfitPct(row);
+        }
+        if (row.find('.itmdisc_pct').length) {
+            calcDiscFromPct(row);
+        }
+        calculateItemValue(row);
+        updateTotal();
+    }
+
+    if (!purchase && typeof window.isSalesReturn === 'function' && window.isSalesReturn() && typeof window.fetchLastSaleBases === 'function') {
+        const itemId = row.find('input[name="itmname[]"]').val();
+        window.fetchLastSaleBases([itemId], function(map) {
+            const base = parseFloat(map[itemId]) || 0;
+            writePrice(base > 0 ? base * unitVal : listPrice);
+        });
+        return;
+    }
+
+    writePrice(purchase ? (parseFloat(unit.ucost) || 0) : listPrice);
 }
 
 // نسبة الربح على أساس سعر الشراء (عمود السعر)

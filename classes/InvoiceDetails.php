@@ -210,6 +210,57 @@ window.isPurchaseInvoice = function() {
     return t === 4 || t === 10 || t === 12;
 };
 
+window.isSalesReturn = function() {
+    return parseInt($('input[name="pro_tybe"]').val(), 10) === 11;
+};
+
+window.fetchLastSaleBases = function(itemIds, done) {
+    var clientId = $('#mySelectEmp').val();
+    var ids = (itemIds || []).map(function(id) { return parseInt(id, 10); }).filter(function(id) { return id > 0; });
+    if (!clientId || !ids.length) {
+        done({});
+        return;
+    }
+    $.getJSON('ajax/last_sale_price.php', { client_id: clientId, item_ids: ids.join(',') })
+        .done(function(res) { done((res && res.prices) || {}); })
+        .fail(function() { done({}); });
+};
+
+window.findInvoiceUnit = function(units, unitVal) {
+    var target = parseFloat(unitVal);
+    if (!isFinite(target)) return null;
+    return (units || []).find(function(u) {
+        return Math.abs((parseFloat(u.unit_value) || 0) - target) < 0.0001;
+    }) || null;
+};
+
+window.formatInvoiceMoney = function(n) {
+    var v = parseFloat(n);
+    if (!isFinite(v)) return '0';
+    return String(parseFloat(v.toFixed(3)));
+};
+
+// أسعار بيانات الصنف أسفل الفاتورة حسب الوحدة المختارة
+window.applyUnitItemInfo = function(data, unit) {
+    if (!data) return;
+    var factor = unit ? (parseFloat(unit.unit_value) || 1) : 1;
+    var sell = unit ? parseFloat(unit.uprice1) : NaN;
+    if (!(sell > 0)) sell = (parseFloat(data.price1) || 0) * factor;
+    var market = unit ? parseFloat(unit.uprice3) : NaN;
+    if (!(market > 0)) market = (parseFloat(data.market_price) || parseFloat(data.price3) || 0) * factor;
+    var cost = unit ? parseFloat(unit.ucost) : NaN;
+    if (!(cost > 0)) cost = (parseFloat(data.cost_price) || 0) * factor;
+    var last = (parseFloat(data.last_price) || 0) * factor;
+    var qty = (parseFloat(data.itmqty) || 0) / factor;
+
+    $('#storeqty').text(window.formatInvoiceMoney(qty) + (unit ? ' (' + factor + ')' : ''));
+    $('#price1').text(window.formatInvoiceMoney(sell));
+    $('#market_price').text(window.formatInvoiceMoney(market));
+    $('#storemdtime').text(data.mdtime || '');
+    $('#cost_price').text(window.formatInvoiceMoney(cost));
+    $('#last_price').text(window.formatInvoiceMoney(last));
+};
+
 $(document).ready(function() {
     const searchInput = document.getElementById('itemSearchInput');
     const searchResults = document.getElementById('searchResults');
@@ -313,12 +364,23 @@ $(document).ready(function() {
                                      style="padding:10px; cursor:pointer; border-bottom:1px solid #eee;">
                                     <strong>${item.iname}</strong>
                                     ${item.name2 ? ' // ' + item.name2 : ''}
-                                    <span style="float:left; color:#10b981;">${listPrice} ج.م</span>
+                                    <span class="search-result-price" style="float:left; color:#10b981;">${listPrice} ج.م</span>
                                 </div>
                             `;
                         });
                         searchResults.innerHTML = html;
                         bindResultItems();
+                        if (window.isSalesReturn()) {
+                            window.fetchLastSaleBases(data.items.map(function(item) { return item.id; }), function(map) {
+                                document.querySelectorAll('#searchResults .search-result-item').forEach(function(el) {
+                                    var base = parseFloat(map[el.dataset.id]);
+                                    if (!(base > 0)) return;
+                                    el.dataset.price = base;
+                                    var label = el.querySelector('.search-result-price');
+                                    if (label) label.textContent = base + ' ج.م';
+                                });
+                            });
+                        }
                     } else {
                         searchResults.innerHTML = '<div style="padding:10px; text-align:center; color:#999;">لا توجد نتائج</div>';
                         clearHighlight();
@@ -477,65 +539,74 @@ $(document).ready(function() {
                 const price = isPurchase
                     ? (defaultUnitCost || parseFloat(data.cost_price) || 0)
                     : listPrice;
+                const defaultUnit = (data.units && data.units.length) ? (parseFloat(data.units[0].unit_value) || 1) : 1;
 
-                // تحديث حقول صف الإدخال
-                $('#itmprice').val(price);
-                $('#itmqty').val(1);
-                $('#itmdisc').val('0');
-                $('#itmval').val(price);
-                $('#itmsprice_stg').val(listPrice || 0);
+                function renderSelection(activePrice) {
+                    $('#itmprice').val(activePrice);
+                    $('#itmqty').val(1);
+                    $('#itmdisc').val('0');
+                    $('#itmval').val(activePrice);
+                    $('#itmsprice_stg').val(listPrice || 0);
 
-                // تحديث حقول المعلومات
-                $('#storeqty').text(data.itmqty ? parseFloat(data.itmqty).toFixed(2) : '0');
-                $('#price1').text(data.price1 || '0');
-                $('#market_price').text(data.market_price || '0');
-                $('#storemdtime').text(data.mdtime || '');
-                $('#cost_price').text(data.cost_price || '0');
-                $('#last_price').text(data.last_price || '0');
+                    window.applyUnitItemInfo(data, (data.units && data.units.length) ? data.units[0] : null);
 
-                // تحديث الوحدات
-                const unitSelect = $('#inputUnitSelect');
-                unitSelect.empty();
-                if (data.units && data.units.length) {
-                    data.units.forEach(function(unit) {
-                        unitSelect.append('<option value="' + unit.unit_value + '">' + unit.unit_name + '</option>');
-                    });
+                    const unitSelect = $('#inputUnitSelect');
+                    unitSelect.empty();
+                    if (data.units && data.units.length) {
+                        data.units.forEach(function(unit) {
+                            var opt = document.createElement('option');
+                            opt.value = unit.unit_value;
+                            opt.textContent = unit.unit_name;
+                            opt.dataset.ucost = unit.ucost || 0;
+                            opt.dataset.uprice1 = unit.uprice1 || 0;
+                            opt.dataset.uprice2 = unit.uprice2 || 0;
+                            opt.dataset.uprice3 = unit.uprice3 || 0;
+                            opt.dataset.uprice4 = unit.uprice4 || 0;
+                            unitSelect.append(opt);
+                        });
 
-                    unitSelect.off('change').on('change', function() {
-                        const selectedUnit = data.units.find(u => u.unit_value == $(this).val());
-                        if (selectedUnit) {
+                        unitSelect.off('change').on('change', function() {
+                            const selectedUnit = window.findInvoiceUnit(data.units, $(this).val());
+                            if (!selectedUnit) return;
                             const unitListPrice = window.invoicePriceFor(selectedUnit, window.currentInvoicePriceList(), true);
-                            const newPrice = isPurchase
-                                ? (parseFloat(selectedUnit.ucost) || 0)
-                                : unitListPrice;
+                            const unitVal = parseFloat(selectedUnit.unit_value) || 1;
+                            const returnBase = parseFloat(window._returnPriceBase) || 0;
+                            const newPrice = (window.isSalesReturn() && returnBase > 0)
+                                ? (returnBase * unitVal)
+                                : (isPurchase ? (parseFloat(selectedUnit.ucost) || 0) : unitListPrice);
                             $('#itmprice').val(newPrice);
                             $('#itmqty').val(1);
                             $('#itmval').val(newPrice);
-
-                            $('#storeqty').text((data.itmqty / selectedUnit.unit_value).toFixed(2) + ' (' + selectedUnit.unit_value + ')');
-                            $('#price1').text(selectedUnit.uprice1);
-                            $('#market_price').text(selectedUnit.uprice3);
-                            $('#cost_price').text(data.cost_price * selectedUnit.unit_value);
-                            $('#last_price').text(data.last_price * selectedUnit.unit_value);
                             $('#itmsprice_stg').val(unitListPrice || 0);
+                            window.applyUnitItemInfo(data, selectedUnit);
+                        });
+                    } else {
+                        unitSelect.append('<option value="">لا توجد وحدات</option>');
+                    }
+
+                    selectUnitByValue(unitSelect, opts.unitVal);
+
+                    var merged = addRowOrMerge(opts.merge);
+                    setTimeout(function() {
+                        if (opts.focusBarcode) {
+                            barcodeInput.focus();
+                            barcodeInput.select();
+                        } else if (!merged) {
+                            $('#itmrow tr:last .itmqty').focus().select();
                         }
-                    });
-                } else {
-                    unitSelect.append('<option value="">لا توجد وحدات</option>');
+                    }, 50);
                 }
 
-                // لو الباركود يخص وحدة معينة، اخترها قبل إضافة الصف
-                selectUnitByValue(unitSelect, opts.unitVal);
-
-                var merged = addRowOrMerge(opts.merge);
-                setTimeout(function() {
-                    if (opts.focusBarcode) {
-                        barcodeInput.focus();
-                        barcodeInput.select();
-                    } else if (!merged) {
-                        $('#itmrow tr:last .itmqty').focus().select();
-                    }
-                }, 50);
+                if (window.isSalesReturn()) {
+                    window.fetchLastSaleBases([item.id], function(map) {
+                        var base = parseFloat(map[item.id]) || 0;
+                        window._returnPriceBase = base;
+                        renderSelection(base > 0 ? (base * defaultUnit) : price);
+                    });
+                } else {
+                    window._returnPriceBase = 0;
+                    renderSelection(price);
+                }
             },
             error: function() {
                 addRowOrMerge(opts.merge);
@@ -971,8 +1042,14 @@ $(document).ready(function() {
 
             echo '<select name="u_val[]" class="form-control form-control-sm" style="width:100px;">';
             foreach ($units as $unit) {
-                $selected = ($selectedUnitVal && $unit['u_val'] == $selectedUnitVal) ? 'selected' : '';
-                echo "<option value='{$unit['u_val']}' {$selected}>{$this->sanitizeInput($unit['uname'])}</option>";
+                $selected = ($selectedUnitVal && abs((float)$unit['u_val'] - (float)$selectedUnitVal) < 0.0001) ? 'selected' : '';
+                $uval = htmlspecialchars((string)$unit['u_val'], ENT_QUOTES, 'UTF-8');
+                $ucost = htmlspecialchars((string)($unit['cost_price'] ?? '0'), ENT_QUOTES, 'UTF-8');
+                $p1 = htmlspecialchars((string)($unit['price1'] ?? '0'), ENT_QUOTES, 'UTF-8');
+                $p2 = htmlspecialchars((string)($unit['price2'] ?? '0'), ENT_QUOTES, 'UTF-8');
+                $p3 = htmlspecialchars((string)($unit['price3'] ?? '0'), ENT_QUOTES, 'UTF-8');
+                $p4 = htmlspecialchars((string)($unit['price4'] ?? '0'), ENT_QUOTES, 'UTF-8');
+                echo "<option value='{$uval}' data-ucost='{$ucost}' data-uprice1='{$p1}' data-uprice2='{$p2}' data-uprice3='{$p3}' data-uprice4='{$p4}' {$selected}>{$this->sanitizeInput($unit['uname'])}</option>";
             }
             echo '</select>';
 
