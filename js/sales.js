@@ -67,6 +67,7 @@ $(document).ready(function() {
     handleRowDeletion();
     handleFormSubmission();
     handleKeyboardShortcuts();
+    paintInvoiceLineWarnings();
 
     function applyClientPriceList(selectEl) {
         if (!selectEl || !selectEl.options || selectEl.selectedIndex < 0) return;
@@ -578,6 +579,7 @@ function handleInputChanges() {
         // "س. بيع" → نسبة الربح = (البيع - الشراء) / الشراء × 100  | لا يغيّر سعر الشراء ولا الإجمالي
         if ($this.hasClass('itmsellprice')) {
             calcProfitPct(row);
+            paintInvoiceLineWarnings();
             return;
         }
 
@@ -708,6 +710,21 @@ function calcProfitPct(row) {
 
             $('#myForm2').on('submit', function(event) {
                 const form = this;
+                if (form.dataset.warnOk === '1') {
+                    delete form.dataset.warnOk;
+                } else {
+                    const lines = paintInvoiceLineWarnings();
+                    if (lines.length) {
+                        event.preventDefault();
+                        confirmInvoiceWarnings(lines).then(function(ok) {
+                            if (!ok) return;
+                            form.dataset.warnOk = '1';
+                            $(form).trigger('submit');
+                        });
+                        return;
+                    }
+                }
+
                 const action = form.getAttribute('action') || '';
                 if (action.indexOf('doadd_invoice.php') === -1) return;
 
@@ -809,7 +826,86 @@ function calcProfitPct(row) {
             return results ? (results[2] ? decodeURIComponent(results[2].replace(/\+/g, ' ')) : '') : null;
         }
 
+function rowSalePrice($row) {
+    const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    if (purchase) {
+        const $sell = $row.find('.itmsellprice');
+        if (!$sell.length) return null;
+        const sell = parseFloat($sell.val());
+        return isFinite(sell) ? sell : 0;
+    }
+    const price = parseFloat($row.find('.itmprice').val());
+    return isFinite(price) ? price : 0;
+}
+
+function paintInvoiceLineWarnings() {
+    const lines = [];
+    const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+
+    $('#itmrow tr').each(function() {
+        const $row = $(this);
+        if (!$row.find('input[name="itmname[]"]').val()) return;
+
+        const name = $.trim($row.find('td').eq(1).find('p').text()) || 'صنف';
+        const qty = parseFloat($row.find('.itmqty').val());
+        const negativeQty = isFinite(qty) && qty < 0;
+        $row.find('.itmqty')
+            .toggleClass('invoice-warn-qty', negativeQty)
+            .attr('title', negativeQty ? 'الكمية سالبة' : '');
+
+        const sale = rowSalePrice($row);
+        const $saleInput = purchase ? $row.find('.itmsellprice') : $row.find('.itmprice');
+        const zeroSale = sale !== null && sale === 0;
+        $saleInput
+            .toggleClass('invoice-warn-price', zeroSale)
+            .attr('title', zeroSale ? 'البيع صفر' : '');
+
+        if (negativeQty) lines.push(name + ': الكمية سالبة');
+        if (zeroSale) lines.push(name + ': البيع صفر');
+    });
+
+    let $box = $('#invoiceLineWarnBox');
+    if (!$box.length && $('#fatTable').length) {
+        const $wrap = $('#fatTable').closest('.itemtable, .table-responsive');
+        ($wrap.length ? $wrap : $('#fatTable')).before('<div id="invoiceLineWarnBox"></div>');
+        $box = $('#invoiceLineWarnBox');
+    }
+    if (!$box.length) return lines;
+
+    if (!lines.length) {
+        $box.hide().empty();
+        return lines;
+    }
+
+    const html = lines.map(function(text) {
+        return '<div>' + $('<div>').text(text).html() + '</div>';
+    }).join('');
+    $box.html('<strong>تحذير</strong>' + html).show();
+    return lines;
+}
+
+function confirmInvoiceWarnings(lines) {
+    const html = lines.map(function(text) {
+        return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
+    }).join('');
+
+    return Swal.fire({
+        type: 'warning',
+        title: 'تحذير في الفاتورة',
+        html: html,
+        showCancelButton: true,
+        confirmButtonText: 'متابعة الحفظ',
+        cancelButtonText: 'رجوع',
+        confirmButtonColor: '#d97706',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true
+    }).then(function(result) {
+        return result.value === true || result.isConfirmed === true;
+    });
+}
+
 function updateTotal() {
+    paintInvoiceLineWarnings();
     let total = 0;
     let totalQty = 0;
     $('#itmrow .itmval').each(function() {

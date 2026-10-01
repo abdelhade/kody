@@ -9,6 +9,31 @@
     box-shadow: inset 3px 0 0 #4B5694;
 }
 
+#invoiceLineWarnBox {
+    display: none;
+    margin: 8px 0;
+    padding: 8px 12px;
+    border: 1px solid #f59e0b;
+    background: #fff7ed;
+    color: #9a3412;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+#invoiceLineWarnBox strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #c2410c;
+}
+
+#itmrow input.invoice-warn-qty,
+#itmrow input.invoice-warn-price {
+    border: 2px solid #dc2626 !important;
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+}
+
 .itemlight1{
     position: fixed;
     bottom:0%;
