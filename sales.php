@@ -122,6 +122,36 @@ function getInvoiceElements() {
     .bg-danger { background-color: #dc2626; }
     .bg-neutral-500 { background-color: #71717a; }
     .hadi-wonder { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .invoice-footer-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 250px;
+        z-index: 1020;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.08);
+        padding: 6px 8px 8px;
+    }
+    @media (min-width: 992px) {
+        body.sidebar-mini.sidebar-collapse .invoice-footer-fixed {
+            right: 4.6rem;
+        }
+    }
+    @media (max-width: 767.98px) {
+        .invoice-footer-fixed { right: 0; }
+        body.sidebar-open .invoice-footer-fixed { right: 250px; }
+    }
+    body.sales-invoice-page .show-keyboard-help {
+        bottom: calc(var(--invoice-footer-h, 240px) + 12px);
+    }
+    @media print {
+        .invoice-footer-fixed {
+            position: static !important;
+            box-shadow: none !important;
+            right: auto !important;
+        }
+    }
 </style>
 
 <!-- Load Non-Critical CSS Async -->
@@ -133,6 +163,7 @@ function getInvoiceElements() {
 </noscript>
 
 <div class="content-wrapper">
+<script>document.body.classList.add('sales-invoice-page');</script>
 <section class="content-header">
 <div class="container-fluid p-0 m-0">
 
@@ -316,6 +347,45 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
 $salesJsVer = filemtime('js/sales.js');
 $sales0JsVer = filemtime('js/sales0.js');
 $extra_footer_scripts .= '
+<script>
+(function () {
+    var footer = document.getElementById("invoiceFooter");
+    var table = document.querySelector(".itemtable");
+    if (!footer || !table) return;
+
+    function fit() {
+        var footerH = footer.offsetHeight || 0;
+        document.documentElement.style.setProperty("--invoice-footer-h", footerH + "px");
+        var top = table.getBoundingClientRect().top;
+        if (top < 80) top = 80;
+        var ops = document.getElementById("operations");
+        var opsH = 0;
+        if (ops && window.getComputedStyle(ops).display !== "none") {
+            opsH = ops.offsetHeight || 0;
+        }
+        var content = document.querySelector(".content-wrapper");
+        if (content) content.style.paddingBottom = (opsH > 0 ? footerH + 12 : 8) + "px";
+        var h = window.innerHeight - top - footerH - opsH - 10;
+        if (h < 140) h = 140;
+        table.style.height = h + "px";
+    }
+
+    fit();
+    window.addEventListener("resize", fit);
+    window.addEventListener("load", fit);
+    if (window.ResizeObserver) {
+        new ResizeObserver(fit).observe(footer);
+    }
+    document.getElementById("showOps")?.addEventListener("click", function () {
+        setTimeout(fit, 30);
+    });
+    if (window.jQuery) {
+        jQuery(document).on("collapsed.lte.pushmenu shown.lte.pushmenu", function () {
+            setTimeout(fit, 320);
+        });
+    }
+})();
+</script>
 <script src="js/sales.js?v=' . $salesJsVer . '"></script>
 <script src="js/sales0.js?v=' . $sales0JsVer . '"></script>
 <script src="js/keyboard_navigation.js"></script>

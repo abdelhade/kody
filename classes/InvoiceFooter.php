@@ -39,6 +39,7 @@ class InvoiceFooter extends InvoiceElementBase
     {
         ob_start();
         ?>
+        <div class="invoice-footer-fixed" id="invoiceFooter">
         <div class="row full bg--200 border">
             <!-- حقل نوع الفاتورة المخفي -->
             <input type="text" name="pro_tybe" hidden value="<?php echo $this->invoiceType; ?>">
@@ -82,6 +83,7 @@ class InvoiceFooter extends InvoiceElementBase
             <div class="col-md-2" id="showOps">
                 <div class="btn">إظهار الفواتير السابقة</div>
             </div>
+        </div>
         </div>
         <script>
         (function() {

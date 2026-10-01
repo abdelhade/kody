@@ -1651,6 +1651,58 @@ class InvoiceProcessor {
     }
 
     /**
+     * يمنع الكمية السالبة وسعر البيع صفر.
+     *
+     * @return list<string>
+     */
+    public static function validateInvoiceLines(int $proTybe, array $post): array
+    {
+        $errors = [];
+        $names = $post['itmname'] ?? null;
+        if (!is_array($names)) {
+            return $errors;
+        }
+
+        $purchase = $proTybe === self::INVOICE_TYPES['PURCHASE'];
+        $salePriceOnLine = in_array($proTybe, [
+            self::INVOICE_TYPES['SALES'],
+            self::INVOICE_TYPES['POS'],
+            self::INVOICE_TYPES['SALES_RETURN'],
+            self::INVOICE_TYPES['SALES_ORDER'],
+            self::INVOICE_TYPES['OFFER'],
+        ], true);
+
+        $rowNo = 0;
+        foreach ($names as $index => $itemId) {
+            if ($itemId === '' || $itemId === null) {
+                continue;
+            }
+            $rowNo++;
+            $qty = (float) ($post['itmqty'][$index] ?? 0);
+            if ($qty < 0) {
+                $errors[] = 'سطر ' . $rowNo . ': الكمية سالبة';
+            }
+
+            if ($purchase) {
+                if (!isset($post['itmsellprice'][$index])) {
+                    continue;
+                }
+                $sale = (float) $post['itmsellprice'][$index];
+            } elseif ($salePriceOnLine) {
+                $sale = (float) ($post['itmprice'][$index] ?? 0);
+            } else {
+                continue;
+            }
+
+            if (abs($sale) < 0.0000001) {
+                $errors[] = 'سطر ' . $rowNo . ': البيع صفر';
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
      * بناء مصفوفة أسطر من $_POST القياسي للفواتير.
      */
     public static function linesFromPost(array $post): array

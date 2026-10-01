@@ -104,6 +104,11 @@ if (!$rowop) {
 
 $pro_tybe = intval($rowop['pro_tybe']);
 
+$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST);
+if ($lineErrors) {
+    die(implode(' — ', $lineErrors));
+}
+
 // تحديد المبلغ المدفوع - أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
 if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
     $paid = 0;

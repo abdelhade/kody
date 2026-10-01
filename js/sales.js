@@ -710,19 +710,21 @@ function calcProfitPct(row) {
 
             $('#myForm2').on('submit', function(event) {
                 const form = this;
-                if (form.dataset.warnOk === '1') {
-                    delete form.dataset.warnOk;
-                } else {
-                    const lines = paintInvoiceLineWarnings();
-                    if (lines.length) {
-                        event.preventDefault();
-                        confirmInvoiceWarnings(lines).then(function(ok) {
-                            if (!ok) return;
-                            form.dataset.warnOk = '1';
-                            $(form).trigger('submit');
-                        });
-                        return;
-                    }
+                const lines = paintInvoiceLineWarnings();
+                if (lines.length) {
+                    event.preventDefault();
+                    const html = lines.map(function(text) {
+                        return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
+                    }).join('');
+                    Swal.fire({
+                        type: 'error',
+                        title: 'لا يمكن حفظ الفاتورة',
+                        html: html,
+                        confirmButtonText: 'حسناً'
+                    });
+                    const $first = $('#itmrow .invoice-warn-qty, #itmrow .invoice-warn-price').first();
+                    if ($first.length) $first.focus().select();
+                    return;
                 }
 
                 const action = form.getAttribute('action') || '';
@@ -880,28 +882,8 @@ function paintInvoiceLineWarnings() {
     const html = lines.map(function(text) {
         return '<div>' + $('<div>').text(text).html() + '</div>';
     }).join('');
-    $box.html('<strong>تحذير</strong>' + html).show();
+    $box.html('<strong>لا يمكن الحفظ</strong>' + html).show();
     return lines;
-}
-
-function confirmInvoiceWarnings(lines) {
-    const html = lines.map(function(text) {
-        return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
-    }).join('');
-
-    return Swal.fire({
-        type: 'warning',
-        title: 'تحذير في الفاتورة',
-        html: html,
-        showCancelButton: true,
-        confirmButtonText: 'متابعة الحفظ',
-        cancelButtonText: 'رجوع',
-        confirmButtonColor: '#d97706',
-        cancelButtonColor: '#3085d6',
-        reverseButtons: true
-    }).then(function(result) {
-        return result.value === true || result.isConfirmed === true;
-    });
 }
 
 function updateTotal() {

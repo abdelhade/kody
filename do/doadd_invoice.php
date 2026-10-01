@@ -251,6 +251,11 @@ if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_fil
     invoice_fail('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
+$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST);
+if ($lineErrors) {
+    invoice_fail(implode(' — ', $lineErrors));
+}
+
 
 
 
