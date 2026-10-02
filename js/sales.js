@@ -515,6 +515,12 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
 
             newRow.appendTo("#itmrow");
 
+            const qtyField = newRow.find('.itmqty').get(0);
+            if (qtyField) {
+                qtyField.focus();
+                setTimeout(function() { try { qtyField.select(); } catch (ex) {} }, 0);
+            }
+
             // مسح حقول الإدخال
             $("#itemSearchInput").val('');
             $("#selectedItemId").val('');
@@ -532,14 +538,9 @@ function handleInputChanges() {
 
     const ALL_ROW_INPUTS = '.itmqty, .itmprice, .itmdisc, .itmdisc_pct, .itmsellprice, .itmprofit_pct';
 
-    // تعطيل تغيير القيمة بالسكرول وأسهم الكيبورد في صفوف الفاتورة
+    // تعطيل تغيير القيمة بعجلة الماوس؛ أسهم الكيبورد تتنقل بين الحقول
     $(document).on('wheel', '#itmrow input[type="number"]', function(e) {
         e.preventDefault();
-    });
-    $(document).on('keydown', '#itmrow input[type="number"]', function(e) {
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            e.preventDefault();
-        }
     });
 
     // تغيير وحدة صف الفاتورة يحدّث سعر الصف حسب الوحدة المختارة
@@ -943,10 +944,35 @@ function updateTotal() {
         
 
 function handleKeyboardShortcuts() {
-    // ترتيب التنقل داخل صف الفاتورة بالـ Enter: كمية → سعر → خصم → بحث
-    const ROW_FIELDS = ['.itmqty', '.itmprice', '.itmdisc_pct', '.itmdisc', '.itmprofit_pct', '.itmsellprice'];
+    // ترتيب الحقول من اليمين لليسار في الصفحة العربية
+    const ROW_FIELDS = ['select[name="u_val[]"]', '.itmqty', '.itmprice', '.itmdisc_pct', '.itmdisc', '.itmprofit_pct', '.itmsellprice'];
 
-    $(document).off('keydown').on('keydown', function(event) {
+    function rowFields($row) {
+        const fields = [];
+        ROW_FIELDS.forEach(function(sel) {
+            const el = $row.find(sel).get(0);
+            if (el && !el.disabled && !el.readOnly) fields.push(el);
+        });
+        return fields;
+    }
+
+    function focusField(el) {
+        if (!el) return;
+        const row = el.closest('#itmrow tr');
+        if (row) {
+            $('#itmrow tr').removeClass('item-row-active');
+            row.classList.add('item-row-active');
+        }
+        el.focus();
+        if (typeof el.select === 'function') {
+            setTimeout(function() { try { el.select(); } catch (ex) {} }, 0);
+        }
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    }
+
+    $(document).off('keydown.invoiceNav').on('keydown.invoiceNav', function(event) {
         if (event.key === 'F11') {
             event.preventDefault();
             $('#submit2').click();
@@ -958,42 +984,54 @@ function handleKeyboardShortcuts() {
             return;
         }
 
-        if (event.key !== 'Enter') return;
         const $target = $(event.target);
+        if ($target.is('button, textarea')) return;
         if ($target.hasClass('select2-search__field') || $target.closest('.select2-dropdown, .select2-container').length) return;
-        if (!$target.is('input, select')) return;
+        if (document.querySelector('.modal.show')) return;
 
-        // هل الحقل داخل صف فاتورة في #itmrow؟
         const $row = $target.closest('#itmrow tr');
-        if ($row.length) {
-            event.preventDefault();
-            // منع معالج keydown الآخر (keyboard_navigation.js) من التنقل مرتين
-            event.stopImmediatePropagation();
+        if (!$row.length) return;
 
-            // حدد فهرس الحقل الحالي
-            let currentIdx = -1;
-            ROW_FIELDS.forEach((sel, i) => {
-                if ($target.is($row.find(sel))) currentIdx = i;
-            });
+        const key = event.key;
+        const moveKeys = { ArrowUp: 1, ArrowDown: 1, ArrowLeft: 1, ArrowRight: 1, Enter: 1 };
+        if (!moveKeys[key]) return;
 
-            // انتقل لأول حقل موجود بعد الحالي (يتخطى الأعمدة المخفية مثل الربح/البيع في غير المشتريات)
-            let moved = false;
-            for (let i = currentIdx + 1; i < ROW_FIELDS.length; i++) {
-                const $next = $row.find(ROW_FIELDS[i]);
-                if ($next.length) { $next.focus(); $next.select(); moved = true; break; }
+        const fields = rowFields($row);
+        const idx = fields.indexOf(event.target);
+        if (idx < 0) return;
+
+        // أسهم القائمة تغيّر الوحدة؛ يمين ويسار وEnter ينقلون بين الحقول
+        if ($target.is('select') && (key === 'ArrowUp' || key === 'ArrowDown')) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        if (key === 'ArrowDown' || key === 'ArrowUp') {
+            const $destRow = key === 'ArrowDown' ? $row.next('tr') : $row.prev('tr');
+            if (!$destRow.length) {
+                if (key === 'ArrowUp') focusField(document.getElementById('itemSearchInput'));
+                return;
             }
-            if (!moved) {
-                // لا يوجد حقل تالٍ → ارجع لحقل البحث لإضافة صنف جديد
-                $('#itemSearchInput').focus().select();
-            }
+            const destFields = rowFields($destRow);
+            focusField(destFields[idx] || destFields[0]);
             return;
         }
 
-        // تنقل عادي في باقي الحقول
-        event.preventDefault();
-        let $next = $target.closest('td').next().find('input, select');
-        if ($next.length) {
-            $next.focus();
+        if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Enter') {
+            // ArrowLeft و Enter يتقدمان لليسار (الحقل التالي). ArrowRight يرجع لليمين.
+            const forward = key !== 'ArrowRight';
+            const nextIdx = idx + (forward ? 1 : -1);
+            if (fields[nextIdx]) {
+                focusField(fields[nextIdx]);
+                return;
+            }
+            const $destRow = forward ? $row.next('tr') : $row.prev('tr');
+            if ($destRow.length) {
+                const destFields = rowFields($destRow);
+                focusField(forward ? destFields[0] : destFields[destFields.length - 1]);
+                return;
+            }
+            if (forward) focusField(document.getElementById('itemSearchInput'));
         }
     });
 }

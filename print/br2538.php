@@ -115,6 +115,20 @@ $justify = $align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' :
     color: #000;
     font-family: Tahoma, Arial, sans-serif;
   }
+  .bd-el.bd-name {
+    white-space: normal;
+    line-height: 1.1;
+    align-items: center;
+  }
+  .bd-el.bd-name span {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: inherit;
+  }
   .bd-el svg { width: 100%; height: 100%; display: block; }
 </style>
 </head>
@@ -169,6 +183,8 @@ foreach ($codes as $index => $itemCodeRaw) {
                 }
             } elseif ($key === 'item_name') {
                 $text = $itemName;
+                echo '<div class="bd-el bd-name" style="' . $box . $font . $extra . '"><span>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span></div>';
+                continue;
             } elseif ($key === 'barcode_text') {
                 $text = $barcodeValue;
             } elseif ($key === 'code') {

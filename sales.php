@@ -232,19 +232,19 @@ if (!empty($elements['add_item_modal'])) {
     <h4>⌨️ اختصارات الكيبورد</h4>
     <ul style="direction: rtl; text-align: right;">
         <li style="display: flex; justify-content: space-between; direction: rtl;">
-            <span style="direction: rtl;">التنقل لأعلى</span> 
+            <span style="direction: rtl;">الصنف السابق (نفس الحقل)</span> 
             <kbd style="direction: ltr; unicode-bidi: isolate;">↑</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
-            <span style="direction: rtl;">التنقل لأسفل</span> 
+            <span style="direction: rtl;">الصنف التالي (نفس الحقل)</span> 
             <kbd style="direction: ltr; unicode-bidi: isolate;">↓</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
-            <span style="direction: rtl;">التنقل لليمين</span> 
+            <span style="direction: rtl;">الحقل السابق في الصنف</span> 
             <kbd style="direction: ltr; unicode-bidi: isolate;">→</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
-            <span style="direction: rtl;">التنقل لليسار</span> 
+            <span style="direction: rtl;">الحقل التالي في الصنف</span> 
             <kbd style="direction: ltr; unicode-bidi: isolate;">←</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
@@ -256,7 +256,7 @@ if (!empty($elements['add_item_modal'])) {
             <kbd style="direction: ltr; unicode-bidi: isolate;">Shift+Tab</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
-            <span style="direction: rtl;">تأكيد/التالي</span> 
+            <span style="direction: rtl;">الحقل التالي ثم الصنف التالي</span> 
             <kbd style="direction: ltr; unicode-bidi: isolate;">Enter</kbd>
         </li>
         <li style="display: flex; justify-content: space-between; direction: rtl;">
@@ -346,6 +346,7 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
 
 $salesJsVer = filemtime('js/sales.js');
 $sales0JsVer = filemtime('js/sales0.js');
+$keyboardNavVer = filemtime('js/keyboard_navigation.js');
 $extra_footer_scripts .= '
 <script>
 (function () {
@@ -388,7 +389,7 @@ $extra_footer_scripts .= '
 </script>
 <script src="js/sales.js?v=' . $salesJsVer . '"></script>
 <script src="js/sales0.js?v=' . $sales0JsVer . '"></script>
-<script src="js/keyboard_navigation.js"></script>
+<script src="js/keyboard_navigation.js?v=' . $keyboardNavVer . '"></script>
 ';
 
 include('includes/footer.php');

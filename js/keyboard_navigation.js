@@ -178,6 +178,9 @@
         // تجاهل إذا كان الـ modal مفتوح
         if (document.querySelector('.modal.show') || document.querySelector('.modal[style*="display: block"]')) return;
 
+        // التنقل داخل أصناف الفاتورة يتولاه sales.js
+        if (activeElement.closest && activeElement.closest('#itmrow')) return;
+
         // تجاهل الـ simulated events من Bootstrap
         if (e.originalEvent === undefined && e.isTrigger) return;
 

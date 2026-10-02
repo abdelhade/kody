@@ -1,99 +1,105 @@
-<nav class="main-header navbar navbar-expand-lg border-bottom py-2" style="background-color: #ffffff;">
+<nav class="main-header navbar navbar-expand border-bottom py-2" style="background-color: #ffffff;">
   <div class="container-fluid d-flex justify-content-between align-items-center">
-    
-    <ul class="navbar-nav align-items-center gap-2 mb-0 me-auto">
-      <li class="nav-item">
-        <a class="nav-link text-primary fs-5" data-widget="pushmenu" href="#" role="button">
-          <i class="fas fa-bars"></i>
-        </a>
-      </li>
 
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="index.php" class="nav-link active fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="<?= htmlspecialchars($lang_sidemain, ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars($lang_sidemain, ENT_QUOTES, 'UTF-8') ?>">
-          <i class="fas fa-home"></i>
-        </a>
-      </li>
-
-      <?php if($role['show_users'] == 1){ ?>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="users.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="المستخدمين" aria-label="المستخدمين">
-          <i class="fas fa-users"></i>
-        </a>
-      </li>
-      <?php } ?>
-
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="setting.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="إعدادات النظام" aria-label="إعدادات النظام">
-          <i class="fas fa-cog"></i>
-        </a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="about.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="بيانات الشركة" aria-label="بيانات الشركة">
-          <i class="fas fa-building"></i>
-        </a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="roadmap.php" class="nav-link fs-5" data-bs-toggle="tooltip" data-bs-placement="bottom" title="خطة العمل" aria-label="خطة العمل">
-          <i class="fas fa-map"></i>
-        </a>
-      </li>
-      
-    </ul>
-
-    <div class="d-flex align-items-center gap-3 ms-auto">
-
-      <?php
-      $activeDbName = $dbname ?? ($_SESSION['active_dbname'] ?? '');
-      $activePeriodLabel = $activeDbName;
-      $registryFile = __DIR__ . '/../config/db_registry.json';
-      if ($activeDbName && is_readable($registryFile)) {
-          $regNav = json_decode((string) file_get_contents($registryFile), true);
-          if (is_array($regNav) && !empty($regNav['databases'])) {
-              foreach ($regNav['databases'] as $dbNav) {
-                  if (($dbNav['name'] ?? '') === $activeDbName) {
-                      $activePeriodLabel = $dbNav['label'] ?: $activeDbName;
-                      break;
-                  }
-              }
-          }
-      }
-      if ($activeDbName):
-      ?>
-      <a href="setting.php" class="btn btn-light rounded-circle p-2 shadow-sm border d-none d-md-inline-flex align-items-center justify-content-center"
-         data-bs-toggle="tooltip" data-bs-placement="bottom"
-         title="<?= htmlspecialchars($activePeriodLabel . ' (' . $activeDbName . ')', ENT_QUOTES, 'UTF-8') ?>"
-         aria-label="<?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>">
-        <i class="fas fa-calendar-alt text-primary"></i>
+    <!-- يمين: زر إخفاء القائمة الجانبية + قائمة الاختصارات -->
+    <div class="d-flex align-items-center" style="gap: .5rem;">
+      <a class="nav-link text-primary fs-5 px-2" data-widget="pushmenu" href="#" role="button" title="القائمة الجانبية" aria-label="القائمة الجانبية">
+        <i class="fas fa-bars"></i>
       </a>
-      <?php endif; ?>
-      
-      <button id="exportDB" class="btn btn-light rounded-circle p-2 shadow-sm border" data-bs-toggle="tooltip" data-bs-placement="bottom" title="حفظ نسخة احتياطية" aria-label="حفظ نسخة احتياطية">
-        <i class="fas fa-database text-primary"></i>
+
+      <div class="dropdown">
+        <button class="btn btn-light rounded-circle p-2 shadow-sm border" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="اختصارات" aria-label="اختصارات">
+          <i class="fas fa-th text-primary"></i>
+        </button>
+        <div class="dropdown-menu navbar-drop-right text-right shadow">
+          <a class="dropdown-item" href="index.php">
+            <i class="fas fa-home ml-2 text-primary"></i><?= htmlspecialchars($lang_sidemain ?? 'الرئيسية', ENT_QUOTES, 'UTF-8') ?>
+          </a>
+          <?php if (($role['show_users'] ?? 0) == 1) { ?>
+          <a class="dropdown-item" href="users.php">
+            <i class="fas fa-users ml-2 text-primary"></i>المستخدمين
+          </a>
+          <?php } ?>
+          <a class="dropdown-item" href="setting.php">
+            <i class="fas fa-cog ml-2 text-primary"></i>إعدادات النظام
+          </a>
+          <a class="dropdown-item" href="about.php">
+            <i class="fas fa-building ml-2 text-primary"></i>بيانات الشركة
+          </a>
+          <a class="dropdown-item" href="roadmap.php">
+            <i class="fas fa-map ml-2 text-primary"></i>خطة العمل
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- شمال: قائمة الأدوات -->
+    <div class="dropdown">
+      <button class="btn btn-light rounded-circle p-2 shadow-sm border" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="أدوات" aria-label="أدوات">
+        <i class="fas fa-ellipsis-h text-muted"></i>
       </button>
+      <div class="dropdown-menu navbar-drop-left text-right shadow">
+        <?php
+        $activeDbName = $dbname ?? ($_SESSION['active_dbname'] ?? '');
+        $activePeriodLabel = $activeDbName;
+        $registryFile = __DIR__ . '/../config/db_registry.json';
+        if ($activeDbName && is_readable($registryFile)) {
+            $regNav = json_decode((string) file_get_contents($registryFile), true);
+            if (is_array($regNav) && !empty($regNav['databases'])) {
+                foreach ($regNav['databases'] as $dbNav) {
+                    if (($dbNav['name'] ?? '') === $activeDbName) {
+                        $activePeriodLabel = $dbNav['label'] ?: $activeDbName;
+                        break;
+                    }
+                }
+            }
+        }
+        if ($activeDbName):
+        ?>
+        <a class="dropdown-item" href="setting.php" title="<?= htmlspecialchars($activePeriodLabel . ' (' . $activeDbName . ')', ENT_QUOTES, 'UTF-8') ?>">
+          <i class="fas fa-calendar-alt ml-2 text-primary"></i><?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>
+        </a>
+        <div class="dropdown-divider"></div>
+        <?php endif; ?>
 
-      <button id="fullscreenBtn" class="btn btn-light rounded-circle p-2 shadow-sm border" data-bs-toggle="tooltip" data-bs-placement="bottom" title="وضع ملء الشاشة">
-        <i class="fas fa-expand text-muted"></i>
-      </button>
-
-   
-
-      <a href="do/do_logout.php" class="logout-link d-flex align-items-center px-2 py-1 rounded-pill" data-bs-toggle="tooltip" data-bs-placement="bottom" title="تسجيل الخروج">
-        <i class="fas fa-sign-out-alt"></i>
-      </a>
+        <button type="button" id="exportDB" class="dropdown-item">
+          <i class="fas fa-database ml-2 text-primary"></i>حفظ نسخة احتياطية
+        </button>
+        <button type="button" id="fullscreenBtn" class="dropdown-item">
+          <i class="fas fa-expand ml-2 text-muted"></i><span id="fullscreenLabel">وضع ملء الشاشة</span>
+        </button>
+        <div class="dropdown-divider"></div>
+        <a href="do/do_logout.php" class="dropdown-item text-danger">
+          <i class="fas fa-sign-out-alt ml-2"></i>تسجيل الخروج
+        </a>
+      </div>
     </div>
   </div>
 </nav>
+<style>
+  .main-header .navbar-drop-right {
+    left: auto !important;
+    right: 0 !important;
+  }
+  .main-header .navbar-drop-left {
+    left: 0 !important;
+    right: auto !important;
+  }
+</style>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('fullscreenBtn');
-    
-    // إضافة وظيفة لتغيير الأيقونة حسب حالة Fullscreen
+    const label = document.getElementById('fullscreenLabel');
+    if (!btn) return;
+
     const updateFullscreenIcon = () => {
-        if (!document.fullscreenElement) {
-            btn.innerHTML = '<i class="fas fa-expand text-muted"></i>';
-        } else {
-            btn.innerHTML = '<i class="fas fa-compress text-primary"></i>';
-        }
+      if (!document.fullscreenElement) {
+        btn.querySelector('i').className = 'fas fa-expand ml-2 text-muted';
+        if (label) label.textContent = 'وضع ملء الشاشة';
+      } else {
+        btn.querySelector('i').className = 'fas fa-compress ml-2 text-primary';
+        if (label) label.textContent = 'إنهاء ملء الشاشة';
+      }
     };
 
     btn.addEventListener('click', () => {
@@ -104,13 +110,6 @@
       }
     });
 
-    // Handle full-screen change events outside of button click
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
-    
-    // Initialize tooltips (if you are using Bootstrap's JS for tooltips)
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
   });
 </script>

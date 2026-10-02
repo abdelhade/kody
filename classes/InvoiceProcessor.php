@@ -1348,7 +1348,7 @@ class InvoiceProcessor {
         $fundId = (int) ($d['fund_id'] ?? 0);
 
         $stmt->bind_param(
-            'ssssiiiiiidddddddii',
+            'ssssiiiiidddddddii',
             $info,
             $proDate,
             $accural,
