@@ -171,6 +171,9 @@ $licenseOk = !empty($licenseStatus['licensed']);
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="database-tab" data-toggle="pill" href="#tab-database" role="tab" aria-controls="tab-database" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-database ml-3" style="font-size: 1.1rem; width: 20px;"></i> قاعدة البيانات
                   </a>
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="system-tab" data-toggle="pill" href="#tab-system" role="tab" aria-controls="tab-system" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fab fa-git-alt ml-3" style="font-size: 1.1rem; width: 20px;"></i> تحديث النظام (Git)
+                  </a>
                 </div>
               </div>
             </div>
@@ -683,6 +686,22 @@ $licenseOk = !empty($licenseStatus['licensed']);
                 </div>
               </div>
 
+              <!-- 8. تحديث النظام (Git) -->
+              <div class="tab-pane fade" id="tab-system" role="tabpanel" aria-labelledby="system-tab">
+                <div class="card card-outline card-info shadow-sm border-0 mb-3" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-info font-weight-bold mb-0"><i class="fab fa-git-alt ml-2"></i> تحديث النظام (Git Pull)</h3>
+                  </div>
+                  <div class="card-body">
+                    <p class="text-muted mb-3">سحب آخر التحديثات مباشرة من الرابط الموجود في ملف <code>.env</code> تحت المتغير <code>GIT_PULL_URL</code>.</p>
+                    <button type="button" class="btn btn-info" id="btnGitPull">
+                      <i class="fas fa-sync-alt ml-1"></i> سحب التحديثات (Git Pull)
+                    </button>
+                    <div id="git-pull-status" class="alert alert-secondary mt-3" style="display: none; white-space: pre-wrap; font-family: monospace; direction: ltr; text-align: left; max-height: 300px; overflow-y: auto;"></div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <!-- زر حفظ التغييرات أسفل التبويبات -->
@@ -1121,6 +1140,33 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(function () { alert('خطأ في الاتصال بالخادم'); })
         .finally(function () { btnSaveLicense.disabled = false; });
+    });
+  }
+
+  var btnGitPull = document.getElementById('btnGitPull');
+  var gitPullStatus = document.getElementById('git-pull-status');
+  if (btnGitPull) {
+    btnGitPull.addEventListener('click', function () {
+      if (!confirm('هل أنت متأكد من سحب التحديثات من مستودع Git؟')) return;
+      btnGitPull.disabled = true;
+      btnGitPull.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري السحب...';
+      gitPullStatus.style.display = 'block';
+      gitPullStatus.textContent = 'جاري الاتصال...';
+
+      fetch('ajax/git_pull.php')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          gitPullStatus.className = 'alert mt-3 ' + (data.success ? 'alert-success' : 'alert-danger');
+          gitPullStatus.textContent = (data.url_used ? 'URL Used: ' + data.url_used + '\n\n' : '') + data.output;
+        })
+        .catch(function () {
+          gitPullStatus.className = 'alert mt-3 alert-danger';
+          gitPullStatus.textContent = 'حدث خطأ في الاتصال.';
+        })
+        .finally(function () {
+          btnGitPull.disabled = false;
+          btnGitPull.innerHTML = '<i class="fas fa-sync-alt ml-1"></i> سحب التحديثات (Git Pull)';
+        });
     });
   }
 });
