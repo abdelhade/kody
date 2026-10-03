@@ -502,6 +502,10 @@
                                         <td class="text-center"><input type="checkbox" name="show_ended_reservation" class="user-checkbox" checked></td>
                                     </tr>
                                     <tr class="tr1">
+                                        <td>عدم السماح بالبيع أكثر من رصيد المخزن</td>
+                                        <td class="text-center"><input type="checkbox" name="prevent_negative_stock" class="user-checkbox"></td>
+                                    </tr>
+                                    <tr class="tr1">
                                         <td>اظهار اجمالي الحجوزات</td>
                                         <td class="text-center"><input type="checkbox" name="show_total_reservation" class="user-checkbox" checked></td>
                                     </tr>

@@ -149,6 +149,12 @@ if ($colEditUserPasswords && $colEditUserPasswords->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN edit_user_passwords INT(11) NOT NULL DEFAULT 0 AFTER sid_cards');
 }
 
+$colPreventNegativeStock = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'prevent_negative_stock'");
+if ($colPreventNegativeStock && $colPreventNegativeStock->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN prevent_negative_stock TINYINT(1) NOT NULL DEFAULT 0');
+}
+
+
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 
 $now = new DateTime();

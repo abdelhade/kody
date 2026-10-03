@@ -104,7 +104,9 @@ if (!$rowop) {
 
 $pro_tybe = intval($rowop['pro_tybe']);
 
-$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST);
+$store_id = isset($_POST['store_id']) ? (int)$_POST['store_id'] : (int)$rowop['store_id'];
+$prevent_negative_stock = isset($role['prevent_negative_stock']) && $role['prevent_negative_stock'] == 1;
+$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $id);
 if ($lineErrors) {
     die(implode(' — ', $lineErrors));
 }

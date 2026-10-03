@@ -507,6 +507,10 @@ if ($hash_id !== $hash) {
                                 <td><input type="checkbox"  name="show_ended_reservation"  class="user-checkbox" <?php if( $rowrol['show_ended_reservation'] == 1){echo "checked"; }?>></td>
                             </tr>
                             <tr class="tr1">
+                                <td>عدم السماح بالبيع أكثر من رصيد المخزن</td>
+                                <td><input type="checkbox"  name="prevent_negative_stock"  class="user-checkbox" <?php if( $rowrol['prevent_negative_stock'] == 1){echo "checked"; }?>></td>
+                            </tr>
+                            <tr class="tr1">
                                 <td>اظهار اجمالي الزيارات</td>
                                 <td><input type="checkbox"  name="show_total_reservation"  class="user-checkbox" <?php if( $rowrol['show_total_reservation'] == 1){echo "checked"; }?>></td>
                             </tr>

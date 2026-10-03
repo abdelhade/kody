@@ -1655,7 +1655,7 @@ class InvoiceProcessor {
      *
      * @return list<string>
      */
-    public static function validateInvoiceLines(int $proTybe, array $post): array
+    public static function validateInvoiceLines(int $proTybe, array $post, $conn = null, $store_id = null, $prevent_negative_stock = false, $editing_invoice_id = null): array
     {
         $errors = [];
         $names = $post['itmname'] ?? null;
@@ -1696,6 +1696,24 @@ class InvoiceProcessor {
 
             if (abs($sale) < 0.0000001) {
                 $errors[] = 'سطر ' . $rowNo . ': البيع صفر';
+            }
+
+            if ($prevent_negative_stock && $conn && $store_id && $salePriceOnLine) {
+                $available = self::getRealStockQuantity($conn, $itemId, $store_id);
+                if ($editing_invoice_id) {
+                    $stmtOld = $conn->prepare("SELECT COALESCE(SUM(qty_out), 0) AS old_qty FROM fat_details WHERE item_id = ? AND det_store = ? AND fatid = ? AND isdeleted = 0");
+                    if ($stmtOld) {
+                        $stmtOld->bind_param("iii", $itemId, $store_id, $editing_invoice_id);
+                        $stmtOld->execute();
+                        $resOld = $stmtOld->get_result()->fetch_assoc();
+                        $available += (float)($resOld['old_qty'] ?? 0);
+                        $stmtOld->close();
+                    }
+                }
+                
+                if ($available < $qty) {
+                    $errors[] = 'سطر ' . $rowNo . ': الكمية المباعة (' . $qty . ') أكبر من رصيد المخزن (' . $available . ')';
+                }
             }
         }
 

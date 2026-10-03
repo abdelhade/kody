@@ -242,6 +242,7 @@ if ($rollname === null) {
 
 
     $show_ended_reservation = isset($_POST['show_ended_reservation']) ? 1 : 0;    
+    $prevent_negative_stock = isset($_POST['prevent_negative_stock']) ? 1 : 0;
     $show_total_reservation = isset($_POST['show_total_reservation']) ? 1 : 0;    
     $show_all_tasks = isset($_POST['show_all_tasks']) ? 1 : 0;    
     $show_main_cards = isset($_POST['show_main_cards']) ? 1 : 0;    
@@ -442,6 +443,7 @@ SET
 `info`= '$info',
 `show_total_reservation`= '$show_total_reservation',
 `show_ended_reservation`= '$show_ended_reservation',
+`prevent_negative_stock`= '$prevent_negative_stock',
 `show_main_cards`= '$show_main_cards',
 `show_main_elements`= '$show_main_elements',
 `show_main_tables`= '$show_main_tables',

@@ -251,7 +251,8 @@ if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_fil
     invoice_fail('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
-$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST);
+$prevent_negative_stock = isset($role['prevent_negative_stock']) && $role['prevent_negative_stock'] == 1;
+$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock);
 if ($lineErrors) {
     invoice_fail(implode(' — ', $lineErrors));
 }
