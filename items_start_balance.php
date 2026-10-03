@@ -53,7 +53,7 @@
                                 $itmid = $row['id'];
                                 
                                 // جلب اسم الوحدة
-                                $unit_result = $conn->query("SELECT uname FROM myunits WHERE id = (SELECT unit_id FROM item_units WHERE item_id = $itmid)");
+                                $unit_result = $conn->query("SELECT uname FROM myunits WHERE id = (SELECT unit_id FROM item_units WHERE item_id = $itmid LIMIT 1)");
                                 $unit_name = '';
                                 if ($unit_result && $unit_result->num_rows > 0) {
                                     $unit_row = $unit_result->fetch_assoc();

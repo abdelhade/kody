@@ -139,14 +139,18 @@
             const oldBalance = parseFloat(row.querySelector('.old-balance').textContent) || 0;
             const settle = parseFloat(row.querySelector('.settle').value) || 0;
 
-            totalDebit += Math.max(0, newBalance);
-            totalCredit += Math.max(0, oldBalance);
+            if (newBalance > 0) {
+                totalDebit += newBalance;
+            } else {
+                totalCredit += Math.abs(newBalance);
+            }
             totalDiff += Math.abs(newBalance - oldBalance);
         });
 
         document.getElementById('total_debit').value = totalDebit.toFixed(2);
         document.getElementById('total_credit').value = totalCredit.toFixed(2);
         document.getElementById('total_diff').value = totalDiff.toFixed(2);
+        document.getElementById('total_diff_budget').value = Math.abs(totalDebit - totalCredit).toFixed(2);
     }
 
     // Call updateTotals on input change
@@ -199,29 +203,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-    const accIdValue = document.getElementById('acc_id').value;
+        // Initialize totals on page load
+        updateTotals();
 
-    // Check if acc_id value is "148"
-    if (accIdValue === "148") {
-        // Make the inputs readonly for this account
-        const newBalances = document.querySelectorAll('.new-balance');
-        newBalances.forEach(function(input) {
-            input.readOnly = true;  // Make the input readonly
-        });
+        const accIdElement = document.querySelector('.acc_id');
+        if (accIdElement) {
+            const accIdValue = accIdElement.value;
+            // Check if acc_id value is "148"
+            if (accIdValue === "148") {
+                // Make the inputs readonly for this account
+                const newBalances = document.querySelectorAll('.new-balance');
+                newBalances.forEach(function(input) {
+                    input.readOnly = true;  // Make the input readonly
+                });
 
-        const settleInputs = document.querySelectorAll('.settle');
-        settleInputs.forEach(function(input) {
-            input.readOnly = true;  // Make the input readonly
-        });
-    }
-
-    // Add focusout event listener to new balance and settle inputs
-    const balanceInputs = document.querySelectorAll('.new-balance, .settle');
-    balanceInputs.forEach(function(input) {
-        input.addEventListener('focusout', function() {
-            alert('Focus lost on input: ' + input.name);  // Replace input.name with the appropriate label or description if needed
-        });
+                const settleInputs = document.querySelectorAll('.settle');
+                settleInputs.forEach(function(input) {
+                    input.readOnly = true;  // Make the input readonly
+                });
+            }
+        }
     });
-});
 
 </script>

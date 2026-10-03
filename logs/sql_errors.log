@@ -296,3 +296,6 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-10-03 15:57:09] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-10-03 15:57:09] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\do\doadd_account.php:78
+[2026-10-03 16:12:45] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
+[2026-10-03 16:13:00] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
+[2026-10-03 16:20:26] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
