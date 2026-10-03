@@ -287,3 +287,12 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-01 17:33:29] mysqli_sql_exception: Unknown column 'receipt_header_text' in 'field list' in C:\xampp\htdocs\kody\_tmp_bd_bind.php:6
 [2026-10-02 15:04:36] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\classes\InvoiceProcessor.php:1350
 [2026-10-02 15:11:39] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\classes\InvoiceProcessor.php:1350
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:08] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:09] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-03 15:57:09] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\kody\do\doadd_account.php:78

@@ -75,7 +75,7 @@ if (isset($_POST['is_fund'])) {
 
 // إدراج الحساب الجديد باستخدام prepared statement
 $insert_stmt = $conn->prepare("INSERT INTO acc_head (code, aname, is_basic, rentable, is_fund, parent_id, is_stock, secret, kind, phone, address, price_list) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$insert_stmt->bind_param("ssiiiiiiiissi", $code, $aname, $is_basic, $rentable, $is_fund, $parent_id, $is_stock, $secret, $kind, $phone, $address, $price_list);
+$insert_stmt->bind_param("ssiiiiiiissi", $code, $aname, $is_basic, $rentable, $is_fund, $parent_id, $is_stock, $secret, $kind, $phone, $address, $price_list);
 
 if ($insert_stmt->execute()) {
     // تسجيل العملية في الجدول القديم
