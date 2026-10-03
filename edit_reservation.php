@@ -115,7 +115,7 @@ $rowrsv = $conn->query("SELECT * FROM reservations WHERE id= $id")->fetch_assoc(
                   <div class="col">
                   <div class="form-group">
                   <label for="address">المدفوع</label>
-                  <input name="paid" data-parsley-trigger="keyup" required type="number" id="paid" class="form-control" value="<?= $rowrsv['paid']?>">
+                  <input name="paid" data-parsley-trigger="keyup" required type="number" step="any" id="paid" class="form-control" value="<?= $rowrsv['paid']?>">
                 </div>
                   
                 </div>

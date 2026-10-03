@@ -147,7 +147,7 @@ if (!$hide_payment):
                               <label for=""  >المدفوع <span class="text-orange-600">(F7)</span></label>
                               </div>
                                 <div class="col-md-8">
-                                    <input id="paid" name="paid" type="number" class="form-control form-control-lg bg-light last" style="font-size:30px;" value="<?php if(isset($_GET['e'])){echo $paid ;}else{echo 0;} ?>" >
+                                    <input id="paid" name="paid" type="number" step="any" class="form-control form-control-lg bg-light last" style="font-size:30px;" value="<?php if(isset($_GET['e'])){echo $paid ;}else{echo 0;} ?>" >
                                 </div>
                                 </div>
 

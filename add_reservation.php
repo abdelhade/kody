@@ -106,7 +106,7 @@
             <div class="col-md-2">
               <div class="form-group">
                 <label for="address">المدفوع</label>
-                <input name="paid" data-parsley-trigger="keyup" required type="number" id="paid" class="form-control" value="400">
+                <input name="paid" data-parsley-trigger="keyup" required type="number" step="any" id="paid" class="form-control" value="400">
               </div>
             </div>
           </div>
