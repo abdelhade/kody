@@ -169,10 +169,8 @@ $bdPriceSources = [
               <label for="bd_embed_prices">سعر مدمج في الشفرة</label>
               <select class="form-control bd-live" id="bd_embed_prices" name="bd_embed_prices">
                 <option value="none" <?= $bd['embed_prices'] === 'none' ? 'selected' : '' ?>>بدون سعر</option>
-                <option value="after" <?= $bd['embed_prices'] === 'after' ? 'selected' : '' ?>>سعر واحد: بعد الخصم</option>
-                <option value="before" <?= $bd['embed_prices'] === 'before' ? 'selected' : '' ?>>سعر واحد: قبل الخصم</option>
-                <option value="before_after" <?= $bd['embed_prices'] === 'before_after' ? 'selected' : '' ?>>سعران: قبل الخصم ثم بعد الخصم</option>
-                <option value="after_before" <?= $bd['embed_prices'] === 'after_before' ? 'selected' : '' ?>>سعران: بعد الخصم ثم قبل الخصم</option>
+                <option value="after" <?= $bd['embed_prices'] === 'after' ? 'selected' : '' ?>>سعر واحد</option>
+                <option value="after_before" <?= $bd['embed_prices'] === 'after_before' ? 'selected' : '' ?>>سعرين</option>
               </select>
               <small class="form-text text-muted">الترميز بدون فاصلة عشرية: 12.50 تصبح 1250.</small>
             </div>
