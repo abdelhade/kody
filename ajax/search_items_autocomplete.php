@@ -46,9 +46,20 @@ if (!empty($term)) {
     }
     
     // 2. Search by name (LIKE search)
+    $search_terms = explode(' ', $term);
+    $name_conds = [];
+    foreach ($search_terms as $t) {
+        $t = trim($t);
+        if (!empty($t)) {
+            $name_conds[] = "iname LIKE '%$t%'";
+        }
+    }
+    $name_where = implode(' AND ', $name_conds);
+    if (empty($name_where)) $name_where = "1=1";
+
     $sql_name = "SELECT id, iname as name, barcode, price1, price2, price3, market_price, price1 as price, 1 as u_val, '' as unit_name 
                  FROM myitems 
-                 WHERE iname LIKE '%$term%' AND isdeleted = 0 LIMIT 15";
+                 WHERE ($name_where) AND isdeleted = 0 LIMIT 15";
     $result_name = $conn->query($sql_name);
     if ($result_name && $result_name->num_rows > 0) {
         while ($row = $result_name->fetch_assoc()) {

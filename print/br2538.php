@@ -197,6 +197,10 @@ foreach ($codes as $index => $itemCodeRaw) {
             } elseif ($key === 'price_after') {
                 $text = $priceAfter;
                 $extra = 'font-weight:700;';
+            } elseif ($key === 'price_retail') {
+                $text = 'قطاعي: ' . kody_barcode_format_price($priceBag['price1']);
+            } elseif ($key === 'price_wholesale') {
+                $text = 'جملة: ' . kody_barcode_format_price($priceBag['price2']);
             }
             echo '<div class="bd-el" style="' . $box . $font . $extra . '">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</div>';
         }

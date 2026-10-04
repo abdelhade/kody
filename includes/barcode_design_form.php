@@ -334,6 +334,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (pb.show) html += '<div style="' + textStyle(pb, 'color:#000;' + (checked('bd_strike_before') ? 'text-decoration:line-through;' : '')) + '">' + escapeHtml(before) + '</div>';
     var pa = elBox('price_after');
     if (pa.show) html += '<div style="' + textStyle(pa, 'color:#000;font-weight:700;') + '">' + escapeHtml(after) + '</div>';
+    var pr = elBox('price_retail');
+    if (pr.show) html += '<div style="' + textStyle(pr, 'color:#000;') + '">قطاعي: ' + escapeHtml(money(sample.price1)) + '</div>';
+    var pw = elBox('price_wholesale');
+    if (pw.show) html += '<div style="' + textStyle(pw, 'color:#000;') + '">جملة: ' + escapeHtml(money(sample.price2)) + '</div>';
 
     html += '</div></div>';
     root.innerHTML = html;

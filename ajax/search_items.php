@@ -27,8 +27,19 @@ try {
         $query = "SELECT id, iname as name, price1, price2, price3, market_price, price1 as price, barcode, $balance_subquery as balance FROM myitems WHERE isdeleted = 0 $category_cond ORDER BY id DESC LIMIT 200";
     } else {
         $s = $conn->real_escape_string($search);
+        $search_terms = explode(' ', $s);
+        $name_conds = [];
+        foreach ($search_terms as $term) {
+            $term = trim($term);
+            if (!empty($term)) {
+                $name_conds[] = "iname LIKE '%$term%'";
+            }
+        }
+        $name_where = implode(' AND ', $name_conds);
+        if (empty($name_where)) $name_where = "1=1";
+
         $query = "SELECT id, iname as name, price1, price2, price3, market_price, price1 as price, barcode, $balance_subquery as balance FROM myitems 
-                  WHERE (iname LIKE '%$s%' OR barcode LIKE '%$s%' OR id = '$s') 
+                  WHERE (($name_where) OR barcode LIKE '%$s%' OR id = '$s') 
                   AND isdeleted = 0 
                   $category_cond
                   ORDER BY iname LIMIT 100";

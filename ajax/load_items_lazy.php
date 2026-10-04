@@ -27,10 +27,39 @@ try {
             $params = [$search];
             $types = 's';
         } else {
-            $where .= " AND (iname LIKE ? OR name2 LIKE ? OR barcode LIKE ?)";
-            $search_param = "%{$search}%";
-            $params = [$search_param, $search_param, $search_param];
-            $types = 'sss';
+            $search_terms = explode(' ', $search);
+            $name_conds = [];
+            $name2_conds = [];
+            foreach ($search_terms as $t) {
+                $t = trim($t);
+                if (!empty($t)) {
+                    $name_conds[] = "iname LIKE ?";
+                    $name2_conds[] = "name2 LIKE ?";
+                }
+            }
+            $iname_cond = implode(' AND ', $name_conds);
+            $name2_cond = implode(' AND ', $name2_conds);
+            if (empty($iname_cond)) $iname_cond = "1=1";
+            if (empty($name2_cond)) $name2_cond = "1=1";
+            
+            $where .= " AND (($iname_cond) OR ($name2_cond) OR barcode LIKE ?)";
+            
+            foreach ($search_terms as $t) {
+                $t = trim($t);
+                if (!empty($t)) {
+                    $params[] = "%{$t}%";
+                    $types .= 's';
+                }
+            }
+            foreach ($search_terms as $t) {
+                $t = trim($t);
+                if (!empty($t)) {
+                    $params[] = "%{$t}%";
+                    $types .= 's';
+                }
+            }
+            $params[] = "%{$search}%";
+            $types .= 's';
         }
     }
     
@@ -79,7 +108,9 @@ try {
         if ($by === 'barcode') {
             $count_stmt->bind_param('s', $search);
         } else {
-            $count_stmt->bind_param('sss', $search_param, $search_param, $search_param);
+            if (!empty($params)) {
+                $count_stmt->bind_param($types, ...$params);
+            }
         }
     }
     

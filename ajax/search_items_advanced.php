@@ -23,21 +23,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])) {
         exit;
     }
     
-    // البحث في الأصناف بالاسم أو الباركود
-    $searchLike = "%{$search}%";
+    $search_terms = explode(' ', $search);
+    $name_conds = [];
+    $params = [];
+    $types = "";
+    foreach ($search_terms as $t) {
+        $t = trim($t);
+        if (!empty($t)) {
+            $name_conds[] = "m.iname LIKE ?";
+            $params[] = "%{$t}%";
+            $types .= "s";
+        }
+    }
+    $name_where = implode(' AND ', $name_conds);
+    if (empty($name_where)) {
+        $name_where = "1=1";
+    }
     
     $sql = "SELECT m.*, i.iname as img_filename
             FROM myitems m 
             LEFT JOIN imgs i ON i.itemid = m.id 
             WHERE m.isdeleted = 0 
-            AND (m.iname LIKE ? OR m.barcode LIKE ? OR m.id = ?)
+            AND (($name_where) OR m.barcode LIKE ? OR m.id = ?)
             GROUP BY m.id
             ORDER BY m.iname
             LIMIT 20";
     
     $stmt = $conn->prepare($sql);
     $numericSearch = is_numeric($search) ? intval($search) : 0;
-    $stmt->bind_param("ssi", $searchLike, $searchLike, $numericSearch);
+    $searchLike = "%{$search}%";
+    $params[] = $searchLike;
+    $params[] = $numericSearch;
+    $types .= "si";
+    
+    $stmt->bind_param($types, ...$params);
     $stmt->execute();
     $result = $stmt->get_result();
     

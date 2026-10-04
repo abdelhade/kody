@@ -10,6 +10,8 @@ function kody_barcode_element_defs(): array
         'code' => ['label' => 'الشفرة', 'font' => true],
         'price_before' => ['label' => 'السعر قبل الخصم', 'font' => true],
         'price_after' => ['label' => 'السعر بعد الخصم', 'font' => true],
+        'price_retail' => ['label' => 'سعر القطاعي', 'font' => true],
+        'price_wholesale' => ['label' => 'سعر الجملة', 'font' => true],
     ];
 }
 
@@ -34,6 +36,8 @@ function kody_barcode_design_defaults(): array
             'code' => ['show' => true, 'h' => 3.5, 'w' => 21, 'top' => 23.5, 'left' => 0, 'font' => 8],
             'price_before' => ['show' => true, 'h' => 3, 'w' => 21, 'top' => 27, 'left' => 0, 'font' => 9],
             'price_after' => ['show' => true, 'h' => 3.5, 'w' => 21, 'top' => 30, 'left' => 0, 'font' => 9],
+            'price_retail' => ['show' => false, 'h' => 3.5, 'w' => 21, 'top' => 33.5, 'left' => 0, 'font' => 9],
+            'price_wholesale' => ['show' => false, 'h' => 3.5, 'w' => 21, 'top' => 37, 'left' => 0, 'font' => 9],
         ],
         'code_prefix' => '',
         'code_suffix' => '',

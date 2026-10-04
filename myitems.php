@@ -3,6 +3,8 @@
 <?php include('includes/sidebar.php') ?>
 <?php
 $search = isset($_GET['search']) ? trim((string)$_GET['search']) : '';
+$group1 = isset($_GET['group1']) ? (int)$_GET['group1'] : 0;
+$group2 = isset($_GET['group2']) ? (int)$_GET['group2'] : 0;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $limit = 200;
@@ -30,6 +32,17 @@ if ($search !== '') {
     if (!empty($conditions)) {
         $whereSql = " AND " . implode(" AND ", $conditions);
     }
+}
+
+if ($group1 > 0) {
+    $whereSql .= " AND group1 = ?";
+    $params[] = $group1;
+    $types .= "i";
+}
+if ($group2 > 0) {
+    $whereSql .= " AND group2 = ?";
+    $params[] = $group2;
+    $types .= "i";
 }
 
 // 1. Get total rows count
@@ -107,7 +120,31 @@ $resitm = $stmtData->get_result();
                     InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
                     ?>
                 </div>
-                <div class="col-md-6"><input type="text" id="search" class="form-control frst" placeholder="بحث... (اضغط Enter للبحث الشامل)" value="<?= htmlspecialchars($search) ?>"></div>
+                <div class="col-md-6">
+                    <input type="text" id="search" class="form-control frst mb-2" placeholder="بحث... (اضغط Enter للبحث الشامل)" value="<?= htmlspecialchars($search) ?>">
+                    <div class="d-flex gap-2">
+                        <select id="filter_group1" class="form-control form-control-sm">
+                            <option value="0">كل المجموعات</option>
+                            <?php
+                            $resg1 = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0");
+                            while ($rg1 = $resg1->fetch_assoc()) {
+                                $sel = ($group1 == $rg1['id']) ? 'selected' : '';
+                                echo "<option value='{$rg1['id']}' $sel>" . htmlspecialchars($rg1['gname']) . "</option>";
+                            }
+                            ?>
+                        </select>
+                        <select id="filter_group2" class="form-control form-control-sm">
+                            <option value="0">كل التصنيفات</option>
+                            <?php
+                            $resg2 = $conn->query("SELECT * FROM item_group2 WHERE isdeleted = 0");
+                            while ($rg2 = $resg2->fetch_assoc()) {
+                                $sel = ($group2 == $rg2['id']) ? 'selected' : '';
+                                echo "<option value='{$rg2['id']}' $sel>" . htmlspecialchars($rg2['gname']) . "</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
                 <div class="col">
                     <div class="d-flex gap-2 justify-content-end">
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
@@ -249,13 +286,13 @@ $resitm = $stmtData->get_result();
                 <nav aria-label="Page navigation" class="mt-4">
                     <ul class="pagination pagination-sm justify-content-center flex-wrap">
                         <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=1&search=<?= urlencode($search) ?>" aria-label="First">
+                            <a class="page-link" href="?page=1&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="First">
                                 <span aria-hidden="true">&laquo;&laquo; الأولى</span>
                             </a>
                         </li>
                         
                         <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>" aria-label="Previous">
+                            <a class="page-link" href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Previous">
                                 <span aria-hidden="true">&laquo; السابق</span>
                             </a>
                         </li>
@@ -270,7 +307,7 @@ $resitm = $stmtData->get_result();
                         
                         for ($p = $startPage; $p <= $endPage; $p++): ?>
                             <li class="page-item <?= ($p === $page) ? 'active' : '' ?>">
-                                <a class="page-link" href="?page=<?= $p ?>&search=<?= urlencode($search) ?>"><?= $p ?></a>
+                                <a class="page-link" href="?page=<?= $p ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>"><?= $p ?></a>
                             </li>
                         <?php endfor;
                         
@@ -280,13 +317,13 @@ $resitm = $stmtData->get_result();
                         ?>
 
                         <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>" aria-label="Next">
+                            <a class="page-link" href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Next">
                                 <span aria-hidden="true">التالي &raquo;</span>
                             </a>
                         </li>
 
                         <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $totalPages ?>&search=<?= urlencode($search) ?>" aria-label="Last">
+                            <a class="page-link" href="?page=<?= $totalPages ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Last">
                                 <span aria-hidden="true">الأخيرة &raquo;&raquo;</span>
                             </a>
                         </li>
@@ -311,11 +348,15 @@ $(document).ready(function() {
 
     // بحث حي مباشر من قاعدة البيانات (Live AJAX Search with Debounce)
     var searchTimer = null;
-    $('#search').on('input', function() {
+    
+    function triggerSearch() {
         clearTimeout(searchTimer);
-        var val = $(this).val();
+        var val = $('#search').val();
+        var g1 = $('#filter_group1').val();
+        var g2 = $('#filter_group2').val();
+        
         searchTimer = setTimeout(function() {
-            var url = 'myitems.php?search=' + encodeURIComponent($.trim(val));
+            var url = 'myitems.php?search=' + encodeURIComponent($.trim(val)) + '&group1=' + g1 + '&group2=' + g2;
             $('#table-container').css('opacity', '0.5');
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
@@ -323,7 +364,10 @@ $(document).ready(function() {
             });
             window.history.pushState(null, '', url);
         }, 300);
-    });
+    }
+
+    $('#search').on('input', triggerSearch);
+    $('#filter_group1, #filter_group2').on('change', triggerSearch);
 
     // منع الإرسال التلقائي للنموذج عند الضغط على Enter في مربع البحث
     $('#search').on('keypress', function(e) {
