@@ -1,4 +1,227 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/includes/connect.php';
+
+if (empty($_SESSION['login']) || (int) ($_SESSION['userid'] ?? 0) < 1) {
+    header('Location: index.php');
+    exit;
+}
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+function kody_money_amount($value): ?float
+{
+    $value = str_replace([',', ' '], '', trim((string) $value));
+    if ($value === '' || !is_numeric($value)) {
+        return null;
+    }
+    $amount = round((float) $value, 2);
+    if ($amount < 0) {
+        return null;
+    }
+    return $amount;
+}
+
+function kody_journal_redirect(array $params): void
+{
+    $query = http_build_query(array_filter($params, static function ($value) {
+        return $value !== '' && $value !== null;
+    }));
+    header('Location: unbalanced_journals.php' . ($query !== '' ? '?' . $query : ''));
+    exit;
+}
+
+function kody_save_journal_lines(mysqli $conn, int $headId, string $jdate, string $details, array $postedLines): void
+{
+    $headStmt = $conn->prepare('SELECT id, op_id, op2 FROM journal_heads WHERE id = ? AND isdeleted = 0');
+    $headStmt->bind_param('i', $headId);
+    $headStmt->execute();
+    $head = $headStmt->get_result()->fetch_assoc();
+    $headStmt->close();
+    if (!$head) {
+        throw new RuntimeException('missing');
+    }
+
+    if (count($postedLines) < 2) {
+        throw new RuntimeException('invalid');
+    }
+
+    $validAccounts = [];
+    $accRes = $conn->query('SELECT id FROM acc_head WHERE isdeleted = 0');
+    if ($accRes) {
+        while ($acc = $accRes->fetch_assoc()) {
+            $validAccounts[(int) $acc['id']] = true;
+        }
+    }
+
+    $totalDebit = 0.0;
+    $totalCredit = 0.0;
+    foreach ($postedLines as $line) {
+        if (!isset($validAccounts[$line['account_id']])) {
+            throw new RuntimeException('invalid');
+        }
+        if ($line['debit'] > 0 && $line['credit'] > 0) {
+            throw new RuntimeException('invalid');
+        }
+        if ($line['debit'] <= 0 && $line['credit'] <= 0) {
+            throw new RuntimeException('invalid');
+        }
+        $totalDebit += $line['debit'];
+        $totalCredit += $line['credit'];
+    }
+    if ($totalDebit <= 0 || abs(round($totalDebit - $totalCredit, 2)) > 0.009) {
+        throw new RuntimeException('unbalanced');
+    }
+
+    $existingAccounts = [];
+    $existingIds = [];
+    $existStmt = $conn->prepare('SELECT id, account_id FROM journal_entries WHERE journal_id = ? AND isdeleted = 0');
+    $existStmt->bind_param('i', $headId);
+    $existStmt->execute();
+    $existRes = $existStmt->get_result();
+    while ($row = $existRes->fetch_assoc()) {
+        $existingIds[(int) $row['id']] = true;
+        $existingAccounts[(int) $row['account_id']] = (int) $row['account_id'];
+    }
+    $existStmt->close();
+
+    foreach ($postedLines as $line) {
+        if ($line['id'] > 0 && !isset($existingIds[$line['id']])) {
+            throw new RuntimeException('invalid');
+        }
+    }
+
+    $conn->begin_transaction();
+    try {
+        $stmtUpdate = $conn->prepare('UPDATE journal_entries SET account_id = ?, debit = ?, credit = ?, tybe = ?, info = ? WHERE id = ? AND journal_id = ? AND isdeleted = 0');
+        $stmtInsert = $conn->prepare('INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, info, op_id, op2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmtDelete = $conn->prepare('UPDATE journal_entries SET isdeleted = 1, debit = 0, credit = 0 WHERE id = ? AND journal_id = ?');
+        $opId = (int) ($head['op_id'] ?? 0);
+        $op2 = (int) ($head['op2'] ?? 0);
+        $kept = [];
+
+        foreach ($postedLines as $line) {
+            $accountId = $line['account_id'];
+            $debit = $line['debit'];
+            $credit = $line['credit'];
+            $tybe = $debit > 0 ? 0 : 1;
+            $info = $line['info'];
+            $lineId = $line['id'];
+            if ($lineId > 0) {
+                $stmtUpdate->bind_param('iddisii', $accountId, $debit, $credit, $tybe, $info, $lineId, $headId);
+                $stmtUpdate->execute();
+                $kept[$lineId] = true;
+            } else {
+                $stmtInsert->bind_param('iiddisii', $headId, $accountId, $debit, $credit, $tybe, $info, $opId, $op2);
+                $stmtInsert->execute();
+            }
+        }
+
+        foreach (array_keys($existingIds) as $oldId) {
+            if (!isset($kept[$oldId])) {
+                $stmtDelete->bind_param('ii', $oldId, $headId);
+                $stmtDelete->execute();
+            }
+        }
+        $stmtUpdate->close();
+        $stmtInsert->close();
+        $stmtDelete->close();
+
+        $stmtHead = $conn->prepare('UPDATE journal_heads SET total = ?, details = ?, jdate = ? WHERE id = ? AND isdeleted = 0');
+        $stmtHead->bind_param('dssi', $totalDebit, $details, $jdate, $headId);
+        $stmtHead->execute();
+        $stmtHead->close();
+
+        $touched = $existingAccounts;
+        foreach ($postedLines as $line) {
+            $touched[$line['account_id']] = $line['account_id'];
+        }
+        $stmtRecalc = $conn->prepare(
+            'UPDATE acc_head SET balance = (
+                SELECT COALESCE(SUM(debit) - SUM(credit), 0)
+                FROM journal_entries
+                WHERE account_id = ? AND isdeleted = 0
+            ) WHERE id = ?'
+        );
+        foreach ($touched as $accountId) {
+            if ($accountId > 0) {
+                $stmtRecalc->bind_param('ii', $accountId, $accountId);
+                $stmtRecalc->execute();
+            }
+        }
+        $stmtRecalc->close();
+
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        throw $e;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedToken = (string) ($_POST['csrf_token'] ?? '');
+    $from = (isset($_POST['from']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['from'])) ? $_POST['from'] : '';
+    $to = (isset($_POST['to']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['to'])) ? $_POST['to'] : '';
+    $search = isset($_POST['search']) ? trim((string) $_POST['search']) : '';
+    $page = isset($_POST['page']) ? max(1, (int) $_POST['page']) : 1;
+    $redirect = [
+        'from' => $from,
+        'to' => $to,
+        'search' => $search,
+        'page' => $page > 1 ? $page : '',
+    ];
+
+    if (!hash_equals($_SESSION['csrf_token'], $postedToken)) {
+        $redirect['error'] = 'csrf';
+        kody_journal_redirect($redirect);
+    }
+
+    try {
+        $headId = (int) ($_POST['head_id'] ?? 0);
+        $jdate = (isset($_POST['jdate']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['jdate'])) ? $_POST['jdate'] : '';
+        $details = mb_substr(trim((string) ($_POST['details'] ?? '')), 0, 250);
+        $lineIds = isset($_POST['line_id']) && is_array($_POST['line_id']) ? array_values($_POST['line_id']) : [];
+        $accounts = isset($_POST['account_id']) && is_array($_POST['account_id']) ? array_values($_POST['account_id']) : [];
+        $debits = isset($_POST['debit']) && is_array($_POST['debit']) ? array_values($_POST['debit']) : [];
+        $credits = isset($_POST['credit']) && is_array($_POST['credit']) ? array_values($_POST['credit']) : [];
+        $infos = isset($_POST['info']) && is_array($_POST['info']) ? array_values($_POST['info']) : [];
+        $count = count($accounts);
+        if ($headId < 1 || $jdate === '' || $count < 2 || $count !== count($lineIds) || $count !== count($debits) || $count !== count($credits)) {
+            throw new RuntimeException('invalid');
+        }
+
+        $postedLines = [];
+        for ($i = 0; $i < $count; $i++) {
+            $debit = kody_money_amount($debits[$i]);
+            $credit = kody_money_amount($credits[$i]);
+            if ($debit === null || $credit === null) {
+                throw new RuntimeException('invalid');
+            }
+            $postedLines[] = [
+                'id' => (int) $lineIds[$i],
+                'account_id' => (int) $accounts[$i],
+                'debit' => $debit,
+                'credit' => $credit,
+                'info' => mb_substr(trim((string) ($infos[$i] ?? '')), 0, 150),
+            ];
+        }
+
+        kody_save_journal_lines($conn, $headId, $jdate, $details, $postedLines);
+        $redirect['saved'] = 1;
+    } catch (RuntimeException $e) {
+        $code = $e->getMessage();
+        $redirect['error'] = in_array($code, ['missing', 'invalid', 'unbalanced'], true) ? $code : 'failed';
+    } catch (Throwable $e) {
+        $redirect['error'] = 'failed';
+    }
+
+    kody_journal_redirect($redirect);
+}
+
 include('includes/header.php');
 include('includes/navbar.php');
 include('includes/sidebar.php');
@@ -6,6 +229,8 @@ include('includes/sidebar.php');
 $from = (isset($_GET['from']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from'])) ? $_GET['from'] : '';
 $to = (isset($_GET['to']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to'])) ? $_GET['to'] : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$saved = isset($_GET['saved']) && $_GET['saved'] === '1';
+$errorCode = isset($_GET['error']) ? (string) $_GET['error'] : '';
 
 $where = ['jh.isdeleted = 0'];
 if ($from !== '') {
@@ -76,7 +301,7 @@ $linesByJournal = [];
 if ($pageRows) {
     $ids = array_map('intval', array_column($pageRows, 'id'));
     $lineSql = "
-        SELECT je.journal_id, je.debit, je.credit, ah.code, ah.aname
+        SELECT je.id, je.journal_id, je.account_id, je.debit, je.credit, je.info, ah.code, ah.aname
         FROM journal_entries je
         LEFT JOIN acc_head ah ON ah.id = je.account_id
         WHERE je.isdeleted = 0 AND je.journal_id IN (" . implode(',', $ids) . ")
@@ -90,9 +315,55 @@ if ($pageRows) {
     }
 }
 
+$accounts = [];
+$accList = $conn->query('SELECT id, code, aname FROM acc_head WHERE isdeleted = 0 AND is_basic = 0 ORDER BY code');
+if ($accList) {
+    while ($acc = $accList->fetch_assoc()) {
+        $accounts[] = [
+            'id' => (int) $acc['id'],
+            'code' => (string) $acc['code'],
+            'name' => (string) $acc['aname'],
+        ];
+    }
+}
+
+$editJournals = [];
+foreach ($pageRows as $row) {
+    $journalLines = [];
+    foreach ($linesByJournal[(int) $row['id']] ?? [] as $line) {
+        $journalLines[] = [
+            'id' => (int) $line['id'],
+            'account_id' => (int) $line['account_id'],
+            'debit' => (float) $line['debit'],
+            'credit' => (float) $line['credit'],
+            'info' => (string) ($line['info'] ?? ''),
+        ];
+    }
+    $editJournals[(int) $row['id']] = [
+        'id' => (int) $row['id'],
+        'journal_id' => (string) $row['journal_id'],
+        'jdate' => (string) $row['jdate'],
+        'details' => (string) ($row['details'] ?? ''),
+        'lines' => $journalLines,
+    ];
+}
+
 $totalDiff = 0;
 foreach ($rows as $row) {
     $totalDiff += abs((float) $row['debit_sum'] - (float) $row['credit_sum']);
+}
+
+$errorText = '';
+if ($errorCode === 'csrf') {
+    $errorText = 'انتهت صلاحية الطلب. أعد المحاولة.';
+} elseif ($errorCode === 'unbalanced') {
+    $errorText = 'لم يُحفظ القيد لأن المدين لا يساوي الدائن.';
+} elseif ($errorCode === 'invalid') {
+    $errorText = 'راجع أطراف القيد: كل طرف يحتاج حساباً ومبلغاً في المدين أو الدائن فقط.';
+} elseif ($errorCode === 'missing') {
+    $errorText = 'القيد غير موجود.';
+} elseif ($errorCode === 'failed') {
+    $errorText = 'تعذر حفظ القيد. لم يُحفظ أي تغيير.';
 }
 ?>
 
@@ -111,6 +382,13 @@ foreach ($rows as $row) {
                     <div class="alert alert-info">
                         القيود القائمة التي لا يتساوى فيها إجمالي المدين مع إجمالي الدائن، والقيود التي بلا بنود.
                     </div>
+
+                    <?php if ($saved) { ?>
+                        <div class="alert alert-success">تم حفظ القيد وإعادة حساب أرصدة الحسابات.</div>
+                    <?php } ?>
+                    <?php if ($errorText !== '') { ?>
+                        <div class="alert alert-danger"><?= htmlspecialchars($errorText, ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php } ?>
 
                     <form method="get" class="row mb-4 bg-light p-3 rounded">
                         <div class="col-md-3">
@@ -168,9 +446,15 @@ foreach ($rows as $row) {
                                     <th>العملية</th>
                                     <th>المستخدم</th>
                                     <th>البنود</th>
+                                    <th>إجراء</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php if (!$pageRows) { ?>
+                                    <tr>
+                                        <td colspan="11" class="text-center text-muted">لا توجد قيود غير متزنة</td>
+                                    </tr>
+                                <?php } ?>
                                 <?php foreach ($pageRows as $i => $row) {
                                     $debit = (float) $row['debit_sum'];
                                     $credit = (float) $row['credit_sum'];
@@ -217,6 +501,11 @@ foreach ($rows as $row) {
                                                 <?php } ?>
                                             <?php } ?>
                                         </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary js-edit-journal" data-id="<?= (int) $row['id'] ?>">
+                                                <i class="fas fa-edit"></i> تعديل
+                                            </button>
+                                        </td>
                                     </tr>
                                 <?php } ?>
                             </tbody>
@@ -252,4 +541,214 @@ foreach ($rows as $row) {
     </section>
 </div>
 
-<?php include('includes/footer.php'); ?>
+<div class="modal fade" id="editJournalModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <form method="post" id="editJournalForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editJournalTitle">تعديل القيد</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="head_id" id="editHeadId" value="">
+                    <input type="hidden" name="from" value="<?= htmlspecialchars($from, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="to" value="<?= htmlspecialchars($to, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="search" value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="page" value="<?= (int) $page ?>">
+
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>التاريخ</label>
+                            <input type="date" name="jdate" id="editJdate" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-9">
+                            <label>البيان</label>
+                            <input type="text" name="details" id="editDetails" class="form-control" maxlength="250">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>الحساب</th>
+                                    <th style="width: 140px;">مدين</th>
+                                    <th style="width: 140px;">دائن</th>
+                                    <th>بيان الطرف</th>
+                                    <th style="width: 70px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="editLines"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addJournalLine">
+                        <i class="fas fa-plus"></i> طرف جديد
+                    </button>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4"><strong>المدين:</strong> <span id="editDebitTotal">0.00</span></div>
+                        <div class="col-md-4"><strong>الدائن:</strong> <span id="editCreditTotal">0.00</span></div>
+                        <div class="col-md-4"><strong>الفرق:</strong> <span id="editDiff" class="text-danger">0.00</span></div>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">لا يُحفظ القيد إلا إذا تساوى المدين مع الدائن.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" id="saveJournalBtn" disabled>حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="application/json" id="journalEditData"><?= json_encode($editJournals, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+<script type="application/json" id="journalAccounts"><?= json_encode($accounts, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+
+<?php
+$extra_footer_scripts = <<<'HTML'
+<script>
+$(function () {
+    var journals = JSON.parse(document.getElementById('journalEditData').textContent || '{}');
+    var accounts = JSON.parse(document.getElementById('journalAccounts').textContent || '[]');
+    var $lines = $('#editLines');
+
+    function money(value) {
+        var number = parseFloat(value);
+        return isNaN(number) || number < 0 ? 0 : Math.round(number * 100) / 100;
+    }
+
+    function accountOptions(selectedId) {
+        var html = '<option value="">اختر حساب</option>';
+        var found = false;
+        accounts.forEach(function (acc) {
+            var selected = String(acc.id) === String(selectedId) ? ' selected' : '';
+            if (selected) {
+                found = true;
+            }
+            html += '<option value="' + acc.id + '"' + selected + '>' + $('<div>').text(acc.code + ' - ' + acc.name).html() + '</option>';
+        });
+        if (selectedId && !found) {
+            html += '<option value="' + selectedId + '" selected>حساب #' + selectedId + '</option>';
+        }
+        return html;
+    }
+
+    function bindSelect($select) {
+        $select.select2({
+            width: '100%',
+            dir: 'rtl',
+            dropdownParent: $('#editJournalModal')
+        });
+    }
+
+    function addLine(line) {
+        line = line || { id: 0, account_id: '', debit: '', credit: '', info: '' };
+        var debit = line.debit > 0 ? line.debit : '';
+        var credit = line.credit > 0 ? line.credit : '';
+        var $row = $('<tr>' +
+            '<td><select name="account_id[]" class="form-control account-select" required>' + accountOptions(line.account_id) + '</select></td>' +
+            '<td><input type="number" name="debit[]" class="form-control line-debit" min="0" step="0.01" value="' + debit + '"></td>' +
+            '<td><input type="number" name="credit[]" class="form-control line-credit" min="0" step="0.01" value="' + credit + '"></td>' +
+            '<td><input type="text" name="info[]" class="form-control" maxlength="150"></td>' +
+            '<td><button type="button" class="btn btn-sm btn-outline-danger remove-line">حذف</button></td>' +
+            '</tr>');
+        $row.prepend($('<input type="hidden" name="line_id[]">').val(line.id || 0));
+        $row.find('input[name="info[]"]').val(line.info || '');
+        $lines.append($row);
+        bindSelect($row.find('.account-select'));
+    }
+
+    function refreshTotals() {
+        var debit = 0;
+        var credit = 0;
+        var valid = $lines.find('tr').length >= 2;
+        $lines.find('tr').each(function () {
+            var rowDebit = money($(this).find('.line-debit').val());
+            var rowCredit = money($(this).find('.line-credit').val());
+            var account = $(this).find('.account-select').val();
+            debit += rowDebit;
+            credit += rowCredit;
+            if (!account || (rowDebit > 0 && rowCredit > 0) || (rowDebit <= 0 && rowCredit <= 0)) {
+                valid = false;
+            }
+        });
+        debit = Math.round(debit * 100) / 100;
+        credit = Math.round(credit * 100) / 100;
+        var diff = Math.round((debit - credit) * 100) / 100;
+        $('#editDebitTotal').text(debit.toFixed(2));
+        $('#editCreditTotal').text(credit.toFixed(2));
+        $('#editDiff').text(diff.toFixed(2)).toggleClass('text-danger', Math.abs(diff) > 0.009).toggleClass('text-success', Math.abs(diff) <= 0.009 && debit > 0);
+        $('#saveJournalBtn').prop('disabled', !(valid && debit > 0 && Math.abs(diff) <= 0.009));
+    }
+
+    $(document).on('click', '.js-edit-journal', function () {
+        var journal = journals[$(this).data('id')];
+        if (!journal) {
+            return;
+        }
+        $lines.find('.account-select').each(function () {
+            if ($(this).data('select2')) {
+                $(this).select2('destroy');
+            }
+        });
+        $lines.empty();
+        $('#editHeadId').val(journal.id);
+        $('#editJdate').val(journal.jdate);
+        $('#editDetails').val(journal.details);
+        $('#editJournalTitle').text('تعديل القيد رقم ' + journal.journal_id);
+        if (journal.lines && journal.lines.length) {
+            journal.lines.forEach(addLine);
+        } else {
+            addLine();
+            addLine();
+        }
+        refreshTotals();
+        $('#editJournalModal').modal('show');
+    });
+
+    $('#addJournalLine').on('click', function () {
+        addLine();
+        refreshTotals();
+    });
+
+    $lines.on('click', '.remove-line', function () {
+        var $select = $(this).closest('tr').find('.account-select');
+        if ($select.data('select2')) {
+            $select.select2('destroy');
+        }
+        $(this).closest('tr').remove();
+        refreshTotals();
+    });
+
+    $lines.on('input', '.line-debit', function () {
+        if (money($(this).val()) > 0) {
+            $(this).closest('tr').find('.line-credit').val('');
+        }
+        refreshTotals();
+    });
+
+    $lines.on('input', '.line-credit', function () {
+        if (money($(this).val()) > 0) {
+            $(this).closest('tr').find('.line-debit').val('');
+        }
+        refreshTotals();
+    });
+
+    $lines.on('change', '.account-select', refreshTotals);
+
+    $('#editJournalModal').on('hidden.bs.modal', function () {
+        $lines.find('.account-select').each(function () {
+            if ($(this).data('select2')) {
+                $(this).select2('destroy');
+            }
+        });
+        $lines.empty();
+    });
+});
+</script>
+HTML;
+include('includes/footer.php');
+?>
