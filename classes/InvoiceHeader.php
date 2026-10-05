@@ -81,7 +81,7 @@ class InvoiceHeader extends InvoiceElementBase
             </div>
 
             <!-- المخزن -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="">المخزن</label>
                 <select name="store_id" id="invoiceStore" class="select2 form-control form-control-sm">
                     <?php $this->renderStoreOptions(); ?>
@@ -89,7 +89,7 @@ class InvoiceHeader extends InvoiceElementBase
             </div>
 
             <!-- الموظف -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="">الموظف</label>
                 <select class="form-control form-control-sm" name="emp_id">
                     <?php $this->renderEmployeeOptions(); ?>
@@ -97,7 +97,7 @@ class InvoiceHeader extends InvoiceElementBase
             </div>
 
             <!-- الفئة السعرية -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="invoicePriceList">الفئة السعرية</label>
                 <select class="form-control form-control-sm" name="price_list" id="invoicePriceList">
                     <?php $this->renderPriceListOptions(); ?>
@@ -105,14 +105,14 @@ class InvoiceHeader extends InvoiceElementBase
             </div>
 
             <!-- التاريخ -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="">التاريخ</label>
                 <input type="date" class="form-control bg-secondary" name="pro_date" id="pro_date" 
                        value="<?php echo $this->getProDate(); ?>">
             </div>
 
             <!-- تاريخ الاستحقاق -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="">تاريخ الاستحقاق</label>
                 <input type="date" class="form-control" name="accural_date" 
                        value="<?php echo $this->getAccuralDate(); ?>">

@@ -299,3 +299,10 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-03 16:12:45] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
 [2026-10-03 16:13:00] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
 [2026-10-03 16:20:26] mysqli_sql_exception: Subquery returns more than 1 row in C:\xampp\htdocs\kody\items_start_balance.php:56
+[2026-10-05 14:35:46] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:35:49] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:35:59] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:36:08] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:36:08] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:36:16] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-05 14:36:18] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112

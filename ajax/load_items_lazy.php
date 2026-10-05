@@ -70,6 +70,9 @@ try {
               ORDER BY iname 
               LIMIT ? OFFSET ?";
     
+    $count_params = $params;
+    $count_types = $types;
+
     $params[] = $limit;
     $params[] = $offset;
     $types .= 'ii';
@@ -108,8 +111,8 @@ try {
         if ($by === 'barcode') {
             $count_stmt->bind_param('s', $search);
         } else {
-            if (!empty($params)) {
-                $count_stmt->bind_param($types, ...$params);
+            if (!empty($count_params)) {
+                $count_stmt->bind_param($count_types, ...$count_params);
             }
         }
     }
