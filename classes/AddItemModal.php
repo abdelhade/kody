@@ -10,11 +10,15 @@ class AddItemModal extends InvoiceElementBase
     private $units = [];
     private $groups1 = [];
     private $groups2 = [];
+    private $nextBarcode = '';
+    private $nextCode = '1';
+    private $unitBarcodeAdd = '0';
 
     public function __construct($invoiceType, $isEditMode = false, $data = null, $conn = null)
     {
         parent::__construct($invoiceType, $isEditMode, $data, $conn);
         $this->loadSelectOptions();
+        $this->loadNextCodes();
     }
 
     private function loadSelectOptions()
@@ -32,6 +36,26 @@ class AddItemModal extends InvoiceElementBase
             $this->groups2 = $result->fetch_all(MYSQLI_ASSOC);
         } catch (Exception $e) {
             error_log('Error loading select options for AddItemModal: ' . $e->getMessage());
+        }
+    }
+
+    private function loadNextCodes()
+    {
+        if (!$this->conn) {
+            return;
+        }
+
+        require_once __DIR__ . '/../includes/item_unit_sync.php';
+        try {
+            $this->nextBarcode = kody_next_barcode($this->conn);
+            $this->unitBarcodeAdd = kody_unit_barcode_addend($this->conn);
+            $codeRow = $this->conn->query('SELECT MAX(code) AS max_code FROM myitems');
+            $assoc = $codeRow ? $codeRow->fetch_assoc() : null;
+            $this->nextCode = ($assoc && $assoc['max_code'] !== null)
+                ? (string) ((int) $assoc['max_code'] + 1)
+                : '1';
+        } catch (Throwable $e) {
+            error_log('Error loading next barcode for AddItemModal: ' . $e->getMessage());
         }
     }
 
@@ -75,6 +99,8 @@ class AddItemModal extends InvoiceElementBase
     private function renderForm()
     {
         $unitOptions = '';
+        $nextCode = htmlspecialchars($this->nextCode, ENT_QUOTES, 'UTF-8');
+        $nextBarcode = htmlspecialchars($this->nextBarcode, ENT_QUOTES, 'UTF-8');
         foreach ($this->units as $unit) {
             $unitOptions .= '<option value="' . (int) $unit['id'] . '">'
                 . htmlspecialchars((string) $unit['uname'], ENT_QUOTES, 'UTF-8')
@@ -95,11 +121,11 @@ class AddItemModal extends InvoiceElementBase
                             <div class="item-fields-inline">
                                 <div class="ifld ifld-code">
                                     <label>كود</label>
-                                    <input readonly class="form-control form-control-sm bg-light text-center" type="text" name="code" id="invItemCode" value="">
+                                    <input readonly class="form-control form-control-sm bg-light text-center" type="text" name="code" id="invItemCode" value="<?= $nextCode ?>">
                                 </div>
                                 <div class="ifld ifld-barcode">
-                                    <label for="invItemBarcode">باركود<span class="text-danger">*</span></label>
-                                    <input id="invItemBarcode" required class="form-control form-control-sm text-center" type="text" name="barcode">
+                                    <label for="invItemBarcode">باركود</label>
+                                    <input id="invItemBarcode" readonly class="form-control form-control-sm bg-light text-center" type="text" name="barcode" value="<?= $nextBarcode ?>">
                                 </div>
                                 <div class="ifld ifld-name">
                                     <label for="invItemName">الاسم<span class="text-danger">*</span></label>
@@ -180,7 +206,7 @@ class AddItemModal extends InvoiceElementBase
                                                 <input class="form-control form-control-sm text-center" type="number" name="u_val[]" value="1" step="0.001" readonly>
                                             </td>
                                             <td>
-                                                <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="">
+                                                <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" value="<?= $nextBarcode ?>">
                                             </td>
                                             <td><input type="number" name="cost_price[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
                                             <td><input type="number" name="price1[]" class="form-control form-control-sm" value="0" step="0.001" min="0"></td>
@@ -193,7 +219,7 @@ class AddItemModal extends InvoiceElementBase
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="units-tip mb-0"><i class="fas fa-info-circle ml-1"></i> الأسعار تُحسب تلقائياً حسب المعامل</p>
+                            <p class="units-tip mb-0"><i class="fas fa-info-circle ml-1"></i> الباركود والأسعار يُحسبان تلقائياً<?php if ($this->unitBarcodeAdd !== '' && $this->unitBarcodeAdd !== '0'): ?>، وباركود الوحدة الثانية = باركود الأولى + <?= htmlspecialchars($this->unitBarcodeAdd, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
                         </div>
                     </div>
                 </form>
@@ -220,7 +246,43 @@ class AddItemModal extends InvoiceElementBase
             var $ = window.jQuery;
             var priceFields = ['cost_price', 'price1', 'price2', 'market_price'];
             var $modal = $('#addItemModal');
-            var lastBarcode = '';
+            var lastBarcode = ($('#invItemBarcode').val() || '').trim();
+            var unitBarcodeAdd = <?= json_encode($this->unitBarcodeAdd, JSON_UNESCAPED_UNICODE) ?>;
+
+            function addBarcodeNumbers(barcode, addend) {
+                barcode = String(barcode || '').replace(/\D/g, '');
+                addend = String(addend || '').replace(/\D/g, '');
+                if (!barcode || !addend || /^0+$/.test(addend)) return '';
+                var i = barcode.length - 1;
+                var j = addend.length - 1;
+                var carry = 0;
+                var out = '';
+                while (i >= 0 || j >= 0 || carry > 0) {
+                    var sum = carry;
+                    if (i >= 0) sum += barcode.charCodeAt(i) - 48;
+                    if (j >= 0) sum += addend.charCodeAt(j) - 48;
+                    out = String(sum % 10) + out;
+                    carry = Math.floor(sum / 10);
+                    i--;
+                    j--;
+                }
+                return out.replace(/^0+(?=\d)/, '');
+            }
+
+            function refreshSecondUnitBarcode() {
+                var $input = $rows().not(':first').first().find('.unit-barcode-input');
+                if (!$input.length) return;
+                var base = ($rows().first().find('.unit-barcode-input').val() || '').trim();
+                if (!/^\d+$/.test(base)) base = ($('#invItemBarcode').val() || '').trim();
+                var next = addBarcodeNumbers(base, unitBarcodeAdd);
+                if (next === '' || next.length > 20) return;
+                var current = ($input.val() || '').trim();
+                var linked = $input.data('linked');
+                if (current === '' || current === linked) {
+                    $input.val(next);
+                    $input.data('linked', next);
+                }
+            }
 
             function $rows() {
                 return $modal.find('#invUnitsContainer .urow');
@@ -235,7 +297,7 @@ class AddItemModal extends InvoiceElementBase
                 $all.not(':first').remove();
                 var $first = $rows().first();
                 $first.find('input[name="u_val[]"]').val('1').prop('readonly', true);
-                $first.find('input[name="unit_barcode[]"]').val('');
+                $first.find('input[name="unit_barcode[]"]').val($('#invItemBarcode').val() || '');
                 priceFields.forEach(function(name) {
                     $first.find('input[name="' + name + '[]"]').val('0');
                 });
@@ -259,7 +321,7 @@ class AddItemModal extends InvoiceElementBase
                 var form = document.getElementById('invoiceAddItemForm');
                 if (form) form.reset();
                 resetUnits();
-                lastBarcode = '';
+                lastBarcode = ($('#invItemBarcode').val() || '').trim();
                 $('#invItemPreviewImg').attr('src', '').addClass('d-none');
                 $('#invItemImagePlaceholder').removeClass('d-none');
                 fetch('ajax/load_items_lazy.php?action=next_barcode')
@@ -288,6 +350,7 @@ class AddItemModal extends InvoiceElementBase
                     $unit.val(value);
                 }
                 lastBarcode = value;
+                refreshSecondUnitBarcode();
             });
 
             $modal.on('change', '#invItemImgs', function() {
@@ -323,7 +386,7 @@ class AddItemModal extends InvoiceElementBase
                 });
                 clone.find('input[name="iu_id[]"]').val('0');
                 clone.find('input[name="u_val[]"]').val(String(factor)).prop('readonly', false);
-                clone.find('.unit-barcode-input').val('');
+                clone.find('.unit-barcode-input').val('').removeData('linked');
                 var $select = clone.find('select[name="unit_id[]"]');
                 $select.find('option').each(function() {
                     if (!used[$(this).val()]) {
@@ -336,6 +399,7 @@ class AddItemModal extends InvoiceElementBase
                     clone.find('input[name="' + name + '[]"]').val((base * factor).toFixed(3));
                 });
                 $rows().last().after(clone);
+                refreshSecondUnitBarcode();
             });
 
             $modal.on('click', '.inv-delete-unit', function() {
@@ -357,9 +421,8 @@ class AddItemModal extends InvoiceElementBase
                 var $btn = $(this);
                 var form = document.getElementById('invoiceAddItemForm');
                 var iname = ($('#invItemName').val() || '').trim();
-                var barcode = ($('#invItemBarcode').val() || '').trim();
-                if (!iname || !barcode) {
-                    showMsg('<div class="alert alert-danger py-1 mb-1">الاسم والباركود مطلوبان</div>');
+                if (!iname) {
+                    showMsg('<div class="alert alert-danger py-1 mb-1">الاسم مطلوب</div>');
                     return;
                 }
                 var units = [];
@@ -426,9 +489,6 @@ class AddItemModal extends InvoiceElementBase
 
         if (empty($_POST['iname'])) {
             $errors[] = 'اسم الصنف مطلوب';
-        }
-        if (empty($_POST['barcode'])) {
-            $errors[] = 'الباركود مطلوب';
         }
         if (empty($_POST['unit_id']) || !is_array($_POST['unit_id'])) {
             $errors[] = 'يجب إضافة وحدة واحدة على الأقل';
