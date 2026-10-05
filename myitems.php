@@ -55,25 +55,16 @@ $stmtCount->execute();
 $totalRows = $stmtCount->get_result()->fetch_assoc()['total'];
 $stmtCount->close();
 
-// Calculate pagination parameters
-$totalPages = ceil($totalRows / $limit);
-if ($totalPages < 1) $totalPages = 1;
-if ($page > $totalPages) {
-    $page = $totalPages;
-}
-$offset = ($page - 1) * $limit;
+// Calculate pagination parameters (removed)
+$offset = 0; // Keeping offset for numbering the table rows if needed
 
-// 2. Fetch paginated data
-$sqlData = "SELECT * FROM myitems WHERE isdeleted = 0" . $whereSql . " ORDER BY id DESC LIMIT ? OFFSET ?";
+// 2. Fetch data
+$sqlData = "SELECT * FROM myitems WHERE isdeleted = 0" . $whereSql . " ORDER BY id DESC";
 $stmtData = $conn->prepare($sqlData);
 
-// Append limit and offset to variables
-$dataParams = $params;
-$dataParams[] = $limit;
-$dataParams[] = $offset;
-$dataTypes = $types . "ii";
-
-$stmtData->bind_param($dataTypes, ...$dataParams);
+if ($types !== "") {
+    $stmtData->bind_param($types, ...$params);
+}
 $stmtData->execute();
 $resitm = $stmtData->get_result();
 ?>
@@ -283,57 +274,9 @@ $resitm = $stmtData->get_result();
                 </div>
             </div>
             
-            <?php if ($totalPages > 1): ?>
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination pagination-sm justify-content-center flex-wrap">
-                        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=1&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="First">
-                                <span aria-hidden="true">&laquo;&laquo; الأولى</span>
-                            </a>
-                        </li>
-                        
-                        <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $page - 1 ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Previous">
-                                <span aria-hidden="true">&laquo; السابق</span>
-                            </a>
-                        </li>
-
-                        <?php
-                        $startPage = max(1, $page - 2);
-                        $endPage = min($totalPages, $page + 2);
-                        
-                        if ($startPage > 1) {
-                            echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                        }
-                        
-                        for ($p = $startPage; $p <= $endPage; $p++): ?>
-                            <li class="page-item <?= ($p === $page) ? 'active' : '' ?>">
-                                <a class="page-link" href="?page=<?= $p ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>"><?= $p ?></a>
-                            </li>
-                        <?php endfor;
-                        
-                        if ($endPage < $totalPages) {
-                            echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                        }
-                        ?>
-
-                        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $page + 1 ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Next">
-                                <span aria-hidden="true">التالي &raquo;</span>
-                            </a>
-                        </li>
-
-                        <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-                            <a class="page-link" href="?page=<?= $totalPages ?>&search=<?= urlencode($search) ?>&group1=<?= $group1 ?>&group2=<?= $group2 ?>" aria-label="Last">
-                                <span aria-hidden="true">الأخيرة &raquo;&raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="text-center text-muted small mt-2">
-                        عرض الأصناف <?= $offset + 1 ?> إلى <?= min($offset + $limit, $totalRows) ?> من إجمالي <?= $totalRows ?> صنف (صفحة <?= $page ?> من <?= $totalPages ?>)
-                    </div>
-                </nav>
-            <?php endif; ?>
+            <div class="text-center text-muted small mt-2 mb-3">
+                إجمالي الأصناف: <?= $totalRows ?>
+            </div>
         </div>
 
         </div>
