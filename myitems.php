@@ -143,6 +143,7 @@ $resitm = $stmtData->get_result();
                             }
                             ?>
                         </select>
+                        <button id="btn_filter_submit" class="btn btn-primary btn-sm">بحث</button>
                     </div>
                 </div>
                 <div class="col">
@@ -366,13 +367,13 @@ $(document).ready(function() {
         }, 300);
     }
 
-    $('#search').on('input', triggerSearch);
-    $('#filter_group1, #filter_group2').on('change', triggerSearch);
+    $('#btn_filter_submit').on('click', triggerSearch);
 
-    // منع الإرسال التلقائي للنموذج عند الضغط على Enter في مربع البحث
+    // منع الإرسال التلقائي للنموذج عند الضغط على Enter في مربع البحث وتفعيل البحث
     $('#search').on('keypress', function(e) {
         if (e.which === 13) {
             e.preventDefault();
+            triggerSearch();
         }
     });
 
