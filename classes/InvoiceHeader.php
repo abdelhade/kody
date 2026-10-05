@@ -97,12 +97,14 @@ class InvoiceHeader extends InvoiceElementBase
             </div>
 
             <!-- الفئة السعرية -->
+            <?php if (in_array((int)$this->invoiceType, [3, 11, 14], true)): ?>
             <div class="col-md-1">
                 <label for="invoicePriceList">الفئة السعرية</label>
                 <select class="form-control form-control-sm" name="price_list" id="invoicePriceList">
                     <?php $this->renderPriceListOptions(); ?>
                 </select>
             </div>
+            <?php endif; ?>
 
             <!-- التاريخ -->
             <div class="col-md-1">

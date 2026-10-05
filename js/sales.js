@@ -534,8 +534,6 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
         }
 
 function handleInputChanges() {
-    let timeout;
-
     const ALL_ROW_INPUTS = '.itmqty, .itmprice, .itmdisc, .itmdisc_pct, .itmsellprice, .itmprofit_pct';
 
     // تعطيل تغيير القيمة بعجلة الماوس؛ أسهم الكيبورد تتنقل بين الحقول
@@ -585,8 +583,10 @@ function handleInputChanges() {
         }
 
         // باقي الحقول (كمية/سعر/خصم) تؤثر على القيمة والإجمالي → debounce
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
+        let rowTimeout = row.data('calcTimer');
+        if (rowTimeout) clearTimeout(rowTimeout);
+        
+        rowTimeout = setTimeout(() => {
             if ($this.hasClass('itmdisc_pct')) {
                 calcDiscFromPct(row);
             } else if ($this.hasClass('itmdisc')) {
@@ -598,6 +598,7 @@ function handleInputChanges() {
             calculateItemValue(row);
             updateTotal();
         }, 150);
+        row.data('calcTimer', rowTimeout);
     });
 }
 
