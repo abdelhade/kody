@@ -262,6 +262,13 @@
                 </a>
               </li>
 
+              <li class="nav-item" id="edititemgroups">
+                <a href="edit_item_groups.php" class="nav-link">
+                  <i class="nav-icon fas fa-object-group"></i>
+                  <p>تعديل المجموعات للاصناف</p>
+                </a>
+              </li>
+
               <li class="nav-item">
                 <a href="barcode_search.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
@@ -1448,6 +1455,11 @@
       if (window.location.href.includes('deleted_items.php')) {
         $('#stock').show().addClass('bg-slate-100');
         $('#deleteditems').addClass('bg-slate-200');
+      }
+
+      if (window.location.href.includes('edit_item_groups.php')) {
+        $('#stock').show().addClass('bg-slate-100');
+        $('#edititemgroups').addClass('bg-slate-200');
       }
 
       if (window.location.href.includes('reservations.php')) {
