@@ -113,6 +113,28 @@
                             </a>
                         </div>
 
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <a href="consignment_items_report.php"
+                               class="report-card"
+                               style="--card-color: #E65100; --card-bg-light: rgba(230, 81, 0, 0.12);">
+                                <div class="report-icon-wrapper">
+                                    <i class="fa fa-handshake"></i>
+                                </div>
+                                <h3>تقرير أصناف الأمانة</h3>
+                            </a>
+                        </div>
+
+                        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+                            <a href="supplier_settlement_report.php"
+                               class="report-card"
+                               style="--card-color: #6A1B9A; --card-bg-light: rgba(106, 27, 154, 0.12);">
+                                <div class="report-icon-wrapper">
+                                    <i class="fa fa-balance-scale"></i>
+                                </div>
+                                <h3>تقرير تسوية الموردين</h3>
+                            </a>
+                        </div>
+
                     </div>
                 </div>
             </div>

@@ -169,7 +169,7 @@ $(document).ready(function() {
         clone.removeClass('urow-base');
         clone.find('input[name="iu_id[]"]').val('0');
         clone.find('input[name="u_val[]"]').val(String(factor)).prop('readonly', false);
-        clone.find('input[name="unit_barcode[]"]').val('').removeClass('is-valid is-invalid').removeData('invalid');
+        clone.find('input[name="unit_barcode[]"]').val('').removeClass('is-valid is-invalid').removeData('invalid').removeData('linked');
         clone.find('.unit-barcode-error').addClass('d-none');
 
         var $unitSelect = clone.find('select[name="unit_id[]"]');
@@ -186,6 +186,11 @@ $(document).ready(function() {
         });
 
         $('.urow').last().after(clone);
+        refreshSecondUnitBarcode();
+        var $secondBarcode = secondUnitBarcodeInput();
+        if ($secondBarcode.length && ($secondBarcode.val() || '').trim() !== '') {
+            validateUnitBarcode($secondBarcode);
+        }
     });
 
     $(document).on('click', '.deleteRow', function() {
@@ -252,7 +257,59 @@ $(document).ready(function() {
             $input.val(next);
         }
         $input.data('linked', next);
+        refreshSecondUnitBarcode();
     }
+
+    function addBarcodeNumbers(barcode, addend) {
+        barcode = String(barcode || '').replace(/\D/g, '');
+        addend = String(addend || '').replace(/\D/g, '');
+        if (!barcode || !addend || /^0+$/.test(addend)) return '';
+        var i = barcode.length - 1;
+        var j = addend.length - 1;
+        var carry = 0;
+        var out = '';
+        while (i >= 0 || j >= 0 || carry > 0) {
+            var sum = carry;
+            if (i >= 0) sum += barcode.charCodeAt(i) - 48;
+            if (j >= 0) sum += addend.charCodeAt(j) - 48;
+            out = String(sum % 10) + out;
+            carry = Math.floor(sum / 10);
+            i--;
+            j--;
+        }
+        return out.replace(/^0+(?=\d)/, '');
+    }
+
+    function secondUnitBarcodeInput() {
+        var $row = $('.urow').not('.urow-base').first();
+        return $row.find('.unit-barcode-input');
+    }
+
+    function refreshSecondUnitBarcode() {
+        var $input = secondUnitBarcodeInput();
+        if (!$input.length) return;
+        var addend = String(window.kodyUnitBarcodeAdd || '').replace(/\D/g, '');
+        var base = (itemBaseRow().find('.unit-barcode-input').val() || '').trim();
+        if (!/^\d+$/.test(base)) base = ($('#barcode').val() || '').trim();
+        var next = addBarcodeNumbers(base, addend);
+        var current = ($input.val() || '').trim();
+        var linked = $input.data('linked');
+        if (next === '' || next.length > 20) return;
+        if (current === next) {
+            $input.data('linked', next);
+            return;
+        }
+        if (current === '' || current === linked) {
+            $input.val(next);
+            $input.data('linked', next);
+        }
+    }
+
+    $(document).on('input', '.urow-base .unit-barcode-input', function() {
+        refreshSecondUnitBarcode();
+    });
+
+    refreshSecondUnitBarcode();
 
     $('#barcode').on('input', function() {
         followItemBarcode(($(this).val() || '').trim());

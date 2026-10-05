@@ -24,6 +24,7 @@
         <div class="alert alert-danger" id="startBalanceClientAlert" style="display:none"></div>
 
         <form action="do/doadd_start_balance.php" method="post" id="startBalanceForm">
+            <input type="hidden" name="plug_manual" id="plug_manual" value="0">
             <div class="card">
                 <div class="card-header">
                     <div class="filter">
@@ -95,12 +96,13 @@
                                     $current = (float) $rowacc['balance'];
                                     $openingClass = $opening < 0 ? 'text-red-500' : '';
                                     $currentClass = $current < 0 ? 'text-red-500' : '';
-                                    $locked = ((int) $rowacc['editable'] === 0);
+                                    $isPlug = ($rowacc['code'] === '2211' || $rowacc['aname'] === 'الشريك الرئيسي');
+                                    $locked = ((int) $rowacc['editable'] === 0) && !$isPlug;
                                 ?>
-                                    <tr data-code="<?= htmlspecialchars($rowacc['code'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <tr data-code="<?= htmlspecialchars($rowacc['code'], ENT_QUOTES, 'UTF-8') ?>"<?= $isPlug ? ' data-plug="1"' : '' ?>>
                                         <td><?= htmlspecialchars($rowacc['code'], ENT_QUOTES, 'UTF-8') ?><input name="acc_id[]" type="text" class="acc_id" value="<?= (int) $rowacc['id'] ?>" hidden></td>
-                                        <td><?= htmlspecialchars($rowacc['aname'], ENT_QUOTES, 'UTF-8') ?></td>
-                                        <td><input name="newbalance[]" type="number" step="1" class="form form-control new-balance font-bold m-0 p-0 <?= $openingClass ?>" value="<?= htmlspecialchars((string) $opening, ENT_QUOTES, 'UTF-8') ?>" readonly data-editable="<?= $locked ? '0' : '1' ?>"></td>
+                                        <td><?= htmlspecialchars($rowacc['aname'], ENT_QUOTES, 'UTF-8') ?><?php if ($isPlug): ?><br><small>فرق الميزانية يُرحّل هنا ويمكن تعديله</small><?php endif; ?></td>
+                                        <td><input name="newbalance[]" type="number" step="1" class="form form-control new-balance font-bold m-0 p-0 <?= $openingClass ?>" value="<?= htmlspecialchars((string) $opening, ENT_QUOTES, 'UTF-8') ?>" <?= $isPlug ? '' : 'readonly' ?> data-editable="<?= $locked ? '0' : '1' ?>"></td>
                                         <td><input type="text" readonly class="form form-control settle m-0 p-0" value="0.00"></td>
                                         <td class="old-balance <?= $openingClass ?>"><?= htmlspecialchars((string) $opening, ENT_QUOTES, 'UTF-8') ?></td>
                                         <td class="<?= $currentClass ?>"><?= htmlspecialchars((string) $current, ENT_QUOTES, 'UTF-8') ?></td>
@@ -148,11 +150,47 @@
         box.style.display = 'block';
     }
 
+    function hideClientError() {
+        const box = document.getElementById('startBalanceClientAlert');
+        box.style.display = 'none';
+        box.textContent = '';
+    }
+
+    function paintBalance(input) {
+        const row = input.closest('tr');
+        const value = parseFloat(input.value);
+        const shown = Number.isFinite(value) ? value : 0;
+        if (shown < 0) {
+            input.classList.add('text-red-500');
+        } else {
+            input.classList.remove('text-red-500');
+        }
+        const oldBalance = parseFloat(row.querySelector('.old-balance').textContent) || 0;
+        row.querySelector('.settle').value = (oldBalance - shown).toFixed(2);
+    }
+
+    function applyPlug() {
+        const plug = document.querySelector('tr[data-plug="1"] .new-balance');
+        if (!plug) {
+            return false;
+        }
+        let others = 0;
+        document.querySelectorAll('tbody tr').forEach(function(row) {
+            if (row.getAttribute('data-plug') === '1') {
+                return;
+            }
+            others += parseFloat(row.querySelector('.new-balance').value) || 0;
+        });
+        plug.value = String(Math.round(-others));
+        paintBalance(plug);
+        return true;
+    }
+
     // Enable editing of balances that are allowed to change
     document.getElementById('edit_balance').addEventListener('click', function() {
         const newBalances = document.querySelectorAll('.new-balance');
         newBalances.forEach(function(input) {
-            if (input.getAttribute('data-editable') === '1') {
+            if (input.getAttribute('data-editable') === '1' || input.closest('tr').getAttribute('data-plug') === '1') {
                 input.readOnly = false;
             }
         });
@@ -199,22 +237,23 @@
     const balanceInputs = document.querySelectorAll('.new-balance');
     balanceInputs.forEach(function(input) {
         input.addEventListener('input', function() {
-            // Change color if balance is less than zero
-            const newBalance = parseFloat(input.value) || 0;
-            if (newBalance < 0) {
-                input.classList.add('text-red-500');
-            } else {
-                input.classList.remove('text-red-500');
-            }
-
-            // Update the settle value
             const row = input.closest('tr');
-            const oldBalance = parseFloat(row.querySelector('.old-balance').textContent) || 0;
-            const settleInput = row.querySelector('.settle');
-            settleInput.value = (oldBalance - newBalance).toFixed(2);
-
-            // Update totals after each input change
+            if (row.getAttribute('data-plug') === '1') {
+                document.getElementById('plug_manual').value = '1';
+                paintBalance(input);
+            } else {
+                document.getElementById('plug_manual').value = '0';
+                paintBalance(input);
+                applyPlug();
+            }
             updateTotals();
+            const debit = parseFloat(document.getElementById('total_debit').value) || 0;
+            const credit = parseFloat(document.getElementById('total_credit').value) || 0;
+            if (Math.abs(debit - credit) > 0.001) {
+                showClientError('القيد غير متوازن. إجمالي المدين (' + debit.toFixed(2) + ') لا يساوي إجمالي الدائن (' + credit.toFixed(2) + '). الفرق: ' + (debit - credit).toFixed(2) + '. عدّل الشريك الرئيسي أو باقي الحسابات قبل الحفظ.');
+            } else {
+                hideClientError();
+            }
         });
     });
 
@@ -267,13 +306,17 @@
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        updateTotals();
-        const debit = parseFloat(document.getElementById('total_debit').value) || 0;
-        const credit = parseFloat(document.getElementById('total_credit').value) || 0;
-        const diff = debit - credit;
-        if (Math.abs(diff) > 0.001 && !document.getElementById('startBalanceAlert')) {
-            showClientError('الرصيد الافتتاحي الحالي غير متوازن. إجمالي المدين (' + debit.toFixed(2) + ') لا يساوي إجمالي الدائن (' + credit.toFixed(2) + '). الفرق: ' + diff.toFixed(2) + '. لن يُحفظ قبل تصحيح الفرق.');
+        if (!applyPlug() ) {
+            updateTotals();
+            const debit = parseFloat(document.getElementById('total_debit').value) || 0;
+            const credit = parseFloat(document.getElementById('total_credit').value) || 0;
+            const diff = debit - credit;
+            if (Math.abs(diff) > 0.001 && !document.getElementById('startBalanceAlert')) {
+                showClientError('الرصيد الافتتاحي الحالي غير متوازن. إجمالي المدين (' + debit.toFixed(2) + ') لا يساوي إجمالي الدائن (' + credit.toFixed(2) + '). الفرق: ' + diff.toFixed(2) + '. حساب الشريك الرئيسي غير موجود لترحيل الفرق.');
+            }
+            return;
         }
+        updateTotals();
     });
 
 </script>

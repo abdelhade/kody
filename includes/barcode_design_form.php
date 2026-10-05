@@ -141,8 +141,20 @@ $bdPriceSources = [
           </table>
         </div>
 
+        <h5 class="text-muted mb-2">باركود الوحدة الثانية</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="bd_unit_barcode_add">الرقم الثابت</label>
+              <input type="text" class="form-control" id="bd_unit_barcode_add" name="bd_unit_barcode_add" maxlength="10" inputmode="numeric"
+                     value="<?= htmlspecialchars((string) ($bd['unit_barcode_add'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="مثال: 1000000">
+              <small class="form-text text-muted">باركود الوحدة الثانية = باركود الوحدة الأولى + هذا الرقم. مثال: 10025 + 1000000 = 1010025.</small>
+            </div>
+          </div>
+        </div>
+
         <h5 class="text-muted mb-2">تركيب الشفرة</h5>
-        <p class="small text-muted mb-3">يُطبَّق على الشفرة فقط. الباركود الخطي والباركود النصي يبقيان على الباركود الأساسي للصنف. الشفرة = بداية + كود الصنف + سعر مُرمَّز (اختياري) + نهاية.</p>
+        <p class="small text-muted mb-3">يُطبَّق على الشفرة فقط. الباركود الخطي والباركود النصي يبقيان على الباركود الأساسي للصنف. الشفرة = بداية + الباركود + كود الصنف + السعر كعدد صحيح + نهاية.</p>
         <div class="row">
           <div class="col-md-6">
             <div class="form-group">
@@ -172,7 +184,7 @@ $bdPriceSources = [
                 <option value="after" <?= $bd['embed_prices'] === 'after' ? 'selected' : '' ?>>سعر واحد</option>
                 <option value="after_before" <?= $bd['embed_prices'] === 'after_before' ? 'selected' : '' ?>>سعرين</option>
               </select>
-              <small class="form-text text-muted">الترميز بدون فاصلة عشرية: 12.50 تصبح 1250.</small>
+              <small class="form-text text-muted">السعر بدون رقم عشري: 12.50 تصبح 13.</small>
             </div>
           </div>
         </div>
@@ -251,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function encodePrice(amount) {
     var n = parseFloat(amount);
     if (isNaN(n)) n = 0;
-    return String(Math.round(n * 100));
+    return String(Math.round(n));
   }
   function pick(source) {
     if (Object.prototype.hasOwnProperty.call(sample, source)) return sample[source];
@@ -260,11 +272,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function money(amount) {
     var n = parseFloat(amount);
     if (isNaN(n)) return '';
-    if (Math.abs(n - Math.round(n)) < 0.001) return String(Math.round(n));
-    return String(Math.round(n * 100) / 100);
+    return String(Math.round(n));
   }
   function compose() {
-    var body = checked('bd_include_item_code') ? sample.code : '';
+    var body = sample.barcode + (checked('bd_include_item_code') ? sample.code : '');
     var mode = val('bd_embed_prices');
     var before = pick(val('bd_price_before_source'));
     var after = pick(val('bd_price_after_source'));

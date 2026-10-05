@@ -67,7 +67,7 @@ try {
         }
     }
 
-    $stmtAcc = $conn->prepare('SELECT id, aname, editable, is_basic, isdeleted FROM acc_head WHERE id = ? LIMIT 1');
+    $stmtAcc = $conn->prepare('SELECT id, code, aname, editable, is_basic, isdeleted FROM acc_head WHERE id = ? LIMIT 1');
     $stmtLines = $conn->prepare(
         "SELECT je.id, je.debit, je.credit
          FROM journal_entries je
@@ -125,7 +125,8 @@ try {
             $oldSigned += (float) $line['debit'] - (float) $line['credit'];
         }
 
-        if ((int) $acc['editable'] === 0 && abs($balance - $oldSigned) > 0.001) {
+        $isPlug = ($acc['code'] === '2211' || $acc['aname'] === 'الشريك الرئيسي');
+        if ((int) $acc['editable'] === 0 && !$isPlug && abs($balance - $oldSigned) > 0.001) {
             start_balance_fail($conn, 'الحساب «' . $name . '» غير قابل لتعديل الرصيد الافتتاحي.', true);
         }
 
@@ -142,6 +143,7 @@ try {
             'credit' => $credit,
             'tybe' => $balance >= 0 ? 0 : 1,
             'lines' => $lines,
+            'plug' => $isPlug,
         ];
     }
 
@@ -149,12 +151,41 @@ try {
     $stmtLines->close();
 
     $diff = round($totalDebit - $totalCredit, 2);
+    $plugManual = isset($_POST['plug_manual']) && (string) $_POST['plug_manual'] === '1';
     if (abs($diff) > 0.001) {
-        start_balance_fail(
-            $conn,
-            'القيد غير متوازن. إجمالي المدين (' . number_format($totalDebit, 2) . ') لا يساوي إجمالي الدائن (' . number_format($totalCredit, 2) . '). الفرق: ' . number_format($diff, 2) . '. لم يُحفظ أي تغيير.',
-            true
-        );
+        $plugIndex = null;
+        foreach ($plans as $index => $plan) {
+            if (!empty($plan['plug'])) {
+                $plugIndex = $index;
+                break;
+            }
+        }
+        if ($plugIndex === null || $plugManual) {
+            start_balance_fail(
+                $conn,
+                'القيد غير متوازن. إجمالي المدين (' . number_format($totalDebit, 2) . ') لا يساوي إجمالي الدائن (' . number_format($totalCredit, 2) . '). الفرق: ' . number_format($diff, 2) . '. لم يُحفظ أي تغيير.',
+                true
+            );
+        }
+
+        $plugBalance = round($plans[$plugIndex]['balance'] - $diff, 2);
+        $plugInt = (int) round($plugBalance);
+        if (abs($plugBalance - $plugInt) > 0.0001 || $plugInt > 2147483647 || $plugInt < -2147483647) {
+            start_balance_fail($conn, 'تعذر ترحيل فرق الميزانية إلى الشريك الرئيسي. لم يُحفظ أي تغيير.', true);
+        }
+        $plans[$plugIndex]['balance'] = (float) $plugInt;
+        $plans[$plugIndex]['debit'] = $plugInt > 0 ? (float) $plugInt : 0.0;
+        $plans[$plugIndex]['credit'] = $plugInt < 0 ? (float) abs($plugInt) : 0.0;
+        $plans[$plugIndex]['tybe'] = $plugInt >= 0 ? 0 : 1;
+        $totalDebit = 0.0;
+        $totalCredit = 0.0;
+        foreach ($plans as $plan) {
+            $totalDebit += $plan['debit'];
+            $totalCredit += $plan['credit'];
+        }
+        if (abs(round($totalDebit - $totalCredit, 2)) > 0.001) {
+            start_balance_fail($conn, 'تعذر موازنة الرصيد الافتتاحي على الشريك الرئيسي. لم يُحفظ أي تغيير.', true);
+        }
     }
 
     $needsInsert = false;

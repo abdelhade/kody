@@ -239,11 +239,50 @@ function kody_prepare_unit_barcodes(mysqli $conn, string $itemBarcode, array $ro
         }
 
         $barcode = trim((string) ($row['barcode'] ?? ''));
-        if ($barcode === '') {
-            $barcode = $isBase
-                ? $itemBarcode
-                : kody_make_unit_barcode($conn, $itemBarcode, (int) $i, $reserved, $excludeItemId);
+        if ($barcode === '' && $isBase) {
+            $barcode = $itemBarcode;
         }
+        $rows[$i]['barcode'] = $barcode;
+        $rows[$i]['_is_base'] = $isBase;
+    }
+
+    $baseBarcode = $itemBarcode;
+    foreach ($rows as $row) {
+        if (!empty($row['_is_base']) && $row['barcode'] !== '') {
+            $baseBarcode = $row['barcode'];
+            break;
+        }
+    }
+    $addend = kody_unit_barcode_addend($conn);
+    $secondFilled = false;
+    $used = $reserved;
+    foreach ($rows as $row) {
+        if ($row['barcode'] !== '') {
+            $used[$row['barcode']] = true;
+        }
+    }
+    foreach ($rows as $i => $row) {
+        if (!empty($row['_is_base']) || $row['barcode'] !== '') {
+            continue;
+        }
+        if (!$secondFilled && $addend !== '0' && $baseBarcode !== '' && ctype_digit($baseBarcode)) {
+            $next = kody_add_barcode_number($baseBarcode, $addend);
+            if (isset($used[$next])) {
+                throw new RuntimeException('duplicate_barcode');
+            }
+            $rows[$i]['barcode'] = $next;
+            $used[$next] = true;
+            $secondFilled = true;
+            continue;
+        }
+        $next = kody_make_unit_barcode($conn, $baseBarcode, (int) $i, $used, $excludeItemId);
+        $rows[$i]['barcode'] = $next;
+        $used[$next] = true;
+    }
+
+    foreach ($rows as $i => $row) {
+        $isBase = !empty($row['_is_base']);
+        $barcode = trim((string) $row['barcode']);
         if ($barcode === '' || strlen($barcode) > 20 || strlen($itemBarcode) > 25) {
             throw new RuntimeException('barcode_length');
         }
@@ -258,6 +297,7 @@ function kody_prepare_unit_barcodes(mysqli $conn, string $itemBarcode, array $ro
 
         $reserved[$barcode] = true;
         $rows[$i]['barcode'] = $barcode;
+        unset($rows[$i]['_is_base']);
     }
 
     if ($baseCount !== 1) {
@@ -265,6 +305,54 @@ function kody_prepare_unit_barcodes(mysqli $conn, string $itemBarcode, array $ro
     }
 
     return $rows;
+}
+
+function kody_unit_barcode_addend(mysqli $conn): string
+{
+    require_once __DIR__ . '/barcode_design.php';
+    $col = $conn->query("SHOW COLUMNS FROM settings LIKE 'barcode_design'");
+    if (!$col || $col->num_rows === 0) {
+        return '0';
+    }
+    $row = $conn->query('SELECT barcode_design FROM settings LIMIT 1');
+    $assoc = $row ? $row->fetch_assoc() : null;
+    $design = kody_barcode_design_load(is_array($assoc) ? $assoc : []);
+    $add = preg_replace('/\D/', '', (string) ($design['unit_barcode_add'] ?? ''));
+    if ($add === '' || preg_match('/^0+$/', $add)) {
+        return '0';
+    }
+    return substr($add, 0, 10);
+}
+
+function kody_add_barcode_number(string $barcode, string $addend): string
+{
+    $barcode = preg_replace('/\D/', '', $barcode);
+    $addend = preg_replace('/\D/', '', $addend);
+    if ($barcode === '') {
+        $barcode = '0';
+    }
+    if ($addend === '') {
+        $addend = '0';
+    }
+    $i = strlen($barcode) - 1;
+    $j = strlen($addend) - 1;
+    $carry = 0;
+    $out = '';
+    while ($i >= 0 || $j >= 0 || $carry > 0) {
+        $sum = $carry;
+        if ($i >= 0) {
+            $sum += ord($barcode[$i]) - 48;
+        }
+        if ($j >= 0) {
+            $sum += ord($addend[$j]) - 48;
+        }
+        $out = (string) ($sum % 10) . $out;
+        $carry = intdiv($sum, 10);
+        $i--;
+        $j--;
+    }
+    $out = ltrim($out, '0');
+    return $out === '' ? '0' : $out;
 }
 
 function kody_make_unit_barcode(mysqli $conn, string $seed, int $index, array $reserved, int $excludeItemId): string

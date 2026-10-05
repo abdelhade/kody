@@ -41,6 +41,7 @@ function kody_barcode_design_defaults(): array
         ],
         'code_prefix' => '',
         'code_suffix' => '',
+        'unit_barcode_add' => '',
         'include_item_code' => true,
         'embed_prices' => 'none',
         'price_before_source' => 'price1',
@@ -123,6 +124,8 @@ function kody_barcode_design_normalize(array $input): array
     $suffix = trim((string) ($input['code_suffix'] ?? ''));
     $d['code_prefix'] = function_exists('mb_substr') ? mb_substr($prefix, 0, 40) : substr($prefix, 0, 40);
     $d['code_suffix'] = function_exists('mb_substr') ? mb_substr($suffix, 0, 40) : substr($suffix, 0, 40);
+    $unitAdd = preg_replace('/\D/', '', (string) ($input['unit_barcode_add'] ?? ''));
+    $d['unit_barcode_add'] = substr($unitAdd, 0, 10);
 
     $embed = (string) ($input['embed_prices'] ?? 'none');
     $allowedEmbed = ['none', 'before', 'after', 'before_after', 'after_before'];
@@ -181,6 +184,7 @@ function kody_barcode_design_from_post(array $post): array
         'elements' => $elements,
         'code_prefix' => $post['bd_code_prefix'] ?? '',
         'code_suffix' => $post['bd_code_suffix'] ?? '',
+        'unit_barcode_add' => $post['bd_unit_barcode_add'] ?? '',
         'include_item_code' => isset($post['bd_include_item_code']),
         'embed_prices' => $post['bd_embed_prices'] ?? 'none',
         'price_before_source' => $post['bd_price_before_source'] ?? 'price1',
@@ -199,12 +203,15 @@ function kody_barcode_encode_price($amount): string
     if (!is_numeric($amount) || $amount === '') {
         return '0';
     }
-    return (string) (int) round(((float) $amount) * 100);
+    return (string) (int) round((float) $amount);
 }
 
-function kody_barcode_compose_code(array $design, string $itemCode, $priceBefore, $priceAfter): string
+function kody_barcode_compose_code(array $design, string $barcode, string $itemCode, $priceBefore, $priceAfter): string
 {
-    $body = !empty($design['include_item_code']) ? $itemCode : '';
+    $body = $barcode;
+    if (!empty($design['include_item_code'])) {
+        $body .= $itemCode;
+    }
     $mode = (string) ($design['embed_prices'] ?? 'none');
     $encoded = '';
     if ($mode === 'before') {
@@ -224,11 +231,7 @@ function kody_barcode_format_price($amount): string
     if ($amount === '' || $amount === null || !is_numeric($amount)) {
         return '';
     }
-    $n = (float) $amount;
-    if (abs($n - round($n)) < 0.001) {
-        return (string) (int) round($n);
-    }
-    return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
+    return (string) (int) round((float) $amount);
 }
 
 function kody_barcode_pick_price(string $source, array $prices)

@@ -46,7 +46,7 @@ if (empty($design['enabled'])) {
     foreach ($codes as $index => $code) {
         $name = htmlspecialchars((string) ($names[$index] ?? ''), ENT_QUOTES, 'UTF-8');
         $barcode = htmlspecialchars((string) ($barcodes[$index] ?? ''), ENT_QUOTES, 'UTF-8');
-        $price = htmlspecialchars((string) $pickPrinted($index), ENT_QUOTES, 'UTF-8');
+        $price = htmlspecialchars(kody_barcode_format_price($pickPrinted($index)), ENT_QUOTES, 'UTF-8');
         $quantity = (int) ($quantities[$index] ?? 0);
         for ($i = 0; $i < $quantity; $i++) {
             echo "<center>";
@@ -153,7 +153,7 @@ foreach ($codes as $index => $itemCodeRaw) {
     $priceAfterRaw = kody_barcode_pick_price($design['price_after_source'], $priceBag);
     $priceBefore = kody_barcode_format_price($priceBeforeRaw);
     $priceAfter = kody_barcode_format_price($priceAfterRaw);
-    $composed = kody_barcode_compose_code($design, $itemCode, $priceBeforeRaw, $priceAfterRaw);
+    $composed = kody_barcode_compose_code($design, $barcodeValue, $itemCode, $priceBeforeRaw, $priceAfterRaw);
 
     for ($i = 0; $i < $quantity; $i++) {
         $svgId = 'bc-' . $index . '-' . $i;

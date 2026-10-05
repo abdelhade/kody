@@ -32,6 +32,8 @@ $reportGroups = [
             ['href' => 'operations_summary.php?q=purchase', 'icon' => 'fa-calendar-day', 'title' => 'المشتريات اليومية'],
             ['href' => 'monthly_purchases.php', 'icon' => 'fa-calendar', 'title' => 'المشتريات بالشهر'],
             ['href' => 'purchase_returns_report.php', 'icon' => 'fa-undo-alt', 'title' => $lang_purchase_return ?? 'فاتورة مردود مشتريات'],
+            ['href' => 'consignment_items_report.php', 'icon' => 'fa-handshake', 'title' => 'تقرير أصناف الأمانة'],
+            ['href' => 'supplier_settlement_report.php', 'icon' => 'fa-balance-scale', 'title' => 'تقرير تسوية الموردين'],
         ],
     ],
     [

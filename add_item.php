@@ -27,6 +27,13 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
     : '1';
 ?>
 <link rel="stylesheet" href="dist/css/add_item.css?v=<?= htmlspecialchars($addItemCssVer, ENT_QUOTES, 'UTF-8') ?>">
+<?php
+require_once __DIR__ . '/includes/barcode_design.php';
+$unitBarcodeAdd = '0';
+if (isset($rowstg) && is_array($rowstg)) {
+    $unitBarcodeAdd = (string) (kody_barcode_design_load($rowstg)['unit_barcode_add'] ?? '0');
+}
+?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
 
@@ -348,7 +355,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                 </tbody>
                             </table>
                         </div>
-                        <p class="units-tip mb-0" title="السطر الأول = الوحدة الأساسية"><i class="fas fa-info-circle ml-1"></i> الأسعار تُحسب تلقائياً حسب المعامل</p>
+                        <p class="units-tip mb-0" title="السطر الأول = الوحدة الأساسية"><i class="fas fa-info-circle ml-1"></i> الأسعار تُحسب تلقائياً حسب المعامل<?php if ($unitBarcodeAdd !== '' && $unitBarcodeAdd !== '0'): ?>، وباركود الوحدة الثانية = باركود الأولى + <?= htmlspecialchars($unitBarcodeAdd, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
                     </div>
                     <div class="item-form-actions is-sticky">
                         <div class="d-flex align-items-center flex-wrap" style="gap:0.3rem;">
@@ -422,5 +429,6 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
     </section>
 </div>
 
+<script>window.kodyUnitBarcodeAdd = <?= json_encode($unitBarcodeAdd, JSON_UNESCAPED_UNICODE) ?>;</script>
 <script src="js/additem.js?v=<?= (int) (@filemtime(__DIR__ . '/js/additem.js') ?: time()) ?>"></script>
 <?php include('includes/footer.php') ?>
