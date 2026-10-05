@@ -1,175 +1,218 @@
 <?php
 session_start();
 include('../includes/connect.php');
+require_once('../includes/item_unit_sync.php');
 
-$usid = $_SESSION['userid'];
+$kodyAddItemJson = isset($_POST['return_json']) && (string) $_POST['return_json'] === '1';
 
-if (isset($_POST['barcode'])) {
-    $barcode = trim($_POST['barcode']);
-} else {
-    $last_barcode = $conn->query('SELECT barcode FROM myitems ORDER BY id DESC LIMIT 1')->fetch_assoc()['barcode'];
-    $barcode = $last_barcode + 1;
-}
-
-// التحقق من أن الباركود الرئيسي فريد
-if ($barcode !== '') {
-    $stmtbc = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? LIMIT 1");
-    $stmtbc->bind_param('s', $barcode);
-    $stmtbc->execute();
-    $stmtbc->store_result();
-    if ($stmtbc->num_rows > 0) {
-        $stmtbc->close();
-        header('Location: ../add_item.php?error=duplicate_barcode');
+if (!isset($_SESSION['userid'])) {
+    if ($kodyAddItemJson) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'غير مصرح'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $stmtbc->close();
-
-    // التحقق من تعارض الباركود مع باركودات الوحدات الموجودة
-    $stmtbc2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? LIMIT 1");
-    $stmtbc2->bind_param('s', $barcode);
-    $stmtbc2->execute();
-    $stmtbc2->store_result();
-    if ($stmtbc2->num_rows > 0) {
-        $stmtbc2->close();
-        header('Location: ../add_item.php?error=duplicate_barcode');
-        exit;
-    }
-    $stmtbc2->close();
-}
-
-// التحقق من أن باركودات الوحدات فريدة
-if (!empty($_POST['unit_barcode'])) {
-    $unitBarcodes = array_filter(array_map('trim', $_POST['unit_barcode']));
-    // تحقق من التكرار داخل النموذج نفسه
-    // الوحدة الأولى (index 0) مسموح لها بنفس الباركود الرئيسي
-    $extraUnitBarcodes = array_slice($unitBarcodes, 1);
-    $allBarcodes = array_merge([$barcode], $extraUnitBarcodes);
-    if (count($allBarcodes) !== count(array_unique($allBarcodes))) {
-        header('Location: ../add_item.php?error=duplicate_barcode');
-        exit;
-    }
-    // تحقق من عدم التكرار بين باركودات الوحدات فيما بينها
-    if (count($unitBarcodes) !== count(array_unique($unitBarcodes))) {
-        header('Location: ../add_item.php?error=duplicate_barcode');
-        exit;
-    }
-    // تحقق من عدم الوجود في قاعدة البيانات (الوحدة الأولى تم فحص باركودها ضمن الباركود الرئيسي)
-    foreach ($unitBarcodes as $idx => $ub) {
-        if ($idx === 0) continue;
-        $stmtub = $conn->prepare("SELECT id FROM myitems WHERE barcode = ? LIMIT 1");
-        $stmtub->bind_param('s', $ub);
-        $stmtub->execute();
-        $stmtub->store_result();
-        $existsInItems = $stmtub->num_rows > 0;
-        $stmtub->close();
-
-        $stmtub2 = $conn->prepare("SELECT id FROM item_units WHERE unit_barcode = ? LIMIT 1");
-        $stmtub2->bind_param('s', $ub);
-        $stmtub2->execute();
-        $stmtub2->store_result();
-        $existsInUnits = $stmtub2->num_rows > 0;
-        $stmtub2->close();
-
-        if ($existsInItems || $existsInUnits) {
-            header('Location: ../add_item.php?error=duplicate_barcode');
-            exit;
-        }
-    }
-}
-
-// التحقق من وجود وحدة واحدة على الأقل
-$unitIds = isset($_POST['unit_id']) ? array_filter($_POST['unit_id'], function ($v) {
-    return trim((string) $v) !== '';
-}) : [];
-if (count($unitIds) === 0) {
-    header('Location: ../add_item.php?error=no_units');
+    header('Location: ../index.php');
     exit;
 }
 
-$iname = $_POST['iname'];
-$chkname = $conn->query("SELECT * FROM myitems WHERE iname = '$iname'")->fetch_assoc();
+$usid = (string) $_SESSION['userid'];
 
-if ($chkname !== null) {
-    header('Location: ../add_item.php?error=duplicate_name');
+function kody_add_item_fail(string $code): void
+{
+    global $kodyAddItemJson;
+    if ($kodyAddItemJson) {
+        $messages = [
+            'duplicate_barcode' => 'الباركود مستخدم مسبقاً، يرجى إدخال باركود فريد.',
+            'duplicate_name' => 'يوجد صنف بنفس الاسم، اختر اسماً مختلفاً.',
+            'save_failed' => 'تعذّر حفظ البيانات. حاول مرة أخرى.',
+            'invalid_image' => 'صيغة الصورة غير مسموحة. استخدم jpg أو png أو gif أو jpeg أو webp.',
+            'no_units' => 'لا يمكن حفظ صنف بدون وحدات.',
+            'duplicate_unit' => 'لا يمكن تكرار نفس الوحدة أو نفس المعامل.',
+            'invalid_unit' => 'بيانات الوحدة غير صالحة. اختر وحدة ومعاملاً أكبر من صفر.',
+            'no_base_unit' => 'يجب وجود وحدة أساسية بمعامل 1.',
+        ];
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'error' => $messages[$code] ?? 'حدث خطأ أثناء الحفظ.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    header('Location: ../add_item.php?error=' . rawurlencode($code));
     exit;
 }
 
-$code = $_POST['code'];
-    $name2 = $_POST['name2']; 
-    $group1 = $_POST['group1']; 
-    $group2 = $_POST['group2']; 
-    $info = $_POST['info']; 
-    $cost_price = $_POST['cost_price'][0]; // نأخذ القيمة الأولى
-    $price1 = $_POST['price1'][0]; // نأخذ القيمة الأولى
-    $price2 = $_POST['price2'][0]; // نأخذ القيمة الأولى
-    $market_price = $_POST['market_price'][0]; // نأخذ القيمة الأولى
- 
+$barcode = isset($_POST['barcode']) ? trim((string) $_POST['barcode']) : '';
+if ($barcode === '') {
+    $barcode = kody_next_barcode($conn);
+}
+if (kody_barcode_taken($conn, $barcode)) {
+    kody_add_item_fail('duplicate_barcode');
+}
 
+$postedUnits = isset($_POST['unit_id']) && is_array($_POST['unit_id']) ? $_POST['unit_id'] : [];
+if ($postedUnits === []) {
+    kody_add_item_fail('no_units');
+}
 
-    // إدخال البيانات إلى جدول myitems
-    $sql = "INSERT INTO myitems(iname, name2, code, barcode, info, market_price, cost_price, price1, price2, group1, group2, user) 
-            VALUES ('$iname', '$name2', '$code', '$barcode', '$info', '$market_price', '$cost_price', '$price1', '$price2', '$group1', '$group2', '$usid')";
-    if (!$conn->query($sql)) {
-        header('Location: ../add_item.php?error=save_failed');
-        exit;
+$unitRows = [];
+foreach ($postedUnits as $index => $unitId) {
+    $unitRows[] = [
+        'iu_id' => 0,
+        'unit_id' => (int) $unitId,
+        'u_val' => $_POST['u_val'][$index] ?? 1,
+        'barcode' => trim((string) ($_POST['unit_barcode'][$index] ?? '')),
+        'cost' => (float) ($_POST['cost_price'][$index] ?? 0),
+        'price1' => (float) ($_POST['price1'][$index] ?? 0),
+        'price2' => (float) ($_POST['price2'][$index] ?? 0),
+        'price3' => (float) ($_POST['market_price'][$index] ?? 0),
+    ];
+}
+
+try {
+    $unitRows = kody_prepare_unit_barcodes($conn, $barcode, $unitRows, 0);
+} catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    $allowed = ['duplicate_barcode', 'no_base_unit', 'barcode_length'];
+    kody_add_item_fail(in_array($code, $allowed, true) ? $code : 'save_failed');
+}
+
+$base = null;
+foreach ($unitRows as $row) {
+    if (number_format((float) $row['u_val'], 3, '.', '') === '1.000') {
+        $base = $row;
+        break;
     }
+}
+if ($base === null) {
+    kody_add_item_fail('no_base_unit');
+}
 
-    $last_id = $conn->insert_id;
+$iname = trim((string) ($_POST['iname'] ?? ''));
+if ($iname === '') {
+    kody_add_item_fail('save_failed');
+}
 
-    // إدخال بيانات الوحدات إلى جدول item_units
-    foreach ($_POST['unit_id'] as $index => $unit_id) {
-        // التأكد من أن جميع القيم في المصفوفات متاحة
-        $u_val = $_POST['u_val'][$index];
-        
-        // التحقق من وجود باركود للوحدة، إذا لم يكن موجودًا يتم توليد باركود تلقائي
-        if (!empty($_POST['unit_barcode'][$index])) {
-            $unit_barcode = $_POST['unit_barcode'][$index];
-        } else {
-            $unit_barcode = "99" . $index . $_POST['unit_barcode'][0]; // توليد باركود تلقائي
+$nameStmt = $conn->prepare('SELECT id FROM myitems WHERE iname = ? AND isdeleted = 0 LIMIT 1');
+$nameStmt->bind_param('s', $iname);
+$nameStmt->execute();
+$nameStmt->store_result();
+if ($nameStmt->num_rows > 0) {
+    $nameStmt->close();
+    kody_add_item_fail('duplicate_name');
+}
+$nameStmt->close();
+
+$allowExt = ['jpg', 'png', 'gif', 'jpeg', 'webp'];
+$imageFiles = [];
+if (!empty($_FILES['imgs']['name'][0])) {
+    $count = count($_FILES['imgs']['name']);
+    for ($i = 0; $i < $count; $i++) {
+        if (($_FILES['imgs']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            continue;
         }
-            // التعامل مع الأسعار كـ Array
-            $cost_price = $_POST['cost_price'][$index]; // نأخذ القيمة الأولى
-            $price1 = $_POST['price1'][$index]; // نأخذ القيمة الأولى
-            $price2 = $_POST['price2'][$index]; // نأخذ القيمة الأولى
-            $market_price = $_POST['market_price'][$index]; // نأخذ القيمة الأولى
-
-
-
-        // إدخال البيانات إلى item_units
-        $sqlunit = "INSERT INTO item_units(item_id, unit_id, u_val, unit_barcode,cost_price,price1, price2,price3) 
-        VALUES ('$last_id', '$unit_id', '$u_val', '$unit_barcode','$cost_price','$price1','$price2','$market_price')";
-    
-        $conn->query($sqlunit);
+        if (($_FILES['imgs']['error'][$i] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            kody_add_item_fail('save_failed');
+        }
+        $ext = strtolower((string) pathinfo((string) $_FILES['imgs']['name'][$i], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowExt, true)) {
+            kody_add_item_fail('invalid_image');
+        }
+        $imageFiles[] = [
+            'tmp' => $_FILES['imgs']['tmp_name'][$i],
+            'ext' => $ext,
+        ];
     }
+}
 
-    // معالجة رفع الصور
-    $imgs_name = $_FILES['imgs']['name'];
-    if (!empty($imgs_name['0'])) {
-        for ($i = 0; $i < count($_FILES['imgs']['name']); $i++) {
-            $imgs_name = $_FILES['imgs']['name'][$i];
-            $tmp_name = $_FILES['imgs']['tmp_name'][$i];
-            
-        
-            $arrkvr = explode(".", $imgs_name);
-            $kvr_ext = end($arrkvr);
+$name2 = (string) ($_POST['name2'] ?? '');
+$code = (string) ($_POST['code'] ?? '');
+$info = (string) ($_POST['info'] ?? '');
+$group1 = (int) ($_POST['group1'] ?? 0);
+$group2 = (int) ($_POST['group2'] ?? 0);
+$costPrice = (float) $base['cost'];
+$price1 = (float) $base['price1'];
+$price2 = (float) $base['price2'];
+$marketPrice = (float) $base['price3'];
 
-            $allow_ext = ["jpg", "png", "gif", "jpeg", "webp"];
-            if (!in_array($kvr_ext, $allow_ext)) {
-                header('Location: ../add_item.php?error=invalid_image');
-                exit;
-            }
+$moved = [];
+$conn->begin_transaction();
+try {
+    $stmt = $conn->prepare(
+        'INSERT INTO myitems (iname, name2, code, barcode, info, market_price, cost_price, price1, price2, group1, group2, user)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->bind_param(
+        'sssssddddiis',
+        $iname,
+        $name2,
+        $code,
+        $barcode,
+        $info,
+        $marketPrice,
+        $costPrice,
+        $price1,
+        $price2,
+        $group1,
+        $group2,
+        $usid
+    );
+    if (!$stmt->execute()) {
+        throw new RuntimeException('save_failed');
+    }
+    $itemId = (int) $conn->insert_id;
+    $stmt->close();
 
-            $new_kvr_name = $arrkvr[0] . rand(1, 1000000) . "." . $kvr_ext;
-            move_uploaded_file($tmp_name, "../uploads/$new_kvr_name");
+    kody_sync_item_units($conn, $itemId, $unitRows);
 
-            $conn->query("INSERT INTO imgs (iname, itemid) VALUES ('$new_kvr_name', '$last_id')");
+    $imgStmt = $conn->prepare('INSERT INTO imgs (iname, itemid) VALUES (?, ?)');
+    foreach ($imageFiles as $image) {
+        $fileName = 'item_' . $itemId . '_' . bin2hex(random_bytes(4)) . '.' . $image['ext'];
+        $dest = dirname(__DIR__) . '/uploads/' . $fileName;
+        if (!move_uploaded_file($image['tmp'], $dest)) {
+            throw new RuntimeException('save_failed');
+        }
+        $moved[] = $dest;
+        $imgStmt->bind_param('si', $fileName, $itemId);
+        if (!$imgStmt->execute()) {
+            throw new RuntimeException('save_failed');
         }
     }
+    $imgStmt->close();
 
-    // إضافة سجل في جدول process
-    $conn->query("INSERT INTO process(type) VALUES ('add item')");
+    $conn->query("INSERT INTO process (type) VALUES ('add item')");
+    $conn->commit();
+} catch (RuntimeException $e) {
+    $conn->rollback();
+    foreach ($moved as $path) {
+        if (is_file($path)) {
+            unlink($path);
+        }
+    }
+    $code = $e->getMessage();
+    $allowed = ['no_units', 'duplicate_unit', 'invalid_unit', 'duplicate_barcode', 'no_base_unit', 'barcode_length'];
+    kody_add_item_fail(in_array($code, $allowed, true) ? $code : 'save_failed');
+} catch (Throwable $e) {
+    $conn->rollback();
+    foreach ($moved as $path) {
+        if (is_file($path)) {
+            unlink($path);
+        }
+    }
+    kody_add_item_fail('save_failed');
+}
 
-    // إعادة التوجيه إلى صفحة إضافة الصنف
-    header('Location: ../add_item.php?saved=1');
+if ($kodyAddItemJson) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => true,
+        'id' => $itemId,
+        'iname' => $iname,
+        'barcode' => $barcode,
+        'price' => $price1,
+    ], JSON_UNESCAPED_UNICODE);
     exit;
-?>
+}
+
+header('Location: ../add_item.php?saved=1');
+exit;

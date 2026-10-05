@@ -1266,6 +1266,20 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="journals_without_operations.php" class="nav-link">
+                  <i class="nav-icon fas fa-unlink"></i>
+                  <p>القيود بدون عمليات</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="unbalanced_journals.php" class="nav-link">
+                  <i class="nav-icon fas fa-not-equal"></i>
+                  <p>القيود غيرالمتزنة</p>
+                </a>
+              </li>
+
 
               <li class="nav-item">
                 <a href="accounts.php" class="nav-link">

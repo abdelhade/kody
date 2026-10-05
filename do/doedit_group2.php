@@ -1,18 +1,40 @@
-<?php 
+<?php
 include('../includes/connect.php');
 
-$id = $_GET['id'];
-$gname = trim($_POST['gname']);
-
-// التحقق من عدم وجود تصنيف بنفس الاسم (باستثناء التصنيف الحالي)
-$check = $conn->query("SELECT id FROM item_group2 WHERE gname = '$gname' AND isdeleted = 0 AND id != $id");
-
-if ($check->num_rows > 0) {
-    // التصنيف موجود بالفعل
-    header('location:../item_categories.php?error=duplicate');
-    exit();
+$id = (int) ($_GET['id'] ?? 0);
+$gname = trim((string) ($_POST['gname'] ?? ''));
+if ($id <= 0 || $gname === '') {
+    header('location:../item_categories.php?error=empty');
+    exit;
 }
 
-$conn->query("UPDATE item_group2 SET gname = '$gname' WHERE id = $id");
+$stmt = $conn->prepare('SELECT id, isdeleted FROM item_group2 WHERE gname = ? AND id != ? LIMIT 1');
+$stmt->bind_param('si', $gname, $id);
+$stmt->execute();
+$existing = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+if ($existing) {
+    if ((int) $existing['isdeleted'] === 0) {
+        header('location:../item_categories.php?error=duplicate');
+        exit;
+    }
+    $oldId = (int) $existing['id'];
+    $freed = '__del_' . $oldId;
+    $stmt = $conn->prepare('UPDATE item_group2 SET gname = ? WHERE id = ?');
+    $stmt->bind_param('si', $freed, $oldId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+$stmt = $conn->prepare('UPDATE item_group2 SET gname = ? WHERE id = ? AND isdeleted = 0');
+$stmt->bind_param('si', $gname, $id);
+if (!$stmt->execute()) {
+    $stmt->close();
+    header('location:../item_categories.php?error=save');
+    exit;
+}
+$stmt->close();
+
 header('location:../item_categories.php');
-?>
+exit;

@@ -41,11 +41,26 @@ $(document).ready(function() {
     // ── حساب الأسعار حسب المعامل ─────────────────────────────────────────────
     var priceFields = ['cost_price', 'price1', 'price2', 'market_price'];
 
+    function itemBaseRow() {
+        var $base = $('.urow-base');
+        return $base.length ? $base.first() : $('.urow').first();
+    }
+
+    function nextUnitFactor() {
+        var used = {};
+        $('input[name="u_val[]"]').each(function() {
+            var coeff = parseFloat($(this).val());
+            if (isFinite(coeff)) used[coeff.toFixed(3)] = true;
+        });
+        var factor = 6;
+        while (used[factor.toFixed(3)]) factor += 1;
+        return factor;
+    }
+
     priceFields.forEach(function(fieldName) {
-        $(document).on('input', '.urow:first input[name="' + fieldName + '[]"]', function() {
+        $(document).on('input', '.urow-base input[name="' + fieldName + '[]"]', function() {
             var firstRowValue = parseFloat($(this).val()) || 0;
-            $('.urow').each(function(index) {
-                if (index === 0) return;
+            $('.urow').not('.urow-base').each(function() {
                 var u_val = parseFloat($(this).find('input[name="u_val[]"]').val()) || 1;
                 $(this).find('input[name="' + fieldName + '[]"]').val((firstRowValue * u_val).toFixed(3));
             });
@@ -54,9 +69,10 @@ $(document).ready(function() {
 
     $(document).on('input', 'input[name="u_val[]"]', function() {
         var currentRow = $(this).closest('.urow');
+        if (currentRow.hasClass('urow-base')) return;
         var u_val = parseFloat($(this).val()) || 1;
         priceFields.forEach(function(fieldName) {
-            var firstRowValue = parseFloat($('.urow:first input[name="' + fieldName + '[]"]').val()) || 0;
+            var firstRowValue = parseFloat(itemBaseRow().find('input[name="' + fieldName + '[]"]').val()) || 0;
             currentRow.find('input[name="' + fieldName + '[]"]').val((firstRowValue * u_val).toFixed(3));
         });
     });
@@ -99,6 +115,18 @@ $(document).ready(function() {
         if (duplicateCoeff) {
             e.preventDefault();
             alert('غير مسموح بتكرار معامل الوحدة، ويجب أن يكون أكبر من صفر');
+            return;
+        }
+        var $base = itemBaseRow();
+        if (!$base.length || $('.urow-base').length !== 1) {
+            e.preventDefault();
+            alert('يجب أن يحتوي الصنف على وحدة أساسية واحدة بمعامل 1');
+            return;
+        }
+        $base.find('input[name="u_val[]"]').val('1');
+        var $baseBarcode = $base.find('.unit-barcode-input');
+        if (!$baseBarcode.val().trim()) {
+            $baseBarcode.val($('#barcode').val().trim());
         }
     });
 
@@ -131,18 +159,17 @@ $(document).ready(function() {
 
     // Add new row
     $('#addUnit').click(function() {
-        // Clone the first row
-        var clone = $('.urow').first().clone();
-
-        var factor = 6;
+        var factor = nextUnitFactor();
         var usedUnits = {};
         $('select[name="unit_id[]"]').each(function() {
             usedUnits[$(this).val()] = true;
         });
 
+        var clone = itemBaseRow().clone();
+        clone.removeClass('urow-base');
         clone.find('input[name="iu_id[]"]').val('0');
         clone.find('input[name="u_val[]"]').val(String(factor)).prop('readonly', false);
-        clone.find('input[name="unit_barcode[]"]').val('').removeClass('is-valid is-invalid');
+        clone.find('input[name="unit_barcode[]"]').val('').removeClass('is-valid is-invalid').removeData('invalid');
         clone.find('.unit-barcode-error').addClass('d-none');
 
         var $unitSelect = clone.find('select[name="unit_id[]"]');
@@ -153,24 +180,21 @@ $(document).ready(function() {
             }
         });
 
-        ['cost_price', 'price1', 'price2', 'market_price'].forEach(function(fieldName) {
-            var base = parseFloat($('.urow').first().find('input[name="' + fieldName + '[]"]').val()) || 0;
+        priceFields.forEach(function(fieldName) {
+            var base = parseFloat(itemBaseRow().find('input[name="' + fieldName + '[]"]').val()) || 0;
             clone.find('input[name="' + fieldName + '[]"]').val((base * factor).toFixed(3));
         });
 
-        // Append the cloned row after the last row
         $('.urow').last().after(clone);
-
-        // Attach delete functionality to the newly added row
-        clone.find('.deleteRow').click(function() {
-            if ($('.urow').length > 1) clone.remove();
-            else alert('لا يمكن حذف الوحدة الاولي');
-        });
     });
 
-    $('.deleteRow').click(function() {
-        if ($('.urow').length > 1) $(this).closest('.urow').remove();
-        else alert('لا يمكن حذف الوحدة الاولي');
+    $(document).on('click', '.deleteRow', function() {
+        var $row = $(this).closest('.urow');
+        if ($row.hasClass('urow-base') || $('.urow').length <= 1) {
+            alert('لا يمكن حذف الوحدة الأساسية');
+            return;
+        }
+        $row.remove();
     });
 
     // Real-time validations
@@ -218,6 +242,22 @@ $(document).ready(function() {
         });
     }
 
+    itemBaseRow().find('.unit-barcode-input').data('linked', ($('#barcode').val() || '').trim());
+
+    function followItemBarcode(next) {
+        var $input = itemBaseRow().find('.unit-barcode-input');
+        var linked = $input.data('linked');
+        var current = ($input.val() || '').trim();
+        if (current === '' || current === linked) {
+            $input.val(next);
+        }
+        $input.data('linked', next);
+    }
+
+    $('#barcode').on('input', function() {
+        followItemBarcode(($(this).val() || '').trim());
+    });
+
     $('#barcode').on('keyup', function() {
         clearTimeout(typingTimer);
         const input = $(this);
@@ -252,8 +292,9 @@ $(document).ready(function() {
         // تحقق من التكرار في نفس الشاشة (مقارنة مع الباركودات الأخرى)
         let localDuplicate = false;
         const mainBarcode = $('#barcode').val().trim();
-        if (value === mainBarcode && $('.unit-barcode-input').index(input) !== 0) {
-            localDuplicate = true; // لا يمكن لوحدة غير الأولى أن تأخذ نفس الباركود الرئيسي
+        const isBase = input.closest('.urow').hasClass('urow-base');
+        if (value === mainBarcode && !isBase) {
+            localDuplicate = true;
         }
 
         $('.unit-barcode-input').not(input).each(function() {
@@ -319,7 +360,16 @@ $(document).ready(function() {
         }
         
         let hasUnitError = false;
+        var seenBarcodes = {};
+        var mainBarcode = ($('#barcode').val() || '').trim();
         $('.unit-barcode-input').each(function() {
+            var value = ($(this).val() || '').trim();
+            var isBase = $(this).closest('.urow').hasClass('urow-base');
+            if (value && ((!isBase && value === mainBarcode) || seenBarcodes[value])) {
+                $(this).addClass('is-invalid').data('invalid', true);
+                $(this).siblings('.unit-barcode-error').text('الباركود مكرر في نفس الصنف').removeClass('d-none');
+            }
+            if (value) seenBarcodes[value] = true;
             if ($(this).data('invalid')) {
                 hasUnitError = true;
                 $(this).focus();

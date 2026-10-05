@@ -55,18 +55,42 @@ $stmtCount->execute();
 $totalRows = $stmtCount->get_result()->fetch_assoc()['total'];
 $stmtCount->close();
 
-// Calculate pagination parameters (removed)
-$offset = 0; // Keeping offset for numbering the table rows if needed
+// 1.5 Get Totals (qty, cost value, sell value)
+$sqlSum = "SELECT SUM(itmqty) as total_qty, SUM(itmqty * cost_price) as total_cost, SUM(itmqty * price1) as total_sell FROM myitems WHERE isdeleted = 0" . $whereSql;
+$stmtSum = $conn->prepare($sqlSum);
+if ($types !== "") {
+    $stmtSum->bind_param($types, ...$params);
+}
+$stmtSum->execute();
+$totalsRow = $stmtSum->get_result()->fetch_assoc();
+$stmtSum->close();
+
+$totalQty = $totalsRow['total_qty'] ?? 0;
+$totalCostValue = $totalsRow['total_cost'] ?? 0;
+$totalSellValue = $totalsRow['total_sell'] ?? 0;
+
+// Pagination parameters for Lazy Loading
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$limit = 500;
+$offset = ($page - 1) * $limit;
 
 // 2. Fetch data
-$sqlData = "SELECT * FROM myitems WHERE isdeleted = 0" . $whereSql . " ORDER BY id DESC";
+$sqlData = "SELECT * FROM myitems WHERE isdeleted = 0" . $whereSql . " ORDER BY id DESC LIMIT ? OFFSET ?";
 $stmtData = $conn->prepare($sqlData);
 
-if ($types !== "") {
-    $stmtData->bind_param($types, ...$params);
-}
+$dataParams = $params;
+$dataParams[] = $limit;
+$dataParams[] = $offset;
+$dataTypes = $types . "ii";
+
+$stmtData->bind_param($dataTypes, ...$dataParams);
 $stmtData->execute();
 $resitm = $stmtData->get_result();
+
+$isLazyAjax = isset($_GET['lazy_ajax']) ? true : false;
+
+if (!$isLazyAjax):
 ?>
 <div class="content-wrapper">
     <section class="content-header">
@@ -139,6 +163,7 @@ $resitm = $stmtData->get_result();
                 </div>
                 <div class="col">
                     <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#calcModal"><i class="fas fa-calculator"></i> إجمالي القيم</button>
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
                         <a href="deleted_items.php" class="btn btn-outline-danger btn-sm">الاصناف المحذوفه</a>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
@@ -167,6 +192,7 @@ $resitm = $stmtData->get_result();
                             </tr>
                         </thead>
                         <tbody>
+                        <?php endif; // end !$isLazyAjax ?>
                         <?php
                         $x = $offset;
                         while ($rowitm = $resitm->fetch_assoc()) {
@@ -268,6 +294,11 @@ $resitm = $stmtData->get_result();
                             </tr>
 
                             <?php } ?>
+                        <?php 
+                        if ($isLazyAjax) {
+                            exit;
+                        }
+                        ?>
                         </tbody>
                     </table>
 
@@ -275,7 +306,7 @@ $resitm = $stmtData->get_result();
             </div>
             
             <div class="text-center text-muted small mt-2 mb-3">
-                إجمالي الأصناف: <?= $totalRows ?>
+                إجمالي الأصناف بعد الفلتر: <?= $totalRows ?>
             </div>
         </div>
 
@@ -284,6 +315,35 @@ $resitm = $stmtData->get_result();
     </section>
 </div>
 
+<!-- Modal for totals -->
+<div class="modal fade" id="calcModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">احتساب الكميات في أسعارها (للمعروض فقط)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        إجمالي الكميات
+                        <span class="badge badge-primary badge-pill"><?= number_format((float)$totalQty, 2) ?></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        إجمالي التكلفة (الكمية × سعر التكلفة)
+                        <span class="badge badge-warning badge-pill"><?= number_format((float)$totalCostValue, 2) ?></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        إجمالي البيع (الكمية × سعر القطاعي)
+                        <span class="badge badge-success badge-pill"><?= number_format((float)$totalSellValue, 2) ?></span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 $(document).ready(function() {
@@ -292,6 +352,10 @@ $(document).ready(function() {
 
     // بحث حي مباشر من قاعدة البيانات (Live AJAX Search with Debounce)
     var searchTimer = null;
+    
+    var lazyPage = 1;
+    var isLoading = false;
+    var hasMore = true; // Assuming there might be more initially
     
     function triggerSearch() {
         clearTimeout(searchTimer);
@@ -305,6 +369,8 @@ $(document).ready(function() {
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
                 if (typeof applySellPriceList === 'function') applySellPriceList();
+                lazyPage = 1;
+                hasMore = true;
             });
             window.history.pushState(null, '', url);
         }, 300);
@@ -320,17 +386,33 @@ $(document).ready(function() {
         }
     });
 
-    // تفعيل التنقل بين الصفحات عبر AJAX لتجنب إعادة تحميل الصفحة بالكامل
-    $(document).on('click', '#table-container .pagination a', function(e) {
-        e.preventDefault();
-        var url = $(this).attr('href');
-        if (url) {
-            $('#table-container').css('opacity', '0.5');
-            $('#table-container').load(url + ' #table-container > *', function() {
-                $('#table-container').css('opacity', '1');
-                if (typeof applySellPriceList === 'function') applySellPriceList();
+    // Lazy loading on scroll
+    $(window).scroll(function() {
+        if (!hasMore || isLoading) return;
+        
+        if ($(window).scrollTop() + $(window).height() >= $(document).height() - 300) {
+            isLoading = true;
+            lazyPage++;
+            
+            var val = $('#search').val();
+            var g1 = $('#filter_group1').val();
+            var g2 = $('#filter_group2').val();
+            var url = 'myitems.php?lazy_ajax=1&page=' + lazyPage + '&search=' + encodeURIComponent($.trim(val)) + '&group1=' + g1 + '&group2=' + g2;
+            
+            $('#horsTable tbody').append('<tr id="loading-row"><td colspan="11" class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المزيد...</td></tr>');
+            
+            $.get(url, function(data) {
+                $('#loading-row').remove();
+                if ($.trim(data) === '') {
+                    hasMore = false;
+                } else {
+                    $('#horsTable tbody').append(data);
+                }
+                isLoading = false;
+            }).fail(function() {
+                $('#loading-row').remove();
+                isLoading = false;
             });
-            window.history.pushState(null, '', url);
         }
     });
 

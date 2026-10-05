@@ -123,6 +123,10 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                         echo 'لا يمكن تكرار نفس الوحدة أو نفس المعامل.';
                     } elseif ($err === 'invalid_unit') {
                         echo 'بيانات الوحدة غير صالحة. اختر وحدة ومعاملاً أكبر من صفر.';
+                    } elseif ($err === 'no_base_unit') {
+                        echo 'يجب أن يحتوي الصنف على وحدة أساسية واحدة بمعامل 1.';
+                    } elseif ($err === 'barcode_length') {
+                        echo 'باركود الصنف حتى 25 حرفاً، وباركود الوحدة حتى 20 حرفاً.';
                     } elseif ($err === 'unit_in_use') {
                         echo 'لا يمكن حذف هذه الوحدة أو تغيير معاملها لأنها مستخدمة في فواتير.';
                     } elseif ($err === 'import_type') {
@@ -215,7 +219,7 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                             </div>
                             <div class="ifld ifld-barcode">
                                 <label for="barcode">باركود<span class="text-danger">*</span></label>
-                                <input id="barcode" required value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm text-center" type="text" name="barcode" data-id="<?= $isEdit ? $editId : 0 ?>">
+                                <input id="barcode" required maxlength="25" value="<?= htmlspecialchars((string) $newBarcode, ENT_QUOTES, 'UTF-8') ?>" class="form-control form-control-sm text-center" type="text" name="barcode" data-id="<?= $isEdit ? $editId : 0 ?>">
                                 <small class="text-danger d-none" id="barcodeError"></small>
                             </div>
                             <div class="ifld ifld-name">
@@ -301,8 +305,18 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                     </tr>
                                 </thead>
                                 <tbody id="unitsContainer">
-                                <?php foreach ($itemUnitRows as $unitIdx => $unitRow) { ?>
-                                    <tr class="urow">
+                                <?php
+                                $baseUnitIndex = 0;
+                                foreach ($itemUnitRows as $baseIdx => $baseRow) {
+                                    if (abs((float) $baseRow['u_val'] - 1) < 0.0001) {
+                                        $baseUnitIndex = $baseIdx;
+                                        break;
+                                    }
+                                }
+                                foreach ($itemUnitRows as $unitIdx => $unitRow) {
+                                    $isBaseUnit = $unitIdx === $baseUnitIndex;
+                                ?>
+                                    <tr class="urow<?= $isBaseUnit ? ' urow-base' : '' ?>">
                                         <td>
                                             <input type="hidden" name="iu_id[]" value="<?= (int) ($unitRow['id'] ?? 0) ?>">
                                             <select name="unit_id[]" class="form-control form-control-sm">
@@ -314,10 +328,10 @@ $addItemCssVer = is_file(__DIR__ . '/dist/css/add_item.css')
                                         <td>
                                             <input class="form-control form-control-sm text-center" type="number" name="u_val[]"
                                                    value="<?= htmlspecialchars($unitRow['u_val'], ENT_QUOTES, 'UTF-8') ?>" step="0.001"
-                                                   <?= $unitIdx === 0 ? 'readonly' : '' ?>>
+                                                   <?= $isBaseUnit ? 'readonly' : '' ?>>
                                         </td>
                                         <td>
-                                            <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]"
+                                            <input class="form-control form-control-sm unit-barcode-input" type="text" name="unit_barcode[]" maxlength="20"
                                                    value="<?= htmlspecialchars($unitRow['unit_barcode'], ENT_QUOTES, 'UTF-8') ?>"
                                                    data-id="<?= $isEdit ? $editId : 0 ?>">
                                             <small class="text-danger d-none unit-barcode-error" style="font-size:0.85rem;">مستخدم</small>

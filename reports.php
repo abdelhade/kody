@@ -41,6 +41,8 @@ $reportGroups = [
             ['href' => 'summary.php', 'icon' => 'fa-file-alt', 'title' => $lang_account_statement ?? 'كشف حساب'],
             ['href' => 'balance_sheet.php', 'icon' => 'fa-balance-scale', 'title' => $lang_balance_sheet ?? 'تقرير الميزانية'],
             ['href' => 'profit_loss.php', 'icon' => 'fa-chart-line', 'title' => $lang_profit_loss ?? 'الأرباح والخسائر'],
+            ['href' => 'journals_without_operations.php', 'icon' => 'fa-unlink', 'title' => 'القيود بدون عمليات'],
+            ['href' => 'unbalanced_journals.php', 'icon' => 'fa-not-equal', 'title' => 'القيود غيرالمتزنة'],
             ['href' => 'acc_report.php?acc=clients', 'icon' => 'fa-users', 'title' => 'تقرير العملاء'],
         ],
     ],

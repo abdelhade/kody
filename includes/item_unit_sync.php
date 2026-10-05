@@ -159,3 +159,133 @@ function kody_sync_item_units(mysqli $conn, int $itemId, array $rows): void
         $del->close();
     }
 }
+
+/**
+ * الباركود مستخدم لصنف نشط أو لوحدة تابعة لصنف نشط.
+ */
+function kody_barcode_taken(mysqli $conn, string $barcode, int $excludeItemId = 0): bool
+{
+    $barcode = trim($barcode);
+    if ($barcode === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare('SELECT id FROM myitems WHERE barcode = ? AND id <> ? AND isdeleted = 0 LIMIT 1');
+    $stmt->bind_param('si', $barcode, $excludeItemId);
+    $stmt->execute();
+    $stmt->store_result();
+    $hit = $stmt->num_rows > 0;
+    $stmt->close();
+    if ($hit) {
+        return true;
+    }
+
+    $stmt = $conn->prepare(
+        'SELECT iu.id
+         FROM item_units iu
+         INNER JOIN myitems m ON m.id = iu.item_id
+         WHERE iu.unit_barcode = ? AND iu.item_id <> ? AND m.isdeleted = 0 AND COALESCE(iu.isdeleted, 0) = 0
+         LIMIT 1'
+    );
+    $stmt->bind_param('si', $barcode, $excludeItemId);
+    $stmt->execute();
+    $stmt->store_result();
+    $hit = $stmt->num_rows > 0;
+    $stmt->close();
+
+    return $hit;
+}
+
+function kody_next_barcode(mysqli $conn): string
+{
+    $sql = "SELECT GREATEST(
+                COALESCE((SELECT MAX(CAST(barcode AS UNSIGNED)) FROM myitems WHERE barcode REGEXP '^[0-9]+$' AND isdeleted = 0), 0),
+                COALESCE((SELECT MAX(CAST(iu.unit_barcode AS UNSIGNED)) FROM item_units iu INNER JOIN myitems m ON m.id = iu.item_id WHERE iu.unit_barcode REGEXP '^[0-9]+$' AND m.isdeleted = 0 AND COALESCE(iu.isdeleted, 0) = 0), 0)
+            ) AS max_barcode";
+    $row = $conn->query($sql);
+    $max = 0;
+    if ($row && ($assoc = $row->fetch_assoc())) {
+        $max = (int) $assoc['max_barcode'];
+    }
+    do {
+        $max++;
+        $candidate = (string) $max;
+    } while (kody_barcode_taken($conn, $candidate));
+
+    return $candidate;
+}
+
+/**
+ * يملأ باركود الوحدات الفارغ ويتأكد من وحدة أساسية واحدة (معامل 1) ومن عدم التكرار.
+ * باركود الوحدة الأساسية يجوز أن يطابق باركود الصنف.
+ *
+ * @param array<int, array<string, mixed>> $rows
+ * @return array<int, array<string, mixed>>
+ */
+function kody_prepare_unit_barcodes(mysqli $conn, string $itemBarcode, array $rows, int $excludeItemId = 0): array
+{
+    $itemBarcode = trim($itemBarcode);
+    $reserved = [];
+    if ($itemBarcode !== '') {
+        $reserved[$itemBarcode] = true;
+    }
+
+    $baseCount = 0;
+    foreach ($rows as $i => $row) {
+        $uVal = number_format((float) ($row['u_val'] ?? 0), 3, '.', '');
+        $isBase = $uVal === '1.000';
+        if ($isBase) {
+            $baseCount++;
+        }
+
+        $barcode = trim((string) ($row['barcode'] ?? ''));
+        if ($barcode === '') {
+            $barcode = $isBase
+                ? $itemBarcode
+                : kody_make_unit_barcode($conn, $itemBarcode, (int) $i, $reserved, $excludeItemId);
+        }
+        if ($barcode === '' || strlen($barcode) > 20 || strlen($itemBarcode) > 25) {
+            throw new RuntimeException('barcode_length');
+        }
+
+        $sharesItemBarcode = $isBase && $barcode === $itemBarcode;
+        if (isset($reserved[$barcode]) && !$sharesItemBarcode) {
+            throw new RuntimeException('duplicate_barcode');
+        }
+        if (!$sharesItemBarcode && kody_barcode_taken($conn, $barcode, $excludeItemId)) {
+            throw new RuntimeException('duplicate_barcode');
+        }
+
+        $reserved[$barcode] = true;
+        $rows[$i]['barcode'] = $barcode;
+    }
+
+    if ($baseCount !== 1) {
+        throw new RuntimeException('no_base_unit');
+    }
+
+    return $rows;
+}
+
+function kody_make_unit_barcode(mysqli $conn, string $seed, int $index, array $reserved, int $excludeItemId): string
+{
+    $seed = $seed !== '' ? $seed : '0';
+    $max = 0;
+    $row = $conn->query("SELECT COALESCE(MAX(CAST(barcode AS UNSIGNED)), 0) AS max_barcode FROM myitems WHERE barcode REGEXP '^[0-9]+$'");
+    if ($row && ($assoc = $row->fetch_assoc())) {
+        $max = (int) $assoc['max_barcode'];
+    }
+    for ($n = 0; $n < 200; $n++) {
+        $prefixed = '99' . $index . ($n === 0 ? '' : (string) $n) . $seed;
+        $candidate = strlen($prefixed) <= 20 ? $prefixed : (string) ($max + $n + 1);
+        if ($candidate === '' || strlen($candidate) > 20 || isset($reserved[$candidate])) {
+            continue;
+        }
+        if (kody_barcode_taken($conn, $candidate, $excludeItemId)) {
+            continue;
+        }
+        return $candidate;
+    }
+
+    throw new RuntimeException('duplicate_barcode');
+}

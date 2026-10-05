@@ -30,7 +30,7 @@ if ($field === 'barcode') {
     $existsInItems = $result1->num_rows > 0;
     
     // تحقق من جدول item_units
-    $sql2 = "SELECT id FROM item_units WHERE unit_barcode = ? AND item_id != ? LIMIT 1";
+    $sql2 = "SELECT iu.id FROM item_units iu INNER JOIN myitems m ON m.id = iu.item_id WHERE iu.unit_barcode = ? AND iu.item_id != ? AND m.isdeleted = 0 AND COALESCE(iu.isdeleted, 0) = 0 LIMIT 1";
     $stmt2 = $conn->prepare($sql2);
     $stmt2->bind_param("si", $value, $exclude_id);
     $stmt2->execute();

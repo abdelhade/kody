@@ -7,6 +7,15 @@
 header('Content-Type: application/json');
 require_once '../includes/connect.php';
 
+if (isset($_GET['action']) && $_GET['action'] === 'next_barcode') {
+    require_once '../includes/item_unit_sync.php';
+    $barcode = kody_next_barcode($conn);
+    $codeRow = $conn->query('SELECT MAX(code) AS max_code FROM myitems')->fetch_assoc();
+    $code = ($codeRow && $codeRow['max_code'] !== null) ? ((int) $codeRow['max_code'] + 1) : 1;
+    echo json_encode(['barcode' => $barcode, 'code' => $code], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
     // معاملات البحث والصفحات
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';

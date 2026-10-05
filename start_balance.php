@@ -9,7 +9,21 @@
 
 
 
-        <form action="do/doadd_start_balance.php" method="post">
+        <?php if (!empty($_SESSION['start_balance_error'])): ?>
+            <div class="alert alert-danger" id="startBalanceAlert">
+                <?= htmlspecialchars($_SESSION['start_balance_error'], ENT_QUOTES, 'UTF-8') ?>
+            </div>
+            <?php unset($_SESSION['start_balance_error']); ?>
+        <?php endif; ?>
+        <?php if (!empty($_SESSION['start_balance_ok'])): ?>
+            <div class="alert alert-success" id="startBalanceAlert">
+                <?= htmlspecialchars($_SESSION['start_balance_ok'], ENT_QUOTES, 'UTF-8') ?>
+            </div>
+            <?php unset($_SESSION['start_balance_ok']); ?>
+        <?php endif; ?>
+        <div class="alert alert-danger" id="startBalanceClientAlert" style="display:none"></div>
+
+        <form action="do/doadd_start_balance.php" method="post" id="startBalanceForm">
             <div class="card">
                 <div class="card-header">
                     <div class="filter">
@@ -17,12 +31,13 @@
                             <div class="col-md-4">
                                 فلتر
                                 <select name="" id="accountFilter" class="form form-control">
+                                    <option value="">كل الحسابات</option>
                                     <?php
                                     $sqlbasic = "SELECT * FROM acc_head WHERE isdeleted = 0 AND is_basic = 1";
                                     $resbasic = $conn->query($sqlbasic);
                                     while($rowbasic = $resbasic->fetch_assoc()) {
                                     ?>    
-                                    <option value="<?= $rowbasic['code'] ?>"><?= $rowbasic['aname'] ?></option>
+                                    <option value="<?= htmlspecialchars($rowbasic['code'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($rowbasic['aname'], ENT_QUOTES, 'UTF-8') ?></option>
                                     <?php } ?>
                                 </select>
                             </div>
@@ -37,7 +52,7 @@
                                     <p>بدأ تعديل الارصدة الافتتاحية</p>
                                 </div>
 
-                                <button class="btn bg-green-400" tybe="submit" name="save_balance">
+                                <button class="btn bg-green-400" type="submit" name="save_balance">
                                     <i class="fa fa-save"></i>
                                     <br>
                                     <p>حفظ التعديلات</p>
@@ -56,20 +71,39 @@
                                     <th>الرصيد الافتتاحي الجديد</th>
                                     <th>قيمة التسوية</th>
                                     <th>الرصيد الافتتاحي السابق</th>
+                                    <th>الرصيد الحالي</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php 
-                                $sqlacc = "SELECT * FROM acc_head WHERE isdeleted = 0 AND is_basic = 0";
+                                $sqlacc = "SELECT a.id, a.code, a.aname, a.balance, a.editable,
+                                    (
+                                        SELECT COALESCE(SUM(je.debit) - SUM(je.credit), 0)
+                                        FROM journal_entries je
+                                        INNER JOIN journal_heads jh ON jh.id = je.journal_id
+                                        WHERE je.account_id = a.id
+                                          AND je.isdeleted = 0
+                                          AND jh.isdeleted = 0
+                                          AND jh.details IN ('قيد الأرصدة الافتتاحية', 'أرصدة افتتاحية حسابات (قفل مدة)')
+                                    ) AS opening_balance
+                                    FROM acc_head a
+                                    WHERE a.isdeleted = 0 AND a.is_basic = 0
+                                    ORDER BY a.code";
                                 $resacc = $conn->query($sqlacc);
                                 while($rowacc = $resacc->fetch_assoc()) {
+                                    $opening = (float) $rowacc['opening_balance'];
+                                    $current = (float) $rowacc['balance'];
+                                    $openingClass = $opening < 0 ? 'text-red-500' : '';
+                                    $currentClass = $current < 0 ? 'text-red-500' : '';
+                                    $locked = ((int) $rowacc['editable'] === 0);
                                 ?>
-                                    <tr>
-                                        <td><?= $rowacc['code']?><input name="acc_id[]" type="text" class="acc_id" value="<?= $rowacc['id']?>" hidden></td>
-                                        <td><?= $rowacc['aname']?></td>
-                                        <td><input name="newbalance[]" type="number" class="form form-control new-balance font-bold m-0 p-0 <?php if($rowacc['balance'] < 0) {echo "text-red-500";} ?>" value="<?= $rowacc['balance']?>" disabled <?php if($rowacc['editable'] == 0) {echo "readonly";} ?>></td>
-                                        <td><input type="text" readonly class="form form-control settle m-0 p-0" value="00.00"></td>
-                                        <td class="old-balance <?php if($rowacc['balance'] < 0) {echo "text-red-500";} ?>"><?= $rowacc['balance']?></td>
+                                    <tr data-code="<?= htmlspecialchars($rowacc['code'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <td><?= htmlspecialchars($rowacc['code'], ENT_QUOTES, 'UTF-8') ?><input name="acc_id[]" type="text" class="acc_id" value="<?= (int) $rowacc['id'] ?>" hidden></td>
+                                        <td><?= htmlspecialchars($rowacc['aname'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td><input name="newbalance[]" type="number" step="1" class="form form-control new-balance font-bold m-0 p-0 <?= $openingClass ?>" value="<?= htmlspecialchars((string) $opening, ENT_QUOTES, 'UTF-8') ?>" readonly data-editable="<?= $locked ? '0' : '1' ?>"></td>
+                                        <td><input type="text" readonly class="form form-control settle m-0 p-0" value="0.00"></td>
+                                        <td class="old-balance <?= $openingClass ?>"><?= htmlspecialchars((string) $opening, ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="<?= $currentClass ?>"><?= htmlspecialchars((string) $current, ENT_QUOTES, 'UTF-8') ?></td>
                                     </tr>
                                 <?php }?>
                             </tbody>
@@ -108,11 +142,19 @@
 <?php include 'includes/footer.php'; ?>
 
 <script>
-    // Enable editing of balances
+    function showClientError(message) {
+        const box = document.getElementById('startBalanceClientAlert');
+        box.textContent = message;
+        box.style.display = 'block';
+    }
+
+    // Enable editing of balances that are allowed to change
     document.getElementById('edit_balance').addEventListener('click', function() {
         const newBalances = document.querySelectorAll('.new-balance');
         newBalances.forEach(function(input) {
-            input.disabled = false;
+            if (input.getAttribute('data-editable') === '1') {
+                input.readOnly = false;
+            }
         });
     });
 
@@ -189,12 +231,12 @@
         });
     }
 
-    // Filter accounts by selected code
+    // Filter accounts by selected parent code
     function filterAccounts(code) {
         const rows = document.querySelectorAll('tbody tr');
         rows.forEach(function(row) {
-            const accountCode = row.querySelector('td:nth-child(1)').textContent;
-            if (accountCode === code) {
+            const accountCode = row.getAttribute('data-code') || '';
+            if (!code || accountCode.indexOf(code) === 0) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -202,26 +244,35 @@
         });
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize totals on page load
+    document.getElementById('startBalanceForm').addEventListener('submit', function(e) {
         updateTotals();
+        const debit = parseFloat(document.getElementById('total_debit').value) || 0;
+        const credit = parseFloat(document.getElementById('total_credit').value) || 0;
+        const diff = debit - credit;
+        if (Math.abs(diff) > 0.001) {
+            e.preventDefault();
+            showClientError('القيد غير متوازن. إجمالي المدين (' + debit.toFixed(2) + ') لا يساوي إجمالي الدائن (' + credit.toFixed(2) + '). الفرق: ' + diff.toFixed(2) + '. لم يُحفظ أي تغيير.');
+            return;
+        }
 
-        const accIdElement = document.querySelector('.acc_id');
-        if (accIdElement) {
-            const accIdValue = accIdElement.value;
-            // Check if acc_id value is "148"
-            if (accIdValue === "148") {
-                // Make the inputs readonly for this account
-                const newBalances = document.querySelectorAll('.new-balance');
-                newBalances.forEach(function(input) {
-                    input.readOnly = true;  // Make the input readonly
-                });
-
-                const settleInputs = document.querySelectorAll('.settle');
-                settleInputs.forEach(function(input) {
-                    input.readOnly = true;  // Make the input readonly
-                });
+        const inputs = document.querySelectorAll('.new-balance');
+        for (let i = 0; i < inputs.length; i++) {
+            const value = parseFloat(inputs[i].value);
+            if (!Number.isFinite(value) || Math.abs(value - Math.round(value)) > 0.0001) {
+                e.preventDefault();
+                showClientError('الرصيد الافتتاحي يجب أن يكون عدداً صحيحاً بدون كسور.');
+                return;
             }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTotals();
+        const debit = parseFloat(document.getElementById('total_debit').value) || 0;
+        const credit = parseFloat(document.getElementById('total_credit').value) || 0;
+        const diff = debit - credit;
+        if (Math.abs(diff) > 0.001 && !document.getElementById('startBalanceAlert')) {
+            showClientError('الرصيد الافتتاحي الحالي غير متوازن. إجمالي المدين (' + debit.toFixed(2) + ') لا يساوي إجمالي الدائن (' + credit.toFixed(2) + '). الفرق: ' + diff.toFixed(2) + '. لن يُحفظ قبل تصحيح الفرق.');
         }
     });
 
