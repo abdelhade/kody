@@ -608,6 +608,13 @@ $licenseOk = !empty($licenseStatus['licensed']);
                     <h3 class="card-title text-success font-weight-bold mb-0"><i class="fas fa-database ml-2"></i> تحديث وإدارة قاعدة البيانات</h3>
                   </div>
                   <div class="card-body">
+                    <div class="form-group">
+                      <label for="backup_path">مسار حفظ النسخة الاحتياطية</label>
+                      <input type="text" class="form-control" id="backup_path" name="backup_path" dir="ltr"
+                             value="<?= htmlspecialchars((string)($rowstg['backup_path'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                             placeholder="<?= htmlspecialchars(__DIR__ . DIRECTORY_SEPARATOR . 'BACKUP', ENT_QUOTES, 'UTF-8') ?>">
+                      <small class="form-text text-muted">اترك الحقل فارغاً للحفظ داخل مجلد <code>BACKUP</code> في النظام. مثال: <span dir="ltr">D:\kody-backup</span></small>
+                    </div>
                     <p class="text-muted mb-3">يشغّل التحديثات الناقصة من مجلد <code>update/</code> مرة واحدة لكل إصدار عبر <code>schema_migrations</code>.</p>
                     <div id="db-migration-status" class="alert alert-secondary mb-3">جاري تحميل حالة التحديثات...</div>
                     <div class="d-flex flex-wrap gap-2" style="gap:10px;">

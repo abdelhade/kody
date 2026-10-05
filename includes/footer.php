@@ -105,10 +105,10 @@ $(document).ready(function(){
             type: "POST", // Request type
             data: {}, // Request data if required
             success: function(response){
-              alert("تم حفظ نسخه احتياطية بنجاح");
+              alert(response || "تم حفظ نسخه احتياطية بنجاح");
             },
             error: function(xhr, status, error){
-              alert("هناك خطأ ما");
+              alert((xhr && xhr.responseText) || "هناك خطأ ما");
             }
         });
     });

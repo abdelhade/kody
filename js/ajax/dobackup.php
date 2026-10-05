@@ -1,4 +1,6 @@
-<?php include '../includes/connect.php';
+<?php
+include '../includes/connect.php';
+require_once __DIR__ . '/../../includes/backup_path.php';
 
 $tables = [];
 $res = $conn->query("SHOW TABLES ");
@@ -35,7 +37,22 @@ foreach ($tables as $table) {
     $return .= "\n\n\n";
 }
 
-$handle = fopen('../BACKUP/backup.sql', 'w+');
+try {
+    $dir = kody_backup_directory($conn);
+} catch (RuntimeException $e) {
+    http_response_code(500);
+    echo $e->getMessage();
+    exit;
+}
+
+$time = date('Ymd_Hi');
+$file = $dir . DIRECTORY_SEPARATOR . 'backup_' . $time . '.sql';
+$handle = fopen($file, 'w+');
+if ($handle === false) {
+    http_response_code(500);
+    echo 'تعذر حفظ ملف النسخة الاحتياطية';
+    exit;
+}
 fwrite($handle, $return);
 fclose($handle);
-echo "successfully backed up";
+echo 'تم حفظ النسخة الاحتياطية في: ' . $file;
