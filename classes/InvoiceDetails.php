@@ -591,6 +591,11 @@ $(document).ready(function() {
 
                     window._pendingItemUnits = data.units || [];
                     var merged = addRowOrMerge(opts.merge);
+                    if (opts.noFocus) {
+                        searchInput.value = '';
+                        searchInput.focus();
+                        return;
+                    }
                     setTimeout(function() {
                         if (opts.focusBarcode) {
                             barcodeInput.focus();
@@ -614,6 +619,11 @@ $(document).ready(function() {
             },
             error: function() {
                 addRowOrMerge(opts.merge);
+                if (opts.noFocus) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                    return;
+                }
                 setTimeout(function() {
                     if (opts.focusBarcode) {
                         barcodeInput.focus();
@@ -624,6 +634,8 @@ $(document).ready(function() {
             }
         });
     }
+
+    window.selectInvoiceItem = selectItem;
 
     // إخفاء النتائج عند الضغط خارجها
     document.addEventListener('click', function(e) {

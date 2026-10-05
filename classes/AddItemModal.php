@@ -247,6 +247,7 @@ class AddItemModal extends InvoiceElementBase
             var priceFields = ['cost_price', 'price1', 'price2', 'market_price'];
             var $modal = $('#addItemModal');
             var lastBarcode = ($('#invItemBarcode').val() || '').trim();
+            var focusSearchAfterClose = false;
             var unitBarcodeAdd = <?= json_encode($this->unitBarcodeAdd, JSON_UNESCAPED_UNICODE) ?>;
 
             function addBarcodeNumbers(barcode, addend) {
@@ -303,6 +304,32 @@ class AddItemModal extends InvoiceElementBase
                 });
             }
 
+            function loadNextBarcode() {
+                fetch('ajax/load_items_lazy.php?action=next_barcode')
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (!d) return;
+                        if (d.code) $('#invItemCode').val(d.code);
+                        if (d.barcode) {
+                            $('#invItemBarcode').val(d.barcode);
+                            $rows().first().find('.unit-barcode-input').val(d.barcode);
+                            lastBarcode = String(d.barcode);
+                        }
+                    })
+                    .catch(function() {});
+            }
+
+            function prepareFreshItem() {
+                showMsg('');
+                var form = document.getElementById('invoiceAddItemForm');
+                if (form) form.reset();
+                resetUnits();
+                lastBarcode = ($('#invItemBarcode').val() || '').trim();
+                $('#invItemPreviewImg').attr('src', '').addClass('d-none');
+                $('#invItemImagePlaceholder').removeClass('d-none');
+                loadNextBarcode();
+            }
+
             function syncPricesFromBase() {
                 var $base = $rows().first();
                 $rows().each(function(index) {
@@ -317,25 +344,7 @@ class AddItemModal extends InvoiceElementBase
             }
 
             $modal.on('show.bs.modal', function() {
-                showMsg('');
-                var form = document.getElementById('invoiceAddItemForm');
-                if (form) form.reset();
-                resetUnits();
-                lastBarcode = ($('#invItemBarcode').val() || '').trim();
-                $('#invItemPreviewImg').attr('src', '').addClass('d-none');
-                $('#invItemImagePlaceholder').removeClass('d-none');
-                fetch('ajax/load_items_lazy.php?action=next_barcode')
-                    .then(function(r) { return r.json(); })
-                    .then(function(d) {
-                        if (!d) return;
-                        if (d.code) $('#invItemCode').val(d.code);
-                        if (d.barcode) {
-                            $('#invItemBarcode').val(d.barcode);
-                            $rows().first().find('.unit-barcode-input').val(d.barcode);
-                            lastBarcode = String(d.barcode);
-                        }
-                    })
-                    .catch(function() {});
+                prepareFreshItem();
             });
 
             $modal.on('shown.bs.modal', function() {
@@ -452,14 +461,22 @@ class AddItemModal extends InvoiceElementBase
                             showMsg('<div class="alert alert-danger py-1 mb-1">' + ((res && res.error) || 'حدث خطأ') + '</div>');
                             return;
                         }
-                        showMsg('<div class="alert alert-success py-1 mb-1">تم حفظ الصنف: <strong>' + res.iname + '</strong></div>');
-                        setTimeout(function() {
-                            $modal.modal('hide');
+                        focusSearchAfterClose = true;
+                        if (typeof window.selectInvoiceItem === 'function') {
+                            window.selectInvoiceItem({
+                                id: res.id,
+                                name: res.iname,
+                                price: res.price || 0,
+                                barcode: res.barcode || ''
+                            }, { noFocus: true });
+                        } else {
                             $('#itemSearchInput').val(res.iname);
                             $('#selectedItemId').val(res.id);
                             $('#itmprice').val(res.price || 0);
                             $('#addRow').click();
-                        }, 500);
+                        }
+                        prepareFreshItem();
+                        $modal.modal('hide');
                     })
                     .catch(function() {
                         showMsg('<div class="alert alert-danger py-1 mb-1">خطأ في الاتصال</div>');
@@ -471,6 +488,12 @@ class AddItemModal extends InvoiceElementBase
 
             $modal.on('hidden.bs.modal', function() {
                 showMsg('');
+                if (!focusSearchAfterClose) return;
+                focusSearchAfterClose = false;
+                setTimeout(function() {
+                    var search = document.getElementById('itemSearchInput');
+                    if (search) search.focus();
+                }, 0);
             });
         })();
         </script>
