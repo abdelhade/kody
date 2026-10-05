@@ -275,6 +275,52 @@ class InvoiceProcessor {
         }
     }
 
+    /**
+     * حذف نهائي للفاتورة: القيود وتفاصيلها، البنود، والسندات المرتبطة، ثم إعادة الأرصدة والكميات.
+     */
+    public static function hardDelete(mysqli $conn, int $id, bool $manageTransaction = true): void
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('معرّف فاتورة غير صالح');
+        }
+
+        if ($manageTransaction) {
+            $conn->begin_transaction();
+        }
+
+        try {
+            $relatedIds = self::fetchIds(
+                $conn,
+                'SELECT id FROM ot_head WHERE op2 = ? AND id <> ?',
+                'ii',
+                [$id, $id]
+            );
+            $opIds = array_values(array_unique(array_merge([$id], $relatedIds)));
+            $journalIds = self::fetchLinkedJournalHeadIds($conn, $opIds);
+            $accountIds = self::fetchLinkedJournalAccountIds($conn, $journalIds, $opIds);
+            $itemIds = self::fetchLinkedItemIds($conn, $opIds);
+
+            self::deleteLinkedJournalEntries($conn, $journalIds, $opIds);
+            self::deleteLinkedJournalHeads($conn, $journalIds, $opIds);
+            self::deleteLinkedDetails($conn, $opIds);
+            self::deleteLinkedHeaders($conn, $opIds);
+
+            foreach (array_unique($accountIds) as $accountId) {
+                self::recalcAccountBalance($conn, (int) $accountId);
+            }
+            self::syncItemQuantitiesByIds($conn, $itemIds);
+
+            if ($manageTransaction) {
+                $conn->commit();
+            }
+        } catch (Throwable $e) {
+            if ($manageTransaction) {
+                $conn->rollback();
+            }
+            throw $e;
+        }
+    }
+
     /** Soft-delete رأس ot_head */
     public static function softDeleteHeader(mysqli $conn, int $id): void
     {
@@ -492,6 +538,183 @@ class InvoiceProcessor {
         $stmt->close();
     }
 
+    /** @param int[] $opIds @return int[] */
+    private static function fetchLinkedJournalHeadIds(mysqli $conn, array $opIds): array
+    {
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        if (empty($opIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($opIds), '?'));
+        $types = str_repeat('i', count($opIds) * 2);
+        $sql = "SELECT id FROM journal_heads WHERE op_id IN ($placeholders) OR op2 IN ($placeholders)";
+        return self::fetchIds($conn, $sql, $types, array_merge($opIds, $opIds));
+    }
+
+    /**
+     * @param int[] $journalIds
+     * @param int[] $opIds
+     * @return int[]
+     */
+    private static function fetchLinkedJournalAccountIds(mysqli $conn, array $journalIds, array $opIds): array
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        $parts = [];
+        $params = [];
+        if (!empty($journalIds)) {
+            $parts[] = 'journal_id IN (' . implode(',', array_fill(0, count($journalIds), '?')) . ')';
+            $params = array_merge($params, $journalIds);
+        }
+        if (!empty($opIds)) {
+            $ph = implode(',', array_fill(0, count($opIds), '?'));
+            $parts[] = "op_id IN ($ph)";
+            $parts[] = "op2 IN ($ph)";
+            $params = array_merge($params, $opIds, $opIds);
+        }
+        if (empty($parts)) {
+            return [];
+        }
+        $sql = 'SELECT DISTINCT account_id FROM journal_entries WHERE ' . implode(' OR ', $parts);
+        return self::fetchIds($conn, $sql, str_repeat('i', count($params)), $params);
+    }
+
+    /** @param int[] $opIds @return int[] */
+    private static function fetchLinkedItemIds(mysqli $conn, array $opIds): array
+    {
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        if (empty($opIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($opIds), '?'));
+        $types = str_repeat('i', count($opIds) * 2);
+        $sql = "SELECT DISTINCT item_id FROM fat_details WHERE fatid IN ($placeholders) OR pro_id IN ($placeholders)";
+        return self::fetchIds($conn, $sql, $types, array_merge($opIds, $opIds));
+    }
+
+    /** @param int[] $journalIds @param int[] $opIds */
+    private static function deleteLinkedJournalEntries(mysqli $conn, array $journalIds, array $opIds): void
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        $parts = [];
+        $params = [];
+        if (!empty($journalIds)) {
+            $parts[] = 'journal_id IN (' . implode(',', array_fill(0, count($journalIds), '?')) . ')';
+            $params = array_merge($params, $journalIds);
+        }
+        if (!empty($opIds)) {
+            $ph = implode(',', array_fill(0, count($opIds), '?'));
+            $parts[] = "op_id IN ($ph)";
+            $parts[] = "op2 IN ($ph)";
+            $params = array_merge($params, $opIds, $opIds);
+        }
+        if (empty($parts)) {
+            return;
+        }
+        $sql = 'DELETE FROM journal_entries WHERE ' . implode(' OR ', $parts);
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف تفاصيل القيود: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    /** @param int[] $journalIds @param int[] $opIds */
+    private static function deleteLinkedJournalHeads(mysqli $conn, array $journalIds, array $opIds): void
+    {
+        $journalIds = array_values(array_filter(array_map('intval', $journalIds)));
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        $parts = [];
+        $params = [];
+        if (!empty($journalIds)) {
+            $parts[] = 'id IN (' . implode(',', array_fill(0, count($journalIds), '?')) . ')';
+            $params = array_merge($params, $journalIds);
+        }
+        if (!empty($opIds)) {
+            $ph = implode(',', array_fill(0, count($opIds), '?'));
+            $parts[] = "op_id IN ($ph)";
+            $parts[] = "op2 IN ($ph)";
+            $params = array_merge($params, $opIds, $opIds);
+        }
+        if (empty($parts)) {
+            return;
+        }
+        $sql = 'DELETE FROM journal_heads WHERE ' . implode(' OR ', $parts);
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف القيود: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    /** @param int[] $opIds */
+    private static function deleteLinkedDetails(mysqli $conn, array $opIds): void
+    {
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        if (empty($opIds)) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($opIds), '?'));
+        $sql = "DELETE FROM fat_details WHERE fatid IN ($placeholders) OR pro_id IN ($placeholders)";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف البنود: ' . $conn->error);
+        }
+        $params = array_merge($opIds, $opIds);
+        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    /** @param int[] $opIds */
+    private static function deleteLinkedHeaders(mysqli $conn, array $opIds): void
+    {
+        $opIds = array_values(array_filter(array_map('intval', $opIds)));
+        if (empty($opIds)) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($opIds), '?'));
+        $sql = "DELETE FROM ot_head WHERE id IN ($placeholders)";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف الفاتورة: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($opIds)), ...$opIds);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    /** @param int[] $itemIds */
+    private static function syncItemQuantitiesByIds(mysqli $conn, array $itemIds): void
+    {
+        $itemIds = array_values(array_unique(array_filter(array_map('intval', $itemIds))));
+        if (empty($itemIds)) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $sql = "
+            UPDATE myitems mi
+            SET itmqty = (
+                SELECT COALESCE(SUM(qty_in) - SUM(qty_out), 0)
+                FROM fat_details fd
+                WHERE fd.item_id = mi.id AND fd.isdeleted = 0
+            )
+            WHERE mi.id IN ($placeholders)
+        ";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('فشل تحضير تحديث الكميات: ' . $conn->error);
+        }
+        $stmt->bind_param(str_repeat('i', count($itemIds)), ...$itemIds);
+        $stmt->execute();
+        $stmt->close();
+    }
+
     /**
      * إعادة حساب ربح الفاتورة من البنود وتحديث ot_head.profit
      */
@@ -523,7 +746,7 @@ class InvoiceProcessor {
     /**
      * Hard-purge للقيود والسندات والبنود قبل إعادة كتابة فاتورة عند التعديل.
      * Soft-delete لا يُستخدم هنا لأن triggers على journal_entries تحدّث acc_head.balance عند DELETE.
-     * مسار الحذف النهائي للمستخدم يبقى softDelete().
+     * مسار مسح الفاتورة من المستخدم هو hardDelete().
      */
     public static function purgeRelatedForRewrite(mysqli $conn, int $invoiceId): void
     {

@@ -53,7 +53,7 @@ if ($pass !== $rowstg['edit_pass']) {
 try {
     $invoice = InvoiceProcessor::getActiveInvoice($conn, $id);
     $pro_tybe = intval($invoice['pro_tybe']);
-    InvoiceProcessor::softDelete($conn, $id);
+    InvoiceProcessor::hardDelete($conn, $id);
 } catch (RuntimeException $e) {
     if ($e->getMessage() === 'invoice_not_found') {
         header('Location: ../warning.php?q=' . urlencode($q) . '&error=invoice_not_found');
