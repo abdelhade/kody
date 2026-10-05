@@ -154,7 +154,7 @@ $bdPriceSources = [
         </div>
 
         <h5 class="text-muted mb-2">تركيب الشفرة</h5>
-        <p class="small text-muted mb-3">يُطبَّق على الشفرة فقط. الباركود الخطي والباركود النصي يبقيان على الباركود الأساسي للصنف. الشفرة = بداية + الباركود + كود الصنف + السعر كعدد صحيح + نهاية.</p>
+        <p class="small text-muted mb-3">يُطبَّق على الشفرة فقط. الباركود الخطي والباركود النصي يبقيان على الباركود الأساسي للصنف. الشفرة = بداية + الباركود (اختياري) + كود الصنف + السعر كعدد صحيح + نهاية.</p>
         <div class="row">
           <div class="col-md-6">
             <div class="form-group">
@@ -168,6 +168,12 @@ $bdPriceSources = [
               <label for="bd_code_suffix">نهاية الشفرة</label>
               <input type="text" class="form-control bd-live" id="bd_code_suffix" name="bd_code_suffix" maxlength="40"
                      value="<?= htmlspecialchars($bd['code_suffix'], ENT_QUOTES, 'UTF-8') ?>" placeholder="نص يُضاف بعد الشفرة (اختياري)">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="custom-control custom-switch mb-3">
+              <input type="checkbox" class="custom-control-input bd-live" id="bd_include_barcode" name="bd_include_barcode" value="1" <?= !empty($bd['include_barcode']) ? 'checked' : '' ?>>
+              <label class="custom-control-label" for="bd_include_barcode">إدراج الباركود داخل الشفرة</label>
             </div>
           </div>
           <div class="col-md-6">
@@ -275,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(Math.round(n));
   }
   function compose() {
-    var body = sample.barcode + (checked('bd_include_item_code') ? sample.code : '');
+    var body = (checked('bd_include_barcode') ? sample.barcode : '') + (checked('bd_include_item_code') ? sample.code : '');
     var mode = val('bd_embed_prices');
     var before = pick(val('bd_price_before_source'));
     var after = pick(val('bd_price_after_source'));

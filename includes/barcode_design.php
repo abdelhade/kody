@@ -42,6 +42,7 @@ function kody_barcode_design_defaults(): array
         'code_prefix' => '',
         'code_suffix' => '',
         'unit_barcode_add' => '',
+        'include_barcode' => true,
         'include_item_code' => true,
         'embed_prices' => 'none',
         'price_before_source' => 'price1',
@@ -86,6 +87,7 @@ function kody_barcode_design_normalize(array $input): array
     $d = kody_barcode_design_defaults();
     $d['enabled'] = kody_bd_bool($input, 'enabled', $d['enabled']);
     $d['invert'] = kody_bd_bool($input, 'invert', $d['invert']);
+    $d['include_barcode'] = kody_bd_bool($input, 'include_barcode', $d['include_barcode']);
     $d['include_item_code'] = kody_bd_bool($input, 'include_item_code', $d['include_item_code']);
     $d['strike_before'] = kody_bd_bool($input, 'strike_before', $d['strike_before']);
 
@@ -185,6 +187,7 @@ function kody_barcode_design_from_post(array $post): array
         'code_prefix' => $post['bd_code_prefix'] ?? '',
         'code_suffix' => $post['bd_code_suffix'] ?? '',
         'unit_barcode_add' => $post['bd_unit_barcode_add'] ?? '',
+        'include_barcode' => isset($post['bd_include_barcode']),
         'include_item_code' => isset($post['bd_include_item_code']),
         'embed_prices' => $post['bd_embed_prices'] ?? 'none',
         'price_before_source' => $post['bd_price_before_source'] ?? 'price1',
@@ -208,7 +211,10 @@ function kody_barcode_encode_price($amount): string
 
 function kody_barcode_compose_code(array $design, string $barcode, string $itemCode, $priceBefore, $priceAfter): string
 {
-    $body = $barcode;
+    $body = '';
+    if (!empty($design['include_barcode'])) {
+        $body .= $barcode;
+    }
     if (!empty($design['include_item_code'])) {
         $body .= $itemCode;
     }
