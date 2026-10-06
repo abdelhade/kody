@@ -25,6 +25,7 @@ let _leaveConfirmOpen = false;
 $(document).on('click', 'a[href]', function(e) {
     const href = $(this).attr('href');
     if (!href || href === '#' || href.startsWith('#') || href.startsWith('javascript')) return;
+    if ($(this).attr('target') === '_blank') return;
     if (formSubmitting || allowLeave || !hasInvoiceData()) return;
     if (_leaveConfirmOpen) { e.preventDefault(); return; }
 
