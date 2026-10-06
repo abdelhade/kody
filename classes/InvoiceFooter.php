@@ -127,7 +127,7 @@ class InvoiceFooter extends InvoiceElementBase
             <div class="col border border-light">
                 <div class="d-flex align-items-center" style="gap:4px;">
                     <h6 id="selectedLineName" class="mb-0" style="font-weight:700; color:#1e293b;"></h6>
-                    <span id="selectedItemLinks" class="d-inline-flex d-none" style="gap:3px;">
+                    <span id="selectedItemLinks" class="d-none" style="display:inline-flex; gap:3px;">
                         <a id="selectedItemMovement" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary py-0 px-1" title="حركة الصنف"><i class="fa fa-exchange-alt"></i></a>
                         <a id="selectedItemEdit" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-warning py-0 px-1" title="تعديل الصنف"><i class="fa fa-pen"></i></a>
                     </span>
