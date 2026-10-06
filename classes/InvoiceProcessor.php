@@ -1702,25 +1702,33 @@ class InvoiceProcessor {
         if ($withCrtime) {
             $stmtDetails = $conn->prepare(
                 "INSERT INTO fat_details (
-                    pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price,
+                    pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, doc_qty, price,
                     discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
         } else {
             $stmtDetails = $conn->prepare(
                 "INSERT INTO fat_details (
-                    pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price,
+                    pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, doc_qty, price,
                     discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
         }
         if (!$stmtDetails) {
             throw new Exception('فشل تحضير تفاصيل الفاتورة: ' . $conn->error);
         }
 
-        $stmtItem = $conn->prepare('SELECT cost_price, itmqty, price1 FROM myitems WHERE id = ?');
-        $stmtUpdate = $conn->prepare('UPDATE myitems SET last_price = ?, cost_price = ?, price1 = ? WHERE id = ?');
-        if (!$stmtItem || !$stmtUpdate) {
+        $stmtItem = $conn->prepare('SELECT cost_price, itmqty, price1, price2, price3 FROM myitems WHERE id = ?');
+        $stmtUpdate = [];
+        $stmtUnitUpdate = [];
+        foreach ([1, 2, 3] as $n) {
+            $stmtUpdate[$n] = $conn->prepare("UPDATE myitems SET last_price = ?, cost_price = ?, price{$n} = ? WHERE id = ?");
+            $stmtUnitUpdate[$n] = $conn->prepare("UPDATE item_units SET price{$n} = ? WHERE item_id = ? AND ABS(u_val - ?) < 0.0001");
+            if (!$stmtUpdate[$n] || !$stmtUnitUpdate[$n]) {
+                throw new Exception('فشل تحضير استعلامات الصنف: ' . $conn->error);
+            }
+        }
+        if (!$stmtItem) {
             throw new Exception('فشل تحضير استعلامات الصنف: ' . $conn->error);
         }
 
@@ -1740,6 +1748,7 @@ class InvoiceProcessor {
             }
 
             [$qtyIn, $qtyOut] = self::resolveLineQty($proTybe, $qty, $uVal);
+            $docQty = $qty * $uVal;
             $detValue = $qty * ($price - $disc);
 
             $stmtItem->bind_param('i', $itemId);
@@ -1754,7 +1763,11 @@ class InvoiceProcessor {
             $oldQty = $withCrtime
                 ? (float) ($rowbl['itmqty'] ?? 0)
                 : self::getRealStockQuantity($conn, $itemId);
-            $existingPrice1 = (float) $rowbl['price1'];
+            $sellList = (int) ($line['sell_list'] ?? 1);
+            if ($sellList < 1 || $sellList > 3) {
+                $sellList = 1;
+            }
+            $existingSell = (float) $rowbl['price' . $sellList];
             $costPrice = $oldPrice;
             $itmProfit = 0.0;
 
@@ -1771,10 +1784,14 @@ class InvoiceProcessor {
                 if ($totalQty > 0) {
                     $costPrice = $totalBalance / $totalQty;
                 }
-                $sellUnit = ($sellPrice > 0) ? ($sellPrice / $uVal) : $existingPrice1;
-                $stmtUpdate->bind_param('dddi', $unitPrice, $costPrice, $sellUnit, $itemId);
-                if (!$stmtUpdate->execute()) {
+                $sellUnit = ($sellPrice > 0) ? ($sellPrice / $uVal) : $existingSell;
+                $stmtUpdate[$sellList]->bind_param('dddi', $unitPrice, $costPrice, $sellUnit, $itemId);
+                if (!$stmtUpdate[$sellList]->execute()) {
                     throw new Exception('فشل تحديث الصنف ' . $itemId);
+                }
+                if ($sellPrice > 0) {
+                    $stmtUnitUpdate[$sellList]->bind_param('did', $sellPrice, $itemId, $uVal);
+                    $stmtUnitUpdate[$sellList]->execute();
                 }
                 $price = $unitPrice;
             } elseif (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS'], self::INVOICE_TYPES['OFFER']], true)) {
@@ -1786,13 +1803,14 @@ class InvoiceProcessor {
             if ($withCrtime) {
                 $crtime = !empty($line['crtime']) ? (string) $line['crtime'] : date('Y-m-d H:i:s');
                 $stmtDetails->bind_param(
-                    'iiiidddddiiiidds',
+                    'iiiiddddddiiiidds',
                     $proTybe,
                     $invoiceId,
                     $itemId,
                     $uVal,
                     $qtyIn,
                     $qtyOut,
+                    $docQty,
                     $price,
                     $disc,
                     $discPct,
@@ -1806,13 +1824,14 @@ class InvoiceProcessor {
                 );
             } else {
                 $stmtDetails->bind_param(
-                    'sssssssssssssss',
+                    'ssssssssssssssss',
                     $proTybe,
                     $invoiceId,
                     $itemId,
                     $uVal,
                     $qtyIn,
                     $qtyOut,
+                    $docQty,
                     $price,
                     $disc,
                     $discPct,
@@ -1831,7 +1850,10 @@ class InvoiceProcessor {
 
         $stmtDetails->close();
         $stmtItem->close();
-        $stmtUpdate->close();
+        foreach ([1, 2, 3] as $n) {
+            $stmtUpdate[$n]->close();
+            $stmtUnitUpdate[$n]->close();
+        }
     }
 
     /** @return array{0:float,1:float} [qty_in, qty_out] */
@@ -1952,11 +1974,16 @@ class InvoiceProcessor {
         if (!isset($post['itmname'], $post['itmqty'], $post['itmprice'], $post['itmdisc'])) {
             return $lines;
         }
+        $sellList = (int) ($post['price_list'] ?? 1);
+        if ($sellList < 1 || $sellList > 3) {
+            $sellList = 1;
+        }
         foreach ($post['itmname'] as $index => $itmname) {
             if ($itmname === '' || $itmname === null) {
                 continue;
             }
             $lines[] = [
+                'sell_list' => $sellList,
                 'item_id' => (int) $itmname,
                 'qty' => (float) ($post['itmqty'][$index] ?? 1),
                 'price' => (float) ($post['itmprice'][$index] ?? 0),

@@ -331,7 +331,7 @@ if (isset($_GET['success']) && $_GET['success'] == '1') {
         Swal.fire({
             type: 'success',
             title: 'تم بنجاح',
-            text: " . json_encode($saved_message, JSON_UNESCAPED_UNICODE) . ",
+            html: " . json_encode($saved_message, JSON_UNESCAPED_UNICODE) . ",
             confirmButtonText: 'حسناً',
             allowOutsideClick: false,
             allowEscapeKey: false

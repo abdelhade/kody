@@ -95,6 +95,7 @@ $(document).ready(function() {
     // تغيير الفئة السعرية يعيد تسعير أصناف فاتورة المبيعات
     $(document).on('change', '#invoicePriceList', function() {
         if (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice()) {
+            refreshPurchaseSellPrices(parseInt(this.value, 10) || 1);
             return;
         }
         if (typeof window.isSalesReturn === 'function' && window.isSalesReturn()) {
@@ -490,7 +491,7 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
                     <input type="number" class="itmprofit_pct form-control form-control-sm" value="${profitPct}" style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;" step="0.1" onclick="sT(this)" title="غيّر نسبة الربح لتحديث سعر البيع">
                 </td>
                 <td>
-                    <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="يُحفظ في سعر الصنف (price1)">
+                    <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
                 </td>` : '';
 
             const newRow = $(`<tr>
@@ -648,6 +649,27 @@ function applyUnitToRow(row, unit) {
     writePrice(purchase ? (parseFloat(unit.ucost) || 0) : listPrice);
 }
 
+// فاتورة المشتريات: عمود "س. بيع" يعرض سعر البيع المختار أعلى الفاتورة (1/2/3)
+function refreshPurchaseSellPrices(listId) {
+    $('#itmrow tr').each(function() {
+        const $row = $(this);
+        const $sell = $row.find('.itmsellprice');
+        if (!$sell.length) return;
+        const itemId = $row.find('input[name="itmname[]"]').val();
+        if (!itemId) return;
+        const unitVal = parseFloat($row.find('select[name="u_val[]"]').val()) || 1;
+        $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
+            if (!data || data.error) return;
+            const unit = window.findInvoiceUnit(data.units, unitVal);
+            let sell = unit ? window.invoicePriceFor(unit, listId, true) : 0;
+            if (!(sell > 0)) sell = window.invoicePriceFor(data, listId, false) * unitVal;
+            $sell.val(parseFloat(sell.toFixed(3)));
+            calcProfitPct($row);
+            paintInvoiceLineWarnings();
+        });
+    });
+}
+
 // نسبة الربح على أساس سعر الشراء (عمود السعر)
 function calcProfitPct(row) {
     const price = parseFloat(row.find('.itmprice').val())     || 0; // سعر الشراء
@@ -771,10 +793,15 @@ function calcProfitPct(row) {
                     if (pendingSubmit === 'print' && response.order_id) {
                         openSavedInvoicePrint(response.order_id);
                     }
+                    let extraHtml = '';
+                    if (response.pro_tybe == 4 && response.order_id) {
+                        let barcodeUrl = 'inv_operations.php?h=' + response.order_id_md5 + '&q=' + response.order_id + '&t=' + response.pro_tybe_md5;
+                        extraHtml = '<br><br><a href="' + barcodeUrl + '" target="_blank" class="btn btn-success"><i class="fa fa-barcode"></i> طباعة باركود الأصناف</a>';
+                    }
                     Swal.fire({
                         type: 'success',
                         title: 'تم بنجاح',
-                        text: response.message || 'تم الحفظ بنجاح',
+                        html: (response.message || 'تم الحفظ بنجاح') + extraHtml,
                         confirmButtonText: 'حسناً',
                         allowOutsideClick: false,
                         allowEscapeKey: false
@@ -937,6 +964,7 @@ function updateTotal() {
         const finalPaid = parseFloat($("#paid").val()) || 0;
         $("#change").val(parseFloat((headnet - finalPaid).toFixed(2)));
     }
+    if (typeof window.updatePartyBalance === 'function') window.updatePartyBalance();
 }
 
 

@@ -1,13 +1,30 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
 <?php
+$isLazyAjax = isset($_GET['lazy_ajax']);
+
+if ($isLazyAjax) {
+    // دفعات الـ lazy ترجع صفوف الجدول فقط — بدون header/navbar/sidebar
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (!isset($_SESSION['login']) || (int) ($_SESSION['userid'] ?? 0) < 1) {
+        http_response_code(401);
+        exit;
+    }
+    header('Content-Type: text/html; charset=utf-8');
+    require_once __DIR__ . '/includes/connect.php';
+} else {
+    include('includes/header.php');
+    include('includes/navbar.php');
+    include('includes/sidebar.php');
+}
+
 $search = isset($_GET['search']) ? trim((string)$_GET['search']) : '';
 $group1 = isset($_GET['group1']) ? (int)$_GET['group1'] : 0;
 $group2 = isset($_GET['group2']) ? (int)$_GET['group2'] : 0;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $limit = 200;
+$offset = ($page - 1) * $limit;
 
 // Build search conditions dynamically for multi-keyword fuzzy matching
 $whereSql = "";
@@ -45,35 +62,36 @@ if ($group2 > 0) {
     $types .= "i";
 }
 
-// 1. Get total rows count
-$sqlCount = "SELECT COUNT(*) as total FROM myitems WHERE isdeleted = 0" . $whereSql;
-$stmtCount = $conn->prepare($sqlCount);
-if ($types !== "") {
-    $stmtCount->bind_param($types, ...$params);
+$totalRows = 0;
+$totalQty = 0;
+$totalCostValue = 0;
+$totalSellValue = 0;
+
+if (!$isLazyAjax) {
+    // 1. Get total rows count
+    $sqlCount = "SELECT COUNT(*) as total FROM myitems WHERE isdeleted = 0" . $whereSql;
+    $stmtCount = $conn->prepare($sqlCount);
+    if ($types !== "") {
+        $stmtCount->bind_param($types, ...$params);
+    }
+    $stmtCount->execute();
+    $totalRows = (int) $stmtCount->get_result()->fetch_assoc()['total'];
+    $stmtCount->close();
+
+    // 1.5 Get Totals (qty, cost value, sell value)
+    $sqlSum = "SELECT SUM(itmqty) as total_qty, SUM(itmqty * cost_price) as total_cost, SUM(itmqty * price1) as total_sell FROM myitems WHERE isdeleted = 0" . $whereSql;
+    $stmtSum = $conn->prepare($sqlSum);
+    if ($types !== "") {
+        $stmtSum->bind_param($types, ...$params);
+    }
+    $stmtSum->execute();
+    $totalsRow = $stmtSum->get_result()->fetch_assoc();
+    $stmtSum->close();
+
+    $totalQty = $totalsRow['total_qty'] ?? 0;
+    $totalCostValue = $totalsRow['total_cost'] ?? 0;
+    $totalSellValue = $totalsRow['total_sell'] ?? 0;
 }
-$stmtCount->execute();
-$totalRows = $stmtCount->get_result()->fetch_assoc()['total'];
-$stmtCount->close();
-
-// 1.5 Get Totals (qty, cost value, sell value)
-$sqlSum = "SELECT SUM(itmqty) as total_qty, SUM(itmqty * cost_price) as total_cost, SUM(itmqty * price1) as total_sell FROM myitems WHERE isdeleted = 0" . $whereSql;
-$stmtSum = $conn->prepare($sqlSum);
-if ($types !== "") {
-    $stmtSum->bind_param($types, ...$params);
-}
-$stmtSum->execute();
-$totalsRow = $stmtSum->get_result()->fetch_assoc();
-$stmtSum->close();
-
-$totalQty = $totalsRow['total_qty'] ?? 0;
-$totalCostValue = $totalsRow['total_cost'] ?? 0;
-$totalSellValue = $totalsRow['total_sell'] ?? 0;
-
-// Pagination parameters for Lazy Loading
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($page < 1) $page = 1;
-$limit = 500;
-$offset = ($page - 1) * $limit;
 
 // 2. Fetch data
 $sqlData = "SELECT * FROM myitems WHERE isdeleted = 0" . $whereSql . " ORDER BY id DESC LIMIT ? OFFSET ?";
@@ -87,8 +105,19 @@ $dataTypes = $types . "ii";
 $stmtData->bind_param($dataTypes, ...$dataParams);
 $stmtData->execute();
 $resitm = $stmtData->get_result();
+$itemRows = $resitm->fetch_all(MYSQLI_ASSOC);
+$stmtData->close();
 
-$isLazyAjax = isset($_GET['lazy_ajax']) ? true : false;
+// وحدات الدفعة كلها في استعلام واحد بدل استعلام لكل صنف
+$unitsByItem = [];
+if (!empty($itemRows)) {
+    $itemIds = implode(',', array_map(static fn($r) => (int) $r['id'], $itemRows));
+    $resunt = $conn->query("SELECT iu.*, u.uname FROM item_units iu LEFT JOIN myunits u ON u.id = iu.unit_id WHERE iu.item_id IN ($itemIds)");
+    while ($r = $resunt->fetch_assoc()) {
+        $unitsByItem[(int) $r['item_id']][] = $r;
+    }
+}
+$shownRows = $offset + count($itemRows);
 
 if (!$isLazyAjax):
 ?>
@@ -127,12 +156,17 @@ if (!$isLazyAjax):
                 <div class="row">
                 <div class="col">
                     <h3>الاصناف</h3>
-                    <label for="invoicePriceList" class="small text-muted mb-0">الفئة السعرية</label>
                     <?php
                     if (!class_exists('InvoiceProcessor')) {
                         require_once __DIR__ . '/classes/InvoiceProcessor.php';
                     }
-                    InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
+                    $priceListNames = [1 => 'قطاعي', 2 => 'جملة', 3 => 'سعر 3'];
+                    foreach (InvoiceProcessor::priceLists($conn) as $plist) {
+                        $plId = (int) ($plist['id'] ?? 0);
+                        if ($plId >= 1 && $plId <= 3 && trim((string) $plist['pname']) !== '') {
+                            $priceListNames[$plId] = (string) $plist['pname'];
+                        }
+                    }
                     ?>
                 </div>
                 <div class="col-md-6">
@@ -185,7 +219,9 @@ if (!$isLazyAjax):
                                 <th>الكميه</th>
                                 <th>الوحدة</th>
                                 <th>الوصف</th>
-                                <th id="sellPriceTitle">قطاعي</th>
+                                <th><?= htmlspecialchars($priceListNames[1], ENT_QUOTES, 'UTF-8') ?></th>
+                                <th><?= htmlspecialchars($priceListNames[2], ENT_QUOTES, 'UTF-8') ?></th>
+                                <th><?= htmlspecialchars($priceListNames[3], ENT_QUOTES, 'UTF-8') ?></th>
                                 <th>سعر الشراء</th>
                                 <th>سعر التكلفة</th>
                                 <th>عمليات</th>
@@ -195,14 +231,10 @@ if (!$isLazyAjax):
                         <?php endif; // end !$isLazyAjax ?>
                         <?php
                         $x = $offset;
-                        while ($rowitm = $resitm->fetch_assoc()) {
+                        foreach ($itemRows as $rowitm) {
                         $x++;
                             $itemid = (int) $rowitm['id'];
-                            $resunt = $conn->query("SELECT iu.*, u.uname FROM item_units iu LEFT JOIN myunits u ON u.id = iu.unit_id WHERE iu.item_id = $itemid");
-                            $unitRows = [];
-                            while ($r = $resunt->fetch_assoc()) {
-                                $unitRows[] = $r;
-                            }
+                            $unitRows = $unitsByItem[$itemid] ?? [];
                             $searchParts = [
                                 (string) $rowitm['id'],
                                 isset($rowitm['code']) ? (string) $rowitm['code'] : '',
@@ -244,7 +276,9 @@ if (!$isLazyAjax):
                                         $sell3 = (float) ($rowitm['market_price'] ?? 0);
                                     }
                                 ?>
-                                <td class="sell-price" data-price1="<?= (float) $rowitm['price1'] ?>" data-price2="<?= (float) ($rowitm['price2'] ?? 0) ?>" data-price3="<?= $sell3 ?>"><b><?= $rowitm['price1'] ?></b></td>
+                                <td><b><?= $rowitm['price1'] ?></b></td>
+                                <td><b><?= (float) ($rowitm['price2'] ?? 0) ?></b></td>
+                                <td><b><?= $sell3 ?></b></td>
                                 <td><b><?= $rowitm['last_price'] ?></b></td>
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
                                
@@ -303,10 +337,12 @@ if (!$isLazyAjax):
                     </table>
 
                 </div>
-            </div>
-            
-            <div class="text-center text-muted small mt-2 mb-3">
-                إجمالي الأصناف بعد الفلتر: <?= $totalRows ?>
+
+                <div id="myitemsShownCounter" class="text-center text-muted small mt-2 mb-1"
+                     data-shown="<?= (int) $shownRows ?>" data-total="<?= (int) $totalRows ?>">
+                    تم عرض <b id="myitemsShownCount"><?= (int) $shownRows ?></b>
+                    من <b id="myitemsTotalCount"><?= (int) $totalRows ?></b> صنف
+                </div>
             </div>
         </div>
 
@@ -354,8 +390,18 @@ $(document).ready(function() {
     var searchTimer = null;
     
     var lazyPage = 1;
+    var lazyLimit = <?= (int) $limit ?>;
     var isLoading = false;
-    var hasMore = true; // Assuming there might be more initially
+    var hasMore = true;
+
+    function myitemsSyncCounter() {
+        var $counter = $('#myitemsShownCounter');
+        var total = parseInt($counter.data('total'), 10) || 0;
+        var shown = $('#horsTable tbody tr[data-search]').length;
+        $('#myitemsShownCount').text(shown);
+        hasMore = shown < total;
+    }
+    myitemsSyncCounter();
     
     function triggerSearch() {
         clearTimeout(searchTimer);
@@ -370,7 +416,8 @@ $(document).ready(function() {
                 $('#table-container').css('opacity', '1');
                 if (typeof applySellPriceList === 'function') applySellPriceList();
                 lazyPage = 1;
-                hasMore = true;
+                isLoading = false;
+                myitemsSyncCounter();
             });
             window.history.pushState(null, '', url);
         }, 300);
@@ -399,14 +446,18 @@ $(document).ready(function() {
             var g2 = $('#filter_group2').val();
             var url = 'myitems.php?lazy_ajax=1&page=' + lazyPage + '&search=' + encodeURIComponent($.trim(val)) + '&group1=' + g1 + '&group2=' + g2;
             
-            $('#horsTable tbody').append('<tr id="loading-row"><td colspan="11" class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المزيد...</td></tr>');
+            $('#horsTable tbody').append('<tr id="loading-row"><td colspan="13" class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المزيد...</td></tr>');
             
             $.get(url, function(data) {
                 $('#loading-row').remove();
                 if ($.trim(data) === '') {
                     hasMore = false;
                 } else {
-                    $('#horsTable tbody').append(data);
+                    var $rows = $($.parseHTML($.trim(data), document, false)).filter('tr');
+                    $('#horsTable tbody').append($rows);
+                    if (typeof applySellPriceList === 'function') applySellPriceList();
+                    myitemsSyncCounter();
+                    if ($rows.length < lazyLimit) hasMore = false;
                 }
                 isLoading = false;
             }).fail(function() {
@@ -478,17 +529,4 @@ $(document).ready(function() {
 });
 
 </script>
-<script src="js/invoice_price_list.js"></script>
-<script>
-function applySellPriceList() {
-    var label = $('#invoicePriceList option:selected').text();
-    $('#sellPriceTitle').text(label);
-    $('.sell-price').each(function() {
-        var price = priceFromValues($(this).data('price1'), $(this).data('price2'), $(this).data('price3'), selectedInvoicePriceList());
-        $(this).find('b').text(price);
-    });
-}
-$('#invoicePriceList').on('change', applySellPriceList);
-</script>
-
 <?php include('includes/footer.php') ?>

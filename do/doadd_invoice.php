@@ -633,7 +633,11 @@ try {
     $stmt->close();
     
     // تعيين رسالة نجاح
-    $_SESSION['success_message'] = 'تم حفظ الطلب بنجاح - رقم الفاتورة: ' . $pro_id;
+    $barcodeHtml = '';
+    if ($pro_tybe == 4) {
+        $barcodeHtml = '<br><br><a href="inv_operations.php?h=' . md5($last_op) . '&q=' . $last_op . '&t=' . md5($pro_tybe) . '" target="_blank" class="btn btn-success"><i class="fa fa-barcode"></i> طباعة باركود الأصناف</a>';
+    }
+    $_SESSION['success_message'] = 'تم حفظ الطلب بنجاح - رقم الفاتورة: ' . $pro_id . $barcodeHtml;
     
 } catch (Exception $e) {
     // إلغاء المعاملة في حالة الخطأ
@@ -662,6 +666,10 @@ if (!empty($ajax_save)) {
         'order_id' => $last_op,
         'table_id' => $table_id,
         'pro_id' => $pro_id,
+        'pro_tybe' => $pro_tybe,
+        'pro_id_md5' => md5($pro_id),
+        'order_id_md5' => md5($last_op),
+        'pro_tybe_md5' => md5($pro_tybe),
         'finalized' => $finalize_order,
         'pending' => $is_pending_table_order,
         'message' => $ajax_message,

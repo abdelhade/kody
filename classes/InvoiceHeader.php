@@ -74,6 +74,10 @@ class InvoiceHeader extends InvoiceElementBase
                             data-target="<?php echo ($this->getClientType() === 'supplier') ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
                     </label>
                     <div class="tooltext">إضافة جديد</div>
+                    <small id="partyBalance" class="font-weight-bold" style="white-space:nowrap; direction:rtl;"
+                           data-sign="<?php echo ($this->getClientType() === 'supplier') ? -1 : 1; ?>"
+                           data-effect="<?php echo $this->getBalanceEffect(); ?>"
+                           data-exclude-op="<?php echo ($this->isEditMode && $this->data) ? (int) $this->data['id'] : 0; ?>"></small>
                 </div>
                 <select class="select2 form-control form-control-sm" name="acc2_id" id="mySelectEmp">
                     <?php $this->renderAccountOptions(); ?>
@@ -102,6 +106,14 @@ class InvoiceHeader extends InvoiceElementBase
                 <label for="invoicePriceList">الفئة السعرية</label>
                 <select class="form-control form-control-sm" name="price_list" id="invoicePriceList">
                     <?php $this->renderPriceListOptions(); ?>
+                </select>
+            </div>
+            <?php elseif ((int)$this->invoiceType === 4): ?>
+            <div class="col-md-2">
+                <label for="invoicePriceList">سعر البيع</label>
+                <select class="form-control form-control-sm" name="price_list" id="invoicePriceList"
+                        title="سعر البيع المعروض في عمود س. بيع ويُحفظ في الصنف">
+                    <?php $this->renderPriceListOptions(3, true); ?>
                 </select>
             </div>
             <?php endif; ?>
@@ -282,6 +294,38 @@ class InvoiceHeader extends InvoiceElementBase
                 });
             }
 
+            // رصيد الطرف قبل وبعد الفاتورة
+            const $pb = $('#partyBalance');
+            let partyBalanceBefore = null;
+            let partyBalanceReq = 0;
+            const fmtBal = v => String(parseFloat((+v).toFixed(2)));
+
+            window.updatePartyBalance = function() {
+                if (!$pb.length || partyBalanceBefore === null) return;
+                const net  = parseFloat($('#headnet').val()) || 0;
+                const paid = parseFloat($('#paid').val()) || 0;
+                const after = partyBalanceBefore + (net - paid) * (parseInt($pb.data('effect'), 10) || 0);
+                $pb.text('قبل:' + fmtBal(partyBalanceBefore) + ' بعد:' + fmtBal(after));
+            };
+
+            function loadPartyBalance() {
+                const accId = parseInt($('#mySelectEmp').val(), 10) || 0;
+                partyBalanceBefore = null;
+                $pb.text('');
+                if (!accId) return;
+                const reqId = ++partyBalanceReq;
+                $.getJSON('ajax/account_balance.php', { id: accId, exclude_op: $pb.data('exclude-op') || 0 })
+                    .done(function(res) {
+                        if (reqId !== partyBalanceReq || !res || !res.success) return;
+                        partyBalanceBefore = res.balance * (parseInt($pb.data('sign'), 10) || 1);
+                        window.updatePartyBalance();
+                    });
+            }
+
+            $('#mySelectEmp').on('change', loadPartyBalance);
+            $(document).on('input change', '#paid, #headnet', function() { setTimeout(window.updatePartyBalance, 0); });
+            loadPartyBalance();
+
             saveAccountInline(null, 'saveSupplierInlineBtn', 'addSupplierInlineMsg', '#addSupplierInlineModal');
             saveAccountInline(null, 'saveClientInlineBtn',   'addClientInlineMsg',   '#addClientInlineModal');
 
@@ -350,6 +394,23 @@ class InvoiceHeader extends InvoiceElementBase
     }
 
     /**
+     * أثر الفاتورة على رصيد الطرف: الفاتورة تزوّد المستحق، المردود ينقصه، الأوامر والعروض لا تؤثر
+     */
+    private function getBalanceEffect()
+    {
+        switch ((int) $this->invoiceType) {
+            case 3:
+            case 4:
+                return 1;
+            case 10:
+            case 11:
+                return -1;
+            default:
+                return 0;
+        }
+    }
+
+    /**
      * عرض خيارات العملاء/الموردين
      */
     private function renderAccountOptions()
@@ -399,11 +460,14 @@ class InvoiceHeader extends InvoiceElementBase
     /**
      * عرض الفئات السعرية (قطاعي / جملة / السوق)
      */
-    private function renderPriceListOptions()
+    private function renderPriceListOptions($maxId = 0, $numbered = false)
     {
         $selectedId = 1;
         if ($this->isEditMode && $this->data && !empty($this->data['price_list'])) {
             $selectedId = (int) $this->data['price_list'];
+        }
+        if ($maxId > 0 && $selectedId > $maxId) {
+            $selectedId = 1;
         }
         $lists = $this->priceLists;
         if (!$lists) {
@@ -415,8 +479,15 @@ class InvoiceHeader extends InvoiceElementBase
         }
         foreach ($lists as $list) {
             $id = (int) $list['id'];
+            if ($maxId > 0 && $id > $maxId) {
+                continue;
+            }
             $selected = ($id === $selectedId) ? 'selected' : '';
-            echo "<option value='{$id}' {$selected}>{$this->sanitizeInput($list['pname'])}</option>";
+            $label = $this->sanitizeInput($list['pname']);
+            if ($numbered) {
+                $label = "سعر البيع {$id} - {$label}";
+            }
+            echo "<option value='{$id}' {$selected}>{$label}</option>";
         }
     }
 

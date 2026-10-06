@@ -41,7 +41,11 @@ class InvoiceDetails extends InvoiceElementBase
         try {
             $invoiceId = intval($this->data['id'] ?? 0);
             if ($invoiceId > 0) {
-                $query = "SELECT fd.*, mi.iname, mi.cost_price AS item_cost, mi.price1 AS item_price1 
+                $query = "SELECT fd.*, mi.iname, mi.cost_price AS item_cost,
+                                mi.price1 AS item_price1, mi.price2 AS item_price2, mi.price3 AS item_price3,
+                                (SELECT iu.price1 FROM item_units iu WHERE iu.item_id = fd.item_id AND ABS(iu.u_val - fd.u_val) < 0.0001 LIMIT 1) AS unit_price1,
+                                (SELECT iu.price2 FROM item_units iu WHERE iu.item_id = fd.item_id AND ABS(iu.u_val - fd.u_val) < 0.0001 LIMIT 1) AS unit_price2,
+                                (SELECT iu.price3 FROM item_units iu WHERE iu.item_id = fd.item_id AND ABS(iu.u_val - fd.u_val) < 0.0001 LIMIT 1) AS unit_price3
                          FROM fat_details fd 
                          JOIN myitems mi ON fd.item_id = mi.id 
                          WHERE fd.pro_id = ? AND fd.isdeleted = 0";
@@ -246,6 +250,14 @@ window.applyUnitItemInfo = function(data, unit) {
     var label = data.iname || '';
     if (data.barcode) label += (label ? ' — ' : '') + data.barcode;
     $('#selectedLineName').text(label);
+    var itemId = parseInt(data.id, 10);
+    if (itemId > 0) {
+        $('#selectedItemMovement').attr('href', 'item_summery.php?id=' + itemId);
+        $('#selectedItemEdit').attr('href', 'add_item.php?edit=' + itemId);
+        $('#selectedItemLinks').removeClass('d-none');
+    } else {
+        $('#selectedItemLinks').addClass('d-none');
+    }
     var factor = unit ? (parseFloat(unit.unit_value) || 1) : 1;
     var sell = unit ? parseFloat(unit.uprice1) : NaN;
     if (!(sell > 0)) sell = (parseFloat(data.price1) || 0) * factor;
@@ -763,7 +775,11 @@ $(document).ready(function() {
      */
     private function renderDetailRow($detail, $rowNumber)
     {
-        $quantity = ($detail['u_val'] > 0) ? abs($detail['qty_in'] - $detail['qty_out']) / $detail['u_val'] : abs($detail['qty_in'] - $detail['qty_out']);
+        $baseQty = abs($detail['qty_in'] - $detail['qty_out']);
+        if ($baseQty <= 0) {
+            $baseQty = abs((float) ($detail['doc_qty'] ?? 0));
+        }
+        $quantity = ($detail['u_val'] > 0) ? $baseQty / $detail['u_val'] : $baseQty;
         $price = $detail['price'] * ($detail['u_val'] > 0 ? $detail['u_val'] : 1);
         $showProfit = ((int) $this->invoiceType === 4);
         ?>
@@ -825,8 +841,19 @@ $(document).ready(function() {
 
             <?php if ($showProfit): ?>
             <?php
-            // الأساس = سعر الشراء (عمود السعر) | سعر البيع الافتراضي = price1 للصنف
-            $sellPrice = floatval($detail['item_price1'] ?? $price);
+            // الأساس = سعر الشراء (عمود السعر) | سعر البيع = سعر الفئة المختارة أعلى الفاتورة
+            $sellList = (int) ($this->data['price_list'] ?? 1);
+            if ($sellList < 1 || $sellList > 3) {
+                $sellList = 1;
+            }
+            $uValRow = ($detail['u_val'] > 0) ? (float) $detail['u_val'] : 1;
+            $sellPrice = floatval($detail['unit_price' . $sellList] ?? 0);
+            if ($sellPrice <= 0) {
+                $sellPrice = floatval($detail['item_price' . $sellList] ?? 0) * $uValRow;
+            }
+            if ($sellPrice <= 0) {
+                $sellPrice = $price;
+            }
             $profitPct = ($price > 0) ? round(($sellPrice - $price) / $price * 100, 1) : 0;
             ?>
             <!-- نسبة الربح -->
@@ -842,7 +869,7 @@ $(document).ready(function() {
                 <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm"
                        value="<?php echo $sellPrice; ?>"
                        style="width:90px;" step="0.001" onclick="sT(this)"
-                       title="سعر البيع - يُحفظ في سعر الصنف (price1)">
+                       title="سعر البيع - يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
             </td>
             <?php endif; ?>
 

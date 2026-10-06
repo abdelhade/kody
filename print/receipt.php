@@ -408,6 +408,9 @@ while ($rowdet = $resdet->fetch_assoc()) {
     if ($stock <= 0) {
         $stock = $useIn ? (float)$rowdet['qty_out'] : (float)$rowdet['qty_in'];
     }
+    if ($stock <= 0) {
+        $stock = (float)($rowdet['doc_qty'] ?? 0);
+    }
     $qty = $stock / $u;
     $linePrice = (float)$rowdet['price'] * $u;
     $iname = $rowitm['iname'] ?? '';

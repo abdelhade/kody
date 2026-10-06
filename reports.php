@@ -9,6 +9,8 @@ $reportGroups = [
         'icon' => 'fa-chart-bar',
         'items' => [
             ['href' => 'operations_summary.php?q=sale', 'icon' => 'fa-calendar-day', 'title' => 'المبيعات اليومية'],
+            ['href' => 'operations_summary.php?q=sales_order', 'icon' => 'fa-clipboard-list', 'title' => 'أوامر البيع'],
+            ['href' => 'operations_summary.php?q=price_offer', 'icon' => 'fa-file-signature', 'title' => 'عروض الأسعار'],
             ['href' => 'items_summery.php', 'icon' => 'fa-boxes', 'title' => $lang_sales_items_report ?? 'المبيعات أصناف'],
             ['href' => 'sales-by-group.php', 'icon' => 'fa-layer-group', 'title' => 'المبيعات مجموعات'],
             ['href' => 'sales-by-hour.php', 'icon' => 'fa-clock', 'title' => 'المبيعات بالساعة'],

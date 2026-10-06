@@ -214,6 +214,12 @@ if($tybe == 4){
     echo "فاتورة مشتريات";
 } elseif($tybe == 3 || $tybe == 9){
     echo "فاتورة مبيعات";
+} elseif($tybe == 12){
+    echo "أمر شراء";
+} elseif($tybe == 13){
+    echo "أمر بيع";
+} elseif($tybe == 14){
+    echo "عرض سعر";
 } else {
     echo "فاتورة";
 }
@@ -299,6 +305,8 @@ if ($driver_name !== '') {
             $qty = $rowdet['qty_in'] / $rowdet['u_val'];
         } elseif($tybe == 3 || $tybe == 9 || $tybe == 11){
             $qty = $rowdet['qty_out'] / $rowdet['u_val'];
+        } elseif(in_array((int) $tybe, [12, 13, 14], true)){
+            $qty = (float) ($rowdet['doc_qty'] ?? 0) / $rowdet['u_val'];
         } else {
             $qty = 0;
         } 

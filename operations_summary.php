@@ -105,11 +105,24 @@ switch ($q) {
         $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
         break;
+    case "sales_order":
+        $report_name = "أوامر البيع";
+        $where_clause = "ot.pro_tybe = 13 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        break;
+    case "price_offer":
+        $report_name = "عروض الأسعار";
+        $where_clause = "ot.pro_tybe = 14 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        break;
     default:
         $report_name = "التقرير الشامل";
         $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
 }
+$is_sales_order_report = in_array($q, ['sales_order', 'price_offer'], true);
+$order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
+$order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
 ?>
 
 
@@ -259,13 +272,14 @@ switch ($q) {
                                     $proid = $rowop['id'];
                                     $tybe = $rowop['pro_tybe'];
                                     $is_return = ($tybe == 10);
+                                    $is_sales_order = in_array((int) $tybe, [13, 14], true);
                                     ?>
                                     <tr class="<?= $is_return ? 'table-danger' : '' ?>">
                                         <td><?= $x ?></td>
                                         <td><?= $rowop['crtime'] ?></td>
                                         <td>
                                             <?php
-                                            $use_a4 = in_array((int) $tybe, [2, 3, 4], true);
+                                            $use_a4 = in_array((int) $tybe, [2, 3, 4, 13, 14], true);
                                             $a4_href = 'print/print_sales.php?id=' . (int) $proid;
                                             $cashier_href = 'print/receipt.php?id=' . (int) $proid . '&src=invoice';
                                             $print_href = $use_a4 ? $a4_href : ('print/receipt.php?id=' . (int) $proid);
@@ -280,11 +294,16 @@ switch ($q) {
                                         <td>
                                             <?php 
                                             $invoice_id = intval($rowop['id']);
-                                            $paid_query = $conn->query("SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = $invoice_id AND isdeleted != 1");
-                                            $paid_amount = ($paid_query && $row_paid = $paid_query->fetch_assoc()) ? ($row_paid['paid'] ?? 0) : 0;
+                                            $paid_amount = 0;
+                                            if (!$is_sales_order) {
+                                                $paid_query = $conn->query("SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = $invoice_id AND isdeleted != 1");
+                                                $paid_amount = ($paid_query && $row_paid = $paid_query->fetch_assoc()) ? ($row_paid['paid'] ?? 0) : 0;
+                                            }
                                             
-                                            if ($paid_amount < $rowop['fat_net']): 
+                                            if ($is_sales_order):
                                             ?>
+                                                <span class="text-muted">—</span>
+                                            <?php elseif ($paid_amount < $rowop['fat_net']): ?>
                                                 <span class="badge badge-warning">أجل</span>
                                             <?php else: ?>
                                                 <span class="badge badge-success">نقدي</span>
@@ -295,12 +314,16 @@ switch ($q) {
                                             <?= $rowop['fat_net'] ?>
                                         </td>
                                         <td class="paid-amount">
+                                            <?php if ($is_sales_order): ?>
+                                                <span class="text-muted">—</span>
+                                            <?php else: ?>
                                             <?= number_format($paid_amount, 2, '.', '') ?>
                                             <?php 
                                             $remaining = $rowop['fat_net'] - $paid_amount;
                                             if ($remaining > 0): 
                                             ?>
                                                 <small class="d-block text-muted" style="font-size: 0.65rem;">(أجل: <?= number_format($remaining, 2, '.', '') ?>)</small>
+                                            <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
                                         <td><?= !empty($rowop['acc1']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc1']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
@@ -315,10 +338,9 @@ switch ($q) {
                                             <a href="inv_operations.php?h=<?= md5($proid) ?>&q=<?= $proid ?>&t=<?= md5($tybe) ?>">
                                                 <i class="fa fa-barcode"></i>
                                             </a>
-                                            <?php $proid = $rowop['id']?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4])) { // مبيعات، مشتريات فقط (الكاشير tybe=9 ليس له صفحة تعديل) ?>
+                                            <?php if(in_array($tybe, [3, 4, 13, 14])) { // مبيعات، مشتريات، أمر بيع، عرض سعر (الكاشير tybe=9 ليس له صفحة تعديل) ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>
@@ -418,7 +440,22 @@ switch ($q) {
                                 ?>
                             </tbody>
                         </table>
-                        <?php if($q !== 'purchase' && $q !== 'sale_legacy'): ?>
+                        <?php if($is_sales_order_report): ?>
+                        <div class="d-flex flex-wrap mt-3 summary-cards" style="gap: 8px;">
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#6f42c1; min-width:130px;">
+                                <small class="d-block"><?= $order_doc_count_label ?></small>
+                                <strong id="so_count_val" style="font-size:1.15rem;">0</strong>
+                            </div>
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#17a2b8; min-width:130px;">
+                                <small class="d-block"><?= $order_doc_total_label ?></small>
+                                <strong id="so_total_val" style="font-size:1.15rem;">0.00</strong>
+                            </div>
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#28a745; min-width:130px;">
+                                <small class="d-block">الإجمالي بعد الخصم</small>
+                                <strong id="so_fatnet_val" style="font-size:1.15rem;">0.00</strong>
+                            </div>
+                        </div>
+                        <?php elseif($q !== 'purchase' && $q !== 'sale_legacy'): ?>
                         <div class="d-flex flex-wrap mt-3 summary-cards" style="gap: 8px;">
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#17a2b8; min-width:130px;">
                                 <small class="d-block">إجمالي المبيعات</small>
@@ -632,6 +669,11 @@ switch ($q) {
             setVal("net_after_returns", net_after_returns);
             setVal("net_sales_val", net);
             setVal("total_profit_val", profit);
+
+            setVal("so_total_val", sales);
+            setVal("so_fatnet_val", fatnet_sales);
+            const soCountEl = document.getElementById("so_count_val");
+            if (soCountEl) soCountEl.textContent = visibleRows.length;
         }
 
         // Initial calculation
@@ -886,6 +928,22 @@ function printBrutal() {
         </tbody>
     </table>
     
+    <?php if ($is_sales_order_report): ?>
+    <div style="margin-top: 30px;">
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;"><?= $order_doc_count_label ?></div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_so_count">0</div>
+        </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;"><?= $order_doc_total_label ?></div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_so_total">0.00</div>
+        </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">الإجمالي بعد الخصم</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_so_fatnet">0.00</div>
+        </div>
+    </div>
+    <?php else: ?>
     <div style="margin-top: 30px;">
         <div class="brutal-summary-box">
             <div style="font-size: 12px;">إجمالي المبيعات</div>
@@ -904,16 +962,25 @@ function printBrutal() {
             <div style="font-size: 24px; font-weight: 900;" id="brutal_profit">0.00</div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <script>
 // Update brutal summary values when page loads
 $(document).ready(function() {
     setTimeout(function() {
-        document.getElementById('brutal_sales').textContent = document.getElementById('total_sales_val')?.textContent || '0.00';
-        document.getElementById('brutal_returns').textContent = document.getElementById('total_returns_val')?.textContent || '0.00';
-        document.getElementById('brutal_net').textContent = document.getElementById('net_sales_val')?.textContent || '0.00';
-        document.getElementById('brutal_profit').textContent = document.getElementById('total_profit_val')?.textContent || '0.00';
+        var copyVal = function (targetId, sourceId, fallback) {
+            var target = document.getElementById(targetId);
+            if (!target) return;
+            target.textContent = document.getElementById(sourceId)?.textContent || fallback;
+        };
+        copyVal('brutal_sales', 'total_sales_val', '0.00');
+        copyVal('brutal_returns', 'total_returns_val', '0.00');
+        copyVal('brutal_net', 'net_sales_val', '0.00');
+        copyVal('brutal_profit', 'total_profit_val', '0.00');
+        copyVal('brutal_so_count', 'so_count_val', '0');
+        copyVal('brutal_so_total', 'so_total_val', '0.00');
+        copyVal('brutal_so_fatnet', 'so_fatnet_val', '0.00');
     }, 1000);
 });
 </script>

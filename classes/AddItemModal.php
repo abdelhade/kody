@@ -421,6 +421,37 @@ class AddItemModal extends InvoiceElementBase
                 e.preventDefault();
             });
 
+            function onItemSaved(res) {
+                focusSearchAfterClose = true;
+                try {
+                    prepareFreshItem();
+                } catch (err) {
+                    console.error('reset add-item form failed:', err);
+                }
+                try {
+                    $modal.modal('hide');
+                } catch (err) {
+                    console.error('hide add-item modal failed:', err);
+                }
+                try {
+                    if (typeof window.selectInvoiceItem === 'function') {
+                        window.selectInvoiceItem({
+                            id: res.id,
+                            name: res.iname,
+                            price: res.price || 0,
+                            barcode: res.barcode || ''
+                        }, { noFocus: true });
+                    } else {
+                        $('#itemSearchInput').val(res.iname);
+                        $('#selectedItemId').val(res.id);
+                        $('#itmprice').val(res.price || 0);
+                        $('#addRow').click();
+                    }
+                } catch (err) {
+                    console.error('add saved item to invoice failed:', err);
+                }
+            }
+
             $('#invoiceAddItemForm').on('submit', function(e) {
                 e.preventDefault();
                 $('#invSaveItemBtn').trigger('click');
@@ -455,30 +486,23 @@ class AddItemModal extends InvoiceElementBase
                 }
                 $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحفظ...');
                 fetch('do/doadd_item.php', { method: 'POST', body: new FormData(form) })
-                    .then(function(r) { return r.json(); })
-                    .then(function(res) {
-                        if (!res || !res.success) {
-                            showMsg('<div class="alert alert-danger py-1 mb-1">' + ((res && res.error) || 'حدث خطأ') + '</div>');
+                    .then(function(r) { return r.text(); })
+                    .then(function(text) {
+                        var res = null;
+                        var start = text.indexOf('{');
+                        try {
+                            res = JSON.parse(start >= 0 ? text.slice(start) : text);
+                        } catch (err) {
+                            console.error('doadd_item response:', text);
+                            showMsg('<div class="alert alert-danger py-1 mb-1">رد غير صالح من الخادم</div>');
                             return;
                         }
-                        focusSearchAfterClose = true;
-                        if (typeof window.selectInvoiceItem === 'function') {
-                            window.selectInvoiceItem({
-                                id: res.id,
-                                name: res.iname,
-                                price: res.price || 0,
-                                barcode: res.barcode || ''
-                            }, { noFocus: true });
-                        } else {
-                            $('#itemSearchInput').val(res.iname);
-                            $('#selectedItemId').val(res.id);
-                            $('#itmprice').val(res.price || 0);
-                            $('#addRow').click();
+                        if (!res || !res.success) {
+                            showMsg('<div class="alert alert-danger py-1 mb-1">' + ((res && (res.error === 'database_error' ? res.message : res.error)) || 'حدث خطأ') + '</div>');
+                            return;
                         }
-                        prepareFreshItem();
-                        $modal.modal('hide');
-                    })
-                    .catch(function() {
+                        onItemSaved(res);
+                    }, function() {
                         showMsg('<div class="alert alert-danger py-1 mb-1">خطأ في الاتصال</div>');
                     })
                     .finally(function() {
