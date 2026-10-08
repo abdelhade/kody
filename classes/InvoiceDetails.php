@@ -804,7 +804,7 @@ $(document).ready(function() {
             
             <!-- الكمية -->
             <td>
-                <input value="<?php echo floatval($quantity); ?>" type="number" 
+                <input value="<?php echo floatval($quantity); ?>" type="number" step="any"
                        name="itmqty[]" onclick="sT(this)" 
                        class="itmqty form-control form-control-sm" style="width:90px;">
             </td>
@@ -998,7 +998,7 @@ $(document).ready(function() {
                             <!-- الكمية -->
                             <td>
                                 <input type="number" hidden>
-                                <input id="itmqty" value="1" type="number"
+                                <input id="itmqty" value="1" type="number" step="any"
                                        onclick="sT(this)" class="itmqty form-control form-control-sm nozero" 
                                        style="width:90px;">
                             </td>

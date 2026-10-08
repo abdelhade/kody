@@ -59,7 +59,7 @@
 
               <!-- الكمية -->
               <td>
-              <input id="itmqty" value="<?php echo abs($rowdet['qty_in'] - $rowdet['qty_out']) / $rowdet['u_val']; ?>" type="number" name="itmqty[]" onclick="sT(this)" class="itmqty form-control form-control-sm" style="width:90px;">
+              <input id="itmqty" value="<?php echo abs($rowdet['qty_in'] - $rowdet['qty_out']) / $rowdet['u_val']; ?>" type="number" step="any" name="itmqty[]" onclick="sT(this)" class="itmqty form-control form-control-sm" style="width:90px;">
               </td>
 
 

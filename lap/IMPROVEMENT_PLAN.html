@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خطة تحسين الإعدادات والمستخدمين والواجهة (Kody)</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-soft: #eff6ff;
+    --code-bg: #f1f5f9;
+    --code-text: #be185d;
+    --urgent: #dc2626;
+    --high: #ea580c;
+    --medium: #ca8a04;
+    --ongoing: #059669;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, "Cairo", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+  }
+  .layout { display: flex; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 24px; }
+  nav.toc {
+    position: sticky; top: 24px; align-self: flex-start;
+    width: 260px; flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px;
+  }
+  nav.toc h3 { margin: 0 0 8px; font-size: 15px; color: var(--muted); }
+  nav.toc a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 14px; }
+  nav.toc a:hover { background: var(--primary-soft); color: var(--primary); }
+  main { flex: 1; min-width: 0; }
+  header.hero {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff; border-radius: var(--radius); padding: 28px 32px; margin-bottom: 24px;
+  }
+  header.hero h1 { margin: 0 0 10px; font-size: 26px; }
+  header.hero p { margin: 4px 0; opacity: .92; }
+  header.hero code { background: rgba(255,255,255,.18); color: #fff; }
+  section.card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px 28px; margin-bottom: 24px; scroll-margin-top: 24px;
+  }
+  section.card > h2 {
+    margin: 0 0 16px; font-size: 21px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 2px solid var(--primary-soft); padding-bottom: 10px;
+  }
+  .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-size: 16px; font-weight: bold;
+  }
+  h3 { font-size: 17px; margin: 22px 0 10px; color: #1e40af; }
+  code {
+    font-family: Consolas, "Courier New", monospace; font-size: .88em;
+    background: var(--code-bg); color: var(--code-text);
+    padding: 1px 6px; border-radius: 5px; direction: ltr; unicode-bidi: embed;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: right; vertical-align: top; }
+  th { background: #f8fafc; font-weight: 600; }
+  tr:hover td { background: #fafbff; }
+  td.center, th.center { text-align: center; }
+  .badge { display: inline-block; padding: 2px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #fff; }
+  .b-urgent { background: var(--urgent); }
+  .b-high { background: var(--high); }
+  .b-medium { background: var(--medium); }
+  .b-ongoing { background: var(--ongoing); }
+  ul, ol { padding-right: 22px; margin: 8px 0; }
+  li { margin-bottom: 8px; }
+  li ul { margin-top: 6px; }
+  .db {
+    margin-top: 6px; padding: 6px 12px; background: #fefce8; border-right: 4px solid #eab308;
+    border-radius: 6px; font-size: 14px;
+  }
+  .db strong { color: #854d0e; }
+  .note { color: var(--muted); font-style: italic; }
+  .problems li::marker { color: var(--urgent); }
+  .checklist li { list-style: none; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; right: -22px; color: var(--ongoing); }
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; padding: 12px; }
+    nav.toc { position: static; width: 100%; }
+    section.card { padding: 18px; }
+    table { display: block; overflow-x: auto; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    body { background: #fff; }
+    section.card { break-inside: avoid-page; border: none; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="toc">
+    <h3>المحتويات</h3>
+    <a href="#order">ترتيب التنفيذ</a>
+    <a href="#phase0">المرحلة 0 — أمان عاجل</a>
+    <a href="#phase1">المرحلة 1 — الإعدادات</a>
+    <a href="#phase2">المرحلة 2 — المستخدمين والأدوار</a>
+    <a href="#phase3">المرحلة 3 — الواجهة (UI)</a>
+    <a href="#phase4">المرحلة 4 — الاختبار والتسليم</a>
+    <a href="#db">ملفات DB الجديدة</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <h1>خطة تحسين الإعدادات والمستخدمين والواجهة (Kody)</h1>
+      <p>مرجع تنفيذي للنظام الحالي (<code>kody</code> PHP) — production.</p>
+      <p>كل مرحلة تتسلّم لوحدها، وكل تعديل على الداتابيز يكون ملف <code>update/0NN_*.sql</code> ويتطبّق من <code>run_db_update.php</code> / زر التحديث في الإعدادات.</p>
+      <p>آخر ملف موجود حالياً: <code>021</code> ← أول ملف جديد في الخطة دي هو <code>022</code>.</p>
+    </header>
+
+    <!-- ترتيب التنفيذ -->
+    <section class="card" id="order">
+      <h2>ترتيب التنفيذ</h2>
+      <table>
+        <thead>
+          <tr><th class="center">#</th><th>المرحلة</th><th class="center">الأولوية</th><th class="center">الحجم</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="center">0</td><td><a href="#phase0">سد ثغرات الأمان في المستخدمين والإعدادات</a></td><td class="center"><span class="badge b-urgent">عاجل</span></td><td class="center">صغير</td></tr>
+          <tr><td class="center">1</td><td><a href="#phase1">الإعدادات (Backend + UX)</a></td><td class="center"><span class="badge b-high">عالي</span></td><td class="center">متوسط</td></tr>
+          <tr><td class="center">2</td><td><a href="#phase2">المستخدمين والأدوار</a></td><td class="center"><span class="badge b-high">عالي</span></td><td class="center">كبير</td></tr>
+          <tr><td class="center">3</td><td><a href="#phase3">الواجهة (UI موحّد + أداء)</a></td><td class="center"><span class="badge b-medium">متوسط</span></td><td class="center">كبير</td></tr>
+          <tr><td class="center">4</td><td><a href="#phase4">الاختبار والتسليم</a></td><td class="center"><span class="badge b-ongoing">مستمر</span></td><td class="center">—</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- المرحلة 0 -->
+    <section class="card" id="phase0">
+      <h2><span class="num">0</span> المرحلة 0 — أمان عاجل</h2>
+
+      <h3>ما تم رصده</h3>
+      <table>
+        <thead><tr><th>الملف</th><th>المشكلة</th></tr></thead>
+        <tbody>
+          <tr><td><code>do/*.php</code> (165 ملف)</td><td>ملفين بس بيتحققوا من <code>$role</code>. أي مستخدم مسجّل دخول يقدر يحذف/يعدّل أي حاجة بفتح اللينك مباشرة</td></tr>
+          <tr><td><code>do/do_deluser.php</code></td><td>حذف نهائي بـ GET، <code>$_GET['id']</code> داخل SQL مباشرة (SQL Injection)، بدون صلاحية، وممكن يحذف نفسه أو آخر أدمن</td></tr>
+          <tr><td><code>edit_user.php</code></td><td><code>$id = $_GET['id']</code> داخل SQL مباشرة، و<code>uname</code> بيتطبع بدون escape (XSS)</td></tr>
+          <tr><td><code>do/doedit_user.php</code></td><td>بدون صلاحية؛ أي مستخدم يقدر يغيّر <code>userrole</code> لنفسه (رفع صلاحيات). الباسورد بيتخزن <code>md5</code></td></tr>
+          <tr><td><code>edit_role.php</code></td><td>"الحماية" بـ <code>md5(id)</code> في اللينك مش حماية؛ مفيش فحص صلاحية</td></tr>
+          <tr><td><code>setting.php</code></td><td>كلمة سر ثابتة في الكود <code>hadi@1234</code> وبدون فحص صلاحية</td></tr>
+          <tr><td><code>do/doedit_settings.php</code></td><td>مفيش فحص صلاحية خالص (أي مستخدم يعمل POST)، وبيكتب كل الـ POST في <code>error_log</code> بما فيه <code>edit_pass</code></td></tr>
+          <tr><td><code>users.php</code></td><td>بيعرض المستخدمين المحذوفين (<code>isdeleted</code>)</td></tr>
+          <tr><td>جذر المشروع</td><td>سكربتات debug/fix مكشوفة: <code>fix_passwords.php</code>, <code>debug_*.php</code>, <code>check_*.php</code>, <code>alter_db.php</code>, <code>delete_fix_file.php</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>التنفيذ</h3>
+      <ol>
+        <li>ملف جديد <code>includes/auth.php</code>:
+          <ul>
+            <li><code>kody_require_login()</code></li>
+            <li><code>kody_can(string $perm): bool</code> — يقرا من <code>$role</code></li>
+            <li><code>kody_require_perm(string $perm)</code> — يرجّع 403 (JSON لو ajax، صفحة لو عادي)</li>
+            <li><code>kody_csrf_token()</code> / <code>kody_csrf_check()</code></li>
+          </ul>
+        </li>
+        <li>تطبيقه فوراً على: <code>do_deluser</code>, <code>doadd_user</code>, <code>doedit_user</code>, <code>doedit_userprev</code>, <code>dochange_password</code>, <code>doadd_role</code>, <code>doedit_role</code>, <code>dodel_role</code>, <code>doedit_settings</code>، و<code>ajax/</code> الخاصة بالداتابيز (<code>db_setup</code>, <code>run_migrations</code>, <code>period_ops</code>, <code>git_pull</code>, <code>save_license</code>).</li>
+        <li>حذف المستخدم: POST + CSRF + صلاحية <code>delete_users</code> + soft delete (<code>isdeleted = 1</code>) + منع حذف النفس وآخر مستخدم عنده <code>show_users</code>.</li>
+        <li>كل <code>$_GET['id']</code> في ملفات المستخدمين والأدوار ← <code>(int)</code> أو prepared statement، وكل طباعة ← <code>htmlspecialchars</code>.</li>
+        <li>تغيير <code>userrole</code> مسموح بس لمن عنده <code>edit_users</code>، والمستخدم ميقدرش يغيّر دوره بنفسه.</li>
+        <li>الإعدادات: صلاحية جديدة <code>manage_settings</code> بدل كلمة السر الثابتة (مع إعادة إدخال باسورد المستخدم نفسه اختيارياً للعمليات الخطرة).</li>
+        <li>شيل <code>error_log(print_r($_POST))</code> من <code>doedit_settings.php</code>.</li>
+        <li>منع سكربتات debug/fix من <code>.htaccess</code> أو نقلها خارج الـ webroot.</li>
+      </ol>
+      <div class="db"><strong>DB:</strong> <code>022_usr_pwrs_manage_settings.sql</code> — إضافة <code>manage_settings</code> و<code>manage_system</code> لـ <code>usr_pwrs</code> (default 0، و1 للدور رقم 1).</div>
+    </section>
+
+    <!-- المرحلة 1 -->
+    <section class="card" id="phase1">
+      <h2><span class="num">1</span> المرحلة 1 — الإعدادات</h2>
+
+      <h3>مشاكل موجودة</h3>
+      <ul class="problems">
+        <li><strong>السمة (Theme) مش شغالة:</strong> <code>setting.php</code> بيحفظ <code>solarized_white / monokai / tokyo_night</code>، لكن <code>includes/header.php</code> بيتوقع لون hex فبيرجع للافتراضي دايماً، و<code>dist/css/themes.css</code> مش متضمّن في أي صفحة.</li>
+        <li><strong><code>ALTER TABLE</code> وقت التشغيل:</strong> <code>includes/connect.php</code> بيعمل ~7 استعلامات <code>SHOW COLUMNS</code> مع <strong>كل طلب</strong> لكل صفحة، و<code>doedit_settings.php</code> بيعمل <code>ALTER</code> وقت الحفظ. ده مخالف لقاعدة "مصدر واحد للتحديث" وبيبطّأ النظام.</li>
+        <li>الحفظ كله في <code>UPDATE</code> واحد بـ 31 باراميتر و<code>bind_param</code> نصّي طويل — أي عمود جديد بيكسره بسهولة.</li>
+        <li>بعد الحفظ بيحوّل للـ dashboard بدل ما يرجع لنفس التبويب. الأخطاء بتطلع بـ <code>die()</code> صفحة بيضا.</li>
+        <li>ظهور القوائم بيتكتب كأرقام 0/1 بدل مفاتيح تشغيل.</li>
+        <li>حسابات POS الافتراضية (عميل/مخزن/موظف/صندوق) بتتكتب ID رقمي يدوي.</li>
+        <li>رفع اللوجو بيقبل SVG (ممكن يحمل JavaScript) والامتداد بيتاخد من اسم الملف.</li>
+        <li>لغات الواجهة 9 في القائمة، والشغل الفعلي عربي بس.</li>
+      </ul>
+
+      <h3>التنفيذ</h3>
+      <ol>
+        <li><strong>نقل كل الـ ALTER</strong> من <code>connect.php</code> و<code>doedit_settings.php</code> لملف migration، وحذف الفحوصات من وقت التشغيل.
+          <div class="db"><strong>DB:</strong> <code>023_settings_usr_pwrs_runtime_columns.sql</code> (بـ <code>ADD COLUMN IF NOT EXISTS</code> لنفس الأعمدة: <code>showpulse</code>، العمولات، الطباعة، <code>company_logo</code>, <code>receipt_header_text/notes</code>, <code>sid_visits</code>, <code>show_main_hr</code>، التوصيل، <code>sid_cards</code>, <code>edit_user_passwords</code>, <code>prevent_negative_stock</code>, <code>acc_head.price_list</code>).</div>
+        </li>
+        <li><strong><code>includes/Settings.php</code>:</strong> <code>Settings::get($key)</code> / <code>Settings::save(array $data)</code> بقائمة أعمدة مسموحة + نوع كل عمود + validation، والـ UPDATE يتبني ديناميكياً.</li>
+        <li><strong>حفظ لكل تبويب</strong> (الشركة / POS / الطباعة / ...) بدل فورم واحد ضخم، والرجوع لـ <code>setting.php#tab-xxx</code> مع رسالة نجاح/خطأ (Toast).</li>
+        <li><strong>إصلاح السمة:</strong> <code>body</code> ياخد class <code>theme-{bodycolor}</code> وضم <code>themes.css</code> في <code>header.php</code>، وتحويل ألوان الواجهة لـ CSS variables عشان الثيمات الداكنة تشتغل فعلاً.</li>
+        <li>ظهور القوائم ← <code>custom-switch</code>.</li>
+        <li>حسابات POS الافتراضية ← <code>select2</code> من <code>acc_head</code> / المخازن / الموظفين مع البحث.</li>
+        <li>اللوجو: منع SVG، التحقق بالـ MIME، حد أقصى 2MB، وحذف اللوجو القديم.</li>
+        <li><strong>سجل تغييرات الإعدادات:</strong> مين غيّر إيه وإمتى، يظهر في تبويب "السجل".
+          <div class="db"><strong>DB:</strong> <code>024_settings_audit.sql</code> — جدول <code>settings_audit (id, user_id, field, old_value, new_value, created_at)</code>.</div>
+        </li>
+        <li>فصل العمليات الخطرة (قاعدة البيانات / المدد / Git / الترخيص) في صفحة <strong>"النظام"</strong> بصلاحية <code>manage_system</code>، والإعدادات العادية تفضل لـ <code>manage_settings</code>.</li>
+        <li>استبدال <code>alert/confirm/prompt</code> في الصفحة بـ SweetAlert2 (موجود بالفعل في المشروع).</li>
+        <li>بحث سريع داخل الإعدادات (فلترة الحقول بالاسم).</li>
+      </ol>
+    </section>
+
+    <!-- المرحلة 2 -->
+    <section class="card" id="phase2">
+      <h2><span class="num">2</span> المرحلة 2 — المستخدمين والأدوار</h2>
+
+      <h3>مشاكل موجودة</h3>
+      <ul class="problems">
+        <li><code>usr_pwrs</code> جدول عريض (~190 عمود)، و<code>edit_role.php</code> (579 سطر) مكتوب صف صف يدوي، وأي صلاحية جديدة محتاجة تعديل في 3 أماكن على الأقل.</li>
+        <li>الدور بيتقرا من <code>$_SESSION['usrole']</code> اللي بيتحط وقت الدخول بس ← تغيير دور مستخدم أو تعطيله مش بيسري غير لما يعمل logout.</li>
+        <li><code>doadd_user</code> / <code>doedit_user</code> / <code>update_waiter_barcode</code> بيخزنوا <code>md5</code>، و<code>index.php</code> بيحوّلها لـ <code>password_hash</code> عند الدخول بس.</li>
+        <li>الويتر بيستخدم حقل الباسورد كباركود.</li>
+        <li>"تذكرني" في صفحة الدخول مش بتعمل حاجة، ومفيش حد لمحاولات الدخول الفاشلة.</li>
+        <li>القيم الافتراضية للمستخدم (<code>def_client/def_fund/def_store/def_emp</code>) موجودة في الجدول وبيستخدمها <code>getUserDefault()</code>، ومحتاجة واجهة واضحة.</li>
+        <li><code>add_user.php</code> و<code>edit_user.php</code> فورمين منفصلين بنفس الحقول تقريباً.</li>
+      </ul>
+
+      <h3>التنفيذ</h3>
+      <ol>
+        <li><strong>سجل الصلاحيات</strong> <code>includes/permissions_map.php</code>: مصفوفة واحدة فيها كل موديول (اسم عربي، أيقونة، أعمدة show/add/edit/delete/fav)، وتبقى المصدر الوحيد لـ:
+          <ul>
+            <li>توليد شاشة تعديل الدور تلقائياً (<code>edit_role.php</code> من 579 سطر لحوالي 100).</li>
+            <li>حفظ الدور في <code>doedit_role.php</code> بلوب واحدة على الأعمدة المسموحة.</li>
+            <li>فلترة الشريط الجانبي.</li>
+          </ul>
+          <p class="note">نفضل على الجدول العريض نفسه (نفس الجدول اللي Laravel بيقرا منه) — بدون إعادة تصميم للسكيمة.</p>
+        </li>
+        <li>شاشة الأدوار: عدد المستخدمين لكل دور، <strong>نسخ دور</strong>، منع حذف دور عليه مستخدمين، "تحديد الكل" لكل موديول ولكل عمود.</li>
+        <li><strong>تحميل الدور من <code>users.userrole</code> في كل طلب</strong> (داخل <code>header.php</code> اللي بيجيب المستخدم أصلاً) + logout تلقائي لو المستخدم اتعطّل.</li>
+        <li><strong>الباسورد:</strong> <code>password_hash</code> في كل مسارات الحفظ، وحد أدنى للطول، وزر "إعادة تعيين" للأدمن.</li>
+        <li><strong>باركود الويتر في عمود مستقل</strong> وفريد بدل حقل الباسورد.
+          <div class="db"><strong>DB:</strong> <code>025_users_waiter_code_status.sql</code> — <code>waiter_code VARCHAR(64) NULL UNIQUE</code>, <code>is_active TINYINT(1) DEFAULT 1</code>, <code>last_login_at DATETIME NULL</code>, <code>failed_logins INT DEFAULT 0</code>, <code>locked_until DATETIME NULL</code>.</div>
+          <p class="note">(نقل الباركودات الحالية محتاج سكربت تحويل لمرة واحدة، لأن القيم المخزنة حالياً hash مش نص صريح — يتقرر بعد مراجعة <code>includes/waiter_auth.php</code>.)</p>
+        </li>
+        <li><strong>قائمة المستخدمين:</strong> DataTables (بحث/فرز)، عمود الدور بالاسم، الحالة (نشط/معطّل)، آخر دخول، فلتر حسب الدور، وأزرار: تعديل / تعطيل / تفعيل / إعادة تعيين باسورد / باركود الويتر.</li>
+        <li><strong>فورم موحّد</strong> <code>user_form.php</code> للإضافة والتعديل، فيه تبويب "الافتراضيات" (العميل/الصندوق/المخزن/الموظف بـ select2).</li>
+        <li><strong>صفحة الدخول:</strong> قفل مؤقت بعد 5 محاولات فاشلة، تفعيل "تذكرني" بتوكن آمن أو إزالته، وخيار في الإعدادات لإخفاء قائمة أسماء المستخدمين.</li>
+        <li><strong>سجل نشاط المستخدمين:</strong> دخول/خروج/تغيير دور/تغيير باسورد.
+          <div class="db"><strong>DB:</strong> <code>026_user_activity_log.sql</code>.</div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- المرحلة 3 -->
+    <section class="card" id="phase3">
+      <h2><span class="num">3</span> المرحلة 3 — الواجهة (UI)</h2>
+
+      <h3>مشاكل موجودة</h3>
+      <ul class="problems">
+        <li><code>includes/header.php</code> بيحمّل في كل صفحة: AdminLTE + Bootstrap 4.2 + <code>tailwind.js</code> (365KB بيشتغل في المتصفح وقت التشغيل) + animate.css + ~15 plugin، حتى لو الصفحة مش محتاجاهم.</li>
+        <li>ملفات مكررة: <code>bootstrap4.2.min.css</code> و<code>bootstrap-rtl.min.css</code> نفس الحجم بالظبط، و<code>bootstrap.min.css</code> كمان.</li>
+        <li>كل صفحة فيها <code>&lt;style&gt;</code> خاص بيها (<code>users.php</code> حوالي 280 سطر CSS، <code>edit_user.php</code> حوالي 180) بأسماء classes مختلفة لنفس المكونات.</li>
+        <li><code>!important</code> عام في <code>header.php</code> (<code>.nav-link { color:#000 !important }</code>، override كامل لـ FontAwesome) بيكسر الثيمات الداكنة.</li>
+        <li><code>includes/sidebar.php</code> حوالي 1489 سطر HTML يدوي.</li>
+        <li>ترتيب الـ includes مش ثابت (<code>edit_role.php</code> بيضم sidebar قبل navbar، و<code>edit_user.php</code> بيضم <code>connect.php</code> مرتين).</li>
+        <li>الرسائل خليط من <code>alert()</code> و<code>die()</code> وSweetAlert.</li>
+      </ul>
+
+      <h3>التنفيذ</h3>
+      <ol>
+        <li><strong>Design tokens:</strong> ملف <code>assets/styles/kody-ui.css</code> فيه CSS variables (ألوان، مسافات، radius، ظلال، خط) + المكونات المشتركة: <code>page-header</code>, <code>k-card</code>, <code>k-table</code>, <code>k-form</code>, <code>k-btn</code>, <code>empty-state</code>, <code>badge</code>. الثيمات تبدّل الـ variables بس.</li>
+        <li><strong>Helpers للصفحة:</strong> <code>kody_page_header($title, $icon, $breadcrumbs, $actions)</code> و<code>kody_flash()</code> (Toast موحّد بـ SweetAlert2) و<code>kody_confirm()</code> في JS بدل <code>confirm()</code>.</li>
+        <li><strong>تنظيف <code>header.php</code>:</strong> شيل <code>tailwind.js</code> (أو استبداله بملف CSS مبني مسبقاً للكلاسات المستخدمة فعلاً)، شيل ملفات Bootstrap المكررة، وتحميل plugins التقارير (datatables/daterangepicker/summernote/jqvmap) بس في الصفحات اللي محتاجاها عن طريق متغير <code>$pagePlugins</code>.</li>
+        <li><strong>شيل <code>!important</code> العام</strong> واستبداله بقواعد محددة.</li>
+        <li><strong>الشريط الجانبي data-driven:</strong> مصفوفة قوائم (عنوان، أيقونة، لينك، مفتاح صلاحية، مفتاح ظهور من الإعدادات) + بحث في القائمة + المفضلة من أعمدة <code>is_fav_*</code>.</li>
+        <li><strong>تطبيق التصميم الجديد بالتدريج:</strong> الإعدادات ← المستخدمين ← الأدوار ← تغيير الباسورد ← الداشبورد، وبعدها باقي الشاشات صفحة صفحة.</li>
+        <li><strong>Responsive:</strong> الجداول تتحول لكروت على الموبايل، والأزرار الكبيرة في <code>users.php</code> (padding 14px 28px) تتظبط.</li>
+        <li>ثبات ترتيب الـ includes: <code>header → navbar → sidebar → content → footer</code> في كل الصفحات.</li>
+      </ol>
+    </section>
+
+    <!-- المرحلة 4 -->
+    <section class="card" id="phase4">
+      <h2><span class="num">4</span> المرحلة 4 — الاختبار والتسليم</h2>
+      <ul>
+        <li>قبل كل مرحلة: backup من تبويب قاعدة البيانات + branch منفصل.</li>
+        <li>checklist يدوي لكل مرحلة:
+          <ul class="checklist">
+            <li>مستخدم بدور محدود يحاول يفتح <code>do/do_deluser.php</code>, <code>do/doedit_settings.php</code>, <code>edit_role.php</code> مباشرة ← لازم 403.</li>
+            <li>تغيير دور مستخدم وهو مسجّل دخول ← يسري من الطلب اللي بعده.</li>
+            <li>دخول بباسورد md5 قديم ← يشتغل ويتحوّل لـ hash.</li>
+            <li>دخول الويتر بالباركود في POS.</li>
+            <li>حفظ كل تبويب إعدادات على حدة + الثيمات الثلاثة.</li>
+            <li>POS (باركود / ملابس / سوبرماركت) بعد تنظيف <code>header.php</code>.</li>
+          </ul>
+        </li>
+        <li>تشغيل <code>run_db_update.php?confirm=yes</code> على نسخة من قاعدة production قبل السيرفر الحقيقي.</li>
+      </ul>
+    </section>
+
+    <!-- ملفات DB -->
+    <section class="card" id="db">
+      <h2>ملفات DB الجديدة (ملخص)</h2>
+      <table>
+        <thead><tr><th>ملف</th><th>المحتوى</th></tr></thead>
+        <tbody>
+          <tr><td><code>022_usr_pwrs_manage_settings.sql</code></td><td>صلاحيات <code>manage_settings</code> / <code>manage_system</code></td></tr>
+          <tr><td><code>023_settings_usr_pwrs_runtime_columns.sql</code></td><td>نقل كل الـ ALTER من وقت التشغيل</td></tr>
+          <tr><td><code>024_settings_audit.sql</code></td><td>سجل تغييرات الإعدادات</td></tr>
+          <tr><td><code>025_users_waiter_code_status.sql</code></td><td><code>waiter_code</code>, <code>is_active</code>, <code>last_login_at</code>، قفل المحاولات</td></tr>
+          <tr><td><code>026_user_activity_log.sql</code></td><td>سجل نشاط المستخدمين</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</body>
+</html>

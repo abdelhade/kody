@@ -504,7 +504,7 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
                 <td>
                     <select name="u_val[]" class="form-control form-control-sm" style="width:100px;"></select>
                 </td>
-                <td><input type="number" name="itmqty[]"     value="${qty}"            class="itmqty     form-control form-control-sm" style="width:90px;"  onclick="sT(this)"></td>
+                <td><input type="number" name="itmqty[]"     value="${qty}"            class="itmqty     form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="any"></td>
                 <td><input type="number" name="itmprice[]"  value="${price}"           class="itmprice   form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
                 <td><input type="number" name="itmdisc_pct[]" value="0.00"             class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
                 <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>

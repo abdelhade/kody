@@ -488,8 +488,7 @@
 
 
 
-        <?php if ($rowstg['showpay'] == 1) { ?>
-          <?php if (($role['sid_sales'] ?? 0) == 1) { ?>
+        <?php if (($role['sid_sales'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
@@ -542,8 +541,7 @@
                 </li>
               </ul>
             </li>
-          <?php }
-        } ?>
+        <?php } ?>
 
 
 
@@ -611,8 +609,7 @@
 
 
 
-        <?php if ($rowstg['showhr'] == 1) { ?>
-          <?php if (($role['sid_hr'] ?? 0) == 1) { ?>
+        <?php if (($role['sid_hr'] ?? 0) == 1) { ?>
 
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -697,8 +694,7 @@
 
               </ul>
             </li>
-          <?php }
-        } ?>
+        <?php } ?>
 
 
         <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
@@ -736,8 +732,7 @@
         <?php } ?>
 
 
-        <?php if ($rowstg['showrent'] == 1) { ?>
-          <?php if (($role['sid_rents'] ?? 0) == 1) { ?>
+        <?php if (($role['sid_rents'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -794,8 +789,7 @@
 
 
 
-          <?php }
-        } ?>
+        <?php } ?>
 
 
 
@@ -806,8 +800,7 @@
 
 
         <!-- clinck -->
-        <?php if ($rowstg['showclinc'] == 1) { ?>
-          <?php if (($role['sid_clinics'] ?? 0) == 1) { ?>
+        <?php if (($role['sid_clinics'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
@@ -851,16 +844,14 @@
               </ul>
 
             </li>
-          <?php }
-        } ?>
+        <?php } ?>
 
         <li class="divider"></li>
 
 
 
         <!-------------------------------الحضور---------------------------------------->
-        <?php if ($rowstg['showatt'] == 1) { ?>
-          <?php if (($role['sid_payroll'] ?? 0) == 1) { ?>
+        <?php if (($role['sid_payroll'] ?? 0) == 1) { ?>
 
 
             <li class="nav-item has-treeview">
@@ -956,14 +947,12 @@
                   </ul>
                 </li>
               </ul>
-            <?php }
-        } ?>
+        <?php } ?>
 
 
 
           <!--                                            المرتبات                               -->
 
-          <?php if ($rowstg['showatt'] == 1) { ?>
             <?php if (($role['sid_payroll'] ?? 0) == 1) { ?>
 
 
@@ -1122,8 +1111,7 @@
 
 
 
-            <?php }
-            } ?>
+            <?php } ?>
 
 
 

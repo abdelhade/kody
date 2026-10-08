@@ -7,6 +7,7 @@ $reportGroups = [
     [
         'title' => 'تقارير المبيعات',
         'icon' => 'fa-chart-bar',
+        'perm' => 'sid_sales',
         'items' => [
             ['href' => 'operations_summary.php?q=sale', 'icon' => 'fa-calendar-day', 'title' => 'المبيعات اليومية'],
             ['href' => 'operations_summary.php?q=sales_order', 'icon' => 'fa-clipboard-list', 'title' => 'أوامر البيع'],
@@ -30,6 +31,7 @@ $reportGroups = [
     [
         'title' => 'تقارير المشتريات',
         'icon' => 'fa-shopping-cart',
+        'perm' => 'sid_purchases',
         'items' => [
             ['href' => 'operations_summary.php?q=purchase', 'icon' => 'fa-calendar-day', 'title' => 'المشتريات اليومية'],
             ['href' => 'monthly_purchases.php', 'icon' => 'fa-calendar', 'title' => 'المشتريات بالشهر'],
@@ -41,6 +43,7 @@ $reportGroups = [
     [
         'title' => 'تقارير مالية',
         'icon' => 'fa-balance-scale',
+        'perm' => 'sid_accounts',
         'items' => [
             ['href' => 'summary.php', 'icon' => 'fa-file-alt', 'title' => $lang_account_statement ?? 'كشف حساب'],
             ['href' => 'balance_sheet.php', 'icon' => 'fa-balance-scale', 'title' => $lang_balance_sheet ?? 'تقرير الميزانية'],
@@ -53,6 +56,7 @@ $reportGroups = [
     [
         'title' => 'تقارير التأجير',
         'icon' => 'fa-building',
+        'perm' => 'sid_rents',
         'items' => [
             ['href' => 'rentables.php', 'icon' => 'fa-building', 'title' => 'تقرير الوحدات الإيجارية'],
             ['href' => 'rentcontracts.php?del=0', 'icon' => 'fa-file-contract', 'title' => 'قائمة العقود'],
@@ -64,14 +68,31 @@ $reportGroups = [
         'title' => 'تقارير إدارية',
         'icon' => 'fa-clipboard-list',
         'items' => [
-            ['href' => 'reps_cl.php', 'icon' => 'fa-clinic-medical', 'title' => $lang_clinic_reports ?? 'تقارير العيادات'],
-            ['href' => 'visits_stats.php', 'icon' => 'fa-chart-bar', 'title' => 'إحصائيات الزيارات'],
-            ['href' => 'prints.php', 'icon' => 'fa-money-check-alt', 'title' => $lang_sidesalariesreports ?? 'تقارير المرتبات'],
-            ['href' => 'attendance_report.php', 'icon' => 'fa-clock', 'title' => 'تقرير الحضور والانصراف'],
-            ['href' => 'staff_report.php', 'icon' => 'fa-user-tie', 'title' => 'تقرير الموظفين'],
+            ['href' => 'reps_cl.php', 'icon' => 'fa-clinic-medical', 'title' => $lang_clinic_reports ?? 'تقارير العيادات', 'perm' => 'sid_clinics'],
+            ['href' => 'visits_stats.php', 'icon' => 'fa-chart-bar', 'title' => 'إحصائيات الزيارات', 'perm' => 'sid_visits'],
+            ['href' => 'prints.php', 'icon' => 'fa-money-check-alt', 'title' => $lang_sidesalariesreports ?? 'تقارير المرتبات', 'perm' => 'sid_payroll'],
+            ['href' => 'attendance_report.php', 'icon' => 'fa-clock', 'title' => 'تقرير الحضور والانصراف', 'perm' => 'sid_payroll'],
+            ['href' => 'staff_report.php', 'icon' => 'fa-user-tie', 'title' => 'تقرير الموظفين', 'perm' => 'sid_hr'],
         ],
     ],
 ];
+
+$hasReportPerm = function ($perm) use ($role) {
+    return $perm === null || (int)($role[$perm] ?? 0) === 1;
+};
+
+foreach ($reportGroups as $gi => $group) {
+    if (!$hasReportPerm($group['perm'] ?? null)) {
+        unset($reportGroups[$gi]);
+        continue;
+    }
+    $reportGroups[$gi]['items'] = array_filter($group['items'], function ($item) use ($hasReportPerm) {
+        return $hasReportPerm($item['perm'] ?? null);
+    });
+    if (empty($reportGroups[$gi]['items'])) {
+        unset($reportGroups[$gi]);
+    }
+}
 ?>
 
 <style>
@@ -174,6 +195,10 @@ $reportGroups = [
                     <div class="mb-4">
                         <input type="text" id="reportSearch" class="form-control" placeholder="بحث في التقارير...">
                     </div>
+
+                    <?php if (empty($reportGroups)) { ?>
+                        <div class="alert alert-info text-center mb-0">لا توجد تقارير متاحة لصلاحياتك</div>
+                    <?php } ?>
 
                     <?php foreach ($reportGroups as $group) { ?>
                         <section class="report-group">
