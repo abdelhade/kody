@@ -75,6 +75,24 @@ $resitm = $stmtData->get_result();
                     <i class="fas fa-check-circle"></i>
                     تم استرجاع الصنف ورجع لقائمة الأصناف.
                 </div>
+            <?php elseif (isset($_GET['purged']) && $_GET['purged'] === '1'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-check-circle"></i>
+                    تم حذف الصنف نهائياً.
+                </div>
+            <?php elseif (isset($_GET['purge_error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <?php
+                    $purgeErrors = [
+                        'moves' => 'لا يمكن حذف الصنف نهائياً لأن عليه حركة في الفواتير.',
+                        'notfound' => 'الصنف غير موجود في الأصناف المحذوفة.',
+                    ];
+                    echo $purgeErrors[$_GET['purge_error']] ?? 'حدث خطأ أثناء الحذف النهائي، لم يتم حذف أي شيء.';
+                    ?>
+                </div>
             <?php elseif (isset($_GET['pass'])): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="إغلاق">&times;</button>
@@ -177,6 +195,39 @@ $resitm = $stmtData->get_result();
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <?php if ($moves > 0): ?>
+                                            <button type="button" class="btn btn-danger btn-sm" disabled title="لا يمكن الحذف النهائي لصنف عليه حركة">
+                                                حذف نهائي
+                                            </button>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#purgeitm<?= (int) $rowitm['id'] ?>">
+                                                حذف نهائي
+                                            </button>
+
+                                            <div class="modal fade" id="purgeitm<?= (int) $rowitm['id'] ?>">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger">
+                                                            <h4 class="modal-title">حذف نهائي</h4>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <form class="purge-item-form" action="do/doforce_delete_item.php?id=<?= (int) $rowitm['id'] ?>" method="post">
+                                                            <div class="modal-body">
+                                                                <p>هل تريد حذف <b><?= htmlspecialchars((string) $rowitm['iname'], ENT_QUOTES, 'UTF-8') ?></b> نهائياً؟</p>
+                                                                <p class="text-danger small mb-2">سيتم حذف الصنف وباركوداته ووحداته وصوره، ولا يمكن التراجع.</p>
+                                                                <input type="password" class="form-control" name="password" placeholder="كلمة مرور التعديل" required>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="submit" class="btn btn-danger btn-block">حذف نهائي</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php } ?>
@@ -220,6 +271,16 @@ $(document).ready(function() {
             });
             window.history.pushState(null, '', url);
         }, 300);
+    });
+
+    $(document).on('submit', '#table-container .purge-item-form', function(e) {
+        var $form = $(this);
+        if ($form.data('submitting')) {
+            e.preventDefault();
+            return;
+        }
+        $form.data('submitting', true);
+        $form.find('button[type="submit"]').prop('disabled', true);
     });
 
     $('#search').on('keypress', function(e) {
