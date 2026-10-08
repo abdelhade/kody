@@ -1896,7 +1896,7 @@ class InvoiceProcessor {
     }
 
     /**
-     * يمنع الكمية السالبة وسعر البيع صفر.
+     * يمنع الكمية السالبة، وسعر البيع صفر في فواتير البيع.
      *
      * @return list<string>
      */
@@ -1908,7 +1908,6 @@ class InvoiceProcessor {
             return $errors;
         }
 
-        $purchase = $proTybe === self::INVOICE_TYPES['PURCHASE'];
         $salePriceOnLine = in_array($proTybe, [
             self::INVOICE_TYPES['SALES'],
             self::INVOICE_TYPES['POS'],
@@ -1928,19 +1927,11 @@ class InvoiceProcessor {
                 $errors[] = 'سطر ' . $rowNo . ': الكمية سالبة';
             }
 
-            if ($purchase) {
-                if (!isset($post['itmsellprice'][$index])) {
-                    continue;
-                }
-                $sale = (float) $post['itmsellprice'][$index];
-            } elseif ($salePriceOnLine) {
+            if ($salePriceOnLine) {
                 $sale = (float) ($post['itmprice'][$index] ?? 0);
-            } else {
-                continue;
-            }
-
-            if (abs($sale) < 0.0000001) {
-                $errors[] = 'سطر ' . $rowNo . ': البيع صفر';
+                if (abs($sale) < 0.0000001) {
+                    $errors[] = 'سطر ' . $rowNo . ': البيع صفر';
+                }
             }
 
             if ($prevent_negative_stock && $conn && $store_id && $salePriceOnLine) {

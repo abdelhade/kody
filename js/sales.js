@@ -735,9 +735,11 @@ function calcProfitPct(row) {
 
             $('#myForm2').on('submit', function(event) {
                 const form = this;
+                $('#invoiceLineWarnBox').removeData('user-closed');
                 const lines = paintInvoiceLineWarnings();
                 if (lines.length) {
                     event.preventDefault();
+                    $('#invoiceLineWarnBox').show();
                     const html = lines.map(function(text) {
                         return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
                     }).join('');
@@ -745,7 +747,10 @@ function calcProfitPct(row) {
                         type: 'error',
                         title: 'لا يمكن حفظ الفاتورة',
                         html: html,
-                        confirmButtonText: 'حسناً'
+                        confirmButtonText: 'حسناً',
+                        showCloseButton: true,
+                        allowOutsideClick: true,
+                        allowEscapeKey: true
                     });
                     const $first = $('#itmrow .invoice-warn-qty, #itmrow .invoice-warn-price').first();
                     if ($first.length) $first.focus().select();
@@ -787,7 +792,11 @@ function calcProfitPct(row) {
                         Swal.fire({
                             type: 'error',
                             title: 'خطأ',
-                            text: (response && response.message) ? response.message : (raw || 'فشل الحفظ')
+                            text: (response && response.message) ? response.message : (raw || 'فشل الحفظ'),
+                            confirmButtonText: 'حسناً',
+                            showCloseButton: true,
+                            allowOutsideClick: true,
+                            allowEscapeKey: true
                         });
                         return;
                     }
@@ -818,7 +827,11 @@ function calcProfitPct(row) {
                     Swal.fire({
                         type: 'error',
                         title: 'خطأ',
-                        text: 'فشل الاتصال بالخادم'
+                        text: 'فشل الاتصال بالخادم',
+                        confirmButtonText: 'حسناً',
+                        showCloseButton: true,
+                        allowOutsideClick: true,
+                        allowEscapeKey: true
                     });
                 });
             });
@@ -861,10 +874,7 @@ function calcProfitPct(row) {
 function rowSalePrice($row) {
     const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
     if (purchase) {
-        const $sell = $row.find('.itmsellprice');
-        if (!$sell.length) return null;
-        const sell = parseFloat($sell.val());
-        return isFinite(sell) ? sell : 0;
+        return null;
     }
     const price = parseFloat($row.find('.itmprice').val());
     return isFinite(price) ? price : 0;
@@ -885,15 +895,22 @@ function paintInvoiceLineWarnings() {
             .toggleClass('invoice-warn-qty', negativeQty)
             .attr('title', negativeQty ? 'الكمية سالبة' : '');
 
-        const sale = rowSalePrice($row);
-        const $saleInput = purchase ? $row.find('.itmsellprice') : $row.find('.itmprice');
-        const zeroSale = sale !== null && sale === 0;
-        $saleInput
-            .toggleClass('invoice-warn-price', zeroSale)
-            .attr('title', zeroSale ? 'البيع صفر' : '');
+        if (!purchase) {
+            const sale = rowSalePrice($row);
+            const $saleInput = $row.find('.itmprice');
+            const zeroSale = sale !== null && sale === 0;
+            $saleInput
+                .toggleClass('invoice-warn-price', zeroSale)
+                .attr('title', zeroSale ? 'البيع صفر' : '');
+
+            if (zeroSale) lines.push(name + ': البيع صفر');
+        } else {
+            $row.find('.itmsellprice, .itmprice')
+                .removeClass('invoice-warn-price')
+                .removeAttr('title');
+        }
 
         if (negativeQty) lines.push(name + ': الكمية سالبة');
-        if (zeroSale) lines.push(name + ': البيع صفر');
     });
 
     let $box = $('#invoiceLineWarnBox');
@@ -906,15 +923,26 @@ function paintInvoiceLineWarnings() {
 
     if (!lines.length) {
         $box.hide().empty();
+        $box.removeData('user-closed');
         return lines;
     }
 
     const html = lines.map(function(text) {
         return '<div>' + $('<div>').text(text).html() + '</div>';
     }).join('');
-    $box.html('<strong>لا يمكن الحفظ</strong>' + html).show();
+    const closeBtn = '<button type="button" class="invoice-warn-close" aria-label="إغلاق" title="إغلاق">&times;</button>';
+    $box.html(closeBtn + '<strong>لا يمكن الحفظ</strong>' + html);
+    if (!$box.data('user-closed')) {
+        $box.show();
+    }
     return lines;
 }
+
+$(document).on('click', '#invoiceLineWarnBox .invoice-warn-close', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $('#invoiceLineWarnBox').data('user-closed', true).slideUp(150);
+});
 
 function updateTotal() {
     paintInvoiceLineWarnings();

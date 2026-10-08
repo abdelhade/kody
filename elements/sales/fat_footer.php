@@ -231,9 +231,13 @@ if (!$hide_payment):
         if (paid < net) {
             Swal.fire({
                 icon: 'warning',
+                type: 'warning',
                 title: 'تنبيه',
                 text: 'المورد الافتراضي لا يقبل الآجل، يجب أن يكون المدفوع مساوياً للصافي (' + net + ')',
-                confirmButtonText: 'حسناً'
+                confirmButtonText: 'حسناً',
+                showCloseButton: true,
+                allowOutsideClick: true,
+                allowEscapeKey: true
             }).then(function() {
                 // انقل التركيز لحقل المدفوع
                 var paidField = document.getElementById('paid');

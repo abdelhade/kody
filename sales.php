@@ -107,8 +107,9 @@ function getInvoiceElements() {
 }
 ?>
 
+<?php $salesCssVer = filemtime('dist/css/sales.css'); ?>
 <!-- Preload Critical CSS -->
-<link rel="preload" href="dist/css/sales.css" as="style">
+<link rel="preload" href="dist/css/sales.css?v=<?= $salesCssVer ?>" as="style">
 
 <!-- Load Critical CSS Inline (for faster First Paint) -->
 <style>
@@ -155,10 +156,10 @@ function getInvoiceElements() {
 </style>
 
 <!-- Load Non-Critical CSS Async -->
-<link rel="stylesheet" href="dist/css/sales.css" media="print" onload="this.media='all'; this.onload=null;">
+<link rel="stylesheet" href="dist/css/sales.css?v=<?= $salesCssVer ?>" media="print" onload="this.media='all'; this.onload=null;">
 <link rel="stylesheet" href="dist/css/keyboard-hints.css" media="print" onload="this.media='all'; this.onload=null;">
 <noscript>
-    <link rel="stylesheet" href="dist/css/sales.css">
+    <link rel="stylesheet" href="dist/css/sales.css?v=<?= $salesCssVer ?>">
     <link rel="stylesheet" href="dist/css/keyboard-hints.css">
 </noscript>
 
