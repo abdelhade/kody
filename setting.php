@@ -270,9 +270,22 @@ $licenseOk = !empty($licenseStatus['licensed']);
                       </div>
                       <div class="col-md-6">
                         <div class="form-group">
-                          <label for="editpass">الترخيص / رقم إضافي</label>
-                          <input type="text" class="form-control" id="editpass" name="editpass"
-                                 value="<?= htmlspecialchars($rowstg['lic'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                          <label for="generalMac">عنوان MAC للسيرفر</label>
+                          <input type="text" class="form-control" id="generalMac" readonly
+                                 value="<?= htmlspecialchars($licenseMac !== '' ? $licenseMac : 'تعذر قراءة MAC', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="generalLicenseKey">مفتاح الترخيص</label>
+                          <div class="input-group">
+                            <input type="text" class="form-control" id="generalLicenseKey" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX"
+                                   value="<?= htmlspecialchars((string) ($licenseStatus['key'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="input-group-append">
+                              <button type="button" class="btn btn-primary js-save-license" data-input="generalLicenseKey" data-msg="generalLicenseMsg">حفظ الترخيص</button>
+                            </div>
+                          </div>
+                          <div id="generalLicenseMsg" class="mt-2"></div>
                         </div>
                       </div>
                     </div>
@@ -593,7 +606,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
                       <label for="licenseKeyInput">مفتاح الترخيص</label>
                       <input type="text" class="form-control" id="licenseKeyInput" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" value="<?= htmlspecialchars((string) ($licenseStatus['key'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
-                    <button type="button" class="btn btn-primary mt-3" id="btnSaveLicense">
+                    <button type="button" class="btn btn-primary mt-3 js-save-license" id="btnSaveLicense" data-input="licenseKeyInput" data-msg="licenseSaveMsg">
                       <i class="fas fa-check ml-1"></i> تفعيل الترخيص
                     </button>
                     <div id="licenseSaveMsg" class="mt-3"></div>
@@ -1123,11 +1136,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  var btnSaveLicense = document.getElementById('btnSaveLicense');
-  if (btnSaveLicense) {
+  document.querySelectorAll('.js-save-license').forEach(function (btnSaveLicense) {
     btnSaveLicense.addEventListener('click', function () {
-      var input = document.getElementById('licenseKeyInput');
-      var msg = document.getElementById('licenseSaveMsg');
+      var input = document.getElementById(btnSaveLicense.getAttribute('data-input'));
+      var msg = document.getElementById(btnSaveLicense.getAttribute('data-msg'));
       var key = input ? input.value.trim() : '';
       if (!key) {
         alert('أدخل مفتاح الترخيص');
@@ -1140,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (msg) {
-            msg.className = 'mt-3 alert ' + (data.licensed ? 'alert-success' : 'alert-danger');
+            msg.className = 'mt-2 alert ' + (data.licensed ? 'alert-success' : 'alert-danger');
             msg.textContent = data.licensed ? 'النسخة مرخصة' : (data.message || 'فشل التفعيل');
           }
           if (data.licensed) location.reload();
@@ -1148,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(function () { alert('خطأ في الاتصال بالخادم'); })
         .finally(function () { btnSaveLicense.disabled = false; });
     });
-  }
+  });
 
   var btnGitPull = document.getElementById('btnGitPull');
   var gitPullStatus = document.getElementById('git-pull-status');
