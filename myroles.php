@@ -31,7 +31,9 @@
                         </thead>
                         <tbody>
                             <?php 
-                            $sqlshowrole = "SELECT id,rollname,info FROM usr_pwrs ORDER BY id";
+                            $sqlshowrole = "SELECT r.id, r.rollname, r.info,
+                                                (SELECT COUNT(*) FROM users u WHERE u.userrole = r.id AND u.isdeleted != 1) AS users_count
+                                            FROM usr_pwrs r ORDER BY r.id";
                             $resshowrole = $conn->query($sqlshowrole);
                             $counter = 1;
                             while ($rawrole = $resshowrole->fetch_assoc()) { 
@@ -47,12 +49,18 @@
                                             <i class="fas fa-edit " style="color:rgb(255, 184, 51);"></i>
                                         </a>
                                        
+                                        <?php if ($rawrole['users_count'] == 0) { ?>
                                         <a href="do/dodel_role.php?id=<?= $rawrole['id'] ?>" 
                                            class="btn btn-sm" 
                                            onclick="return confirm('هل أنت متأكد من حذف هذا الدور؟')" 
                                            title="حذف">
                                             <i class="fas fa-trash" style="color: rgb(173, 71, 71);"></i>
                                         </a>
+                                        <?php } else { ?>
+                                        <span class="btn btn-sm disabled" title="لا يمكن الحذف - مرتبط بـ <?= $rawrole['users_count'] ?> مستخدم">
+                                            <i class="fas fa-trash text-muted"></i>
+                                        </span>
+                                        <?php } ?>
                                     </div>
                                 </td>
                             </tr>

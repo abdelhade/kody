@@ -9,10 +9,11 @@ ensure_payroll_calcs_schema($conn);
 <?php
 $filterEmp = isset($_GET['emp']) ? (int)$_GET['emp'] : 0;
 $filterDept = isset($_GET['dept']) ? (int)$_GET['dept'] : 0;
+$filterShift = isset($_GET['shift']) ? (int)$_GET['shift'] : 0;
 $filterFrom = isset($_GET['from']) ? $conn->real_escape_string($_GET['from']) : '';
 $filterTo = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : '';
 $companyName = $rowstg['company_name'] ?? 'FOCUS';
-$hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterTo !== '';
+$hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFrom !== '' || $filterTo !== '';
 ?>
 
 <div class="content-wrapper calcsalary-page">
@@ -47,7 +48,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterT
         </div>
         <div class="card-body">
           <form method="get" action="calcsalary.php" class="form-row align-items-end">
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-2">
               <label>القسم / الإدارة</label>
               <select name="dept" class="form-control select2">
                 <option value="">— الكل —</option>
@@ -60,7 +61,20 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterT
                 ?>
               </select>
             </div>
-            <div class="form-group col-md-3">
+            <div class="form-group col-md-2">
+              <label>الوردية</label>
+              <select name="shift" class="form-control select2">
+                <option value="">— الكل —</option>
+                <?php
+                $resShiftList = $conn->query("SELECT id, name FROM shifts WHERE isdeleted = 0 OR isdeleted IS NULL ORDER BY name");
+                while ($resShiftList && $s = $resShiftList->fetch_assoc()) {
+                    $selShift = ($filterShift === (int)$s['id']) ? 'selected' : '';
+                    echo '<option value="' . (int)$s['id'] . '" ' . $selShift . '>' . htmlspecialchars($s['name']) . '</option>';
+                }
+                ?>
+              </select>
+            </div>
+            <div class="form-group col-md-2">
               <label>الموظف</label>
               <select name="emp" class="form-control select2">
                 <option value="">— الكل —</option>
@@ -100,6 +114,10 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterT
           if ($filterDept > 0) {
               $dn = $conn->query("SELECT name FROM departments WHERE id = $filterDept")->fetch_assoc();
               echo 'القسم: ' . htmlspecialchars($dn['name'] ?? '') . ' — ';
+          }
+          if ($filterShift > 0) {
+              $sn = $conn->query("SELECT name FROM shifts WHERE id = $filterShift")->fetch_assoc();
+              echo 'الوردية: ' . htmlspecialchars($sn['name'] ?? '') . ' — ';
           }
           if ($filterEmp > 0) {
               $fn = $conn->query("SELECT name FROM employees WHERE id = $filterEmp")->fetch_assoc();
@@ -152,6 +170,9 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterFrom !== '' || $filterT
                 }
                 if ($filterDept > 0) {
                     $where .= " AND empid IN (SELECT id FROM employees WHERE department = $filterDept)";
+                }
+                if ($filterShift > 0) {
+                    $where .= " AND empid IN (SELECT id FROM employees WHERE shift = $filterShift)";
                 }
                 if ($filterFrom !== '') {
                     $where .= " AND todate >= '$filterFrom'";

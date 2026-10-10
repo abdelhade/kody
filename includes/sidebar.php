@@ -697,8 +697,7 @@
         <?php } ?>
 
 
-        <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
-          <?php if (($role['sid_pulse'] ?? 1) == 1) { ?>
+        <?php if (($role['sid_hr'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-bolt text-warning"></i>
@@ -728,7 +727,6 @@
                 </li>
               </ul>
             </li>
-          <?php } ?>
         <?php } ?>
 
 
