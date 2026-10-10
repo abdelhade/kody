@@ -15,20 +15,20 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['aname'])) {
     }
 
     
-    if (!isset($_POST['fund'])) {
-        $secret = 0;
+    if (!isset($_POST['is_fund'])) {
+        $is_fund = 0;
     }
 
     
     if (!isset($_POST['rentable'])) {
-        $secret = 0;
+        $rentable = 0;
     }
     $priceSql = '';
     if (isset($_POST['price_list'])) {
         $price_list = max(1, min(3, (int) $_POST['price_list']));
         $priceSql = ",price_list='$price_list'";
     }
-    $sql = "UPDATE acc_head SET code='$code',aname='$aname',is_fund='$fund',rentable='$rentable',is_stock='$is_stock',parent_id='$parent_id',is_basic='$is_basic',secret='$secret'$priceSql WHERE id = '$id' ";
+    $sql = "UPDATE acc_head SET code='$code',aname='$aname',is_fund='$is_fund',rentable='$rentable',is_stock='$is_stock',parent_id='$parent_id',is_basic='$is_basic',secret='$secret'$priceSql WHERE id = '$id' ";
     
     $conn->query($sql);
     header("location:../accounts.php");

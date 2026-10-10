@@ -306,3 +306,20 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-05 14:36:08] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
 [2026-10-05 14:36:16] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
 [2026-10-05 14:36:18] ArgumentCountError: The number of variables must match the number of parameters in the prepared statement in C:\xampp\htdocs\kody\ajax\load_items_lazy.php:112
+[2026-10-10 19:31:58] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:31:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:31:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:31:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:31:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:31:59] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:01] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:02] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:03] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-10 19:32:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
