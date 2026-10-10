@@ -43,6 +43,12 @@ if ($fileSize > 20 * 1024 * 1024) {
          حجم الملف يتجاوز 20 ميجا.</div>');
 }
 
+if (!class_exists('ZipArchive')) {
+    die('<div style="color:red;font-family:Arial;direction:rtl;padding:20px;">
+         إضافة PHP zip غير مفعّلة على السيرفر — افتح ملف php.ini وأزل علامة ; من أمام السطر
+         <code>extension=zip</code> ثم أعد تشغيل Apache.</div>');
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  تحميل الـ Spreadsheet 
 //  بعض الأجهزة تصدر ملفات XML أو HTML أو CSV بمسماة xls.
