@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-require '../vendor/autoload.php';
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+    require __DIR__ . '/../vendor/autoload.php';
+}
 
 // ── تحميل PhpSpreadsheet يدوياً (بدون Composer) ──
 spl_autoload_register(function ($className) {
