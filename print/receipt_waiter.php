@@ -106,8 +106,26 @@ $rowstg = $conn->query("SELECT * FROM settings WHERE id = 1")->fetch_assoc();
                 <tfoot>
                     <tr>
                         <td colspan="3"><strong>الإجمالي:</strong></td>
-                        <td><strong><?= number_format($total, 2) ?></strong></td>
+                        <td><strong><?= number_format((float)($rowfat['fat_total'] ?? $total), 2) ?></strong></td>
                     </tr>
+                    <?php if (!empty($rowfat['fat_disc']) && (float)$rowfat['fat_disc'] > 0): ?>
+                    <tr>
+                        <td colspan="3"><strong>الخصم:</strong></td>
+                        <td style="color:#dc3545;"><strong>- <?= number_format((float)$rowfat['fat_disc'], 2) ?></strong></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if (!empty($rowfat['fat_plus']) && (float)$rowfat['fat_plus'] > 0): ?>
+                    <tr>
+                        <td colspan="3"><strong>الإضافي:</strong></td>
+                        <td style="color:#28a745;"><strong>+ <?= number_format((float)$rowfat['fat_plus'], 2) ?></strong></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if (!empty($rowfat['fat_net'])): ?>
+                    <tr>
+                        <td colspan="3"><strong>الصافي:</strong></td>
+                        <td><strong><?= number_format((float)$rowfat['fat_net'], 2) ?></strong></td>
+                    </tr>
+                    <?php endif; ?>
                 </tfoot>
             </table>
 

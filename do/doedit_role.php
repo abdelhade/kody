@@ -249,6 +249,7 @@ if ($rollname === null) {
     $show_main_elements = isset($_POST['show_main_elements']) ? 1 : 0;    
     $show_main_tables = isset($_POST['show_main_tables']) ? 1 : 0;    
     $show_main_hr = isset($_POST['show_main_hr']) ? 1 : 0;    
+    $allow_pos_delivery = isset($_POST['allow_pos_delivery']) ? 1 : 0;    
     
 
 $sqledit = "UPDATE `usr_pwrs` 
@@ -448,7 +449,8 @@ SET
 `show_main_elements`= '$show_main_elements',
 `show_main_tables`= '$show_main_tables',
 `show_main_hr`= '$show_main_hr',
-`show_all_tasks`= '$show_all_tasks'
+`show_all_tasks`= '$show_all_tasks',
+`allow_pos_delivery`= '$allow_pos_delivery'
 
 WHERE id = $id";
 

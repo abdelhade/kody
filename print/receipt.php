@@ -411,6 +411,7 @@ if (($show_client && ($customer_name || $customer_phone || $customer_address || 
 </thead>
 <tbody>
 <?php
+$total_item_disc = 0;
 $resdet = $conn->query("SELECT * FROM fat_details WHERE isdeleted = 0 AND (fatid = $id OR pro_id = $id) ORDER BY id");
 while ($rowdet = $resdet->fetch_assoc()) {
     $itmid = (int)$rowdet['item_id'];
@@ -430,9 +431,16 @@ while ($rowdet = $resdet->fetch_assoc()) {
     $qty = $stock / $u;
     $linePrice = (float)$rowdet['price'] * $u;
     $iname = $rowitm['iname'] ?? '';
+    $lineDisc = (float)($rowdet['discount'] ?? 0);
+    $total_item_disc += $lineDisc;
 ?>
 <tr>
-    <td style="text-align:right; padding-right:4px;"><?= htmlspecialchars($iname) ?></td>
+    <td style="text-align:right; padding-right:4px;">
+        <?= htmlspecialchars($iname) ?>
+        <?php if ($lineDisc > 0): ?>
+            <div style="font-size:10px; font-weight:normal; color:#555;">(خصم: <?= number_format($lineDisc, 2) ?>)</div>
+        <?php endif; ?>
+    </td>
     <td><?= number_format($qty, 2) ?></td>
     <td><?= number_format($linePrice, 2) ?></td>
     <td><?= number_format((float)$rowdet['det_value'], 2) ?></td>
@@ -446,22 +454,54 @@ $paid_res = $conn->query("SELECT SUM(pro_value) as paid_amount FROM ot_head WHER
 $paid_row = $paid_res ? $paid_res->fetch_assoc() : null;
 $paid_amount = $paid_row && $paid_row['paid_amount'] ? floatval($paid_row['paid_amount']) : 0;
 $change_amount = $paid_amount - floatval($rowfat['fat_net']);
+
+$fat_total = (float)($rowfat['fat_total'] ?? 0);
+$fat_net = (float)($rowfat['fat_net'] ?? 0);
+$disc_val = (float)($rowfat['fat_disc'] ?? 0);
+$disc_pct = !empty($rowfat['fat_disc_per']) ? (float)$rowfat['fat_disc_per'] : (($fat_total > 0 && $disc_val > 0) ? round(($disc_val / $fat_total) * 100, 2) : 0);
+$plus_val = (float)($rowfat['fat_plus'] ?? 0);
+$plus_pct = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
 ?>
 <table class="rcpt-totals">
+<?php if ($total_item_disc > 0): ?>
 <tr>
-    <td class="tot-label">إجمالي</td>
-    <td class="tot-val"><?= number_format($rowfat['fat_total'], 2) ?></td>
+    <td class="tot-label">إجمالي الأصناف</td>
+    <td class="tot-val"><?= number_format($fat_total + $total_item_disc, 2) ?></td>
 </tr>
 <tr>
-    <td class="tot-label">الصافي</td>
-    <td class="tot-val net"><?= number_format($rowfat['fat_net'], 2) ?></td>
+    <td class="tot-label">خصم الأصناف</td>
+    <td class="tot-val disc">- <?= number_format($total_item_disc, 2) ?></td>
 </tr>
-<?php if ($rowfat['fat_disc'] > 0): ?>
 <tr>
-    <td class="tot-label">الخصم</td>
-    <td class="tot-val disc"><?= number_format($rowfat['fat_disc'], 2) ?></td>
+    <td class="tot-label">الإجمالي</td>
+    <td class="tot-val"><?= number_format($fat_total, 2) ?></td>
+</tr>
+<?php else: ?>
+<tr>
+    <td class="tot-label">الإجمالي</td>
+    <td class="tot-val"><?= number_format($fat_total, 2) ?></td>
 </tr>
 <?php endif; ?>
+
+<?php if ($disc_val > 0): ?>
+<tr>
+    <td class="tot-label">الخصم <?= $disc_pct > 0 ? '('.$disc_pct.'%)' : '' ?></td>
+    <td class="tot-val disc">- <?= number_format($disc_val, 2) ?></td>
+</tr>
+<?php endif; ?>
+
+<?php if ($plus_val > 0): ?>
+<tr>
+    <td class="tot-label">الإضافي <?= $plus_pct > 0 ? '('.$plus_pct.'%)' : '' ?></td>
+    <td class="tot-val plus">+ <?= number_format($plus_val, 2) ?></td>
+</tr>
+<?php endif; ?>
+
+<tr>
+    <td class="tot-label">الصافي</td>
+    <td class="tot-val net"><?= number_format($fat_net, 2) ?></td>
+</tr>
+
 <?php if ($paid_amount > 0): ?>
 <tr>
     <td class="tot-label">المدفوع</td>

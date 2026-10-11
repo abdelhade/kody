@@ -21,6 +21,7 @@ $sales_query = $conn->query("SELECT
     COUNT(*) as total_invoices,
     COALESCE(SUM(fat_total), 0) as total_sales,
     COALESCE(SUM(fat_disc), 0) as total_discounts,
+    COALESCE(SUM(fat_plus), 0) as total_plus,
     COALESCE(SUM(fat_net), 0) as net_sales
     FROM ot_head 
     WHERE DATE(pro_date) = '$today'
@@ -166,7 +167,14 @@ if (file_exists($logo_path)) {
 <?php if ($sales_data['total_discounts'] > 0) { ?>
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th>خصم:</th>
-<td class="float-right"><?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+<td class="float-right">- <?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+</tr>
+<?php } ?>
+
+<?php if ($sales_data['total_plus'] > 0) { ?>
+<tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
+<th>إضافي:</th>
+<td class="float-right">+ <?= number_format($sales_data['total_plus'], 2) ?> ج.م</td>
 </tr>
 <?php } ?>
 

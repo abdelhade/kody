@@ -533,6 +533,10 @@
                                         <td>اظهار الموارد البشرية في الشاشه الرئيسية</td>
                                         <td class="text-center"><input type="checkbox" name="show_main_hr" class="user-checkbox" checked></td>
                                     </tr>
+                                    <tr class="tr1">
+                                        <td>السماح بطلبات الدليفري في نقاط البيع (POS)</td>
+                                        <td class="text-center"><input type="checkbox" name="allow_pos_delivery" class="user-checkbox" checked></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>

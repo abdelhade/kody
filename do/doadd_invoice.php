@@ -94,6 +94,20 @@ error_log('=========================');
 // Get order type from age parameter
 $order_type = isset($_POST['age']) ? intval($_POST['age']) : 1; // Default to takeaway (1)
 
+if ($order_type == 3) {
+    $inv_role = $role ?? [];
+    if (isset($_SESSION['pos_user_id']) && !empty($_SESSION['pos_user_id'])) {
+        $q_role = $conn->query("SELECT p.* FROM users u LEFT JOIN usr_pwrs p ON u.userrole = p.id WHERE u.id = " . intval($_SESSION['pos_user_id']));
+        if ($q_role && $r_role = $q_role->fetch_assoc()) {
+            $inv_role = $r_role;
+        }
+    }
+    $can_pos_delivery = (isset($inv_role['allow_pos_delivery']) ? ($inv_role['allow_pos_delivery'] == 1) : true) && (isset($inv_role['show_delivery']) ? ($inv_role['show_delivery'] == 1) : true);
+    if (!$can_pos_delivery) {
+        $order_type = 1;
+    }
+}
+
 // إضافة نوع الطلب إلى حقل info
 $order_type_text = '';
 switch($order_type) {

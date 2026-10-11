@@ -165,12 +165,14 @@
                 </a>
               </li>
 
+              <?php if (($role['show_delivery'] ?? 0) == 1) { ?>
               <li class="nav-item">
                 <a href="acc_report.php?acc=delivery" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
                   <p>ديليفري</p>
                 </a>
               </li>
+              <?php } ?>
             </ul>
           </li>
         <?php } ?>
@@ -634,12 +636,14 @@
                   </a>
                 </li> -->
 
+                <?php if (($role['show_delivery'] ?? 0) == 1) { ?>
                 <li class="nav-item">
                   <a href="acc_report.php?acc=delivery" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
                     <p>ديليفري</p>
                   </a>
                 </li>
+                <?php } ?>
 
                 <li class="nav-item">
                   <a href="shifts.php" class="nav-link">

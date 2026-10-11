@@ -538,6 +538,10 @@ if ($hash_id !== $hash) {
                                 <td>اظهار الموارد البشرية في الشاشه الرئيسية</td>
                                 <td><input type="checkbox"  name="show_main_hr"  class="user-checkbox" <?php if( ($rowrol['show_main_hr'] ?? 1) == 1){echo "checked"; }?>></td>
                             </tr>
+                            <tr class="tr1">
+                                <td>السماح بطلبات الدليفري في نقاط البيع (POS)</td>
+                                <td><input type="checkbox"  name="allow_pos_delivery"  class="user-checkbox" <?php if( ($rowrol['allow_pos_delivery'] ?? 1) == 1){echo "checked"; }?>></td>
+                            </tr>
                         </tbody>
                         </table>
                         </div>

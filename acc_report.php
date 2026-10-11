@@ -77,6 +77,21 @@ if (isset($_GET)) {
         }
 }}
 
+if (isset($_GET['acc']) && $_GET['acc'] == 'delivery' && (($role['show_delivery'] ?? 1) == 0)) {
+?>
+<div class="content-wrapper">
+  <div class="container p-5">
+    <div class="alert alert-danger text-center p-4">
+      <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+      <h4>صلاحية غير كافية</h4>
+      <p class="mb-0">ليس لديك صلاحية لعرض حسابات الدليفري.</p>
+    </div>
+  </div>
+</div>
+<?php
+  include('includes/footer.php');
+  exit;
+}
 ?>
 <?php
 if(isset($_POST['fix_balances'])) {

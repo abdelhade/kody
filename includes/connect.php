@@ -154,6 +154,11 @@ if ($colPreventNegativeStock && $colPreventNegativeStock->num_rows === 0) {
     $conn->query('ALTER TABLE usr_pwrs ADD COLUMN prevent_negative_stock TINYINT(1) NOT NULL DEFAULT 0');
 }
 
+$colAllowPosDelivery = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'allow_pos_delivery'");
+if ($colAllowPosDelivery && $colAllowPosDelivery->num_rows === 0) {
+    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN allow_pos_delivery INT(11) NOT NULL DEFAULT 1');
+}
+
 
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 

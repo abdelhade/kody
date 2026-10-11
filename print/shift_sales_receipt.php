@@ -25,6 +25,7 @@ $sales_query = $conn->query("SELECT
     COUNT(*) as total_invoices,
     COALESCE(SUM(fat_total), 0) as total_sales,
     COALESCE(SUM(fat_disc), 0) as total_discounts,
+    COALESCE(SUM(fat_plus), 0) as total_plus,
     COALESCE(SUM(fat_net), 0) as net_sales,
     MIN(crtime) as first_sale_time,
     MAX(crtime) as last_sale_time,
@@ -199,7 +200,13 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
             <?php if ($sales_data['total_discounts'] > 0): ?>
             <tr>
                 <td><strong>الخصم:</strong></td>
-                <td class="text-end"><?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+            </tr>
+            <?php endif; ?>
+            <?php if ($sales_data['total_plus'] > 0): ?>
+            <tr>
+                <td><strong>الإضافي:</strong></td>
+                <td class="text-end" style="color: #28a745;">+ <?= number_format($sales_data['total_plus'], 2) ?> ج.م</td>
             </tr>
             <?php endif; ?>
             <tr class="table-success">

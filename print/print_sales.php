@@ -317,7 +317,9 @@ if ($driver_name !== '') {
     <?php 
     $x =0;
     $total_qty = 0;
-    $resdet = $conn->query("SELECT * FROM fat_details where pro_id = $id AND isdeleted = 0 order by id desc");
+    $total_item_disc = 0;
+    $total_items_val = 0;
+    $resdet = $conn->query("SELECT * FROM fat_details where (fatid = $id OR pro_id = $id) AND isdeleted = 0 order by id desc");
     while ($rowdet =$resdet->fetch_assoc()) {
         $x++;
         $itmid= $rowdet['item_id']; 
@@ -333,10 +335,14 @@ if ($driver_name !== '') {
         } 
         $total_qty += $qty;
         
+        $item_disc = (float)($rowdet['discount'] ?? 0);
+        $total_item_disc += $item_disc;
+        $total_items_val += (float)$rowdet['det_value'];
+
         $disc_pct = isset($rowdet['disc_pct']) ? $rowdet['disc_pct'] : 0;
-        if ($disc_pct == 0 && $rowdet['discount'] > 0) {
+        if ($disc_pct == 0 && $item_disc > 0) {
             $pct_base = $qty * ($rowdet['price'] * $rowdet['u_val']);
-            $disc_pct = ($pct_base > 0) ? round(($rowdet['discount'] / $pct_base) * 100, 2) : 0;
+            $disc_pct = ($pct_base > 0) ? round(($item_disc / $pct_base) * 100, 2) : 0;
         }
     ?>
 <tr>
@@ -353,19 +359,29 @@ echo $unitid['uname'];
 ?></td>
 <td class="text-center"><?= number_format($rowdet['price'] * $rowdet['u_val'], 2) ?></td>
 <td class="text-center"><?= number_format($disc_pct, 2) ?>%</td>
-<td class="text-center"><?= number_format($rowdet['discount'], 2) ?></td>
+<td class="text-center"><?= number_format($item_disc, 2) ?></td>
 <td class="text-center"><strong><?= number_format($rowdet['det_value'], 2)?></strong></td>
 </tr>
 <?php }?>
 <tr style="background-color: #e8f0fe; font-weight: bold;">
-<td colspan="3" class="text-center" style="color: #1a2f5a;">إجمالي الكميات</td>
+<td colspan="3" class="text-center" style="color: #1a2f5a;">الإجمالي</td>
 <td class="text-center" style="color: #1a2f5a; font-size: 13px;"><?= number_format($total_qty, 2) ?></td>
-<td colspan="5"></td>
+<td colspan="3"></td>
+<td class="text-center" style="color: #dc3545;"><?= $total_item_disc > 0 ? number_format($total_item_disc, 2) : '0.00' ?></td>
+<td class="text-center" style="color: #1a2f5a;"><strong><?= number_format($total_items_val, 2) ?></strong></td>
 </tr>
 </tbody>
 </table>
 
 <!-- Summary Section -->
+<?php
+$fat_total = (float)($rowfat['fat_total'] ?? 0);
+$fat_net = (float)($rowfat['fat_net'] ?? 0);
+$disc_val = (float)($rowfat['fat_disc'] ?? 0);
+$disc_pct_head = !empty($rowfat['fat_disc_per']) ? (float)$rowfat['fat_disc_per'] : (($fat_total > 0 && $disc_val > 0) ? round(($disc_val / $fat_total) * 100, 2) : 0);
+$plus_val = (float)($rowfat['fat_plus'] ?? 0);
+$plus_pct_head = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
+?>
 <table class="table table-bordered" style="margin-top: 15px;">
 <tr>
 <td style="width: 50%; vertical-align: top;">
@@ -378,18 +394,23 @@ echo $unitid['uname'];
 </td>
 <td style="width: 50%; padding: 0 !important;">
 <table class="table table-sm table-bordered summary-table" style="margin: 0;">
-<tr><th>الإجمالي:</th><td><?= number_format($rowfat['fat_total'], 2) ?></td></tr>
-<?php if ($rowfat['fat_disc'] > 0 ){
-    $disc_pct_head = ($rowfat['fat_total'] > 0) ? round(($rowfat['fat_disc'] / $rowfat['fat_total']) * 100, 2) : 0;
-?>
-<tr><th>خصم <?= $disc_pct_head > 0 ? '('.$disc_pct_head.'%)' : '' ?>:</th><td style="color: #dc3545;">- <?= number_format($rowfat['fat_disc'], 2) ?></td></tr>
-<?php }?>
-<?php if ($rowfat['fat_plus'] > 0 ){
-    $plus_pct_head = ($rowfat['fat_total'] > 0) ? round(($rowfat['fat_plus'] / $rowfat['fat_total']) * 100, 2) : 0;
-?>
-<tr><th>إضافي <?= $plus_pct_head > 0 ? '('.$plus_pct_head.'%)' : '' ?>:</th><td style="color: #28a745;">+ <?= number_format($rowfat['fat_plus'], 2) ?></td></tr>
-<?php }?>
-<tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($rowfat['fat_net'], 2) ?></strong></td></tr>
+<?php if ($total_item_disc > 0): ?>
+<tr><th>إجمالي الأصناف:</th><td><?= number_format($fat_total + $total_item_disc, 2) ?></td></tr>
+<tr><th>خصم الأصناف:</th><td style="color: #dc3545;">- <?= number_format($total_item_disc, 2) ?></td></tr>
+<tr><th>الإجمالي:</th><td><?= number_format($fat_total, 2) ?></td></tr>
+<?php else: ?>
+<tr><th>الإجمالي:</th><td><?= number_format($fat_total, 2) ?></td></tr>
+<?php endif; ?>
+
+<?php if ($disc_val > 0): ?>
+<tr><th>الخصم <?= $disc_pct_head > 0 ? '('.$disc_pct_head.'%)' : '' ?>:</th><td style="color: #dc3545;">- <?= number_format($disc_val, 2) ?></td></tr>
+<?php endif; ?>
+
+<?php if ($plus_val > 0): ?>
+<tr><th>الإضافي <?= $plus_pct_head > 0 ? '('.$plus_pct_head.'%)' : '' ?>:</th><td style="color: #28a745;">+ <?= number_format($plus_val, 2) ?></td></tr>
+<?php endif; ?>
+
+<tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($fat_net, 2) ?></strong></td></tr>
 <?php 
 // إخفاء المدفوع والمتبقي لأوامر الشراء والبيع وعروض الأسعار
 if (!in_array($tybe, [12, 13, 14])): 
@@ -403,10 +424,10 @@ if (!in_array($tybe, [12, 13, 14])):
                $paidval = $rowpaid['pro_value'];
            } else {
                // إذا لم يوجد سند، افترض أن المدفوع = الصافي (دفع كامل)
-               $paidval = $rowfat['fat_net'];
+               $paidval = $fat_net;
            }
            
-           $change = $rowfat['fat_net'] - $paidval;
+           $change = $fat_net - $paidval;
            echo number_format($paidval, 2);
     ?></td></tr>
 <tr><th>المتبقي:</th><td style="color: <?= $change > 0 ? '#dc3545' : '#28a745' ?>; font-weight: bold;"><?= number_format($change, 2) ?></td></tr>

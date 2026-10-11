@@ -62,6 +62,16 @@ body {
 
                             <!-- نوع الطلب -->
                             <?php
+                            // التحقق من صلاحية طلبات الدليفري
+                            $pos_role = $role ?? [];
+                            if (isset($_SESSION['pos_user_id']) && !empty($_SESSION['pos_user_id'])) {
+                                $q_role = $conn->query("SELECT p.* FROM users u LEFT JOIN usr_pwrs p ON u.userrole = p.id WHERE u.id = " . intval($_SESSION['pos_user_id']));
+                                if ($q_role && $r_role = $q_role->fetch_assoc()) {
+                                    $pos_role = $r_role;
+                                }
+                            }
+                            $can_pos_delivery = (isset($pos_role['allow_pos_delivery']) ? ($pos_role['allow_pos_delivery'] == 1) : true) && (isset($pos_role['show_delivery']) ? ($pos_role['show_delivery'] == 1) : true);
+
                             // يُحسب في pos_barcode.php قبل الـ navbar — هذا احتياط لو ضُمِّن الملف من مكان آخر
                             if (!isset($default_table_pref)) {
                                 $default_table_pref = isset($_COOKIE['pos_default_table']) && $_COOKIE['pos_default_table'] === '1';
@@ -71,12 +81,15 @@ body {
                             if (isset($_GET['edit']) && isset($rowed['info'])) {
                                 $info_text = $rowed['info'];
                                 if (strpos($info_text, 'نوع الطلب: دليفري') !== false) {
-                                    $order_type_val = 3;
+                                    $order_type_val = $can_pos_delivery ? 3 : 1;
                                 } elseif (strpos($info_text, 'طاولة:') !== false || strpos($info_text, 'نوع الطلب: طاولة') !== false) {
                                     $order_type_val = 2;
                                 } elseif (strpos($info_text, 'نوع الطلب: تيك أواي') !== false) {
                                     $order_type_val = 1;
                                 }
+                            }
+                            if ($order_type_val == 3 && !$can_pos_delivery) {
+                                $order_type_val = 1;
                             }
 
                             // عند تعديل طلب طاولة: استرجع ربط الطاولة حتى لا يُحفظ الطلب بلا طاولة
@@ -123,11 +136,13 @@ body {
                                         طاولة
                                     </label>
 
+                                    <?php if ($can_pos_delivery): ?>
                                     <input type="radio" class="btn-check" id="age3" name="age" value="3" <?= $order_type_val == 3 ? 'checked' : '' ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age3"
                                         onclick="openDeliveryModal()">
                                         دليفري
                                     </label>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -1160,7 +1175,20 @@ body {
             }
 
             // وظائف الدليفري
+            const canPosDelivery = <?= $can_pos_delivery ? 'true' : 'false' ?>;
             window.openDeliveryModal = function () {
+                if (!canPosDelivery) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'صلاحية غير كافية',
+                            text: 'ليس لديك صلاحية لعمل طلبات دليفري'
+                        });
+                    } else {
+                        alert('ليس لديك صلاحية لعمل طلبات دليفري');
+                    }
+                    return;
+                }
                 $('#deliveryModal').modal('show');
             };
 
