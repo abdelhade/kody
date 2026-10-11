@@ -235,20 +235,68 @@
               <div class="card-header py-2">
                 <h3 class="card-title mb-0">
                   <i class="fas fa-hourglass-half mr-1"></i>
-                  حدود التأخير والانصراف
+                  فترات السماح وقواعد الخصم (تأخير الحضور والانصراف المبكر)
                 </h3>
               </div>
               <div class="card-body py-3">
-                <div class="row">
-                  <div class="col-12 col-sm-6 form-group mb-2 mb-sm-0">
-                    <label><?= $lang_addsh_delaylimits ?></label>
-                    <input name="latelimit" type="number" min="0" class="form-control form-control-sm" placeholder="0">
-                  </div>
-                  <div class="col-12 col-sm-6 form-group mb-0">
-                    <label><?= $lang_addsh_earlylimits ?></label>
-                    <input name="earlylimit" type="number" min="0" class="form-control form-control-sm" placeholder="0">
+                <!-- فترة السماح الأولى -->
+                <div class="p-3 mb-3 rounded" style="background: #f8f9fa; border: 1px solid #e2e8f0;">
+                  <h6 class="font-weight-bold text-primary mb-2">
+                    <i class="fas fa-stopwatch mr-1"></i> فترة السماح الأولى (1)
+                  </h6>
+                  <p class="section-hint mb-2">إذا حضر الموظف أو انصرف ضمن هذه الدقائق لا يُخصم منه شيء. وإذا تجاوزها يُطبق الإجراء المحدد.</p>
+                  <div class="row">
+                    <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                      <label><?= $lang_addsh_delaylimits ?></label>
+                      <input name="latelimit" type="number" min="0" class="form-control form-control-sm" placeholder="0">
+                      <small class="text-muted">دقائق سماح التأخير (حضور)</small>
+                    </div>
+                    <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                      <label><?= $lang_addsh_earlylimits ?></label>
+                      <input name="earlylimit" type="number" min="0" class="form-control form-control-sm" placeholder="0">
+                      <small class="text-muted">دقائق سماح التبكير (انصراف)</small>
+                    </div>
+                    <div class="col-12 col-md-4 form-group mb-0">
+                      <label>الإجراء بعد تجاوز فترة سماح 1</label>
+                      <select name="grace1_action" class="form-control form-control-sm">
+                        <option value="actual" selected>خصم وقت عادي</option>
+                        <option value="half">خصم نصف يوم</option>
+                        <option value="full">خصم يوم كامل</option>
+                      </select>
+                      <small class="text-muted">الإجراء المطبق لتجاوز سماح 1</small>
+                    </div>
                   </div>
                 </div>
+
+                <!-- فترة السماح الثانية -->
+                <div class="p-3 mb-3 rounded" style="background: #fffbf0; border: 1px solid #fed7aa;">
+                  <h6 class="font-weight-bold text-warning mb-2" style="color: #b45309 !important;">
+                    <i class="fas fa-history mr-1"></i> فترة السماح الثانية (2)
+                  </h6>
+                  <p class="section-hint mb-2">حد زمني ثانٍ: إذا تجاوز الموظف هذا الحد يُطبق إجراء الخصم الثاني (اتركه 0 إذا لم ترغب بفترة ثانية).</p>
+                  <div class="row">
+                    <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                      <label>حد تأخير الحضور 2 (بالدقائق)</label>
+                      <input name="latelimit_2" type="number" min="0" class="form-control form-control-sm" placeholder="0">
+                      <small class="text-muted">الحد الأقصى للتأخير الثاني</small>
+                    </div>
+                    <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                      <label>حد تبكير الانصراف 2 (بالدقائق)</label>
+                      <input name="earlylimit_2" type="number" min="0" class="form-control form-control-sm" placeholder="0">
+                      <small class="text-muted">الحد الأقصى للانصراف الثاني</small>
+                    </div>
+                    <div class="col-12 col-md-4 form-group mb-0">
+                      <label>الإجراء بعد تجاوز فترة سماح 2</label>
+                      <select name="grace2_action" class="form-control form-control-sm">
+                        <option value="half" selected>خصم نصف يوم</option>
+                        <option value="full">خصم يوم كامل</option>
+                        <option value="actual">خصم وقت عادي</option>
+                      </select>
+                      <small class="text-muted">الإجراء المطبق لتجاوز سماح 2</small>
+                    </div>
+                  </div>
+                </div>
+
                 <hr>
                 <div class="row mt-2">
                   <div class="col-12 col-md-6 mb-2 mb-md-0">

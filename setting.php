@@ -634,6 +634,9 @@ $licenseOk = !empty($licenseStatus['licensed']);
                       <button type="button" class="btn btn-success" id="btnRunMigrations">
                         <i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات
                       </button>
+                      <button type="button" class="btn btn-outline-info" id="btnRecostSp">
+                        <i class="fas fa-calculator ml-1"></i> إعادة حساب التكاليف (Stored Procedure)
+                      </button>
                       <button type="button" class="btn btn-outline-warning" id="btnRestoreBackup">
                         <i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية
                       </button>
@@ -905,6 +908,25 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(function () {
           btnMig.disabled = false;
           btnMig.innerHTML = '<i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات';
+        });
+    });
+  }
+
+  var btnRecost = document.getElementById('btnRecostSp');
+  if (btnRecost) {
+    btnRecost.addEventListener('click', function () {
+      if (!confirm('هل تريد تثبيت الإجراء المخزن (Stored Procedure) وإعادة حساب متوسط التكلفة والأرباح لجميع الأصناف والفواتير بأثر رجعي؟')) return;
+      btnRecost.disabled = true;
+      btnRecost.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحساب والتثبيت...';
+      fetch('ajax/sp_recost.php', { method: 'POST', credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          alert(data.message || (data.success ? 'تم بنجاح' : 'حدث خطأ'));
+        })
+        .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+        .finally(function () {
+          btnRecost.disabled = false;
+          btnRecost.innerHTML = '<i class="fas fa-calculator ml-1"></i> إعادة حساب التكاليف (Stored Procedure)';
         });
     });
   }

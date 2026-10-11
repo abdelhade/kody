@@ -4,6 +4,7 @@
 <?php include('includes/connect.php');
 require_once('includes/shift_attendance.php');
 ensure_shift_single_fp_schema($conn);
+ensure_shift_grace_rules_schema($conn);
 
 $id = $_GET['id'];
 $sqlshift = "SELECT * FROM shifts WHERE id = '$id'";
@@ -194,17 +195,77 @@ hr {
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label><?= $lang_addsh_delaylimits ?></label>
-                                    <input value="<?= $rowshift['latelimit'] ?>" name="latelimit" type="number" class="form-control" placeholder="0">
+                        <?php
+                        $grace1Action = normalize_grace_action($rowshift['grace1_action'] ?? 'actual', 'actual');
+                        $grace2Action = normalize_grace_action($rowshift['grace2_action'] ?? 'half', 'half');
+                        ?>
+
+                        <!-- فترة السماح الأولى -->
+                        <div class="card p-3 mb-3" style="background: #f8f9fa; border: 1px solid #e2e8f0;">
+                            <h6 class="font-weight-bold text-primary mb-2">
+                                <i class="fas fa-stopwatch mr-1"></i> فترة السماح الأولى (1)
+                            </h6>
+                            <p class="text-muted small mb-2">إذا حضر الموظف أو انصرف ضمن هذه الدقائق لا يُخصم منه شيء. وإذا تجاوزها يُطبق الإجراء المحدد.</p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group mb-2 mb-md-0">
+                                        <label><?= $lang_addsh_delaylimits ?></label>
+                                        <input value="<?= htmlspecialchars((string)($rowshift['latelimit'] ?? 0)) ?>" name="latelimit" type="number" min="0" class="form-control" placeholder="0">
+                                        <small class="text-muted">دقائق سماح التأخير (حضور)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-2 mb-md-0">
+                                        <label><?= $lang_addsh_earlylimits ?></label>
+                                        <input value="<?= htmlspecialchars((string)($rowshift['earlylimit'] ?? 0)) ?>" name="earlylimit" type="number" min="0" class="form-control" placeholder="0">
+                                        <small class="text-muted">دقائق سماح التبكير (انصراف)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-0">
+                                        <label>الإجراء بعد تجاوز فترة سماح 1</label>
+                                        <select name="grace1_action" class="form-control">
+                                            <option value="actual" <?= $grace1Action === 'actual' ? 'selected' : '' ?>>خصم وقت عادي</option>
+                                            <option value="half" <?= $grace1Action === 'half' ? 'selected' : '' ?>>خصم نصف يوم</option>
+                                            <option value="full" <?= $grace1Action === 'full' ? 'selected' : '' ?>>خصم يوم كامل</option>
+                                        </select>
+                                        <small class="text-muted">الإجراء المطبق لتجاوز سماح 1</small>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label><?= $lang_addsh_earlylimits ?></label>
-                                    <input value="<?= $rowshift['earlylimit'] ?>" name="earlylimit" type="number" class="form-control" placeholder="0">
+                        </div>
+
+                        <!-- فترة السماح الثانية -->
+                        <div class="card p-3 mb-3" style="background: #fffbf0; border: 1px solid #fed7aa;">
+                            <h6 class="font-weight-bold text-warning mb-2" style="color: #b45309 !important;">
+                                <i class="fas fa-history mr-1"></i> فترة السماح الثانية (2)
+                            </h6>
+                            <p class="text-muted small mb-2">حد زمني ثانٍ: إذا تجاوز الموظف هذا الحد يُطبق إجراء الخصم الثاني (اتركه 0 إذا لم ترغب بفترة ثانية).</p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group mb-2 mb-md-0">
+                                        <label>حد تأخير الحضور 2 (بالدقائق)</label>
+                                        <input value="<?= htmlspecialchars((string)($rowshift['latelimit_2'] ?? 0)) ?>" name="latelimit_2" type="number" min="0" class="form-control" placeholder="0">
+                                        <small class="text-muted">الحد الأقصى للتأخير الثاني</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-2 mb-md-0">
+                                        <label>حد تبكير الانصراف 2 (بالدقائق)</label>
+                                        <input value="<?= htmlspecialchars((string)($rowshift['earlylimit_2'] ?? 0)) ?>" name="earlylimit_2" type="number" min="0" class="form-control" placeholder="0">
+                                        <small class="text-muted">الحد الأقصى للانصراف الثاني</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-0">
+                                        <label>الإجراء بعد تجاوز فترة سماح 2</label>
+                                        <select name="grace2_action" class="form-control">
+                                            <option value="half" <?= $grace2Action === 'half' ? 'selected' : '' ?>>خصم نصف يوم</option>
+                                            <option value="full" <?= $grace2Action === 'full' ? 'selected' : '' ?>>خصم يوم كامل</option>
+                                            <option value="actual" <?= $grace2Action === 'actual' ? 'selected' : '' ?>>خصم وقت عادي</option>
+                                        </select>
+                                        <small class="text-muted">الإجراء المطبق لتجاوز سماح 2</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>

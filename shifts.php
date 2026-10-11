@@ -1,6 +1,7 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
+<?php require_once('includes/shift_attendance.php'); ?>
 
 <!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper">
@@ -81,6 +82,7 @@
                   <th style="width: 50px;">م</th>
                   <th><?= $lang_publicname ?></th>
                   <th>أيام العطلة</th>
+                  <th>فترات السماح والخصم</th>
                   <th style="width: 150px;">العمليات</th>
                 </tr>
               </thead>
@@ -110,6 +112,22 @@
                       if (!in_array('5', $days)) $off_days[] = $lang_addsh_fri;
                       echo empty($off_days) ? "لا يوجد" : implode(" - ", $off_days);
                       ?>
+                    </td>
+                    <td>
+                      <div class="small text-right d-inline-block">
+                        <div>
+                          <span class="badge badge-info">سماح 1:</span>
+                          <?= (int)($rowshft['latelimit'] ?? 0) ?> د تأخير / <?= (int)($rowshft['earlylimit'] ?? 0) ?> د تبكير
+                          &larr; <span class="badge badge-secondary"><?= shift_grace_action_label($rowshft['grace1_action'] ?? 'actual') ?></span>
+                        </div>
+                        <?php if (!empty($rowshft['latelimit_2']) || !empty($rowshft['earlylimit_2'])): ?>
+                        <div class="mt-1">
+                          <span class="badge badge-warning">سماح 2:</span>
+                          <?= (int)($rowshft['latelimit_2'] ?? 0) ?> د تأخير / <?= (int)($rowshft['earlylimit_2'] ?? 0) ?> د تبكير
+                          &larr; <span class="badge badge-danger"><?= shift_grace_action_label($rowshft['grace2_action'] ?? 'half') ?></span>
+                        </div>
+                        <?php endif; ?>
+                      </div>
                     </td>
                     <td>
                       <a href="edit_shift.php?id=<?= $rowshft['id'] ?>" class="btn btn-sm btn-warning">
