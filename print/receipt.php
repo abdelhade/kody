@@ -44,16 +44,32 @@ if ($rowfat == null) {
     exit;
 }
 
-$tybe = $rowfat['pro_tybe'];
+$tybe = (int)($rowfat['pro_tybe'] ?? 0);
 $pos_type = $rowstg['pos_type'] ?? 'barcode';
 if (isset($_SESSION['lock_after_print']) && $_SESSION['lock_after_print'] === true) {
     $back_page = '../pos_barcode.php?logout=1';
     unset($_SESSION['lock_after_print']);
 } else {
+    $type_map = [
+        3 => '../sales.php?q=buy',
+        4 => '../sales.php?q=sale',
+        10 => '../sales.php?q=resale',
+        11 => '../sales.php?q=rebuy',
+        12 => '../sales.php?q=po',
+        13 => '../sales.php?q=so',
+        6 => ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php'
+    ];
+    $default_back = $type_map[$tybe] ?? '../sales.php';
+
     if (!empty($_SESSION['pos_back_page'])) {
         $back_page = $_SESSION['pos_back_page'];
+        unset($_SESSION['pos_back_page']);
+        // لو الفاتورة ليست POS والصفحة المخزنة كانت POS، يتم الرجوع لصفحة الفاتورة المناسبة
+        if ($tybe !== 6 && strpos($back_page, 'pos_') !== false) {
+            $back_page = $default_back;
+        }
     } else {
-        $back_page = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
+        $back_page = $default_back;
     }
 }
 $from_invoice = isset($_GET['src']) && $_GET['src'] === 'invoice';
@@ -491,12 +507,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    function doGoBack() {
+        if (window.opener) {
+            window.close();
+            return;
+        }
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        var backBtn = document.getElementById('back');
+        if (backBtn && backBtn.getAttribute('href')) {
+            window.location.href = backBtn.getAttribute('href');
+        }
+    }
+
+    var backBtn = document.getElementById('back');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            doGoBack();
+        });
+    }
+
     document.addEventListener('keydown', function(event) {
         if (event.key === "Escape") {
-            var backButton = document.getElementById('back');
-            if (backButton) backButton.click();
+            doGoBack();
         }
     });
+
+    // إغلاق أو الرجوع تلقائياً بعد اكتمال أمر الطباعة
+    window.addEventListener('afterprint', function() {
+        doGoBack();
+    });
+
     // طباعة تلقائية بعد فتح الصفحة (بعد الحفظ)
     setTimeout(function() {
         window.print();

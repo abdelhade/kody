@@ -244,9 +244,10 @@ window.formatInvoiceMoney = function(n) {
     return String(parseFloat(v.toFixed(3)));
 };
 
-// أسعار بيانات الصنف أسفل الفاتورة حسب الوحدة المختارة
-window.applyUnitItemInfo = function(data, unit) {
+// أسعار وبيانات الصنف أسفل الفاتورة وحساب الربح المتوقع
+window.applyUnitItemInfo = function(data, unit, $row) {
     if (!data) return;
+    window.lastSelectedUnitItemData = { data: data, unit: unit };
     var label = data.iname || '';
     if (data.barcode) label += (label ? ' — ' : '') + data.barcode;
     $('#selectedLineName').text(label);
@@ -274,6 +275,84 @@ window.applyUnitItemInfo = function(data, unit) {
     $('#storemdtime').text(data.mdtime || '');
     $('#cost_price').text(window.formatInvoiceMoney(cost));
     $('#last_price').text(window.formatInvoiceMoney(last));
+
+    window.calculateItemProfit(data, unit, $row);
+};
+
+// حساب وعرض الربح المتوقع للصنف المحدد في الفاتورة
+window.calculateItemProfit = function(data, unit, $row) {
+    if (!data) {
+        $('#unit_profit').text('-');
+        $('#item_total_profit').text('-');
+        return;
+    }
+
+    var $activeRow = ($row && $row.length) ? $row : $('#itmrow tr.item-row-active');
+    if ($activeRow.length && parseInt($activeRow.find('input[name="itmname[]"]').val(), 10) !== parseInt(data.id, 10)) {
+        var foundRow = $('#itmrow tr').filter(function() {
+            return parseInt($(this).find('input[name="itmname[]"]').val(), 10) === parseInt(data.id, 10);
+        }).last();
+        if (foundRow.length) $activeRow = foundRow;
+    }
+
+    var factor = unit ? (parseFloat(unit.unit_value) || 1) : 1;
+    var cost = unit ? parseFloat(unit.ucost) : NaN;
+    if (!(cost > 0)) cost = (parseFloat(data.cost_price) || parseFloat(data.last_price) || 0) * factor;
+
+    var isPurchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    var hasActiveRow = $activeRow && $activeRow.length > 0;
+
+    var rowQty = hasActiveRow ? (parseFloat($activeRow.find('.itmqty').val()) || 0) : 1;
+    var rowPrice = hasActiveRow ? (parseFloat($activeRow.find('.itmprice').val()) || 0) : 0;
+    var rowDisc = hasActiveRow ? (parseFloat($activeRow.find('.itmdisc').val()) || 0) : 0;
+    var rowVal = hasActiveRow ? (parseFloat($activeRow.find('.itmval').val()) || ((rowQty * rowPrice) - rowDisc)) : 0;
+
+    var unitProfit = 0;
+    var totalProfit = 0;
+    var profitPct = 0;
+
+    if (isPurchase) {
+        var sellPrice = hasActiveRow && $activeRow.find('.itmsellprice').length 
+            ? (parseFloat($activeRow.find('.itmsellprice').val()) || 0)
+            : (unit ? (parseFloat(unit.uprice1) || 0) : (parseFloat(data.price1) || 0) * factor);
+        var purchasePrice = hasActiveRow ? rowPrice : cost;
+        unitProfit = sellPrice - purchasePrice;
+        totalProfit = unitProfit * (rowQty > 0 ? rowQty : 1);
+        profitPct = purchasePrice > 0 ? ((unitProfit / purchasePrice) * 100) : 0;
+    } else {
+        var sellPrice = hasActiveRow ? rowPrice : (unit ? (parseFloat(unit.uprice1) || 0) : (parseFloat(data.price1) || 0) * factor);
+        if (hasActiveRow && rowQty > 0) {
+            var netUnitPrice = rowVal / rowQty;
+            unitProfit = netUnitPrice - cost;
+            totalProfit = rowVal - (cost * rowQty);
+        } else {
+            unitProfit = sellPrice - cost;
+            totalProfit = unitProfit * (rowQty > 0 ? rowQty : 1);
+        }
+        profitPct = cost > 0 ? ((unitProfit / cost) * 100) : 0;
+    }
+
+    var sign = unitProfit > 0 ? '+' : '';
+    var unitColor = unitProfit > 0 ? '#16a34a' : (unitProfit < 0 ? '#dc2626' : '#64748b');
+    var totalColor = totalProfit > 0 ? '#16a34a' : (totalProfit < 0 ? '#dc2626' : '#64748b');
+
+    var unitHtml = '<span style="color:' + unitColor + '; font-weight:700;">' + 
+                   sign + window.formatInvoiceMoney(unitProfit) + 
+                   ' <small style="font-size:0.8em;">(' + (profitPct >= 0 ? '+' : '') + profitPct.toFixed(1) + '%)</small></span>';
+
+    var totalHtml = '<span style="color:' + totalColor + '; font-weight:700;">' + 
+                    (totalProfit > 0 ? '+' : '') + window.formatInvoiceMoney(totalProfit) + 
+                    (hasActiveRow ? ' <small class="text-muted" style="font-size:0.8em;">(لـ ' + window.formatInvoiceMoney(rowQty) + ')</small>' : '') + 
+                    '</span>';
+
+    $('#unit_profit').html(unitHtml);
+    $('#item_total_profit').html(totalHtml);
+
+    if (hasActiveRow) {
+        $activeRow.attr('data-unit-profit', unitProfit);
+        $activeRow.attr('data-total-profit', totalProfit);
+        $activeRow.find('.itmval').attr('title', 'الربح المتوقع: ' + window.formatInvoiceMoney(totalProfit) + ' (ربح القطعة: ' + window.formatInvoiceMoney(unitProfit) + ')');
+    }
 };
 
 $(document).ready(function() {

@@ -166,15 +166,26 @@ $(document).ready(function() {
         updateTotal();
     });
     
-    // تحديث المدفوع عند تحميل الصفحة
+    // تحديث المدفوع عند تحميل الصفحة وعرض بيانات وأرباح أول صنف إن وجد
     setTimeout(function() {
         updateTotal();
+        const $first = $('#itmrow tr').first();
+        if ($first.length) {
+            showInvoiceLineInfo($first);
+        }
     }, 500);
     
-    // الضغط على سطر الصنف يعرض بياناته أسفل الفاتورة
+    // الضغط على سطر الصنف يعرض بياناته وأرباحه أسفل الفاتورة
     $(document).on('click', '#itmrow tr', function(e) {
         if ($(e.target).closest('.deleteRow').length) return;
         showInvoiceLineInfo($(this));
+    });
+
+    // التنقل بالتركيز بين السطور يعرض بيانات الصنف والربح المتوقع
+    $(document).on('focusin', '#itmrow tr', function() {
+        if (!$(this).hasClass('item-row-active')) {
+            showInvoiceLineInfo($(this));
+        }
     });
 
     // تغيير وحدة السطر يحدّث سعر السطر وبيانات الصنف أسفل الفاتورة
@@ -186,10 +197,11 @@ $(document).ready(function() {
 
         $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
             if (!data || data.error || typeof window.findInvoiceUnit !== 'function') return;
+            $row.data('itemInfo', data);
             const unit = window.findInvoiceUnit(data.units, $select.val());
             if (!unit) return;
 
-            window.applyUnitItemInfo(data, unit);
+            window.applyUnitItemInfo(data, unit, $row);
 
             const purchase = (typeof window.isPurchaseInvoice === 'function') && window.isPurchaseInvoice();
             const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
@@ -234,12 +246,22 @@ function showInvoiceLineInfo($row) {
     const fallbackName = $.trim($row.find('td').eq(1).find('p').text());
     if (fallbackName) $('#selectedLineName').text(fallbackName);
 
+    const cachedData = $row.data('itemInfo');
+    if (cachedData && cachedData.units) {
+        const unit = (typeof window.findInvoiceUnit === 'function')
+            ? window.findInvoiceUnit(cachedData.units, unitVal)
+            : null;
+        window.applyUnitItemInfo(cachedData, unit || ((cachedData.units && cachedData.units.length) ? cachedData.units[0] : null), $row);
+        return;
+    }
+
     $.getJSON('get/get_iteminfo.php', { id: itemId }, function(data) {
         if (!data || data.error || typeof window.applyUnitItemInfo !== 'function') return;
+        $row.data('itemInfo', data);
         const unit = (typeof window.findInvoiceUnit === 'function')
             ? window.findInvoiceUnit(data.units, unitVal)
             : null;
-        window.applyUnitItemInfo(data, unit || ((data.units && data.units.length) ? data.units[0] : null));
+        window.applyUnitItemInfo(data, unit || ((data.units && data.units.length) ? data.units[0] : null), $row);
     });
 }
 
@@ -516,6 +538,7 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
             fillRowUnitSelect(newRow.find('select[name="u_val[]"]'), unitVal, unitName);
 
             newRow.appendTo("#itmrow");
+            showInvoiceLineInfo(newRow);
 
             const qtyField = newRow.find('.itmqty').get(0);
             if (qtyField) {
@@ -574,6 +597,9 @@ function handleInputChanges() {
             const price = parseFloat(row.find('.itmprice').val()) || 0;
             const pct   = parseFloat($this.val()) || 0;
             row.find('.itmsellprice').val(parseFloat((price * (1 + pct / 100)).toFixed(3)));
+            if (window.lastSelectedUnitItemData && typeof window.calculateItemProfit === 'function') {
+                window.calculateItemProfit(window.lastSelectedUnitItemData.data, window.lastSelectedUnitItemData.unit, row);
+            }
             return;
         }
 
@@ -581,6 +607,9 @@ function handleInputChanges() {
         if ($this.hasClass('itmsellprice')) {
             calcProfitPct(row);
             paintInvoiceLineWarnings();
+            if (window.lastSelectedUnitItemData && typeof window.calculateItemProfit === 'function') {
+                window.calculateItemProfit(window.lastSelectedUnitItemData.data, window.lastSelectedUnitItemData.unit, row);
+            }
             return;
         }
 
@@ -599,6 +628,9 @@ function handleInputChanges() {
             }
             calculateItemValue(row);
             updateTotal();
+            if (window.lastSelectedUnitItemData && typeof window.calculateItemProfit === 'function') {
+                window.calculateItemProfit(window.lastSelectedUnitItemData.data, window.lastSelectedUnitItemData.unit, row);
+            }
         }, 150);
         row.data('calcTimer', rowTimeout);
     });
@@ -707,8 +739,20 @@ function calcProfitPct(row) {
 
         function handleRowDeletion() {
             $("#itmrow").on("click", ".deleteRow", function() {
+                const wasActive = $(this).closest("tr").hasClass("item-row-active");
                 $(this).closest("tr").remove();
                 updateTotal();
+                if (wasActive) {
+                    const $firstRow = $("#itmrow tr").first();
+                    if ($firstRow.length) {
+                        showInvoiceLineInfo($firstRow);
+                    } else {
+                        $("#selectedLineName").text('');
+                        $("#selectedItemLinks").addClass('d-none');
+                        $("#storeqty, #price1, #market_price, #cost_price, #last_price").text('');
+                        $("#unit_profit, #item_total_profit").text('-');
+                    }
+                }
             });
         }
 

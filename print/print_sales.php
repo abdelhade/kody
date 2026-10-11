@@ -15,7 +15,28 @@ $rowfat = $conn->query("SELECT * FROM `ot_head` where id = $id")->fetch_assoc();
 if ($rowfat == null) {
     echo "لا يوجد فاتورة بهذا الرقم";die;
 }else{
-    $tybe = $rowfat['pro_tybe'];
+    $tybe = (int)($rowfat['pro_tybe'] ?? 0);
+    $pos_type = $rowstg['pos_type'] ?? 'barcode';
+    $type_map = [
+        3 => '../sales.php?q=buy',
+        4 => '../sales.php?q=sale',
+        10 => '../sales.php?q=resale',
+        11 => '../sales.php?q=rebuy',
+        12 => '../sales.php?q=po',
+        13 => '../sales.php?q=so',
+        6 => ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php'
+    ];
+    $default_back = $type_map[$tybe] ?? '../sales.php';
+
+    if (!empty($_SESSION['pos_back_page'])) {
+        $back_page = $_SESSION['pos_back_page'];
+        unset($_SESSION['pos_back_page']);
+        if ($tybe !== 6 && strpos($back_page, 'pos_') !== false) {
+            $back_page = $default_back;
+        }
+    } else {
+        $back_page = $default_back;
+    }
 ?>
 
 <style>
@@ -403,7 +424,8 @@ if (!in_array($tybe, [12, 13, 14])):
     <button id="printButton">
 <i class="fas fa-print"></i> طباعة الفاتورة
 </button>
-    <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:0; cursor:pointer; font-weight:bold;">
+    <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back" style="background:#6c757d; color:#fff; padding:8px 20px; font-size:14px; font-weight:bold; border-radius:5px; text-decoration:none; margin-top:20px; display:inline-block;">عودة</a>
+    <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:0; cursor:pointer; font-weight:bold; margin-top:20px;">
         <input type="checkbox" id="printCashierCheck">
         كاشير
     </label>
@@ -439,6 +461,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    function doGoBack() {
+        if (window.opener) {
+            window.close();
+            return;
+        }
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        var backBtn = document.getElementById('back');
+        if (backBtn && backBtn.getAttribute('href')) {
+            window.location.href = backBtn.getAttribute('href');
+        }
+    }
+
+    var backBtn = document.getElementById('back');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            doGoBack();
+        });
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            doGoBack();
+        }
+    });
+
+    window.addEventListener('afterprint', function() {
+        doGoBack();
+    });
 });
 </script>
 

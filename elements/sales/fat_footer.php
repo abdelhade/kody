@@ -66,6 +66,20 @@
                 </div>
             </div>
 
+            <div class="row">
+                    <div class="col bg-light"> ربح الوحدة المتوقع</div>
+                    <div class="col border border-light">
+                   <h6 id="unit_profit" class="font-weight-bold" >-</h6>
+                </div>
+            </div>
+
+            <div class="row">
+                    <div class="col bg-light"> إجمالي ربح الصنف</div>
+                    <div class="col border border-light">
+                   <h6 id="item_total_profit" class="font-weight-bold" >-</h6>
+                </div>
+            </div>
+
 </div>
 <div class="col-md-3">
 <div class="row">
