@@ -213,7 +213,7 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississsssiss",
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississssiss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
@@ -227,7 +227,7 @@ if ($company_logo !== '') {
         $backup_path
     );
 } else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississsssis",
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississssis",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,

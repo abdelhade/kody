@@ -1,7 +1,9 @@
 <?php
 /**
  * save_inventory_audit.php
- * AJAX handler — receives actual quantities, logs the audit, then updates myitems.itmqty
+ * AJAX handler — receives counted quantities, logs the audit, and records the
+ * difference as a stock movement (pro_tybe "تسوية جرد") in fat_details.
+ * itmqty is then re-synced from fat_details so it never drifts from the ledger.
  */
 
 session_start();
@@ -16,6 +18,9 @@ if (!isset($_SESSION['login'])) {
 
 require_once __DIR__ . '/../includes/connect.php';
 
+const AUDIT_PRO_NAME = 'تسوية جرد';
+const QTY_EPSILON    = 0.0005;
+
 // ─── Auto-create audit log table if it doesn't exist ───
 $conn->query("
     CREATE TABLE IF NOT EXISTS inventory_audit_log (
@@ -27,6 +32,7 @@ $conn->query("
         qty_before DECIMAL(15,2) NOT NULL,
         qty_actual DECIMAL(15,2) NOT NULL,
         qty_diff DECIMAL(15,2) NOT NULL,
+        fat_detail_id INT NULL,
         user_id INT,
         user_name VARCHAR(100),
         notes TEXT,
@@ -36,6 +42,28 @@ $conn->query("
         INDEX idx_date (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 ");
+$colFatDetail = $conn->query("SHOW COLUMNS FROM inventory_audit_log LIKE 'fat_detail_id'");
+if ($colFatDetail && $colFatDetail->num_rows === 0) {
+    $conn->query("ALTER TABLE inventory_audit_log ADD COLUMN fat_detail_id INT NULL AFTER qty_diff");
+}
+
+// ─── Ensure the "تسوية جرد" operation type exists ───
+$stmtType = $conn->prepare("SELECT id FROM pro_tybes WHERE pname = ? LIMIT 1");
+$auditProName = AUDIT_PRO_NAME;
+$stmtType->bind_param('s', $auditProName);
+$stmtType->execute();
+$typeRow = $stmtType->get_result()->fetch_assoc();
+$stmtType->close();
+if ($typeRow) {
+    $auditProType = (int) $typeRow['id'];
+} else {
+    $stmtType = $conn->prepare("INSERT INTO pro_tybes (pname, ptybe) VALUES (?, 0)");
+    $stmtType->bind_param('s', $auditProName);
+    $stmtType->execute();
+    $auditProType = (int) $conn->insert_id;
+    $stmtType->close();
+    $conn->query("UPDATE pro_tybes SET ptybe = id WHERE id = $auditProType");
+}
 
 // Accept JSON body only
 $raw = file_get_contents('php://input');
@@ -51,8 +79,12 @@ $notes = isset($data['notes']) ? trim($data['notes']) : '';
 
 // Validate items
 foreach ($items as $item) {
-    if (!isset($item['id']) || !isset($item['qty'])) {
+    if (!isset($item['id']) || !isset($item['qty']) || !is_numeric($item['qty'])) {
         echo json_encode(['success' => false, 'message' => 'بيانات غير صحيحة']);
+        exit;
+    }
+    if (floatval($item['qty']) < 0) {
+        echo json_encode(['success' => false, 'message' => 'لا يمكن أن تكون الكمية الفعلية سالبة']);
         exit;
     }
 }
@@ -63,52 +95,107 @@ $auditSession = 'AUD-' . date('Ymd-His') . '-' . substr(md5(uniqid(mt_rand(), tr
 // Get user info
 $userId   = isset($_SESSION['userid']) ? intval($_SESSION['userid']) : 0;
 $userName = isset($_SESSION['login'])  ? $_SESSION['login'] : 'غير معروف';
+$storeId  = (int) (getUserDefault('def_store', $conn) ?: 1);
 
 $conn->begin_transaction();
 $errors = [];
+$results = [];
 
 try {
     // Prepare statements
-    $stmtSelect = $conn->prepare("SELECT id, iname, barcode, itmqty FROM myitems WHERE id = ? AND isdeleted = 0");
-    $stmtLog    = $conn->prepare("
-        INSERT INTO inventory_audit_log 
-            (audit_session, item_id, item_name, item_barcode, qty_before, qty_actual, qty_diff, user_id, user_name, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    $stmtSelect = $conn->prepare("SELECT id, iname, barcode, cost_price FROM myitems WHERE id = ? AND isdeleted = 0 FOR UPDATE");
+    $stmtLedger = $conn->prepare("
+        SELECT COALESCE(SUM(qty_in), 0) - COALESCE(SUM(qty_out), 0) AS qty
+        FROM fat_details
+        WHERE item_id = ? AND isdeleted = 0
     ");
-    $stmtUpdate = $conn->prepare("UPDATE myitems SET itmqty = ? WHERE id = ? AND isdeleted = 0");
+    $stmtMove = $conn->prepare("
+        INSERT INTO fat_details
+            (pro_tybe, fat_tybe, det_store, item_id, u_val, qty_in, qty_out, doc_qty, price, cost_price, det_value, profit)
+        VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 0)
+    ");
+    $stmtLog = $conn->prepare("
+        INSERT INTO inventory_audit_log 
+            (audit_session, item_id, item_name, item_barcode, qty_before, qty_actual, qty_diff, fat_detail_id, user_id, user_name, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    $stmtSync = $conn->prepare("
+        UPDATE myitems
+        SET itmqty = (
+            SELECT COALESCE(SUM(qty_in), 0) - COALESCE(SUM(qty_out), 0)
+            FROM fat_details
+            WHERE item_id = myitems.id AND isdeleted = 0
+        )
+        WHERE id = ?
+    ");
 
-    if (!$stmtSelect || !$stmtLog || !$stmtUpdate) {
+    if (!$stmtSelect || !$stmtLedger || !$stmtMove || !$stmtLog || !$stmtSync) {
         throw new Exception('فشل تحضير الاستعلام: ' . $conn->error);
     }
 
     foreach ($items as $item) {
         $id  = intval($item['id']);
-        $qty = floatval($item['qty']);
+        $qty = round(floatval($item['qty']), 3);
 
         if ($id < 1) {
             $errors[] = "معرف صنف غير صالح: $id";
             continue;
         }
 
-        // 1. Read current item data
+        // 1. Lock and read the item
         $stmtSelect->bind_param('i', $id);
         $stmtSelect->execute();
-        $result = $stmtSelect->get_result();
-        $row = $result->fetch_assoc();
+        $row = $stmtSelect->get_result()->fetch_assoc();
 
         if (!$row) {
             $errors[] = "صنف غير موجود: $id";
             continue;
         }
 
-        $qtyBefore = floatval($row['itmqty']);
-        $qtyDiff   = $qty - $qtyBefore;
-        $itemName  = $row['iname'];
-        $barcode   = $row['barcode'] ?? '';
+        // 2. System qty comes from the movement ledger, not the cached itmqty
+        $stmtLedger->bind_param('i', $id);
+        $stmtLedger->execute();
+        $qtyBefore = round((float) $stmtLedger->get_result()->fetch_assoc()['qty'], 3);
 
-        // 2. Log the audit record BEFORE updating
+        $qtyDiff = round($qty - $qtyBefore, 3);
+        if (abs($qtyDiff) < QTY_EPSILON) {
+            $qtyDiff = 0.0;
+        }
+
+        // 3. Record the difference as a stock movement
+        $fatDetailId = null;
+        if ($qtyDiff != 0) {
+            $qtyIn    = $qtyDiff > 0 ? $qtyDiff : 0.0;
+            $qtyOut   = $qtyDiff < 0 ? -$qtyDiff : 0.0;
+            $docQty   = abs($qtyDiff);
+            $cost     = (float) $row['cost_price'];
+            $detValue = round($docQty * $cost, 2);
+
+            $stmtMove->bind_param(
+                'iiiidddddd',
+                $auditProType,
+                $auditProType,
+                $storeId,
+                $id,
+                $qtyIn,
+                $qtyOut,
+                $docQty,
+                $cost,
+                $cost,
+                $detValue
+            );
+            $stmtMove->execute();
+            $fatDetailId = (int) $conn->insert_id;
+
+            $stmtSync->bind_param('i', $id);
+            $stmtSync->execute();
+        }
+
+        // 4. Log the audit line (matching items too, so the session is a full count record)
+        $itemName = $row['iname'];
+        $barcode  = $row['barcode'] ?? '';
         $stmtLog->bind_param(
-            'sissddisss',
+            'sissdddiiss',
             $auditSession,
             $id,
             $itemName,
@@ -116,25 +203,21 @@ try {
             $qtyBefore,
             $qty,
             $qtyDiff,
+            $fatDetailId,
             $userId,
             $userName,
             $notes
         );
-        if (!$stmtLog->execute()) {
-            $errors[] = "خطأ في حفظ سجل الجرد للصنف رقم $id";
-            continue;
-        }
+        $stmtLog->execute();
 
-        // 3. Update the item quantity
-        $stmtUpdate->bind_param('di', $qty, $id);
-        if (!$stmtUpdate->execute()) {
-            $errors[] = "خطأ في تحديث الصنف رقم $id";
-        }
+        $results[] = ['id' => $id, 'qty_before' => $qtyBefore, 'qty' => $qty, 'diff' => $qtyDiff];
     }
 
     $stmtSelect->close();
+    $stmtLedger->close();
+    $stmtMove->close();
     $stmtLog->close();
-    $stmtUpdate->close();
+    $stmtSync->close();
 
     if (!empty($errors)) {
         $conn->rollback();
@@ -145,8 +228,9 @@ try {
     $conn->commit();
     echo json_encode([
         'success'       => true,
-        'message'       => 'تمت تسوية ' . count($items) . ' صنف بنجاح',
-        'count'         => count($items),
+        'message'       => 'تم حفظ جرد ' . count($results) . ' صنف بنجاح',
+        'count'         => count($results),
+        'items'         => $results,
         'audit_session' => $auditSession
     ]);
 

@@ -324,3 +324,4 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-10 19:32:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-10-10 19:32:04] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-10-13 15:46:13] mysqli_sql_exception: Unknown column 'sittingpass' in 'field list' in D:\xampp\htdocs\kody\scratch_check_pass.php:3
+[2026-10-13 19:28:15] ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in D:\xampp\htdocs\kody\do\doedit_settings.php:230

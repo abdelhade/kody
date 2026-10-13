@@ -12,14 +12,22 @@ $sql = "SELECT m.*,
                (SELECT u.uname FROM myunits u 
                 INNER JOIN item_units iu ON iu.unit_id = u.id 
                 WHERE iu.item_id = m.id 
-                LIMIT 1) AS unit_name_fallback
+                LIMIT 1) AS unit_name_fallback,
+               COALESCE(st.qty, 0) AS ledger_qty
         FROM myitems m 
+        LEFT JOIN (
+            SELECT item_id, SUM(qty_in) - SUM(qty_out) AS qty
+            FROM fat_details
+            WHERE isdeleted = 0
+            GROUP BY item_id
+        ) st ON st.item_id = m.id
         WHERE m.isdeleted = 0 
         ORDER BY m.iname";
 $result = $conn->query($sql);
 $items  = [];
 while ($row = $result->fetch_assoc()) {
     $row['display_unit'] = $row['unit_name'] ?: ($row['unit_name_fallback'] ?: '-');
+    $row['sys_qty']      = round((float) $row['ledger_qty'], 3);
     $items[] = $row;
 }
 $total = count($items);
@@ -194,6 +202,7 @@ $total = count($items);
     text-align: center;
     transition: all 0.25s;
 }
+.diff-pending { background: #f1f3f8; color: #9aa3b5; font-weight: 600; font-size: 0.8rem; }
 .diff-zero    { background: #e8f5e9; color: #2e7d32; }
 .diff-surplus { background: #e8f5e9; color: #1b5e20; }
 .diff-deficit { background: #ffebee; color: #b71c1c; }
@@ -504,8 +513,8 @@ $total = count($items);
 <div class="row mb-4" id="statsRow">
     <div class="col-6 col-md-3 mb-3">
         <div class="stat-card stat-total">
-            <div class="stat-number" id="statTotal"><?= $total ?></div>
-            <div class="stat-label">إجمالي الأصناف</div>
+            <div class="stat-number"><span id="statCounted">0</span> / <span id="statTotal"><?= $total ?></span></div>
+            <div class="stat-label">تم جرده / إجمالي الأصناف</div>
             <i class="fas fa-boxes stat-icon"></i>
         </div>
     </div>
@@ -542,7 +551,7 @@ $total = count($items);
                 <i class="fas fa-print ml-1"></i> طباعة
             </button>
             <button id="btnResetAll" class="btn btn-sm no-print" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:8px;">
-                <i class="fas fa-undo ml-1"></i> تصفير الجرد
+                <i class="fas fa-undo ml-1"></i> مسح الجرد
             </button>
             <button id="btnSaveAll" class="btn-save-all no-print" disabled>
                 <i class="fas fa-save ml-1"></i> حفظ وتسوية الجرد
@@ -566,7 +575,7 @@ $total = count($items);
                 </thead>
                 <tbody>
                 <?php $i = 0; foreach ($items as $row): $i++; ?>
-                    <tr id="row-<?= $row['id'] ?>" data-id="<?= $row['id'] ?>" data-sys-qty="<?= floatval($row['itmqty']) ?>">
+                    <tr id="row-<?= $row['id'] ?>" data-id="<?= $row['id'] ?>" data-sys-qty="<?= $row['sys_qty'] ?>">
                         <td style="color:#aaa;font-size:0.8rem;"><?= $i ?></td>
                         <td>
                             <span class="item-name"><?= htmlspecialchars($row['iname']) ?></span>
@@ -577,33 +586,33 @@ $total = count($items);
                         <td><code style="color:#667eea;font-size:0.85rem;"><?= htmlspecialchars($row['barcode'] ?? '') ?></code></td>
                         <td><span class="badge" style="background:#e8eeff;color:#3a4a6b;padding:4px 10px;border-radius:6px;"><?= htmlspecialchars($row['display_unit']) ?></span></td>
                         <td style="text-align:center;">
-                            <span class="sys-qty" id="sys-<?= $row['id'] ?>"><?= number_format(floatval($row['itmqty']), 2) ?></span>
+                            <span class="sys-qty" id="sys-<?= $row['id'] ?>"><?= number_format($row['sys_qty'], 2) ?></span>
                         </td>
                         <td style="text-align:center;">
                             <input type="number"
                                    class="qty-input"
                                    id="actual-<?= $row['id'] ?>"
                                    data-row-id="<?= $row['id'] ?>"
-                                   value="<?= floatval($row['itmqty']) ?>"
-                                   step="0.01"
+                                   value=""
+                                   placeholder="—"
+                                   step="any"
                                    min="0"
-                                   onchange="calcDiff(<?= $row['id'] ?>, <?= floatval($row['itmqty']) ?>)"
-                                   oninput="calcDiff(<?= $row['id'] ?>, <?= floatval($row['itmqty']) ?>)">
+                                   oninput="calcDiff(<?= $row['id'] ?>)">
                         </td>
                         <td style="text-align:center;">
-                            <span class="diff-badge diff-zero" id="diff-<?= $row['id'] ?>">0.00</span>
+                            <span class="diff-badge diff-pending" id="diff-<?= $row['id'] ?>">لم يُجرد</span>
                         </td>
                         <td class="no-print" style="text-align:center;">
                             <button class="btn-settle-row"
                                     id="settle-<?= $row['id'] ?>"
                                     disabled
-                                    onclick="settleRow(<?= $row['id'] ?>, <?= floatval($row['itmqty']) ?>)"
-                                    title="تسوية هذا الصنف فقط">
+                                    onclick="settleRow(<?= $row['id'] ?>)"
+                                    title="حفظ جرد هذا الصنف فقط">
                                 <i class="fas fa-check"></i> تسوية
                             </button>
                             <button class="btn-reset-row mt-1"
-                                    onclick="resetRow(<?= $row['id'] ?>, <?= floatval($row['itmqty']) ?>)"
-                                    title="إعادة الكمية للقيمة بالسيستم">
+                                    onclick="resetRow(<?= $row['id'] ?>)"
+                                    title="مسح الكمية المجرودة">
                                 <i class="fas fa-undo"></i>
                             </button>
                         </td>
