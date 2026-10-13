@@ -13,7 +13,7 @@ if (!isset($_SESSION['login'])) {
     die('غير مصرح بالدخول');
 }
 
-require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/connect.php';
 require_once __DIR__ . '/../classes/KodyExcelExporter.php';
 
 $type = $_GET['type'] ?? $_POST['type'] ?? '';
@@ -22,7 +22,7 @@ $to = $_GET['to'] ?? $_POST['to'] ?? '';
 
 // Fetch company name from settings
 $companyName = 'النظام';
-$stgRes = $conn->query("SELECT company_name FROM setting LIMIT 1");
+$stgRes = $conn->query("SELECT company_name FROM settings LIMIT 1");
 if ($stgRes && $rowStg = $stgRes->fetch_assoc()) {
     $companyName = $rowStg['company_name'] ?? 'النظام';
 }
