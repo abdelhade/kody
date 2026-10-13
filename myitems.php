@@ -535,11 +535,33 @@ $(document).ready(function() {
         var g2Val = $('#filter_group2').val() || 0;
         var exportUrl = 'do/export_excel.php?type=items&search=' + encodeURIComponent(searchVal) + '&group1=' + g1Val + '&group2=' + g2Val;
 
-        var $iframe = $('<iframe style="display:none;"></iframe>').attr('src', exportUrl).appendTo('body');
-        setTimeout(function() {
-            $btn.prop('disabled', false).html(originalHtml);
-            setTimeout(function() { $iframe.remove(); }, 60000);
-        }, 1500);
+        fetch(exportUrl, { credentials: 'same-origin' })
+            .then(function(res) {
+                var ct = res.headers.get('Content-Type') || '';
+                if (!res.ok || ct.indexOf('spreadsheetml') === -1) {
+                    return res.text().then(function(txt) {
+                        var msg = $('<div>').html(txt).text().trim();
+                        throw new Error(msg.substring(0, 500) || ('HTTP ' + res.status));
+                    });
+                }
+                return res.blob();
+            })
+            .then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'دليل_الأصناف.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+            })
+            .catch(function(err) {
+                alert(err.message || 'تعذّر تصدير ملف الإكسل');
+            })
+            .finally(function() {
+                $btn.prop('disabled', false).html(originalHtml);
+            });
     });
 });
 </script>

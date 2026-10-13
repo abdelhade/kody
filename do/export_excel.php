@@ -16,6 +16,29 @@ if (!isset($_SESSION['login'])) {
 require_once __DIR__ . '/../includes/connect.php';
 require_once __DIR__ . '/../classes/KodyExcelExporter.php';
 
+set_exception_handler(function ($e) {
+    @file_put_contents(
+        __DIR__ . '/../logs/sql_errors.log',
+        '[' . date('Y-m-d H:i:s') . '] export_excel: ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL,
+        FILE_APPEND
+    );
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=utf-8');
+    }
+    echo 'تعذّر تصدير ملف الإكسل: ' . $e->getMessage();
+    exit;
+});
+
+if (!class_exists('ZipArchive')) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    die('تعذّر تصدير ملف الإكسل: امتداد PHP zip غير مفعّل على السيرفر (فعّل extension=zip في php.ini ثم أعد تشغيل Apache)');
+}
+
 $type = $_GET['type'] ?? $_POST['type'] ?? '';
 $from = $_GET['from'] ?? $_POST['from'] ?? '';
 $to = $_GET['to'] ?? $_POST['to'] ?? '';
@@ -91,7 +114,14 @@ switch ($type) {
                     i.iname,
                     COALESCE(g1.gname, '') AS group1_name,
                     COALESCE(g2.gname, '') AS group2_name,
-                    COALESCE(u.uname, '') AS unit_name,
+                    COALESCE((
+                        SELECT u.uname
+                        FROM item_units iu
+                        JOIN myunits u ON u.id = iu.unit_id
+                        WHERE iu.item_id = i.id AND iu.isdeleted = 0 AND (iu.def_stock = 1 OR iu.def_sale = 1)
+                        ORDER BY iu.def_stock DESC, iu.id ASC
+                        LIMIT 1
+                    ), '') AS unit_name,
                     i.itmqty,
                     COALESCE(i.info, '') AS info,
                     i.price1,
@@ -102,10 +132,7 @@ switch ($type) {
                 FROM myitems i 
                 LEFT JOIN item_group g1 ON i.group1 = g1.id 
                 LEFT JOIN item_group2 g2 ON i.group2 = g2.id 
-                LEFT JOIN item_units iu ON (iu.item_id = i.id AND iu.isdeleted = 0 AND (iu.def_stock = 1 OR iu.def_sale = 1))
-                LEFT JOIN myunits u ON iu.unit_id = u.id
                 $where 
-                GROUP BY i.id
                 ORDER BY i.id DESC";
 
         $res = $conn->query($sql);

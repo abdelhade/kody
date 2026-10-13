@@ -265,7 +265,7 @@ class KodyExcelExporter
     {
         $binary = self::generate($headers, $rows, $options);
 
-        if (!str_ends_with(strtolower($filename), '.xlsx')) {
+        if (substr(strtolower($filename), -5) !== '.xlsx') {
             $filename .= '.xlsx';
         }
 
