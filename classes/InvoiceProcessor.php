@@ -1884,7 +1884,7 @@ class InvoiceProcessor {
                 WHERE fd.item_id = mi.id AND fd.isdeleted = 0
             )
             WHERE mi.id IN (
-                SELECT DISTINCT item_id FROM fat_details WHERE fatid = ? AND isdeleted = 0
+                SELECT DISTINCT item_id FROM fat_details WHERE fatid = ?
             )
         ";
         $stmt = $conn->prepare($sql);

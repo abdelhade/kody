@@ -156,6 +156,21 @@ BEGIN
       AND COALESCE(m.isdeleted, 0) = 0
       AND (m.manual_price_edit = 0 OR m.manual_price_edit IS NULL);
 
+    -- 3.1 إعادة حساب رصيد الصنف (itmqty) من الحركات غير المحذوفة فقط
+    -- للأصناف التي لها أي حركة (ولو محذوفة)؛ الأصناف بلا حركات تحتفظ برصيدها اليدوي
+    UPDATE myitems m
+    JOIN (
+        SELECT d.item_id,
+               SUM(CASE WHEN COALESCE(d.isdeleted, 0) = 0 AND COALESCE(o.isdeleted, 0) = 0
+                        THEN COALESCE(d.qty_in, 0) - COALESCE(d.qty_out, 0)
+                        ELSE 0 END) AS bal
+        FROM fat_details d
+        LEFT JOIN ot_head o ON o.id = COALESCE(NULLIF(d.pro_id, 0), d.fatid)
+        GROUP BY d.item_id
+    ) b ON b.item_id = m.id
+    SET m.itmqty = b.bal
+    WHERE COALESCE(m.isdeleted, 0) = 0;
+
     -- 4. تحديث أسعار وحدات الصنف (item_units)
     UPDATE item_units u
     JOIN tmp_item_state s ON u.item_id = s.item_id
