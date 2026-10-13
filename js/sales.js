@@ -142,14 +142,10 @@ $(document).ready(function() {
         }
     });
 
-    // عند تغيير المدفوع يدوياً → حساب الباقي (فقط لو مش مورد افتراضي)
+    // عند تغيير المدفوع يدوياً → حساب الباقي (فقط لو الحساب مش تعامل نقدي فقط)
     $(document).on('input', '#paid', function() {
-        const supplierSel = document.getElementById('mySelectEmp');
-        const isDefault = supplierSel &&
-                          supplierSel.options.length > 0 &&
-                          supplierSel.value === supplierSel.options[0].value;
-        if (isDefault) {
-            // المورد الافتراضي → أعد المدفوع للصافي
+        if (isCashPartySelected()) {
+            // تعامل نقدي فقط → أعد المدفوع للصافي
             const net = parseFloat($('#headnet').val()) || 0;
             $(this).val(net.toFixed(2));
             $('#change').val('0.00');
@@ -988,6 +984,11 @@ $(document).on('click', '#invoiceLineWarnBox .invoice-warn-close', function(e) {
     $('#invoiceLineWarnBox').data('user-closed', true).slideUp(150);
 });
 
+function isCashPartySelected() {
+    const $opt = $('#mySelectEmp').find('option:selected');
+    return $opt.length > 0 && $opt.attr('data-cash') === '1';
+}
+
 function updateTotal() {
     paintInvoiceLineWarnings();
     let total = 0;
@@ -1014,17 +1015,13 @@ function updateTotal() {
         $('#headdisc_pct').val('0');
     }
     
-    // هل المورد المختار هو المورد الافتراضي (أول option في القائمة)؟
-    const supplierSel = document.getElementById('mySelectEmp');
-    const isDefaultSupplier = supplierSel &&
-                              supplierSel.options.length > 0 &&
-                              supplierSel.value === supplierSel.options[0].value;
-
+    const isCashParty = isCashPartySelected();
     const isEditMode = window.location.href.indexOf('edit_id') !== -1;
     const paidValue  = parseFloat(headnet.toFixed(2));
 
-    if (isDefaultSupplier) {
-        // المورد الافتراضي → paid = net دايماً، change = 0
+    $("#paid").prop('readonly', isCashParty);
+    if (isCashParty) {
+        // تعامل نقدي فقط → paid = net دايماً، change = 0
         $("#paid").val(paidValue);
         $("#change").val('0.00');
     } else {

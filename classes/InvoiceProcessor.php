@@ -26,6 +26,41 @@ class InvoiceProcessor {
         'PURCHASE_DISC' => 6      // خصم مشتريات
     ];
 
+    public static function isCashPartyAccount($account) {
+        return !empty($account['cash_only']);
+    }
+
+    /**
+     * الحساب المعلَّم "تعامل نقدي فقط" لا يقبل الآجل: المدفوع يجب أن يساوي صافي الفاتورة.
+     * يرجع رسالة الخطأ أو null.
+     */
+    public static function validateCashPartyPayment($conn, $pro_tybe, $acc_id, $paid, $net) {
+        $types = [
+            self::INVOICE_TYPES['SALES'],
+            self::INVOICE_TYPES['PURCHASE'],
+            self::INVOICE_TYPES['SALES_RETURN'],
+            self::INVOICE_TYPES['PURCHASE_RETURN'],
+        ];
+        if (!in_array((int) $pro_tybe, $types, true) || (int) $acc_id <= 0) {
+            return null;
+        }
+
+        $stmt = $conn->prepare("SELECT aname, cash_only FROM acc_head WHERE id = ? LIMIT 1");
+        $acc_id = (int) $acc_id;
+        $stmt->bind_param('i', $acc_id);
+        $stmt->execute();
+        $account = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!self::isCashPartyAccount($account)) {
+            return null;
+        }
+        if (abs(round((float) $paid - (float) $net, 2)) >= 0.01) {
+            return 'الحساب "' . $account['aname'] . '" تعامل نقدي فقط — يجب أن يكون المدفوع مساوياً لصافي الفاتورة (' . round((float) $net, 2) . ')';
+        }
+        return null;
+    }
+
     /**
      * دالة الحصول على إعدادات نوع الفاتورة
      */

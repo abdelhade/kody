@@ -118,6 +118,11 @@ if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], Invoi
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 }
 
+$cashPartyError = InvoiceProcessor::validateCashPartyPayment($conn, $pro_tybe, $acc2_id, $paid, isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0);
+if ($cashPartyError) {
+    die($cashPartyError);
+}
+
 // الحصول على إعدادات الفاتورة
 $config = InvoiceProcessor::getInvoiceConfig($pro_tybe);
 if (!$config) {

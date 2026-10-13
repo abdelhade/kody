@@ -505,8 +505,9 @@ class InvoiceHeader extends InvoiceElementBase
             $priceAttr = " data-price-list=\"{$clientPrice}\"";
         }
         $supAttr = ' data-is-supplier="' . ($isSup ? '1' : '0') . '"';
+        $cashAttr = !empty($account['cash_only']) ? ' data-cash="1"' : '';
         $aname = $this->sanitizeInput($account['aname']);
-        echo "<option value='{$account['id']}' {$selected}{$priceAttr}{$supAttr}>{$aname}</option>";
+        echo "<option value='{$account['id']}' {$selected}{$priceAttr}{$supAttr}{$cashAttr}>{$aname}</option>";
     }
 
     /**

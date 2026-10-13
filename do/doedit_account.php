@@ -28,7 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['aname'])) {
         $price_list = max(1, min(3, (int) $_POST['price_list']));
         $priceSql = ",price_list='$price_list'";
     }
-    $sql = "UPDATE acc_head SET code='$code',aname='$aname',is_fund='$is_fund',rentable='$rentable',is_stock='$is_stock',parent_id='$parent_id',is_basic='$is_basic',secret='$secret'$priceSql WHERE id = '$id' ";
+    $cash_only = isset($_POST['cash_only']) ? 1 : 0;
+    $sql = "UPDATE acc_head SET code='$code',aname='$aname',is_fund='$is_fund',rentable='$rentable',is_stock='$is_stock',parent_id='$parent_id',is_basic='$is_basic',secret='$secret',cash_only='$cash_only'$priceSql WHERE id = '$id' ";
     
     $conn->query($sql);
     header("location:../accounts.php");

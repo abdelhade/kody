@@ -271,6 +271,11 @@ if ($lineErrors) {
     invoice_fail(implode(' — ', $lineErrors));
 }
 
+$cashPartyError = InvoiceProcessor::validateCashPartyPayment($conn, $pro_tybe, $acc2_id, $paid_cash + $paid_bank, $headnet);
+if ($cashPartyError) {
+    invoice_fail($cashPartyError);
+}
+
 
 
 

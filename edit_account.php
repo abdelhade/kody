@@ -134,6 +134,14 @@ $rowacc = $conn->query("SELECT * FROM acc_head where id = $id")->fetch_assoc();
                             <input type="checkbox" name="rentable" id="" value="1" <?php if($rowacc['rentable'] == 1) echo "checked" ?>>
                         </div>
                         </div>
+                        <?php if (preg_match('/^(122|211)/', (string) $rowacc['code']) && (int) $rowacc['is_basic'] === 0) { ?>
+                        <div class="col">
+                        <div class="form-group">
+                            <label for="cash_only">تعامل نقدي فقط</label>
+                            <input type="checkbox" name="cash_only" id="cash_only" value="1" <?php if(!empty($rowacc['cash_only'])) echo "checked" ?>>
+                        </div>
+                        </div>
+                        <?php } ?>
                         </div>
 
 

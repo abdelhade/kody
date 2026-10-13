@@ -193,6 +193,14 @@ if (($parent == '122' && $role['add_clients'] == 1) ||
                             <input type="checkbox" name="rentable" id="" <?php if ($parent == "112"){echo "checked ";}?>>
                         </div>
                         </div>
+                   <?php if ($parent == '122' || $parent == '211') { ?>
+                   <div class="col">
+                <div class="form-group">
+                            <label for="cash_only">تعامل نقدي فقط</label>
+                            <input type="checkbox" name="cash_only" id="cash_only" value="1">
+                        </div>
+                        </div>
+                   <?php } ?>
                     </div>
                    </div>
 
