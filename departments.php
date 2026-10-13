@@ -1,113 +1,101 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-  <!-- Content Header (Page header) -->
-  <section class="content-header">
-    <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1><?= $lang_departlist ?></h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-          </ol>
+// Fetch departments safely
+$sql = "SELECT * FROM `departments` WHERE COALESCE(isdeleted, 0) != 1 ORDER BY id DESC";
+$res = $conn->query($sql);
+$deptCount = $res ? $res->num_rows : 0;
+?>
+
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: $lang_departlist ?? 'قائمة الأقسام',
+      icon: 'fa-sitemap',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          ($lang_departlist ?? 'الأقسام') => ''
+      ],
+      actions: [
+          [
+              'label' => $lang_add_new ?? 'إضافة قسم جديد',
+              'url'   => 'add_department.php',
+              'class' => 'k-btn-primary',
+              'icon'  => 'fa-plus'
+          ]
+      ],
+      badge: $deptCount . ' قسم'
+  ) ?>
+
+  <div class="k-card">
+    <div class="k-toolbar">
+      <div class="k-toolbar-start">
+        <div class="k-search-input-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="بحث سريع في الأقسام..." data-kody-table-search="#departmentsTable">
         </div>
       </div>
-    </div><!-- /.container-fluid -->
-  </section>
-
-  <!-- Main content -->
-  <section class="content">
-    <div class="row">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title"><a href="add_department.php" class="btn btn-large btn-primary"><?= $lang_add_new ?> </a></h3>
-          </div>
-          <!-- /.card-header -->
-          <div class="card-body">
-            <table id="example2" class="table table-bordered table-hover">
-              <thead>
-                <tr>
-                  <th>م</th>
-                  <th><?= $lang_publicname ?></th>
-                  <th><?= $lang_publicinfo ?></th>
-                  <th><?= $lang_publicoperations ?></th>
-                </tr>
-              </thead>
-              <?php
-              $sql = "SELECT * FROM `departments` WHERE coalesce(isdeleted, 0) != 1 order by id desc";
-              $res = $conn->query($sql);
-
-              $x = 0;
-
-              while ($row = $res->fetch_assoc()) {
-                $x++;
-              ?>
-                <tbody>
-                  <tr>
-                    <th><?php echo $x ?></th>
-                    <th><a href='#'><?= $row['name'] ?></a></th>
-                    <th><?= $row['info'] ?></th>
-                    <th><a class="btn btn-warning" href="edit_department.php?id=<?= $row['id'] ?>"><?= $lang_edit ?></a>
-                      <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
-                        <?= $lang_delete ?>
-                      </a>
-
-                      <div class="modal fade" id="modal-danger<?= $row['id'] ?>">
-                        <div class="modal-dialog">
-                          <div class="modal-content bg-danger">
-                            <div class="modal-header">
-                              <h4 class="modal-title"><?= $lang_warning ?></h4>
-                              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                              </button>
-                            </div>
-                            <form action="do/dodel_department.php?id=<?= $row['id'] ?>" method="POST">
-                            <div class="modal-body">
-                                   <p><?= $lang_job_delete_confirm ?></p>
-                                   </div>
-                                  <div class="modal-footer justify-content-between">
-                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal"><?= $lang_cancel ?></button>
-                                     <button type="submit" class="btn btn-outline-light"><?= $lang_delete ?></button>
-                               </div>
-                            </form>
-                          </div>
-                          <!-- /.modal-content -->
-                        </div>
-                        <!-- /.modal-dialog -->
-                      </div>
-                    </th>
-                  </tr>
-                <?php } ?>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <th>م</th>
-                    <th><?= $lang_publicname ?></th>
-                    <th><?= $lang_publicinfo ?></th>
-                    <th><?= $lang_publicoperations ?></th>
-                  </tr>
-                </tfoot>
-            </table>
-          </div>
-          <!-- /.card-body -->
-        </div>
-        <!-- /.card -->
+      <div class="k-toolbar-end">
+        <span class="text-muted small">إجمالي الأقسام: <strong><?= $deptCount ?></strong></span>
       </div>
-      <!-- /.card-body -->
     </div>
-    <!-- /.card -->
-</div>
-<!-- /.col -->
-</div>
-<!-- /.row -->
-</section>
-<!-- /.content -->
+
+    <?php if ($deptCount === 0): ?>
+      <?= kody_empty_state(
+          title: 'لا توجد أقسام مسجلة حالياً',
+          desc: 'قم بإضافة الأقسام التنظيمية للشركة لربط الموظفين والعمليات بها بسهولة.',
+          icon: 'fa-sitemap',
+          cta: [
+              'label' => 'إضافة أول قسم',
+              'url' => 'add_department.php',
+              'icon' => 'fa-plus'
+          ]
+      ) ?>
+    <?php else: ?>
+      <div class="k-table-wrap">
+        <table class="k-table" id="departmentsTable">
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th><?= $lang_publicname ?? 'اسم القسم' ?></th>
+              <th><?= $lang_publicinfo ?? 'الوصف والملاحظات' ?></th>
+              <th style="width: 120px;" class="text-center"><?= $lang_publicoperations ?? 'العمليات' ?></th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $x = 0;
+            while ($row = $res->fetch_assoc()):
+                $x++;
+                $deptId = (int)$row['id'];
+                $deptName = htmlspecialchars($row['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                $deptInfo = htmlspecialchars($row['info'] ?? '', ENT_QUOTES, 'UTF-8');
+            ?>
+              <tr>
+                <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
+                <td>
+                  <strong class="text-dark"><?= $deptName ?></strong>
+                </td>
+                <td>
+                  <?= $deptInfo !== '' ? $deptInfo : '<span class="text-muted small">—</span>' ?>
+                </td>
+                <td class="text-center">
+                  <div class="k-actions">
+                    <?= kody_action_btn('edit', 'edit_department.php?id=' . $deptId, ['title' => 'تعديل القسم']) ?>
+                    <?= kody_action_btn('delete', 'do/dodel_department.php?id=' . $deptId, [
+                        'title' => 'حذف القسم',
+                        'item_name' => $deptName
+                    ]) ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
 
-
-<?php include('includes/footer.php') ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

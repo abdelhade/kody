@@ -94,31 +94,82 @@ if (isset($_GET['acc']) && $_GET['acc'] == 'delivery' && (($role['show_delivery'
 }
 ?>
 <?php
-if(isset($_POST['fix_balances'])) {
-    // التأكد من ان balance في acc_head لكل row = 
-    // اجمالي المدين - اجمالي الدائن في جدول journal_entries where account_id = acc_head.id 
-    $sqlchk = "UPDATE acc_head SET balance = COALESCE(( SELECT SUM(journal_entries.debit)- SUM(journal_entries.credit) FROM journal_entries WHERE journal_entries.account_id = acc_head.id AND journal_entries.isdeleted = 0 ), 0);";
+// ==========================================
+// تصحيح الأرصدة قبل الدخول وعرض التقرير
+// ==========================================
+$is_manual_fix = isset($_POST['fix_balances']);
+$corrected_count = 0;
+$corrected_list = [];
 
-    $conn->query($sqlchk);
+// 1. التأكد من صحة الحسابات الرئيسية والفرعية (is_basic)
+$main_accounts = ['122', '211', '121', '124', '44', '32', '212', '125', '221', '11', '213', '112', '123', '126'];
+foreach ($main_accounts as $acc_code) {
+    $conn->query("UPDATE acc_head SET is_basic = 1 WHERE code = '$acc_code' AND isdeleted = 0");
+}
+$conn->query("UPDATE acc_head SET is_basic = 0 WHERE code LIKE '122%' AND code != '122' AND is_basic = 1 AND isdeleted = 0");
+$conn->query("UPDATE acc_head SET is_basic = 0 WHERE code LIKE '211%' AND code != '211' AND is_basic = 1 AND isdeleted = 0");
+$conn->query("UPDATE acc_head SET is_basic = 0 WHERE code LIKE '213%' AND code != '213' AND is_basic = 1 AND isdeleted = 0");
 
-    // أولاً: نتأكد إن الحسابات الرئيسية is_basic = 1
-    $main_accounts = ['122', '211', '121', '124', '44', '32', '212', '125', '221', '11', '213', '112', '123', '126'];
-    foreach ($main_accounts as $acc_code) {
-        $fix_main = "UPDATE acc_head SET is_basic = 1 WHERE code = '$acc_code' AND isdeleted = 0";
-        $conn->query($fix_main);
+// 2. فحص الأرصدة غير المطابقة بين acc_head و journal_entries
+$check_sql = "SELECT a.id, a.code, a.aname, a.balance, 
+              COALESCE(SUM(j.debit) - SUM(j.credit), 0) AS calc
+              FROM acc_head a
+              LEFT JOIN journal_entries j ON j.account_id = a.id AND j.isdeleted = 0
+              WHERE a.isdeleted = 0
+              GROUP BY a.id, a.code, a.aname, a.balance
+              HAVING ROUND(COALESCE(a.balance, 0), 2) != ROUND(calc, 2)";
+
+$check_res = $conn->query($check_sql);
+if ($check_res && $check_res->num_rows > 0) {
+    while ($row = $check_res->fetch_assoc()) {
+        $acc_id = (int)$row['id'];
+        $calc_bal = (float)$row['calc'];
+        if ($conn->query("UPDATE acc_head SET balance = $calc_bal WHERE id = $acc_id")) {
+            $corrected_count++;
+            $acc_display = htmlspecialchars($row['aname'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($row['code'], ENT_QUOTES, 'UTF-8') . ")";
+            $corrected_list[] = $acc_display;
+        }
+    }
+}
+
+// 3. إعداد بيانات SweetAlert
+$swal_show = false;
+$swal_icon = 'success';
+$swal_title = '';
+$swal_html = '';
+
+if ($corrected_count > 0) {
+    $swal_show = true;
+    $swal_icon = 'success';
+    $swal_title = 'تم تصحيح الأرصدة';
+
+    if ($corrected_count == 1) {
+        $count_text = 'رصيد حساب واحد';
+    } elseif ($corrected_count == 2) {
+        $count_text = 'رصيدي حسابين';
+    } elseif ($corrected_count <= 10) {
+        $count_text = "{$corrected_count} أرصدة";
+    } else {
+        $count_text = "{$corrected_count} رصيداً";
     }
 
-    // ثانياً: إصلاح الحسابات الفرعية لتكون is_basic = 0
-    $fix_clients = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '122%' AND code != '122' AND is_basic = 1 AND isdeleted = 0";
-    $conn->query($fix_clients);
-
-    $fix_suppliers = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '211%' AND code != '211' AND is_basic = 1 AND isdeleted = 0";
-    $conn->query($fix_suppliers);
-
-    $fix_employees = "UPDATE acc_head SET is_basic = 0 WHERE code LIKE '213%' AND code != '213' AND is_basic = 1 AND isdeleted = 0";
-    $conn->query($fix_employees);
-    
-    echo "<script>alert('تم تصحيح الأرصدة بنجاح');</script>";
+    $swal_html = "تم تصحيح <b>{$count_text}</b> بنجاح ومطابقتها مع القيود المحاسبية.";
+    if (!empty($corrected_list)) {
+        $acc_names_preview = array_slice($corrected_list, 0, 5);
+        $swal_html .= "<br><div class='text-muted mt-2' style='font-size:0.85em; text-align:right; max-height:120px; overflow-y:auto; padding:5px; background:#f8f9fa; border-radius:4px;'><strong>الحسابات المصححة:</strong><ul class='mb-0 pr-3'>";
+        foreach ($acc_names_preview as $name) {
+            $swal_html .= "<li>" . $name . "</li>";
+        }
+        if (count($corrected_list) > 5) {
+            $swal_html .= "<li>و " . (count($corrected_list) - 5) . " حسابات أخرى...</li>";
+        }
+        $swal_html .= "</ul></div>";
+    }
+} elseif ($is_manual_fix) {
+    $swal_show = true;
+    $swal_icon = 'info';
+    $swal_title = 'الأرصدة سليمة';
+    $swal_html = 'جميع أرصدة الحسابات مضبوطة بالفعل ومطابقة تماماً للقيود المحاسبية.';
 }
 ?>
 <div class="content-wrapper">
@@ -205,3 +256,20 @@ if(isset($_POST['fix_balances'])) {
 </div>
 
 <?php include('includes/footer.php') ?>
+<?php if (!empty($swal_show)): ?>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: <?= json_encode($swal_icon, JSON_UNESCAPED_UNICODE) ?>,
+            title: <?= json_encode($swal_title, JSON_UNESCAPED_UNICODE) ?>,
+            html: <?= json_encode($swal_html, JSON_UNESCAPED_UNICODE) ?>,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'حسناً',
+            timer: 5000,
+            timerProgressBar: true
+        });
+    }
+});
+</script>
+<?php endif; ?>

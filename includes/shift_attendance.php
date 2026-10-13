@@ -37,12 +37,27 @@ function ensure_shift_grace_rules_schema(mysqli $conn): void
 
 function shift_single_fp_rule_label(string $rule): string
 {
-    return $rule === 'cancel' ? 'إلغاء اليوم' : 'احتساب نصف يوم';
+    switch ($rule) {
+        case 'cancel':
+            return 'إلغاء اليوم';
+        case 'none':
+            return 'لا تعليق';
+        case 'half':
+        default:
+            return 'احتساب نصف يوم';
+    }
 }
 
 function normalize_single_fp_rule(?string $rule): string
 {
-    return ($rule === 'cancel') ? 'cancel' : 'half';
+    $rule = strtolower(trim((string)$rule));
+    if ($rule === 'cancel') {
+        return 'cancel';
+    }
+    if ($rule === 'none' || $rule === 'no_action' || $rule === 'no_comment') {
+        return 'none';
+    }
+    return 'half';
 }
 
 function normalize_grace_action(?string $action, string $default = 'actual'): string
@@ -66,6 +81,47 @@ function shift_grace_action_label(string $action): string
 }
 
 /**
+ * تطبيق البصمة التلقائية عند اختيار "لا تعليق":
+ * - عند تسجيل حضور فقط: تُحدد بصمة الانصراف عند نهاية الانصراف (outend).
+ * - عند تسجيل انصراف فقط: تُحدد بصمة الحضور عند نهاية الحضور (inend).
+ *
+ * @param string|null $fpin
+ * @param string|null $fpout
+ * @param array $shiftRow
+ * @param bool $isCrossMidnight
+ * @return array{fpin: string|null, fpout: string|null, filled: bool}
+ */
+function apply_single_fp_no_comment_fallback(
+    ?string $fpin,
+    ?string $fpout,
+    array $shiftRow,
+    bool $isCrossMidnight = false
+): array {
+    $hasIn = ($fpin !== null && $fpin !== '');
+    $hasOut = ($fpout !== null && $fpout !== '');
+
+    if ($hasIn xor $hasOut) {
+        if ($hasIn && !$hasOut) {
+            $fallbackOut = !empty($shiftRow['outend']) ? $shiftRow['outend'] : ($shiftRow['shiftend'] ?? '');
+            if ($isCrossMidnight && !empty($fallbackOut)) {
+                $fpoDt = new DateTime($fallbackOut);
+                $hours = (int)$fpoDt->format('H');
+                $minutesSeconds = $fpoDt->format(':i:s');
+                $fpout = ($hours + 24) . $minutesSeconds;
+            } else {
+                $fpout = $fallbackOut;
+            }
+            return ['fpin' => $fpin, 'fpout' => $fpout, 'filled' => true];
+        } else {
+            $fallbackIn = !empty($shiftRow['inend']) ? $shiftRow['inend'] : ($shiftRow['shiftstart'] ?? '');
+            return ['fpin' => $fallbackIn, 'fpout' => $fpout, 'filled' => true];
+        }
+    }
+
+    return ['fpin' => $fpin, 'fpout' => $fpout, 'filled' => false];
+}
+
+/**
  * @return array{statue: int, curhours: float}
  */
 function resolve_single_fp_attendance(
@@ -81,8 +137,12 @@ function resolve_single_fp_attendance(
     if (!$hasFpin && !$hasFpout) {
         return ['statue' => $baseStatue, 'curhours' => 0.0];
     }
-    if (normalize_single_fp_rule($singleFpRule) === 'cancel') {
+    $normRule = normalize_single_fp_rule($singleFpRule);
+    if ($normRule === 'cancel') {
         return ['statue' => $baseStatue, 'curhours' => 0.0];
+    }
+    if ($normRule === 'none') {
+        return ['statue' => 2, 'curhours' => round($defHours, 2)];
     }
     return ['statue' => 2, 'curhours' => round($defHours / 2, 2)];
 }

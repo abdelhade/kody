@@ -1,15 +1,29 @@
 <?php
-include '../includes/connect.php';
+require_once __DIR__ . '/../includes/connect.php';
 
-if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_POST['name'])) {
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+    $name = trim((string)($_POST['name'] ?? ''));
+    $info = trim((string)($_POST['info'] ?? ''));
 
-    foreach ($_POST as $key => $value) {
-        $$key = $value;
+    if ($name === '') {
+        header("Location: ../add_department.php?error=" . urlencode('يرجى إدخال اسم القسم'));
+        exit;
     }
-    $sql = "INSERT INTO departments (`name` , `info` ) VALUES ('$name' , '$info')";
-    $res = $conn->query($sql);
 
-    $conn->query("INSERT INTO `process`(`type`) VALUES ('add department')");
+    $stmt = $conn->prepare("INSERT INTO departments (`name`, `info`) VALUES (?, ?)");
+    $stmt->bind_param("ss", $name, $info);
+    $stmt->execute();
+    $stmt->close();
 
-    header("location:../departments.php");
+    $stmtLog = $conn->prepare("INSERT INTO `process` (`type`) VALUES (?)");
+    $procType = 'add department';
+    $stmtLog->bind_param("s", $procType);
+    $stmtLog->execute();
+    $stmtLog->close();
+
+    header("Location: ../departments.php?msg=saved");
+    exit;
 }
+
+header("Location: ../departments.php");
+exit;

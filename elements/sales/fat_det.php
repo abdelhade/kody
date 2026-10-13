@@ -66,7 +66,7 @@
 
               <!-- السعر -->
               <td>
-                <input id="itmprice" type="number" name="itmprice[]" onclick=sT(this) class="itmprice form-control form-control-sm" style="width:90px;" value="<?php if(isset($_GET['e'])){echo $rowdet['price']*$rowdet['u_val'];}else{echo 0.00;}?>">
+                <input id="itmprice" type="number" step="any" name="itmprice[]" onclick=sT(this) class="itmprice form-control form-control-sm" style="width:90px;" value="<?php if(isset($_GET['e'])){echo $rowdet['price']*$rowdet['u_val'];}else{echo 0.00;}?>">
               </td>
 
               <!-- نسبة الخصم -->
@@ -78,18 +78,18 @@
                     $disc_pct = ($pct_base > 0) ? round(($rowdet['discount'] / $pct_base) * 100, 2) : 0;
                 }
                 ?>
-                <input type="number" name="itmdisc_pct[]" value="<?= $disc_pct ?>" class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)">
+                <input type="number" name="itmdisc_pct[]" value="<?= $disc_pct ?>" class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="any" placeholder="%" onclick="sT(this)">
               </td>
 
               <!-- الخصم -->
               <td>
-                <input id="itmdisc" value="<?php if(isset($_GET['e'])){echo $rowdet['discount'];}else{echo 0.00;}?>" type="number" name="itmdisc[]" onclick=sT(this) class="itmdisc form-control form-control-sm" style="width:90px;">
+                <input id="itmdisc" value="<?php if(isset($_GET['e'])){echo $rowdet['discount'];}else{echo 0.00;}?>" type="number" step="any" name="itmdisc[]" onclick=sT(this) class="itmdisc form-control form-control-sm" style="width:90px;">
               </td>
 
 
               <!-- القيمة -->
               <td>
-                <input readonly id="itmval" value="<?php if(isset($_GET['e'])){echo $rowdet['det_value'];}else{echo 0.00;}?>" type="number" name="itmval[]" class="itmval bg-light form-control form-control-sm" style="width:150px;">
+                <input readonly id="itmval" value="<?php if(isset($_GET['e'])){echo $rowdet['det_value'];}else{echo 0.00;}?>" type="number" step="any" name="itmval[]" class="itmval bg-light form-control form-control-sm" style="width:150px;">
               </td>
 
 

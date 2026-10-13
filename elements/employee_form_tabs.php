@@ -56,9 +56,6 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                     <a href="employees.php" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-arrow-right ml-1"></i> <?= $lang_employeeslist ?? 'الموظفين' ?>
                     </a>
-                    <button type="button" id="<?= htmlspecialchars($empUnlockBtnId, ENT_QUOTES) ?>" class="btn btn-warning btn-sm btn-unlock">
-                        <i class="fas fa-pen ml-1"></i> <?= $isEdit ? 'تفعيل التعديل' : 'تفعيل الحقول' ?>
-                    </button>
                 </div>
             </div>
         </div>
@@ -106,13 +103,13 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="emp_name"><?= $lang_addemployee_name ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" <?= $isEdit ? '' : 'required minlength="6" data-parsley-length="[6, 50]"' ?>
+                                    <input type="text" data-parsley-trigger="keyup"
                                            value="<?= $e('name') ?>" class="form-control" id="emp_name" name="name"
-                                           placeholder="<?= $lang_pbholder_name ?>" <?= $isEdit ? '' : 'autocomplete="off"' ?>>
+                                           placeholder="<?= $lang_pbholder_name ?>" autocomplete="off">
                                 </div>
                                 <div class="form-group">
                                     <label for="emp_phone"><?= $lang_addemployee_phone ?></label>
-                                    <input type="text" data-parsley-type="digits" data-parsley-trigger="keyup"
+                                    <input type="text" data-parsley-trigger="keyup"
                                            value="<?= $e('number') ?>" class="form-control" name="number" id="emp_phone"
                                            placeholder="<?= $lang_pbholder_phone ?>" autocomplete="off">
                                 </div>
@@ -278,9 +275,9 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="emp_salary"><?= $lang_addemployee_salary ?></label>
-                                    <input type="text" data-parsley-trigger="keyup" data-parsley-type="digits"
-                                           value="<?= $e('salary', $isEdit ? '0' : '') ?>" class="form-control"
-                                           id="emp_salary" name="salary" placeholder="00" autocomplete="off">
+                                    <input type="number" step="any" min="0" data-parsley-trigger="keyup" data-parsley-type="number"
+                                           value="<?= $e('salary', '') ?>" class="form-control"
+                                           id="emp_salary" name="salary" placeholder="0.00" autocomplete="off">
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -312,14 +309,28 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                                     <label>نوع الاستحقاق</label>
                                     <select name="ent_tybe" class="custom-select">
                                         <?php
+                                        $entitlesList = [];
                                         $resentitle = $conn->query('SELECT * FROM entitles ORDER BY id');
-                                        while ($rowentitle = $resentitle->fetch_assoc()):
+                                        if ($resentitle && $resentitle->num_rows > 0) {
+                                            while ($rowentitle = $resentitle->fetch_assoc()) {
+                                                $entitlesList[] = $rowentitle;
+                                            }
+                                        } else {
+                                            $entitlesList = [
+                                                ['id' => 1, 'tybe' => 'بالساعات فقط', 'info' => 'احتساب الراتب بناءً على الساعات الفعلية فقط'],
+                                                ['id' => 2, 'tybe' => 'ساعات عمل وإضافي يومي', 'info' => 'احتساب ساعات العمل بالإضافة إلى الإضافي اليومي'],
+                                                ['id' => 3, 'tybe' => 'ساعات عمل وإضافي خلال الفترة', 'info' => 'احتساب ساعات العمل بالإضافة إلى الإضافي التراكمي خلال الفترة'],
+                                                ['id' => 4, 'tybe' => 'بناءً على الحضور', 'info' => 'احتساب الراتب بناءً على عدد أيام الحضور'],
+                                                ['id' => 5, 'tybe' => 'بالإنتاجية', 'info' => 'احتساب الراتب بناءً على إجمالي الإنتاجية'],
+                                            ];
+                                        }
+                                        foreach ($entitlesList as $rowentitle):
                                         ?>
                                         <option value="<?= (int) $rowentitle['id'] ?>" <?= $sel('ent_tybe', $rowentitle['id']) ?>
                                                 title="<?= htmlspecialchars($rowentitle['info'] ?? '') ?>">
                                             <?= htmlspecialchars($rowentitle['tybe']) ?>
                                         </option>
-                                        <?php endwhile; ?>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
@@ -371,7 +382,7 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                 <?php endif; ?>
 
                 <div class="form-footer">
-                    <button type="submit" id="emp_submit" class="btn btn-success btn-lg px-5" disabled>
+                    <button type="submit" id="emp_submit" class="btn btn-success btn-lg px-5">
                         <i class="fas fa-check ml-1"></i>
                         <?= $isEdit ? $lang_publicconfirm : $lang_addemployee_confirm ?>
                     </button>
@@ -383,21 +394,6 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
 
 <script>
 $(function() {
-    var $form = $('#<?= htmlspecialchars($empFormId, ENT_QUOTES) ?>');
-    var $fields = $form.find('input:not([type=submit]):not([type=hidden]), select, textarea');
-    var $submit = $('#emp_submit');
-    var $unlock = $('#<?= htmlspecialchars($empUnlockBtnId, ENT_QUOTES) ?>');
-
-    $fields.prop('disabled', true);
-    $submit.prop('disabled', true);
-
-    $unlock.on('click', function(ev) {
-        ev.preventDefault();
-        $fields.prop('disabled', false);
-        $submit.prop('disabled', false);
-        $(this).prop('disabled', true).html('<i class="fas fa-lock-open ml-1"></i> تم التفعيل');
-    });
-
     if (typeof bsCustomFileInput !== 'undefined') {
         bsCustomFileInput.init();
     }

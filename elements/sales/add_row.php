@@ -108,19 +108,19 @@
             <input type="hidden" name="code" value="__auto__">
             <div class="col-md-2 form-group">
               <label class="small text-muted">التكلفة</label>
-              <input type="number" name="cost_price[]" value="0" step="0.001" min="0" class="form-control form-control-sm">
+              <input type="number" name="cost_price[]" value="0" step="any" class="form-control form-control-sm">
             </div>
             <div class="col-md-2 form-group">
               <label class="small text-muted">سعر البيع</label>
-              <input type="number" name="price1[]" value="0" step="0.001" min="0" class="form-control form-control-sm">
+              <input type="number" name="price1[]" value="0" step="any" class="form-control form-control-sm">
             </div>
             <div class="col-md-2 form-group">
               <label class="small text-muted">جملة</label>
-              <input type="number" name="price2[]" value="0" step="0.001" min="0" class="form-control form-control-sm">
+              <input type="number" name="price2[]" value="0" step="any" class="form-control form-control-sm">
             </div>
             <div class="col-md-2 form-group">
               <label class="small text-muted">السوق</label>
-              <input type="number" name="market_price[]" value="0" step="0.001" min="0" class="form-control form-control-sm">
+              <input type="number" name="market_price[]" value="0" step="any" class="form-control form-control-sm">
             </div>
             <div class="col-md-2 form-group">
               <label class="small text-muted">الباركود الوحدة</label>
@@ -205,10 +205,10 @@
   });
 })();
 </script>
-<input id="itmprice" type="number" hidden value="0.00" step="0.001">
-<input id="itmqty"   type="number" hidden value="1.00">
-<input id="itmdisc"  type="number" hidden value="0.00" step="0.001">
-<input id="itmval"   type="number" hidden value="0.00" step="0.001">
+<input id="itmprice" type="number" hidden value="0.00" step="any">
+<input id="itmqty"   type="number" hidden value="1.00" step="any">
+<input id="itmdisc"  type="number" hidden value="0.00" step="any">
+<input id="itmval"   type="number" hidden value="0.00" step="any">
 <select id="inputUnitSelect" hidden><option value="">اختر وحدة</option></select>
 <button type="button" id="addRow" hidden>إضافة</button>
 

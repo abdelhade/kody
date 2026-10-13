@@ -1,366 +1,342 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php 
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
+
+// Single joined query for table view
+$sqlTable = "SELECT a.*, p.aname AS parent_name 
+             FROM acc_head a 
+             LEFT JOIN acc_head p ON a.parent_id = p.id 
+             WHERE a.isdeleted = 0 
+             ORDER BY a.code ASC";
+$resTable = $conn->query($sqlTable);
+$totalAccounts = $resTable ? $resTable->num_rows : 0;
+?>
 
 <style>
-/* Tree Styles */
-ul, #myUL {
-  list-style-type: none;
+/* Account Tree Styles */
+.acc-tree-container {
+  padding: 1.25rem;
+  background: var(--k-bg-card);
+  border-radius: var(--k-radius-md);
 }
-
-#myUL {
+.acc-tree-list, .acc-tree-list ul {
+  list-style: none;
+  padding-right: 1.25rem;
   margin: 0;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
 }
-
-/* Account Item */
-.tree {
-  font-size: 16px;
-  margin: 5px 0;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 6px;
-  border-right: 3px solid #e0e0e0;
-  transition: all 0.3s ease;
+.acc-tree-node {
+  margin: 0.35rem 0;
+  position: relative;
 }
-
-.tree:hover {
-  background: #f0f7ff;
-  border-right-color: #2196F3;
-  transform: translateX(-3px);
-}
-
-/* Caret Styles */
-.caret {
-  cursor: pointer;
-  user-select: none;
+.acc-caret {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--k-radius-md);
+  background: #f8fafc;
+  border: 1px solid var(--k-border);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--k-transition);
+  font-size: 0.9rem;
 }
-
-.caret:hover {
-  background: #e3f2fd;
+.acc-caret:hover {
+  background: var(--k-primary-light);
+  border-color: var(--k-primary);
+  color: var(--k-primary);
 }
-
-/* Icon for accounts with children */
-.caret::before {
-  content: "📁";
-  font-size: 18px;
-  transition: transform 0.3s;
+.acc-caret.no-children {
+  cursor: default;
+  background: #ffffff;
 }
-
-.caret-down::before {
-  content: "📂";
-  transform: rotate(0deg);
+.acc-caret.no-children:hover {
+  background: #ffffff;
+  border-color: var(--k-border);
+  color: inherit;
 }
-
-/* Icon for accounts without children */
-.no-children::before {
-  content: "📄";
-  font-size: 16px;
+.acc-caret i.folder-icon {
+  color: #f59e0b;
+  font-size: 1.1rem;
 }
-
-/* Nested Lists */
-.nested {
+.acc-nested {
   display: none;
-  padding-right: 25px;
-  margin-top: 5px;
-  border-right: 2px dashed #ddd;
+  margin-top: 0.25rem;
+  border-right: 2px dashed #cbd5e1;
 }
-
-.active {
+.acc-nested.active {
   display: block;
 }
-
-/* Level Colors */
-.num0 { border-right-color: #f44336; }
-.num0:hover { border-right-color: #d32f2f; }
-
-.level-1 { border-right-color: #2196F3; }
-.level-1:hover { border-right-color: #1976D2; }
-
-.level-2 { border-right-color: #4CAF50; }
-.level-2:hover { border-right-color: #388E3C; }
-
-.level-3 { border-right-color: #FF9800; }
-.level-3:hover { border-right-color: #F57C00; }
-
-.level-4 { border-right-color: #9C27B0; }
-.level-4:hover { border-right-color: #7B1FA2; }
-
-/* Account Code Badge */
-.acc-code {
-  background: #e3f2fd;
-  color: #1976D2;
-  padding: 2px 8px;
+.acc-code-badge {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--k-primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.15rem 0.45rem;
   border-radius: 4px;
-  font-weight: bold;
-  font-size: 14px;
-  margin-left: 8px;
-}
-
-/* Account Name */
-.acc-name {
-  color: #333;
-  font-weight: 500;
 }
 </style>
 
-<div class="content-wrapper">
-  <section class="content-header">
-    <div class="container-fluid">
-      
-      <div class="card">
-        <!-- Header -->
-        <div class="card-header bg-primary text-right" style="padding: 15px 20px;">
-          <div class="d-flex justify-content-between align-items-center">
-            <a href="add_account.php" class="btn btn-light">
-              <i class="fas fa-plus"></i> حساب جديد
-            </a>
-            <h3 class="m-0" style="color: white;">
-              <i class="fas fa-sitemap"></i> شجرة الحسابات
-            </h3>
-            <div style="width: 100px;"></div>
-          </div>
-        </div>
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: 'شجرة ودليل الحسابات العامة',
+      icon: 'fa-sitemap',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'الحسابات' => ''
+      ],
+      actions: [
+          [
+              'label' => 'إضافة حساب جديد',
+              'url'   => 'add_account.php',
+              'class' => 'k-btn-primary',
+              'icon'  => 'fa-plus'
+          ],
+          [
+              'label' => 'ميزان المراجعة',
+              'url'   => 'balance_sheet.php',
+              'class' => 'k-btn-secondary',
+              'icon'  => 'fa-balance-scale'
+          ]
+      ],
+      badge: $totalAccounts . ' حساب'
+  ) ?>
 
-        <!-- Tree View -->
-        <div class="card-body" style="padding: 20px;">
-          <ul id="myUL">
+  <div class="k-card">
+    <div class="k-card-header">
+      <ul class="nav nav-pills" id="accTabs" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active font-weight-bold" id="tree-tab" data-toggle="pill" href="#tab-tree" role="tab">
+            <i class="fas fa-network-wired ml-1"></i> الشجرة المحاسبية (الهيكل)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link font-weight-bold" id="table-tab" data-toggle="pill" href="#tab-table" role="tab">
+            <i class="fas fa-table ml-1"></i> العرض الجدولي والتفصيلي
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="tab-content" id="accTabsContent">
+      <!-- تبويب الشجرة -->
+      <div class="tab-pane fade show active p-3" id="tab-tree" role="tabpanel">
+        <div class="acc-tree-container">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="text-muted small">انقر على المجلد لعرض وتفريغ الحسابات الفرعية التابعة له.</span>
+            <div>
+              <button type="button" class="k-btn k-btn-secondary k-btn-sm" id="btnExpandAll">
+                <i class="fas fa-folder-open ml-1"></i> فتح الكل
+              </button>
+              <button type="button" class="k-btn k-btn-secondary k-btn-sm" id="btnCollapseAll">
+                <i class="fas fa-folder ml-1"></i> إغلاق الكل
+              </button>
+            </div>
+          </div>
+
+          <ul class="acc-tree-list pr-0" id="accountsRoot">
             <?php
-            // Get all accounts with their children count
-            $sqlacc = 'SELECT a.*, 
-                       (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) as children_count
-                       FROM acc_head a 
-                       WHERE a.parent_id = 0 AND a.isdeleted = 0 
-                       ORDER BY a.code';
-            $resacc = $conn->query($sqlacc);
-            
-            while ($rowacc = $resacc->fetch_assoc()) {
-              $hasChildren = $rowacc['children_count'] > 0;
-              $caretClass = $hasChildren ? 'caret' : 'caret no-children';
+            // Recursive or Multi-level Tree rendering (Level 1 root accounts: parent_id = 0)
+            $resL1 = $conn->query("SELECT a.*, (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) AS children_count FROM acc_head a WHERE a.parent_id = 0 AND a.isdeleted = 0 ORDER BY a.code");
+            while ($r1 = $resL1->fetch_assoc()):
+                $hasKids1 = ((int)$r1['children_count'] > 0);
             ?>
-            <li class="num0 tree">
-              <span class="<?= $caretClass ?>">
-                <span class="acc-code"><?= htmlspecialchars($rowacc['code']) ?></span>
-                <span class="acc-name"><?= htmlspecialchars($rowacc['aname']) ?></span>
-              </span>
-              
-              <?php if ($hasChildren) { ?>
-              <ul class="nested">
-                <?php
-                $p2id = $rowacc['id'];
-                $sqlacc2 = "SELECT a.*, 
-                           (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) as children_count
-                           FROM acc_head a 
-                           WHERE a.parent_id = $p2id AND a.isdeleted = 0 
-                           ORDER BY a.code";
-                $resacc2 = $conn->query($sqlacc2);
-                
-                while ($rowacc2 = $resacc2->fetch_assoc()) {
-                  $hasChildren2 = $rowacc2['children_count'] > 0;
-                  $caretClass2 = $hasChildren2 ? 'caret' : 'caret no-children';
-                ?>
-                <li class="tree level-1">
-                  <span class="<?= $caretClass2 ?>">
-                    <span class="acc-code"><?= htmlspecialchars($rowacc2['code']) ?></span>
-                    <span class="acc-name"><?= htmlspecialchars($rowacc2['aname']) ?></span>
-                  </span>
-                  
-                  <?php if ($hasChildren2) { ?>
-                  <ul class="nested">
+              <li class="acc-tree-node">
+                <span class="acc-caret <?= $hasKids1 ? '' : 'no-children' ?>">
+                  <i class="fas <?= $hasKids1 ? 'fa-folder' : 'fa-file-invoice' ?> folder-icon"></i>
+                  <span class="acc-code-badge"><?= htmlspecialchars($r1['code']) ?></span>
+                  <strong><?= htmlspecialchars($r1['aname']) ?></strong>
+                </span>
+
+                <?php if ($hasKids1): ?>
+                  <ul class="acc-nested">
                     <?php
-                    $p3id = $rowacc2['id'];
-                    $sqlacc3 = "SELECT a.*, 
-                               (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) as children_count
-                               FROM acc_head a 
-                               WHERE a.parent_id = $p3id AND a.isdeleted = 0 
-                               ORDER BY a.code";
-                    $resacc3 = $conn->query($sqlacc3);
-                    
-                    while ($rowacc3 = $resacc3->fetch_assoc()) {
-                      $hasChildren3 = $rowacc3['children_count'] > 0;
-                      $caretClass3 = $hasChildren3 ? 'caret' : 'caret no-children';
+                    $p1 = (int)$r1['id'];
+                    $resL2 = $conn->query("SELECT a.*, (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) AS children_count FROM acc_head a WHERE a.parent_id = $p1 AND a.isdeleted = 0 ORDER BY a.code");
+                    while ($r2 = $resL2->fetch_assoc()):
+                        $hasKids2 = ((int)$r2['children_count'] > 0);
                     ?>
-                    <li class="tree level-2">
-                      <span class="<?= $caretClass3 ?>">
-                        <span class="acc-code"><?= htmlspecialchars($rowacc3['code']) ?></span>
-                        <span class="acc-name"><?= htmlspecialchars($rowacc3['aname']) ?></span>
-                      </span>
-                      
-                      <?php if ($hasChildren3) { ?>
-                      <ul class="nested">
-                        <?php
-                        $p4id = $rowacc3['id'];
-                        $sqlacc4 = "SELECT a.*, 
-                                   (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) as children_count
-                                   FROM acc_head a 
-                                   WHERE a.parent_id = $p4id AND a.isdeleted = 0 
-                                   ORDER BY a.code";
-                        $resacc4 = $conn->query($sqlacc4);
-                        
-                        while ($rowacc4 = $resacc4->fetch_assoc()) {
-                          $hasChildren4 = $rowacc4['children_count'] > 0;
-                          $caretClass4 = $hasChildren4 ? 'caret' : 'caret no-children';
-                        ?>
-                        <li class="tree level-3">
-                          <span class="<?= $caretClass4 ?>">
-                            <span class="acc-code"><?= htmlspecialchars($rowacc4['code']) ?></span>
-                            <span class="acc-name"><?= htmlspecialchars($rowacc4['aname']) ?></span>
-                          </span>
-                        </li>
-                        <?php } ?>
-                      </ul>
-                      <?php } ?>
-                    </li>
-                    <?php } ?>
+                      <li class="acc-tree-node">
+                        <span class="acc-caret <?= $hasKids2 ? '' : 'no-children' ?>">
+                          <i class="fas <?= $hasKids2 ? 'fa-folder' : 'fa-file-alt' ?> folder-icon"></i>
+                          <span class="acc-code-badge"><?= htmlspecialchars($r2['code']) ?></span>
+                          <span><?= htmlspecialchars($r2['aname']) ?></span>
+                        </span>
+
+                        <?php if ($hasKids2): ?>
+                          <ul class="acc-nested">
+                            <?php
+                            $p2 = (int)$r2['id'];
+                            $resL3 = $conn->query("SELECT a.*, (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) AS children_count FROM acc_head a WHERE a.parent_id = $p2 AND a.isdeleted = 0 ORDER BY a.code");
+                            while ($r3 = $resL3->fetch_assoc()):
+                                $hasKids3 = ((int)$r3['children_count'] > 0);
+                            ?>
+                              <li class="acc-tree-node">
+                                <span class="acc-caret <?= $hasKids3 ? '' : 'no-children' ?>">
+                                  <i class="fas <?= $hasKids3 ? 'fa-folder' : 'fa-file' ?> folder-icon"></i>
+                                  <span class="acc-code-badge"><?= htmlspecialchars($r3['code']) ?></span>
+                                  <span><?= htmlspecialchars($r3['aname']) ?></span>
+                                </span>
+
+                                <?php if ($hasKids3): ?>
+                                  <ul class="acc-nested">
+                                    <?php
+                                    $p3 = (int)$r3['id'];
+                                    $resL4 = $conn->query("SELECT a.*, (SELECT COUNT(*) FROM acc_head WHERE parent_id = a.id AND isdeleted = 0) AS children_count FROM acc_head a WHERE a.parent_id = $p3 AND a.isdeleted = 0 ORDER BY a.code");
+                                    while ($r4 = $resL4->fetch_assoc()):
+                                    ?>
+                                      <li class="acc-tree-node">
+                                        <span class="acc-caret no-children">
+                                          <i class="fas fa-file text-muted"></i>
+                                          <span class="acc-code-badge"><?= htmlspecialchars($r4['code']) ?></span>
+                                          <span><?= htmlspecialchars($r4['aname']) ?></span>
+                                        </span>
+                                      </li>
+                                    <?php endwhile; ?>
+                                  </ul>
+                                <?php endif; ?>
+                              </li>
+                            <?php endwhile; ?>
+                          </ul>
+                        <?php endif; ?>
+                      </li>
+                    <?php endwhile; ?>
                   </ul>
-                  <?php } ?>
-                </li>
-                <?php } ?>
-              </ul>
-              <?php } ?>
-            </li>
-            <?php } ?>
+                <?php endif; ?>
+              </li>
+            <?php endwhile; ?>
           </ul>
-        </div>
-
-        <!-- Table View -->
-        <div class="card-body" style="padding: 20px; border-top: 2px solid #f0f0f0;">
-          <h4 class="mb-3"><i class="fas fa-table"></i> عرض جدولي</h4>
-          <div class="table-responsive">
-            <table class="table table-hover table-bordered">
-              <thead class="bg-light">
-                <tr>
-                  <th width="50">#</th>
-                  <th>الكود</th>
-                  <th>الاسم</th>
-                  <th>النوع</th>
-                  <th>التصنيف</th>
-                  <th>يتبع لـ</th>
-                  <th width="180" class="text-center">العمليات</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php 
-                $sqlacc = 'SELECT * FROM acc_head WHERE isdeleted = 0 ORDER BY code';
-                $resacc = $conn->query($sqlacc);
-                $x = 0;
-                while ($rowacc = $resacc->fetch_assoc()) {
-                  $x++;
-                ?>
-                <tr>
-                  <td><?= $x ?></td>
-                  <td><span class="badge badge-info"><?= htmlspecialchars($rowacc['code']) ?></span></td>
-                  <td><?= htmlspecialchars($rowacc['aname']) ?></td>
-                  <td>
-                    <?php 
-                    if ($rowacc['kind'] == 1) {
-                      echo '<span class="badge badge-primary">ميزانية</span>';
-                    } elseif ($rowacc['kind'] == 2) {
-                      echo '<span class="badge badge-success">أرباح وخسائر</span>';
-                    }
-                    ?>
-                  </td>
-                  <td>
-                    <?php 
-                    if ($rowacc['is_basic'] == 1) {
-                      echo '<span class="badge badge-warning">حساب أساسي</span>';
-                    } else {
-                      echo '<span class="badge badge-secondary">حساب عادي</span>';
-                    }
-                    ?>
-                  </td>
-                  <td>
-                    <?php
-                    $accheadid = $rowacc['parent_id'];
-                    if ($accheadid != 0) {
-                      $stmt = $conn->prepare("SELECT aname FROM acc_head WHERE id = ?");
-                      $stmt->bind_param("i", $accheadid);
-                      $stmt->execute();
-                      $result = $stmt->get_result();
-                      if ($rowacchead = $result->fetch_assoc()) {
-                        echo htmlspecialchars($rowacchead['aname']);
-                      }
-                    } else {
-                      echo '<span class="text-muted">--</span>';
-                    }
-                    ?>
-                  </td>
-                  <td class="text-center">
-                    <a href="edit_account.php?id=<?= $rowacc['id'] ?>" class="btn btn-sm btn-warning">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#delete<?= $rowacc['id']?>">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-
-                <!-- Delete Modal -->
-                <div class="modal fade" id="delete<?= $rowacc['id']?>">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title">
-                          <i class="fas fa-exclamation-triangle"></i> تحذير
-                        </h5>
-                        <button type="button" class="close text-white" data-dismiss="modal">
-                          <span>&times;</span>
-                        </button>
-                      </div>
-                      <div class="modal-body text-center">
-                        <i class="fas fa-trash-alt text-danger" style="font-size: 48px;"></i>
-                        <p class="mt-3">هل تريد بالتأكيد حذف الحساب:</p>
-                        <h5 class="text-danger"><?= htmlspecialchars($rowacc['aname']) ?></h5>
-                      </div>
-                      <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                          <i class="fas fa-times"></i> إلغاء
-                        </button>
-                        <a href="do/dodel_account.php?id=<?= $rowacc['id'] ?>" class="btn btn-danger">
-                          <i class="fas fa-trash"></i> حذف
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <?php } ?>
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 
+      <!-- تبويب الجدول -->
+      <div class="tab-pane fade p-0" id="tab-table" role="tabpanel">
+        <div class="k-toolbar border-top-0">
+          <div class="k-toolbar-start">
+            <div class="k-search-input-wrap">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="بحث بكود أو اسم الحساب أو الحساب الأب..." data-kody-table-search="#accountsTable">
+            </div>
+          </div>
+          <div class="k-toolbar-end">
+            <span class="text-muted small">إجمالي الحسابات: <strong><?= $totalAccounts ?></strong></span>
+          </div>
+        </div>
+
+        <div class="k-table-wrap">
+          <table class="k-table" id="accountsTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th style="width: 110px;">كود الحساب</th>
+                <th>اسم الحساب</th>
+                <th>نوع القائمة</th>
+                <th>التصنيف</th>
+                <th>الحساب الرئيسي التابع له</th>
+                <th>الرصيد الدفتري</th>
+                <th style="width: 110px;" class="text-center">العمليات</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+              $x = 0;
+              while ($row = $resTable->fetch_assoc()):
+                  $x++;
+                  $aid = (int)$row['id'];
+                  $code = htmlspecialchars($row['code'] ?? '', ENT_QUOTES, 'UTF-8');
+                  $name = htmlspecialchars($row['aname'] ?? '', ENT_QUOTES, 'UTF-8');
+                  $pname = htmlspecialchars($row['parent_name'] ?? '', ENT_QUOTES, 'UTF-8');
+                  $kind = (int)($row['kind'] ?? 0);
+                  $isBasic = ((int)($row['is_basic'] ?? 0) === 1);
+                  $bal = (float)($row['balance'] ?? 0);
+              ?>
+                <tr>
+                  <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
+                  <td><span class="k-badge k-badge-secondary font-weight-bold"><?= $code ?></span></td>
+                  <td>
+                    <strong class="text-dark font-size-15"><?= $name ?></strong>
+                  </td>
+                  <td>
+                    <?php if ($kind === 1): ?>
+                      <span class="k-badge k-badge-primary">ميزانية عمومية</span>
+                    <?php elseif ($kind === 2): ?>
+                      <span class="k-badge k-badge-success">أرباح وخسائر</span>
+                    <?php else: ?>
+                      <span class="text-muted small">—</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if ($isBasic): ?>
+                      <span class="k-badge k-badge-warning">رئيسي</span>
+                    <?php else: ?>
+                      <span class="k-badge k-badge-info">فرعي (حركة)</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?= $pname !== '' ? '<span class="text-muted">' . $pname . '</span>' : '<span class="text-muted small">—</span>' ?>
+                  </td>
+                  <td>
+                    <span class="font-weight-bold <?= $bal >= 0 ? 'text-success' : 'text-danger' ?>">
+                      <?= number_format($bal, 2) ?>
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <div class="k-actions">
+                      <?= kody_action_btn('edit', 'edit_account.php?id=' . $aid, ['title' => 'تعديل الحساب']) ?>
+                      <?php if (!$isBasic && ((int)($row['deletable'] ?? 1) === 1)): ?>
+                        <?= kody_action_btn('delete', 'do/dodel_account.php?id=' . $aid, [
+                            'title' => 'حذف الحساب',
+                            'item_name' => $name
+                        ]) ?>
+                      <?php else: ?>
+                        <span class="k-btn-action text-muted" style="cursor: not-allowed; opacity: 0.5;" title="حساب أساسي لا يمكن حذفه">
+                          <i class="fas fa-lock"></i>
+                        </span>
+                      <?php endif; ?>
+                    </div>
+                  </td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  </section>
+  </div>
 </div>
 
+<?php 
+$extra_footer_scripts = '
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  var togglers = document.getElementsByClassName("caret");
-  
-  for (var i = 0; i < togglers.length; i++) {
-    // Skip items without children
-    if (togglers[i].classList.contains('no-children')) {
-      continue;
-    }
-    
-    togglers[i].addEventListener("click", function() {
-      var nested = this.parentElement.querySelector(".nested");
-      if (nested) {
-        nested.classList.toggle("active");
-        this.classList.toggle("caret-down");
+document.addEventListener("DOMContentLoaded", function() {
+  // Tree carets toggle
+  $(document).on("click", ".acc-caret:not(.no-children)", function() {
+    var $nested = $(this).siblings(".acc-nested");
+    var $icon = $(this).find("i.folder-icon");
+    if ($nested.length) {
+      $nested.toggleClass("active");
+      if ($nested.hasClass("active")) {
+        $icon.removeClass("fa-folder").addClass("fa-folder-open");
+      } else {
+        $icon.removeClass("fa-folder-open").addClass("fa-folder");
       }
-    });
-  }
+    }
+  });
+
+  // Expand all
+  $("#btnExpandAll").on("click", function() {
+    $(".acc-nested").addClass("active");
+    $(".acc-caret:not(.no-children) i.folder-icon").removeClass("fa-folder").addClass("fa-folder-open");
+  });
+
+  // Collapse all
+  $("#btnCollapseAll").on("click", function() {
+    $(".acc-nested").removeClass("active");
+    $(".acc-caret:not(.no-children) i.folder-icon").removeClass("fa-folder-open").addClass("fa-folder");
+  });
 });
 </script>
-
-<?php include('includes/footer.php') ?>
+';
+require_once __DIR__ . '/includes/footer.php'; 
+?>

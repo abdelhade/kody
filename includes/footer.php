@@ -342,10 +342,24 @@ function checkTotal() {
 
 // التحقق عند تحميل الصفحة إذا كان تم الإرسال
 $(document).ready(function() {
-    // تحديث المدفوع عند تغيير الإجمالي
-    $('#headnet, #headdisc, #headplus').on('input change', function() {
-        const headnet = parseFloat($('#headnet').val()) || 0;
-        $('#paid').val(headnet.toFixed(2));
+    // تحديث المدفوع عند تغيير الإجمالي (فقط لو كان العميل/المورد افتراضياً)
+    $('#headnet, #headdisc, #headplus').on('input change keyup', function() {
+        if (typeof window.syncPaidIfDefault === 'function') {
+            window.syncPaidIfDefault();
+        } else {
+            const supplierSel = document.getElementById('mySelectEmp');
+            const isDefault = !supplierSel || (supplierSel.options.length > 0 && supplierSel.value === supplierSel.options[0].value);
+            if (isDefault) {
+                const headnet = parseFloat($('#headnet').val()) || 0;
+                $('#paid').val(headnet.toFixed(2));
+            }
+        }
+        if (typeof window.updatePartyBalance === 'function') {
+            window.updatePartyBalance();
+        }
+        if (typeof window.updateInvoiceTotalProfit === 'function') {
+            window.updateInvoiceTotalProfit();
+        }
     });
     
     // معالجة الأزرار بشكل صريح - تعمل مع أي form
@@ -440,8 +454,6 @@ $(document).ready(function() {
 <script>
   $.widget.bridge('uibutton', $.ui.button)
 </script>
-<!-- Bootstrap 4 rtl -->
-<script src="plugins/bootstrap/bootstrab.rtlcss.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- ChartJS -->
@@ -529,10 +541,10 @@ $(document).ready(function() {
       "responsive": true,
     });
   });
-
-
 </script>
 
+<script src="assets/js/kody-ui.js"></script>
+<script src="assets/js/kody-excel.js"></script>
 <?php if (!empty($extra_footer_scripts)) { echo $extra_footer_scripts; } ?>
 
 </body>

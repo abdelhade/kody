@@ -224,6 +224,7 @@
                 <div class="form-group mb-0">
                   <label for="single_fp_rule">الإجراء</label>
                   <select name="single_fp_rule" id="single_fp_rule" class="form-control form-control-sm">
+                    <option value="none">لا تعليق</option>
                     <option value="half" selected>احتساب نصف يوم</option>
                     <option value="cancel">إلغاء اليوم (لا يُحسب حضور)</option>
                   </select>

@@ -38,53 +38,224 @@ class InvoiceFooter extends InvoiceElementBase
     public function render()
     {
         ob_start();
+        $isPurchase = in_array($this->invoiceType, [4, 10, 12]);
         ?>
-        <div class="invoice-footer-fixed" id="invoiceFooter">
-        <div class="row full bg--200 border">
-            <!-- حقل نوع الفاتورة المخفي -->
-            <input type="text" name="pro_tybe" hidden value="<?php echo $this->invoiceType; ?>">
-            
-            <!-- معلومات الصنف والتكلفة -->
-            <div class="col-md-6" id="itemDataCols">
-                <label for="showItemDataCheck" class="mb-1 d-inline-flex align-items-center px-2 border rounded bg-white" style="gap:6px; cursor:pointer; font-weight:600;">
-                    <input type="checkbox" id="showItemDataCheck">
-                    <span>بيانات الصنف</span>
-                </label>
-                <div id="itemDataPanel" class="row">
-                    <div class="col-md-6">
-                        <?php $this->renderItemInfo(); ?>
+        <div class="invoice-footer-fixed invoice-footer-modern" id="invoiceFooter">
+        <style>
+        .invoice-footer-modern {
+            padding: 6px 10px 6px;
+            background: #ffffff;
+            border-top: 1px solid #cbd5e1;
+            box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
+            font-family: inherit;
+        }
+        .invoice-footer-modern .footer-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 1.15fr 1fr;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        @media (max-width: 991px) {
+            .invoice-footer-modern .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .invoice-footer-modern .footer-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 108px;
+        }
+        .invoice-footer-modern .footer-card-totals {
+            background: #ffffff;
+            border-color: #cbd5e1;
+        }
+        .invoice-footer-modern .footer-card-payment {
+            background: #ffffff;
+            border-color: #cbd5e1;
+        }
+        .invoice-footer-modern .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #334155;
+        }
+        .invoice-footer-modern .item-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+        .invoice-footer-modern .metric-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 3px 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .invoice-footer-modern .metric-label {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-bottom: 1px;
+            white-space: nowrap;
+        }
+        .invoice-footer-modern .metric-val {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .invoice-footer-modern .form-row-compact {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+        .invoice-footer-modern .form-row-compact:last-child {
+            margin-bottom: 0;
+        }
+        .invoice-footer-modern .form-lbl {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        .invoice-footer-modern .hero-net-container {
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 6px;
+            padding: 2px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        .invoice-footer-modern .hero-net-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin: 0;
+            white-space: nowrap;
+        }
+        .invoice-footer-modern .hero-net-input {
+            background: transparent !important;
+            border: none !important;
+            color: #38bdf8 !important;
+            font-size: 20px !important;
+            font-weight: 800 !important;
+            text-align: left;
+            padding: 0 !important;
+            height: auto !important;
+            box-shadow: none !important;
+        }
+        .invoice-footer-modern .hero-paid-input {
+            font-size: 17px !important;
+            font-weight: 700 !important;
+            color: #047857 !important;
+            background: #ecfdf5 !important;
+            border: 1px solid #10b981 !important;
+            height: 29px !important;
+            text-align: center;
+        }
+        .invoice-footer-modern .bottom-action-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-top: 4px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .invoice-footer-modern .notes-input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .invoice-footer-modern .notes-input-wrapper .notes-lbl {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #64748b;
+            white-space: nowrap;
+        }
+        </style>
+
+        <!-- حقل نوع الفاتورة المخفي -->
+        <input type="text" name="pro_tybe" hidden value="<?php echo $this->invoiceType; ?>">
+
+        <!-- الشبكة الرئيسية: 3 بطاقات متوازية -->
+        <div class="footer-grid">
+            <!-- البطاقة 1: بيانات وتاريخ الصنف -->
+            <div class="footer-card" id="itemDataCols">
+                <div class="card-header-bar">
+                    <label for="showItemDataCheck" class="mb-0 d-inline-flex align-items-center" style="gap:4px; cursor:pointer;">
+                        <input type="checkbox" id="showItemDataCheck">
+                        <span>بيانات الصنف</span>
+                    </label>
+                    <div class="d-flex align-items-center text-truncate" style="gap:5px; max-width: 70%;">
+                        <h6 id="selectedLineName" class="mb-0 text-truncate" style="font-weight:700; color:#0f172a; font-size:11.5px;"></h6>
+                        <span id="selectedItemLinks" class="d-none" style="display:inline-flex; gap:2px;">
+                            <a id="selectedItemMovement" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary py-0 px-1" title="حركة الصنف" style="font-size:10px;"><i class="fa fa-exchange-alt"></i></a>
+                            <a id="selectedItemEdit" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-warning py-0 px-1" title="تعديل الصنف" style="font-size:10px;"><i class="fa fa-pen"></i></a>
+                        </span>
                     </div>
-                    <div class="col-md-6">
-                        <?php $this->renderCostInfo(); ?>
+                </div>
+                
+                <div id="itemDataPanel">
+                    <div class="row no-gutters">
+                        <div class="col-12">
+                            <?php $this->renderItemInfo(); ?>
+                            <?php $this->renderCostInfo(); ?>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- إجماليات الفاتورة -->
-            <div class="col-md-3">
+
+            <!-- البطاقة 2: ملخص الحساب والإجماليات -->
+            <div class="footer-card footer-card-totals">
                 <?php $this->renderTotals(); ?>
             </div>
-            
-            <!-- الدفع والصندوق -->
-            <div class="col-md-3">
+
+            <!-- البطاقة 3: السداد والخزينة -->
+            <div class="footer-card footer-card-payment">
                 <?php $this->renderPayment(); ?>
             </div>
         </div>
-        
-        <!-- أزرار التحكم والملاحظات -->
-        <div class="row">
-            <div class="col-md-4">
-                <?php $this->renderActionButtons(); ?>
+
+        <!-- شريط الإجراءات والملاحظات السفلي المدمج -->
+        <div class="bottom-action-bar">
+            <!-- الملاحظات -->
+            <div class="notes-input-wrapper">
+                <span class="notes-lbl"><i class="far fa-comment-alt"></i> ملاحظات:</span>
+                <input type="text" class="form-control form-control-sm bg-light" name="info" id="info" 
+                       placeholder="ملاحظات على الفاتورة..." value="<?php echo $this->getInfo(); ?>" style="height:30px; font-size:12px;">
             </div>
-            <div class="col-md-6">
-                <input type="text" class="form-control bg-orange-300" name="info" id="info" 
-                       placeholder="ملاحظات" value="<?php echo $this->getInfo(); ?>">
+
+            <!-- زر إظهار الفواتير السابقة -->
+            <div id="showOps" style="cursor:pointer;">
+                <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" style="gap:4px; height:30px; font-size:11.5px; white-space:nowrap;">
+                    <i class="fas fa-history"></i> فواتير سابقة
+                </button>
             </div>
-            <div class="col-md-2" id="showOps">
-                <div class="btn">إظهار الفواتير السابقة</div>
-            </div>
+
+            <!-- أزرار الحفظ والطباعة -->
+            <?php $this->renderActionButtons(); ?>
         </div>
         </div>
+
         <script>
         (function() {
             var COOKIE = 'invoice_show_item_data';
@@ -121,47 +292,51 @@ class InvoiceFooter extends InvoiceElementBase
      */
     private function renderItemInfo()
     {
-        ?>
-        <div class="row">
-            <div class="col bg-light">الصنف</div>
-            <div class="col border border-light">
-                <div class="d-flex align-items-center" style="gap:4px;">
-                    <h6 id="selectedLineName" class="mb-0" style="font-weight:700; color:#1e293b;"></h6>
-                    <span id="selectedItemLinks" class="d-none" style="display:inline-flex; gap:3px;">
-                        <a id="selectedItemMovement" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary py-0 px-1" title="حركة الصنف"><i class="fa fa-exchange-alt"></i></a>
-                        <a id="selectedItemEdit" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline-warning py-0 px-1" title="تعديل الصنف"><i class="fa fa-pen"></i></a>
-                    </span>
+        $isPurchase = in_array($this->invoiceType, [4, 10, 12]);
+        if ($isPurchase) {
+            ?>
+            <div class="item-metric-grid">
+                <div class="metric-box">
+                    <span class="metric-label">رصيد المخزن</span>
+                    <h6 id="storeqty" class="metric-val"></h6>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">آخر سعر شراء</span>
+                    <h6 id="last_price" class="metric-val text-primary"></h6>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">متوسط التكلفة</span>
+                    <h6 id="cost_price" class="metric-val"></h6>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">سعر البيع</span>
+                    <h6 id="price1" class="metric-val text-success"></h6>
                 </div>
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col bg-light">الكمية</div>
-            <div class="col border border-light">
-                <h6 id="storeqty"></h6>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col bg-light">سعر البيع</div>
-            <div class="col border border-light" id="cost_price_div">
-                <h6 id="price1"></h6>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col bg-light">سعر السوق</div>
-            <div class="col border border-light" id="cost_price_div">
+            <!-- عناصر مخفية لضمان توافق سكربتات JS تماماً دون أي خطأ -->
+            <div style="display:none;" id="cost_price_div">
                 <h6 id="market_price"></h6>
+                <h6 id="storemdtime"></h6>
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col border border-light" id="cost_price_div">
-                <h6 id="storemdtime" style="display:none;"></h6>
+            <?php
+        } else {
+            ?>
+            <div class="item-metric-grid">
+                <div class="metric-box">
+                    <span class="metric-label">الكمية بالمخزن</span>
+                    <h6 id="storeqty" class="metric-val"></h6>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">سعر البيع</span>
+                    <h6 id="price1" class="metric-val text-primary"></h6>
+                </div>
             </div>
-        </div>
-        <?php
+            <div style="display:none;" id="cost_price_div">
+                <h6 id="market_price"></h6>
+                <h6 id="storemdtime"></h6>
+            </div>
+            <?php
+        }
     }
 
     /**
@@ -169,35 +344,38 @@ class InvoiceFooter extends InvoiceElementBase
      */
     private function renderCostInfo()
     {
-        ?>
-        <div class="row">
-            <div class="col bg-light">سعر الشراء المتوسط</div>
-            <div class="col border border-light" id="cost_price_div">
-                <h6 id="cost_price" class="mb-0" style="color:#1e293b;"></h6>
+        $isPurchase = in_array($this->invoiceType, [4, 10, 12]);
+        if ($isPurchase) {
+            // مؤشرات الربح مخفية في فواتير المشتريات لكن موجودة في الـ DOM لتوافق الـ JS
+            ?>
+            <div style="display:none;">
+                <h6 id="unit_profit">-</h6>
+                <h6 id="item_total_profit">-</h6>
+                <h6 id="invoice_total_profit">-</h6>
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col bg-light">سعر الشراء الأخير</div>
-            <div class="col border border-light">
-                <h6 id="last_price" class="mb-0" style="color:#1e293b;"></h6>
+            <?php
+        } else {
+            ?>
+            <div class="item-metric-grid mt-1">
+                <div class="metric-box">
+                    <span class="metric-label">سعر التكلفة</span>
+                    <h6 id="cost_price" class="metric-val"></h6>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">ربح الصنف</span>
+                    <h6 id="item_total_profit" class="metric-val text-success font-weight-bold">-</h6>
+                </div>
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col bg-light">ربح الوحدة المتوقع</div>
-            <div class="col border border-light">
-                <h6 id="unit_profit" class="mb-0 font-weight-bold">-</h6>
+            <div class="d-flex justify-content-between align-items-center mt-1 px-1">
+                <span class="metric-label mb-0">إجمالي ربح الفاتورة:</span>
+                <h6 id="invoice_total_profit" class="metric-val text-success mb-0 font-weight-bold">-</h6>
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col bg-light">إجمالي ربح الصنف</div>
-            <div class="col border border-light">
-                <h6 id="item_total_profit" class="mb-0 font-weight-bold">-</h6>
+            <div style="display:none;">
+                <h6 id="last_price"></h6>
+                <h6 id="unit_profit">-</h6>
             </div>
-        </div>
-        <?php
+            <?php
+        }
     }
 
     /**
@@ -206,66 +384,64 @@ class InvoiceFooter extends InvoiceElementBase
     private function renderTotals()
     {
         ?>
-        <div class="row">
-            <div class="col col-md-4">
-                <label for="">إجمالي الكميات</label>
-            </div>
-            <div class="col-md-8">
-                <input id="headqty" name="headqty" type="text"
-                       class="form-control form-control-sm bg-light"
-                       value="<?php echo $this->getTotalQty(); ?>" readonly>
-            </div>
+        <div class="card-header-bar">
+            <span>ملخص الحساب والإجماليات</span>
+            <span class="badge badge-light border text-muted" style="font-size:10px;">حسابات الفاتورة</span>
         </div>
 
-        <div class="row">
-            <div class="col col-md-4">
-                <label for="">الإجمالي</label>
-            </div>
-            <div class="col-md-8">
-                <input id="headtotal" name="headtotal" type="text" 
-                       class="form-control form-control-sm" 
-                       value="<?php echo $this->getFatTotal(); ?>" readonly>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col col-md-4">
-                <label for="">الخصم<span class="text-orange-600">(F6)</span></label>
+        <!-- سطر 1: الكميات والإجمالي الأولي -->
+        <div class="row no-gutters mb-1" style="gap:4px;">
+            <div class="col">
+                <div class="d-flex align-items-center" style="gap:3px;">
+                    <label class="form-lbl" style="font-size:11px;">الكمية:</label>
+                    <input id="headqty" name="headqty" type="text"
+                           class="form-control form-control-sm bg-light text-center font-weight-bold p-0"
+                           value="<?php echo $this->getTotalQty(); ?>" readonly style="height:26px; font-size:12px;">
+                </div>
             </div>
             <div class="col">
-                <div style="display:flex; gap:4px;">
-                    <input id="headdisc_pct" name="headdisc_pct" type="number" 
-                           class="form-control form-control-sm mid select-all hover:select-all nozero" 
-                           placeholder="%" step="0.01" min="0" max="99"
-                           value="<?php echo $this->getFatDiscPct(); ?>" style="width: 40%;">
-                    <input id="headdisc" name="headdisc" type="number" 
-                           class="form-control form-control-sm mid select-all hover:select-all nozero" 
-                           placeholder="القيمة" step="0.01"
-                           value="<?php echo $this->getFatDisc(); ?>" style="width: 60%;">
+                <div class="d-flex align-items-center" style="gap:3px;">
+                    <label class="form-lbl" style="font-size:11px;">الإجمالي:</label>
+                    <input id="headtotal" name="headtotal" type="text" 
+                           class="form-control form-control-sm bg-light text-center font-weight-bold p-0" 
+                           value="<?php echo $this->getFatTotal(); ?>" readonly style="height:26px; font-size:12px;">
                 </div>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="col col-md-4">
-                <label for="">الإضافي</label>
-            </div>
+
+        <!-- سطر 2: الخصم والإضافي -->
+        <div class="row no-gutters mb-1" style="gap:4px;">
             <div class="col">
-                <input id="headplus" name="headplus" type="text" 
-                       class="form-control form-control-sm" 
-                       value="<?php echo $this->getFatPlus(); ?>">
+                <div class="d-flex align-items-center" style="gap:2px;">
+                    <label class="form-lbl" style="font-size:11px;">الخصم <span class="text-orange-600">(F6)</span>:</label>
+                    <div class="d-flex flex-grow-1" style="gap:2px;">
+                        <input id="headdisc_pct" name="headdisc_pct" type="number" 
+                               class="form-control form-control-sm mid select-all hover:select-all nozero text-center px-1" 
+                               placeholder="%" step="any"
+                               value="<?php echo $this->getFatDiscPct(); ?>" style="width: 42%; height:26px; font-size:11px;">
+                        <input id="headdisc" name="headdisc" type="number" 
+                               class="form-control form-control-sm mid select-all hover:select-all nozero text-center px-1" 
+                               placeholder="قيمة" step="any"
+                               value="<?php echo $this->getFatDisc(); ?>" style="width: 58%; height:26px; font-size:11px;">
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="d-flex align-items-center" style="gap:2px;">
+                    <label class="form-lbl" style="font-size:11px;">إضافي:</label>
+                    <input id="headplus" name="headplus" type="text" 
+                           class="form-control form-control-sm text-center p-0" 
+                           value="<?php echo $this->getFatPlus(); ?>" style="height:26px; font-size:12px;">
+                </div>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="col col-md-4">
-                <label for="">الصافي</label>
-            </div>
-            <div class="col-md-8">
-                <input id="headnet" name="headnet" type="text" 
-                       class="form-control" readonly style="font-size:30px;" 
-                       value="<?php echo $this->getProValue(); ?>">
-            </div>
+
+        <!-- سطر 3: الصافي النهائي -->
+        <div class="hero-net-container">
+            <span class="hero-net-label">الصافي النهائي:</span>
+            <input id="headnet" name="headnet" type="text" 
+                   class="form-control hero-net-input" readonly 
+                   value="<?php echo $this->getProValue(); ?>">
         </div>
         <?php
     }
@@ -278,46 +454,40 @@ class InvoiceFooter extends InvoiceElementBase
         // إخفاء جزء الدفع لأوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14)
         $hidePayment = in_array($this->invoiceType, [12, 13, 14]);
         
-        if ($hidePayment) {
-            // عرض رسالة بديلة أو ترك المساحة فارغة
-            echo '<div class="alert alert-info text-center" style="margin: 20px;">
-                    <i class="fas fa-info-circle"></i> 
-                    لا يتطلب هذا المستند معلومات دفع
-                  </div>';
-            return;
-        }
         ?>
-        <div class="row">
-            <div class="col-md-4">
-                <label for="">المدفوع <span class="text-orange-600">(F7)</span></label>
+        <div class="card-header-bar">
+            <span>السداد والخزينة</span>
+            <span class="badge badge-light border text-muted" style="font-size:10px;">حركة النقدية</span>
+        </div>
+
+        <?php if ($hidePayment): ?>
+            <div class="alert alert-info text-center py-2 mb-0" style="font-size:11.5px;">
+                <i class="fas fa-info-circle"></i> لا يتطلب هذا المستند سداداً
             </div>
-            <div class="col-md-8">
+        <?php else: ?>
+            <!-- المدفوع -->
+            <div class="form-row-compact">
+                <label class="form-lbl" style="width:72px;">المدفوع <span class="text-orange-600">(F7)</span></label>
                 <input id="paid" name="paid" type="number" step="any"
-                       class="form-control form-control-lg bg-light last" 
-                       style="font-size:30px;" value="<?php echo $this->getPaidAmount(); ?>">
+                       class="form-control form-control-sm hero-paid-input last" 
+                       value="<?php echo $this->getPaidAmount(); ?>">
             </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-4">
-                <label for="">الباقي</label>
+            
+            <!-- الباقي -->
+            <div class="form-row-compact">
+                <label class="form-lbl" style="width:72px;">الباقي (الآجل)</label>
+                <input id="change" type="text" class="form-control form-control-sm bg-light font-weight-bold text-danger text-center p-0" 
+                       readonly value="0" style="height:26px; font-size:12px;">
             </div>
-            <div class="col-md-8">
-                <input id="change" type="text" class="form-control form-control-sm" 
-                       readonly value="0">
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col col-4">
-                <label for="">الصندوق</label>
-            </div>
-            <div class="col col-md-8">
-                <select name="fund_id" id="fund_id" class="form-control form-control-sm">
+            
+            <!-- الصندوق -->
+            <div class="form-row-compact">
+                <label class="form-lbl" style="width:72px;">الخزينة</label>
+                <select name="fund_id" id="fund_id" class="form-control form-control-sm" style="height:26px; font-size:11.5px; padding: 2px 4px;">
                     <?php $this->renderFundOptions(); ?>
                 </select>
             </div>
-        </div>
+        <?php endif; ?>
 
         <!-- hidden inputs مطلوبة بـ doadd_invoice.php -->
         <input type="hidden" name="paid_cash"       id="paid_cash"       value="0">
@@ -355,22 +525,25 @@ class InvoiceFooter extends InvoiceElementBase
     {
         $buttonClass = $this->getBackgroundClass();
         $saveText = $this->isEditMode ? 'تحديث' : 'حفظ';
+        $isPurchase = in_array($this->invoiceType, [4, 10, 12]);
         ?>
-        <button id="submit" class="btn <?php echo $buttonClass; ?> btn-block btn-lg dis" 
-                type="submit" name="submit" value="save">
-            <?php echo $saveText; ?> (F12)
-        </button>
-        <div class="d-flex align-items-stretch" style="gap:6px;">
-            <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-lg dis flex-grow-1" 
-                    type="submit" formtarget="_blank" name="submit" value="print">
+        <div class="d-flex align-items-center" style="gap:6px;">
+            <button id="submit2" class="btn <?php echo $buttonClass; ?> btn-sm text-white dis font-weight-bold d-flex align-items-center" 
+                    type="submit" formtarget="_blank" name="submit" value="print" style="gap:4px; height:30px; font-size:12px; white-space:nowrap; padding: 4px 12px;">
                 <i class="fas fa-print"></i> <?php echo $saveText; ?> وطباعة (F11)
             </button>
-            <label for="printCashierCheck" class="mb-0 d-flex align-items-center px-2 border rounded bg-white" style="gap:4px; white-space:nowrap; cursor:pointer;" title="طباعة إيصال كاشير بدل ورقة A4">
+            
+            <label for="printCashierCheck" class="mb-0 <?php echo $isPurchase ? 'd-none' : 'd-flex'; ?> align-items-center px-2 border rounded bg-white" style="gap:4px; white-space:nowrap; cursor:pointer; height:30px; font-size:11.5px;" title="طباعة إيصال كاشير بدل ورقة A4">
                 <input type="checkbox" id="printCashierCheck">
                 <span>كاشير</span>
             </label>
+            <input type="hidden" name="print_cashier" id="printCashierField" value="0">
+            
+            <button id="submit" class="btn <?php echo $buttonClass; ?> btn-sm text-white dis font-weight-bold d-flex align-items-center" 
+                    type="submit" name="submit" value="save" style="gap:4px; height:30px; font-size:12px; white-space:nowrap; padding: 4px 16px;">
+                <i class="fas fa-save"></i> <?php echo $saveText; ?> (F12)
+            </button>
         </div>
-        <input type="hidden" name="print_cashier" id="printCashierField" value="0">
         <script>
         (function() {
             var COOKIE = 'invoice_print_cashier';

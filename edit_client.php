@@ -1,153 +1,162 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
-
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-  <!-- Content Header (Page header) -->
-  <section class="content-header">
-    <div class="container-fluid">
 <?php
-$id = $_GET['id'];
-$rowcl= $conn->query("SELECT * FROM clients where id = $id")->fetch_assoc() ?>
-<form action="do/doedit_client.php?id=<?= $id ?>" method="post">
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
 
-<div class="card card-warning">
-        <div class="card-header">
-            <h3>تعديل العميل <?= $rowcl['name']?> </h3>
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id < 1) {
+    header('Location: clients.php');
+    exit;
+}
+
+$stmt = $conn->prepare("SELECT * FROM clients WHERE id = ? LIMIT 1");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$res = $stmt->get_result();
+$rowcl = $res->fetch_assoc();
+$stmt->close();
+
+if (!$rowcl) {
+    header('Location: clients.php');
+    exit;
+}
+
+// Fetch towns
+$restwn = $conn->query("SELECT * FROM towns WHERE COALESCE(isdeleted, 0) != 1 ORDER BY name ASC");
+$clientName = htmlspecialchars($rowcl['name'] ?? '', ENT_QUOTES, 'UTF-8');
+?>
+
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: 'تعديل بيانات العميل: ' . $clientName,
+      icon: 'fa-user-edit',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'العملاء' => 'clients.php',
+          'تعديل بيانات عميل' => ''
+      ],
+      actions: [
+          [
+              'label' => 'ملف العميل',
+              'url'   => 'clprofile.php?id=' . $id,
+              'class' => 'k-btn-info',
+              'icon'  => 'fa-id-card'
+          ],
+          [
+              'label' => 'العودة للقائمة',
+              'url'   => 'clients.php',
+              'class' => 'k-btn-secondary',
+              'icon'  => 'fa-arrow-right'
+          ]
+      ]
+  ) ?>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      <div class="k-card">
+        <div class="k-card-header">
+          <h3 class="k-card-title"><i class="fas fa-edit text-warning mr-1"></i> تعديل بيانات العميل</h3>
         </div>
-        <div class="card-body">
+
+        <form action="do/doedit_client.php?id=<?= $id ?>" method="POST">
+          <div class="k-card-body">
             <div class="row">
-                <div class="col">
-                    <div class="form-group">
-                        <label for="name">الاسم</label>
-                        <input value="<?= $rowcl['name']?>" placeholder="ادخل اسم العميل" class="form-control" type="text" name="name" id="">
-                    </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label required">اسم العميل</label>
+                  <input type="text" name="name" value="<?= $clientName ?>" class="k-input" required autofocus>
                 </div>
-                <div class="col">
-                    
-                <div class="form-group">
-                        <label for="phone">phone</label>
-                        <input value="<?= $rowcl['phone']?>" placeholder="ادخل تليفون" class="form-control" type="text" name="phone" id="">
-                    </div>
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">رقم الهاتف</label>
+                  <input type="text" name="phone" value="<?= htmlspecialchars($rowcl['phone'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
                 </div>
+              </div>
             </div>
-            <div class="row">
-                <div class="col">
-                    <label for="town">المدينه</label>
-                    <select class="form-control" name="city" id="">
-                        <?php 
-                        while ($rowtwn = $restwn->fetch_assoc()) {
-                          ?>
-                          <option <?php if ($rowcl['city'] = $rowtwn['id']) {
-                            echo 'selected';
-                          } ?> value="<?= $rowtwn['id']?>"><?= $rowtwn['name']?></option>
-                          <?php }?>
-
-                    </select>
-
-
-                </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="address">العنوان</label>
-                        <input value="<?= $rowcl['address']?>" placeholder="ادخل العنوان" class="form-control" type="text" name="address" id="">
-                    </div>
-
-                </div>
-            </div>
-
-
-
-
 
             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="height">height</label>
-                        <select name="gender" id="" class="form-control">
-                            <option <?php if ($rowcl['gender']==0) {
-                                echo "selected";
-                            }?> value="0">ذكر</option>
-                            <option <?php if ($rowcl['gender']==1) {
-                                echo "selected";
-                            }?> value="1">انثي</option>
-                        </select>
-
-                    </div>
-
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">المدينة / المحافظة</label>
+                  <select name="city" class="k-select">
+                    <option value="">-- اختر المدينة --</option>
+                    <?php if ($restwn): while ($twn = $restwn->fetch_assoc()): ?>
+                      <?php $sel = ((string)$rowcl['city'] === (string)$twn['id']) ? 'selected' : ''; ?>
+                      <option value="<?= $twn['id'] ?>" <?= $sel ?>><?= htmlspecialchars($twn['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endwhile; endif; ?>
+                  </select>
                 </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="height">height</label>
-                        <input value="<?= $rowcl['height']?>" placeholder="ادخل الطول" class="form-control" type="number" name="height" id="">
-                    </div>
-
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">العنوان بالتفصيل</label>
+                  <input type="text" name="address" value="<?= htmlspecialchars($rowcl['address'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
                 </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">weight</label>
-                        <input value="<?= $rowcl['weight']?>" placeholder="الوزن بالkg" class="form-control" type="number" name="weight" id="">
-                    </div>
-
-                </div>
+              </div>
             </div>
-
-
-
 
             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="dateofbirth">تاريخ الميلاد</label>
-                        <input value="<?= $rowcl['dateofbirth']?>" placeholder="" class="form-control" type="date" name="dateofbirth" id="">
-                    </div>
-
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">النوع</label>
+                  <select name="gender" class="k-select">
+                    <option value="0" <?= ((int)($rowcl['gender'] ?? 0) === 0) ? 'selected' : '' ?>>ذكر</option>
+                    <option value="1" <?= ((int)($rowcl['gender'] ?? 0) === 1) ? 'selected' : '' ?>>أنثى</option>
+                  </select>
                 </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="">رقم الرفيق</label>
-                        <input value="<?= $rowcl['ref']?>" placeholder="ادخل تليفون" class="form-control" type="text" name="ref" id="">
-                    </div>
-
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">تاريخ الميلاد</label>
+                  <input type="date" name="dateofbirth" value="<?= htmlspecialchars($rowcl['dateofbirth'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
                 </div>
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">الطول (سم)</label>
+                  <input type="number" step="0.1" name="height" value="<?= htmlspecialchars($rowcl['height'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">الوزن (كجم)</label>
+                  <input type="number" step="0.1" name="weight" value="<?= htmlspecialchars($rowcl['weight'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
+                </div>
+              </div>
             </div>
-            </div>
-             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">امراض مزمنه</label>
-                        <textarea  placeholder="ادخل الامراض المزمنه" class="form-control"  name="diseses" id="" cols="30" rows="5"><?= $rowcl['diseses']?></textarea>
-                    </div>
 
-
-                </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">ملاحظات اخري</label>
-                        <textarea  placeholder="ادخل الملاحظات" class="form-control"  name="info" id="" cols="30" rows="5"><?= $rowcl['info']?></textarea>
-                    </div>
-                </div>
-             </div>
-        </div>
-        <div class="card-footer">
             <div class="row">
-                <div class="col">
-            <button class="btn btn-warning btn-flat btn-block" type="submit">تأكيد</button>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">رقم هاتف بديل / الرفيق</label>
+                  <input type="text" name="ref" value="<?= htmlspecialchars($rowcl['ref'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">ملاحظات طبية / أمراض مزمنة</label>
+                  <input type="text" name="diseses" value="<?= htmlspecialchars($rowcl['diseses'] ?? '', ENT_QUOTES, 'UTF-8') ?>" class="k-input">
+                </div>
+              </div>
             </div>
-                <div class="col">
-                    <button class="btn btn-secondary btn-flat btn-block" type="reset">مسح البيانات</button>
-                    </div>
-                    </div>
-                    </div>
-                    </form>
-             
-        
 
+            <div class="k-form-group">
+              <label class="k-label">ملاحظات عامة</label>
+              <textarea name="info" rows="3" class="k-textarea"><?= htmlspecialchars($rowcl['info'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+            </div>
+          </div>
 
-
-</div>
-</section>
+          <div class="k-card-header bg-light d-flex justify-content-end gap-2 p-3">
+            <a href="clients.php" class="k-btn k-btn-secondary ml-2">إلغاء</a>
+            <button type="submit" class="k-btn k-btn-primary">
+              <i class="fas fa-save ml-1"></i> حفظ التعديلات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 
-<?php include('includes/footer.php') ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -27,9 +27,12 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <button type="submit" class="btn btn-primary">بحث</button>
+                            <div class="col-md-4">
+                                <div class="form-group" style="padding-top: 30px; display: flex; gap: 8px;">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+                                    <button type="button" class="btn btn-outline-success" data-kody-export data-table="#myTable" data-filename="تقرير_المبيعات_اليومية" data-title="المبيعات حسب الأيام">
+                                        <i class="fas fa-file-excel"></i> تصدير Excel
+                                    </button>
                                 </div>
                             </div>
                         </div>

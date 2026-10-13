@@ -46,6 +46,15 @@ if ($usertype !== '') {
 
 // userrole
 if ($userrole !== '') {
+    // حماية المستخدم الأول: التأكد التام من أن الدور المسند له يحتوي على صلاحية إدارة المستخدمين
+    if ($id === 1) {
+        $chkRole = $conn->query("SELECT show_users FROM usr_pwrs WHERE id = " . (int)$userrole . " LIMIT 1");
+        $chkData = $chkRole ? $chkRole->fetch_assoc() : null;
+        if (!$chkData || (int)($chkData['show_users'] ?? 0) !== 1) {
+            echo "<script>alert('لا يمكن إسناد دور بدون صلاحية إدارة المستخدمين للمستخدم الرئيسي للنظام.'); history.back();</script>";
+            exit();
+        }
+    }
     $fields[] = "userrole = ?";
     $types .= "s";
     $values[] = $userrole;

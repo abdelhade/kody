@@ -1,144 +1,136 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
 
-<div class="content-wrapper">
-  <section class="content-header">
-    <div class="container-fluid">
-        <?php if ($role['add_clients'] == 1) { ?>
+// Fetch towns
+$restwn = $conn->query("SELECT * FROM towns WHERE COALESCE(isdeleted, 0) != 1 ORDER BY name ASC");
+?>
 
-    <div class="card card-primary">
-        <form action="do/doadd_client.php" method="post">
-        <div class="card-header">
-            <h3>عميل جديد</h3>
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: 'إضافة عميل جديد',
+      icon: 'fa-user-plus',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'العملاء' => 'clients.php',
+          'إضافة عميل' => ''
+      ],
+      actions: [
+          [
+              'label' => 'العودة لقائمة العملاء',
+              'url'   => 'clients.php',
+              'class' => 'k-btn-secondary',
+              'icon'  => 'fa-arrow-right'
+          ]
+      ]
+  ) ?>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+      <div class="k-card">
+        <div class="k-card-header">
+          <h3 class="k-card-title"><i class="fas fa-id-card text-primary mr-1"></i> البيانات الشخصية ومعلومات الاتصال</h3>
         </div>
-        <div class="card-body">
+
+        <form action="do/doadd_client.php" method="POST">
+          <div class="k-card-body">
             <div class="row">
-                <div class="col">
-                    <div class="form-group">
-                        <label for="name">الاسم</label>
-                        <input placeholder="ادخل اسم العميل" class="form-control" type="text" name="name" id="">
-                    </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label required">اسم العميل</label>
+                  <input type="text" name="name" class="k-input" placeholder="الاسم ثلاثي أو رباعي..." required autofocus>
                 </div>
-                <div class="col">
-                    
-                <div class="form-group">
-                        <label for="phone">phone</label>
-                        <input placeholder="ادخل تليفون" class="form-control" type="text" name="phone" id="">
-                    </div>
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">رقم الهاتف</label>
+                  <input type="text" name="phone" class="k-input" placeholder="01xxxxxxxxx">
                 </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                    <label for="town">المدينه</label>
-                    <select class="form-control" name="city" id="">
-                        <?php 
-                        while ($rowtwn = $restwn->fetch_assoc()) {
-                          ?>
-                          <option value="<?= $rowtwn['id']?>"><?= $rowtwn['name']?></option>
-                          <?php }?>
-
-                    </select>
-
-
-                </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="height">العنوان</label>
-                        <input placeholder="ادخل العنوان" class="form-control" type="text" name="address" id="">
-                    </div>
-
-                </div>
+              </div>
             </div>
 
-
-
-
+            <div class="row">
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">المدينة / المحافظة</label>
+                  <select name="city" class="k-select">
+                    <option value="">-- اختر المدينة --</option>
+                    <?php if ($restwn): while ($twn = $restwn->fetch_assoc()): ?>
+                      <option value="<?= $twn['id'] ?>"><?= htmlspecialchars($twn['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endwhile; endif; ?>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">العنوان بالتفصيل</label>
+                  <input type="text" name="address" class="k-input" placeholder="الشارع، رقم المبنى، علامة مميزة...">
+                </div>
+              </div>
+            </div>
 
             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="gender">gender</label>
-                    <select class="form-control" name="gender" id="" >
-                        <option value="0">ذكر</option>
-                        <option value="1">انثي</option>
-                    </select>        
-                    </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">النوع</label>
+                  <select name="gender" class="k-select">
+                    <option value="0">ذكر</option>
+                    <option value="1">أنثى</option>
+                  </select>
                 </div>
-
-        
-                <div class="col">
-                <div class="form-group">
-                        <label for="height">height</label>
-                        <input placeholder="ادخل الطول" class="form-control" type="number" name="height" id="">
-                    </div>
-
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">تاريخ الميلاد</label>
+                  <input type="date" name="dateofbirth" class="k-input">
                 </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">weight</label>
-                        <input placeholder="الوزن بالkg" class="form-control" type="number" name="weight" id="">
-                    </div>
-
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">الطول (سم)</label>
+                  <input type="number" step="0.1" name="height" class="k-input" placeholder="مثال: 175">
                 </div>
+              </div>
+              <div class="col-md-3">
+                <div class="k-form-group">
+                  <label class="k-label">الوزن (كجم)</label>
+                  <input type="number" step="0.1" name="weight" class="k-input" placeholder="مثال: 70">
                 </div>
-          
-
-
-
+              </div>
+            </div>
 
             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="dateofbirth">تاريخ الميلاد</label>
-                        <input placeholder="" class="form-control" type="date" name="dateofbirth" id="">
-                    </div>
-
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">رقم هاتف بديل / الرفيق</label>
+                  <input type="text" name="ref" class="k-input" placeholder="هاتف إضافي أو قريب...">
                 </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">رقم الرفيق</label>
-                        <input placeholder="ادخل تليفون" class="form-control" type="text" name="ref" id="">
-                    </div>
-
+              </div>
+              <div class="col-md-6">
+                <div class="k-form-group">
+                  <label class="k-label">ملاحظات طبية / أمراض مزمنة</label>
+                  <input type="text" name="diseses" class="k-input" placeholder="سكر، ضغط، حساسية...">
                 </div>
+              </div>
             </div>
-            </div>
-             <div class="row">
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">امراض مزمنه</label>
-                        <textarea  placeholder="ادخل الامراض المزمنه" class="form-control"  name="diseses" id="" cols="30" rows="5"></textarea>
-                    </div>
 
-
-                </div>
-                <div class="col">
-                <div class="form-group">
-                        <label for="weight">ملاحظات اخري</label>
-                        <textarea  placeholder="ادخل الملاحظات" class="form-control"  name="info" id="" cols="30" rows="5"></textarea>
-                    </div>
-                </div>
-             </div>
-        </div>
-        <div class="card-footer">
-            <div class="row">
-                <div class="col">
-            <button class="btn btn-primary btn-flat btn-block" type="submit">تأكيد</button>
+            <div class="k-form-group">
+              <label class="k-label">ملاحظات عامة</label>
+              <textarea name="info" rows="3" class="k-textarea" placeholder="أي بيانات أو متطلبات خاصة بالعميل..."></textarea>
             </div>
-                <div class="col">
-                    <button class="btn btn-secondary btn-flat btn-block" type="reset">مسح البيانات</button>
-       </div>
-             
+          </div>
+
+          <div class="k-card-header bg-light d-flex justify-content-end gap-2 p-3">
+            <a href="clients.php" class="k-btn k-btn-secondary ml-2">إلغاء</a>
+            <button type="submit" class="k-btn k-btn-primary">
+              <i class="fas fa-save ml-1"></i> حفظ بيانات العميل
+            </button>
+          </div>
         </form>
-
-
-</div>
-<?php }else{echo $userErrorMassage;} ?>
-
-
-</div>
-</section>
+      </div>
+    </div>
+  </div>
 </div>
 
-<?php include('includes/footer.php') ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -80,6 +80,13 @@
                 </div>
             </div>
 
+            <div class="row">
+                    <div class="col bg-light">إجمالي ربح الفاتورة</div>
+                    <div class="col border border-light">
+                   <h6 id="invoice_total_profit" class="font-weight-bold" >-</h6>
+                </div>
+            </div>
+
 </div>
 <div class="col-md-3">
 <div class="row">
@@ -108,11 +115,11 @@
                                     <div style="display:flex; gap:4px;">
                                         <input id="headdisc_pct" name="headdisc_pct" type="number" 
                                                class="form-control form-control-sm mid select-all hover:select-all nozero" 
-                                               placeholder="%" step="0.01" min="0" max="99"
+                                               placeholder="%" step="any"
                                                value="<?php echo isset($_GET['e']) && isset($rowedit['fat_disc_per']) ? $rowedit['fat_disc_per'] : 0; ?>" style="width: 40%;">
                                         <input id="headdisc" name="headdisc" type="number" 
                                                class="form-control form-control-sm mid select-all hover:select-all nozero" 
-                                               placeholder="القيمة" step="0.01"
+                                               placeholder="القيمة" step="any"
                                                value="<?php if(isset($_GET['e'])){echo $rowedit['fat_disc'];}else {echo 0;}?>" style="width: 60%;">
                                     </div>
                                 </div>

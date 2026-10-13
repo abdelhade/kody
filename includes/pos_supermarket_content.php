@@ -204,7 +204,8 @@ if (!isset($action_url)) {
                                 <label class="small text-muted fw-bold">العميل</label>
                                 <select name="acc2_id" class="form-select form-select-sm fw-bold" required>
                                     <?php
-                                    $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0;");
+                                    $acc_filter = !empty($rowstg['allow_all_accounts']) ? "(code LIKE '122%' OR code LIKE '211%')" : "code LIKE '122%'";
+                                    $resclient = $conn->query("SELECT * FROM `acc_head` WHERE $acc_filter AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
                                     if(isset($_GET['edit'])){$rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();};
                                     $first_client = true;
                                     while ($rowclient = $resclient->fetch_assoc()) { 
@@ -213,8 +214,10 @@ if (!isset($action_url)) {
                                         elseif(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){ $selected = "selected"; } 
                                         elseif ($first_client && empty($rowstg['def_pos_client']) && !isset($_GET['edit'])) { $selected = "selected"; }
                                         $first_client = false;
+                                        $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
+                                        $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
                                     ?>
-                                    <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $rowclient['aname'] ?></option>
+                                    <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?></option>
                                     <?php } ?>
                                 </select>
                             </div>

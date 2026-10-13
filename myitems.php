@@ -13,6 +13,18 @@ if ($isLazyAjax) {
     header('Content-Type: text/html; charset=utf-8');
     require_once __DIR__ . '/includes/connect.php';
 } else {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (!isset($_SESSION['login']) || (int) ($_SESSION['userid'] ?? 0) < 1) {
+        header('Location: index.php');
+        exit;
+    }
+
+    require_once __DIR__ . '/includes/connect.php';
+    require_once __DIR__ . '/includes/cost_recalculate.php';
+    recalculateAverageCosts($conn);
+
     include('includes/header.php');
     include('includes/navbar.php');
     include('includes/sidebar.php');
@@ -196,8 +208,11 @@ if (!$isLazyAjax):
                     </div>
                 </div>
                 <div class="col">
-                    <div class="d-flex gap-2 justify-content-end">
+                    <div class="d-flex gap-2 justify-content-end flex-wrap">
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#calcModal"><i class="fas fa-calculator"></i> إجمالي القيم</button>
+                        <button type="button" class="btn btn-success btn-sm" id="btnExportExcelSql" title="تصدير كل الأصناف المطابقة للبحث والفلترة">
+                            <i class="fas fa-file-excel mr-1"></i> تصدير Excel
+                        </button>
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
                         <a href="deleted_items.php" class="btn btn-outline-danger btn-sm">الاصناف المحذوفه</a>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
@@ -224,7 +239,7 @@ if (!$isLazyAjax):
                                 <th><?= htmlspecialchars($priceListNames[3], ENT_QUOTES, 'UTF-8') ?></th>
                                 <th>سعر الشراء</th>
                                 <th>سعر التكلفة</th>
-                                <th>عمليات</th>
+                                <th class="no-export">عمليات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -282,7 +297,7 @@ if (!$isLazyAjax):
                                 <td><b><?= $rowitm['last_price'] ?></b></td>
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
                                
-                                    <td>
+                                    <td class="no-export">
                                         <a class="btn btn-warning btn-sm" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>
                                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteitm<?= $rowitm['id']?>">
                                             <i class="fa fa-trash"></i>
@@ -506,6 +521,25 @@ $(document).ready(function() {
             // تحديث الكمية المعروضة على الصفحة
             qtyElement.text(newQty.toFixed(2));
         }
+    });
+
+    // تصدير الأصناف عبر SQL مباشرة بدون حدود (يشمل كل نتائج البحث والفلترة)
+    $(document).on('click', '#btnExportExcelSql', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> جاري التصدير...');
+
+        var searchVal = $.trim($('#search').val());
+        var g1Val = $('#filter_group1').val() || 0;
+        var g2Val = $('#filter_group2').val() || 0;
+        var exportUrl = 'do/export_excel.php?type=items&search=' + encodeURIComponent(searchVal) + '&group1=' + g1Val + '&group2=' + g2Val;
+
+        var $iframe = $('<iframe style="display:none;"></iframe>').attr('src', exportUrl).appendTo('body');
+        setTimeout(function() {
+            $btn.prop('disabled', false).html(originalHtml);
+            setTimeout(function() { $iframe.remove(); }, 60000);
+        }, 1500);
     });
 });
 </script>

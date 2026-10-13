@@ -1,27 +1,30 @@
 <?php
-include '../includes/connect.php';
+require_once __DIR__ . '/../includes/connect.php';
 
-if ($_SERVER['REQUEST_METHOD'] == "POST" && isset($_GET['id'])) {
-    $id = $_GET['id'];
-    
-    // Check if there are linked employees
-    $check_sql = "SELECT count(*) as count FROM employees WHERE department = '$id' AND coalesce(isdeleted, 0) != 1";
-    $result = $conn->query($check_sql);
-    $row = $result->fetch_assoc();
-    
-    if ($row['count'] > 0) {
-        echo "<center><br><br><br><h1 class='bg-danger' style='padding: 20px; border-radius: 10px; display: inline-block; font-family: sans-serif;'>لا يمكن حذف هذا القسم لارتباطه ببيانات أخرى (موظفين)<br><br>
-        <button class='btn btn-light' style='padding: 10px 20px; font-size: 20px; cursor: pointer;' onclick='history.go(-1);'>رجوع</button>
-        </h1></center>";
-        die;
-    }
-
-    // Try soft delete first, if column exists
-    $sql = "UPDATE departments SET isdeleted = 1 WHERE id = $id";
-    if ($conn->query($sql) !== TRUE) {
-        // Fallback to hard delete if isdeleted column doesn't exist
-        $conn->query("DELETE FROM departments where id = $id");
-    }
-    
-    header('location:../departments.php');
+$id = isset($_REQUEST['id']) ? (int) $_REQUEST['id'] : 0;
+if ($id < 1) {
+    header('Location: ../departments.php');
+    exit;
 }
+
+// Check if there are linked employees
+$stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM employees WHERE department = ? AND COALESCE(isdeleted, 0) != 1");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$res = $stmt->get_result();
+$row = $res->fetch_assoc();
+$stmt->close();
+
+if (!empty($row['cnt']) && (int)$row['cnt'] > 0) {
+    header('Location: ../departments.php?w=del');
+    exit;
+}
+
+// Soft delete
+$upd = $conn->prepare("UPDATE departments SET isdeleted = 1 WHERE id = ?");
+$upd->bind_param("i", $id);
+$upd->execute();
+$upd->close();
+
+header('Location: ../departments.php?msg=deleted');
+exit;

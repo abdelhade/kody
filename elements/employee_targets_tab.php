@@ -76,7 +76,7 @@ $months_ar = [
                         <div class="form-group">
                             <label class="font-weight-bold text-secondary" style="font-size:.85rem;">قيمة التارجيت (ج.م)</label>
                             <input type="number" step="0.01" min="0" name="target_value" id="target_value"
-                                   class="form-control form-control-sm" placeholder="مثال: 50000" required>
+                                   class="form-control form-control-sm" placeholder="مثال: 50000">
                         </div>
 
                         <div class="form-group">

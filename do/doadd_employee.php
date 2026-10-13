@@ -25,7 +25,7 @@ $town = $_POST['town'];
 $address2 = $_POST['address2']; 
 $dateofhire = $_POST['dateofhire'];
 $dateofend = $_POST['dateofend']; 
-$salary = $_POST['salary'];
+$salary = (isset($_POST['salary']) && $_POST['salary'] !== '' && is_numeric($_POST['salary'])) ? floatval($_POST['salary']) : 0.00;
 $jop = $_POST['jop'];
 $department = $_POST['department'];
 $joptybe = $_POST['joptybe'];

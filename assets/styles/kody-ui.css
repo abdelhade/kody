@@ -1,0 +1,594 @@
+/**
+ * Kody Unified Design System (kody-ui.css)
+ * Central UI tokens, components, and layout styling for modern, consistent RTL interface.
+ */
+
+:root {
+  /* Brand & Status Colors */
+  --k-primary: #3b82f6;
+  --k-primary-hover: #2563eb;
+  --k-primary-light: #eff6ff;
+  --k-primary-text: #1d4ed8;
+
+  --k-secondary: #64748b;
+  --k-secondary-hover: #475569;
+  --k-secondary-light: #f1f5f9;
+
+  --k-success: #10b981;
+  --k-success-hover: #059669;
+  --k-success-light: #ecfdf5;
+  --k-success-text: #065f46;
+
+  --k-danger: #ef4444;
+  --k-danger-hover: #dc2626;
+  --k-danger-light: #fef2f2;
+  --k-danger-text: #991b1b;
+
+  --k-warning: #f59e0b;
+  --k-warning-hover: #d97706;
+  --k-warning-light: #fffbeb;
+  --k-warning-text: #92400e;
+
+  --k-info: #06b6d4;
+  --k-info-hover: #0891b2;
+  --k-info-light: #ecfeff;
+  --k-info-text: #155e75;
+
+  /* Neutrals & Surfaces */
+  --k-bg-body: #f8fafc;
+  --k-bg-card: #ffffff;
+  --k-bg-card-header: #f8fafc;
+  --k-border: #e2e8f0;
+  --k-border-subtle: #f1f5f9;
+  
+  /* Text */
+  --k-text-main: #1e293b;
+  --k-text-muted: #64748b;
+  --k-text-light: #94a3b8;
+
+  /* Typography & Radius */
+  --k-radius-sm: 6px;
+  --k-radius-md: 10px;
+  --k-radius-lg: 14px;
+  --k-radius-full: 9999px;
+
+  /* Shadows */
+  --k-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --k-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --k-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --k-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+
+  /* Transitions */
+  --k-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* -------------------------------------------------------------
+ * Page Container & Header Component (.k-page-header)
+ * ------------------------------------------------------------- */
+.k-page-wrapper {
+  padding: 1.25rem 1.5rem;
+  min-height: calc(100vh - 60px);
+}
+
+.k-page-header {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  padding: 1.15rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--k-shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.k-page-header-start {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.k-page-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--k-radius-md);
+  background: var(--k-primary-light);
+  color: var(--k-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.k-page-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--k-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.k-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.825rem;
+  color: var(--k-text-muted);
+}
+
+.k-breadcrumb a {
+  color: var(--k-text-muted);
+  text-decoration: none;
+  transition: var(--k-transition);
+}
+
+.k-breadcrumb a:hover {
+  color: var(--k-primary);
+}
+
+.k-breadcrumb-sep {
+  opacity: 0.4;
+  font-size: 0.7rem;
+}
+
+.k-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------------
+ * Modern Card Component (.k-card)
+ * ------------------------------------------------------------- */
+.k-card {
+  background: var(--k-bg-card);
+  border: 1px solid var(--k-border);
+  border-radius: var(--k-radius-lg);
+  box-shadow: var(--k-shadow-xs);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  transition: var(--k-transition);
+}
+
+.k-card:hover {
+  box-shadow: var(--k-shadow-sm);
+}
+
+.k-card-header {
+  background: var(--k-bg-card-header);
+  border-bottom: 1px solid var(--k-border);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.k-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--k-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.k-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.k-card-body {
+  padding: 1.25rem;
+}
+
+.k-card-body-flush {
+  padding: 0;
+}
+
+/* -------------------------------------------------------------
+ * Toolbar Component (.k-toolbar)
+ * ------------------------------------------------------------- */
+.k-toolbar {
+  padding: 0.85rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--k-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.k-toolbar-start,
+.k-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.k-search-input-wrap {
+  position: relative;
+  min-width: 240px;
+}
+
+.k-search-input-wrap i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--k-text-light);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.k-search-input-wrap input {
+  padding-right: 36px;
+  height: 38px;
+  border-radius: var(--k-radius-md);
+  border: 1px solid var(--k-border);
+  font-size: 0.875rem;
+  width: 100%;
+  transition: var(--k-transition);
+}
+
+.k-search-input-wrap input:focus {
+  border-color: var(--k-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* -------------------------------------------------------------
+ * Table Component (.k-table)
+ * ------------------------------------------------------------- */
+.k-table-wrap {
+  position: relative;
+  overflow-x: auto;
+  border-radius: 0 0 var(--k-radius-lg) var(--k-radius-lg);
+}
+
+.k-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.k-table thead th {
+  background: #f8fafc;
+  color: var(--k-text-muted);
+  font-weight: 600;
+  font-size: 0.825rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--k-border);
+  border-top: none;
+  white-space: nowrap;
+}
+
+.k-table tbody td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--k-border-subtle);
+  color: var(--k-text-main);
+  transition: background 0.15s ease;
+}
+
+.k-table tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+.k-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Table Actions Cell */
+.k-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.k-btn-action {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--k-radius-md);
+  font-size: 0.825rem;
+  border: 1px solid transparent;
+  transition: var(--k-transition);
+  cursor: pointer;
+  text-decoration: none !important;
+}
+
+.k-btn-action-view {
+  background: var(--k-info-light);
+  color: var(--k-info);
+  border-color: rgba(6, 182, 212, 0.2);
+}
+.k-btn-action-view:hover {
+  background: var(--k-info);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.k-btn-action-edit {
+  background: var(--k-warning-light);
+  color: var(--k-warning-text);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.k-btn-action-edit:hover {
+  background: var(--k-warning);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.k-btn-action-del {
+  background: var(--k-danger-light);
+  color: var(--k-danger-text);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.k-btn-action-del:hover {
+  background: var(--k-danger);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------------
+ * Buttons (.k-btn)
+ * ------------------------------------------------------------- */
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--k-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--k-transition);
+  text-decoration: none !important;
+  line-height: 1.4;
+}
+
+.k-btn:active {
+  transform: translateY(1px);
+}
+
+.k-btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: var(--k-radius-sm);
+}
+
+.k-btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: var(--k-radius-lg);
+}
+
+.k-btn-primary {
+  background: var(--k-primary);
+  color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.2);
+}
+.k-btn-primary:hover {
+  background: var(--k-primary-hover);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+}
+
+.k-btn-secondary {
+  background: var(--k-secondary-light);
+  color: var(--k-secondary) !important;
+  border-color: var(--k-border);
+}
+.k-btn-secondary:hover {
+  background: var(--k-border);
+  color: var(--k-text-main) !important;
+}
+
+.k-btn-success {
+  background: var(--k-success);
+  color: #ffffff !important;
+}
+.k-btn-success:hover {
+  background: var(--k-success-hover);
+}
+
+.k-btn-danger {
+  background: var(--k-danger);
+  color: #ffffff !important;
+}
+.k-btn-danger:hover {
+  background: var(--k-danger-hover);
+}
+
+.k-btn-outline {
+  background: transparent;
+  border: 1px solid var(--k-border);
+  color: var(--k-text-main);
+}
+.k-btn-outline:hover {
+  background: var(--k-bg-body);
+  border-color: var(--k-text-muted);
+}
+
+/* -------------------------------------------------------------
+ * Badges (.k-badge)
+ * ------------------------------------------------------------- */
+.k-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--k-radius-full);
+  line-height: 1.2;
+}
+
+.k-badge-primary {
+  background: var(--k-primary-light);
+  color: var(--k-primary-text);
+}
+.k-badge-success {
+  background: var(--k-success-light);
+  color: var(--k-success-text);
+}
+.k-badge-danger {
+  background: var(--k-danger-light);
+  color: var(--k-danger-text);
+}
+.k-badge-warning {
+  background: var(--k-warning-light);
+  color: var(--k-warning-text);
+}
+.k-badge-info {
+  background: var(--k-info-light);
+  color: var(--k-info-text);
+}
+.k-badge-secondary {
+  background: var(--k-secondary-light);
+  color: var(--k-secondary);
+}
+
+/* -------------------------------------------------------------
+ * Empty State (.k-empty-state)
+ * ------------------------------------------------------------- */
+.k-empty-state {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+}
+
+.k-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.k-empty-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--k-text-main);
+  margin-bottom: 0.5rem;
+}
+
+.k-empty-desc {
+  font-size: 0.875rem;
+  color: var(--k-text-muted);
+  max-width: 420px;
+  margin: 0 auto 1.5rem auto;
+}
+
+/* -------------------------------------------------------------
+ * Form Controls (.k-form)
+ * ------------------------------------------------------------- */
+.k-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.k-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--k-text-main);
+  margin-bottom: 0.4rem;
+}
+
+.k-label.required::after {
+  content: " *";
+  color: var(--k-danger);
+}
+
+.k-input,
+.k-select,
+.k-textarea {
+  width: 100%;
+  border-radius: var(--k-radius-md);
+  border: 1px solid var(--k-border);
+  background: #ffffff;
+  color: var(--k-text-main);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  transition: var(--k-transition);
+}
+
+.k-input:focus,
+.k-select:focus,
+.k-textarea:focus {
+  border-color: var(--k-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* Custom modern switch */
+.k-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.k-switch input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.k-switch-slider {
+  width: 44px;
+  height: 24px;
+  background-color: #cbd5e1;
+  border-radius: var(--k-radius-full);
+  position: relative;
+  transition: var(--k-transition);
+}
+
+.k-switch-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  right: 3px;
+  top: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: var(--k-transition);
+  box-shadow: var(--k-shadow-xs);
+}
+
+.k-switch input:checked + .k-switch-slider {
+  background-color: var(--k-primary);
+}
+
+.k-switch input:checked + .k-switch-slider::before {
+  transform: translateX(-20px);
+}

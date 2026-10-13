@@ -129,13 +129,13 @@ class InvoiceDetails extends InvoiceElementBase
         </div>
 
         <!-- حقول مخفية يستخدمها addNewRow() - خارج الجدول -->
-        <input id="itmprice"      type="number" hidden value="0" step="0.001">
-        <input id="itmqty"        type="number" hidden value="1">
-        <input id="itmdisc_pct"   type="number" hidden value="0" step="0.01">
-        <input id="itmdisc"       type="number" hidden value="0" step="0.001">
-        <input id="itmval"        type="number" hidden value="0" step="0.001">
+        <input id="itmprice"      type="number" hidden value="0" step="any">
+        <input id="itmqty"        type="number" hidden value="1" step="any">
+        <input id="itmdisc_pct"   type="number" hidden value="0" step="any">
+        <input id="itmdisc"       type="number" hidden value="0" step="any">
+        <input id="itmval"        type="number" hidden value="0" step="any">
         <input id="itmprofit"     type="number" hidden>
-        <input id="itmsprice_stg" type="number" hidden value="0" step="0.001">
+        <input id="itmsprice_stg" type="number" hidden value="0" step="any">
         <select id="inputUnitSelect" hidden><option value="">اختر وحدة</option></select>
         <button type="button" id="addRow" hidden>إضافة</button>
         <!-- dropdown البحث - خارج الجدول عشان مش يتقطع بالـ overflow -->
@@ -292,7 +292,12 @@ window.calculateItemProfit = function(data, unit, $row) {
         var foundRow = $('#itmrow tr').filter(function() {
             return parseInt($(this).find('input[name="itmname[]"]').val(), 10) === parseInt(data.id, 10);
         }).last();
-        if (foundRow.length) $activeRow = foundRow;
+        $activeRow = foundRow.length ? foundRow : $();
+    } else if (!$activeRow.length) {
+        var foundRow = $('#itmrow tr').filter(function() {
+            return parseInt($(this).find('input[name="itmname[]"]').val(), 10) === parseInt(data.id, 10);
+        }).last();
+        $activeRow = foundRow.length ? foundRow : $();
     }
 
     var factor = unit ? (parseFloat(unit.unit_value) || 1) : 1;
@@ -312,9 +317,13 @@ window.calculateItemProfit = function(data, unit, $row) {
     var profitPct = 0;
 
     if (isPurchase) {
-        var sellPrice = hasActiveRow && $activeRow.find('.itmsellprice').length 
-            ? (parseFloat($activeRow.find('.itmsellprice').val()) || 0)
+        var rawSellPrice = hasActiveRow && $activeRow.find('.itmsellprice').length 
+            ? parseFloat($activeRow.find('.itmsellprice').val()) 
+            : NaN;
+        var sellPrice = (rawSellPrice > 0)
+            ? rawSellPrice
             : (unit ? (parseFloat(unit.uprice1) || 0) : (parseFloat(data.price1) || 0) * factor);
+        if (!(sellPrice > 0)) sellPrice = cost > 0 ? cost : purchasePrice;
         var purchasePrice = hasActiveRow ? rowPrice : cost;
         unitProfit = sellPrice - purchasePrice;
         totalProfit = unitProfit * (rowQty > 0 ? rowQty : 1);
@@ -351,8 +360,108 @@ window.calculateItemProfit = function(data, unit, $row) {
     if (hasActiveRow) {
         $activeRow.attr('data-unit-profit', unitProfit);
         $activeRow.attr('data-total-profit', totalProfit);
+        if (!isNaN(cost) && cost > 0) {
+            $activeRow.attr('data-cost', cost);
+        }
         $activeRow.find('.itmval').attr('title', 'الربح المتوقع: ' + window.formatInvoiceMoney(totalProfit) + ' (ربح القطعة: ' + window.formatInvoiceMoney(unitProfit) + ')');
+        
+        if (typeof window.updateInvoiceTotalProfit === 'function') {
+            window.updateInvoiceTotalProfit();
+        }
     }
+};
+
+// حساب وعرض إجمالي ربح الفاتورة ككل
+window.updateInvoiceTotalProfit = function() {
+    var $target = $('#invoice_total_profit');
+    if (!$target.length) return;
+
+    var $rows = $('#itmrow tr');
+    if (!$rows.length) {
+        $target.text('-');
+        return;
+    }
+
+    var isPurchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    var isSalesReturn = typeof window.isSalesReturn === 'function' && window.isSalesReturn();
+    var sumRowsProfit = 0;
+    var calculatedRowsCount = 0;
+
+    $rows.each(function() {
+        var $row = $(this);
+        var itemId = $row.find('input[name="itmname[]"]').val();
+        if (!itemId) return;
+
+        var qty = parseFloat($row.find('.itmqty').val()) || 0;
+        var price = parseFloat($row.find('.itmprice').val()) || 0;
+        var disc = parseFloat($row.find('.itmdisc').val()) || 0;
+        var val = parseFloat($row.find('.itmval').val());
+        if (isNaN(val) || val === 0) {
+            val = (qty * price) - disc;
+        }
+
+        // تكلفة الوحدة
+        var cost = parseFloat($row.attr('data-cost'));
+        if (isNaN(cost) || cost <= 0) {
+            var $opt = $row.find('select[name="u_val[]"] option:selected');
+            if ($opt.length) {
+                var ucost = parseFloat($opt.attr('data-ucost'));
+                if (!isNaN(ucost) && ucost > 0) {
+                    cost = ucost;
+                }
+            }
+        }
+        if ((isNaN(cost) || cost <= 0) && $row.data('itemInfo')) {
+            var cachedInfo = $row.data('itemInfo');
+            var unitVal = parseFloat($row.find('select[name="u_val[]"]').val()) || 1;
+            cost = (parseFloat(cachedInfo.cost_price) || parseFloat(cachedInfo.last_price) || 0) * unitVal;
+        }
+
+        var rowProfit = 0;
+        if (isPurchase) {
+            var rawSell = $row.find('.itmsellprice').length ? parseFloat($row.find('.itmsellprice').val()) : NaN;
+            var sellPrice = (rawSell > 0) ? rawSell : (cost > 0 ? cost : price);
+            rowProfit = (sellPrice - price) * qty;
+            calculatedRowsCount++;
+        } else {
+            if (!isNaN(cost) && cost > 0) {
+                rowProfit = val - (cost * qty);
+                if (isSalesReturn) {
+                    rowProfit = -rowProfit;
+                }
+                calculatedRowsCount++;
+            } else if ($row.attr('data-total-profit') !== undefined) {
+                rowProfit = parseFloat($row.attr('data-total-profit')) || 0;
+                calculatedRowsCount++;
+            }
+        }
+
+        sumRowsProfit += rowProfit;
+    });
+
+    if (calculatedRowsCount === 0) {
+        $target.text('-');
+        return;
+    }
+
+    // خصم أو إضافات إجمالية على الفاتورة
+    var headdisc = parseFloat($('#headdisc').val()) || 0;
+    var headplus = parseFloat($('#headplus').val()) || 0;
+    var totalInvoiceProfit = sumRowsProfit - headdisc + headplus;
+    var net = parseFloat($('#headnet').val()) || 0;
+
+    var sign = totalInvoiceProfit > 0 ? '+' : '';
+    var color = totalInvoiceProfit > 0 ? '#16a34a' : (totalInvoiceProfit < 0 ? '#dc2626' : '#64748b');
+    var marginPct = (net > 0) ? ((totalInvoiceProfit / net) * 100) : 0;
+    var pctHtml = (net > 0) 
+        ? ' <small style="font-size:0.8em; color:' + color + ';">(' + (marginPct >= 0 ? '+' : '') + marginPct.toFixed(1) + '%)</small>'
+        : '';
+
+    var html = '<span style="color:' + color + '; font-weight:700;">' + 
+               sign + window.formatInvoiceMoney(totalInvoiceProfit) + 
+               '</span>' + pctHtml;
+
+    $target.html(html);
 };
 
 $(document).ready(function() {
@@ -364,13 +473,34 @@ $(document).ready(function() {
 
     if (!searchInput || !searchResults || !barcodeInput) return;
 
-    // تحديث موضع الـ dropdown تحت الـ input
+    // تحديث موضع الـ dropdown تحت الـ input (position: fixed يعتمد على إحداثيات viewport المباشرة)
     function positionDropdown() {
         const rect = searchInput.getBoundingClientRect();
-        searchResults.style.top    = (rect.bottom + window.scrollY) + 'px';
-        searchResults.style.left   = (rect.left   + window.scrollX) + 'px';
-        searchResults.style.width  = rect.width + 'px';
+        searchResults.style.top   = (rect.bottom + 2) + 'px';
+        searchResults.style.left  = rect.left + 'px';
+        searchResults.style.width = Math.max(rect.width, 360) + 'px';
     }
+
+    // إعادة ضبط الموضع عند التمرير أو تغيير حجم الشاشة طالما القائمة ظاهرة
+    window.addEventListener('scroll', function() {
+        if (searchResults.style.display !== 'none') {
+            positionDropdown();
+        }
+    }, true);
+
+    window.addEventListener('resize', function() {
+        if (searchResults.style.display !== 'none') {
+            positionDropdown();
+        }
+    });
+
+    // إغلاق القائمة عند النقر خارجها
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+            clearHighlight();
+        }
+    });
 
     let searchTimeout;
     let selectedItem = null;
@@ -422,13 +552,26 @@ $(document).ready(function() {
         });
     }
 
+    // فتح القائمة عند التركيز على الحقل إذا كان يحتوي على نص
+    searchInput.addEventListener('focus', function() {
+        const query = this.value.trim();
+        if (query.length >= 1) {
+            positionDropdown();
+            if (searchResults.children.length > 0) {
+                searchResults.style.display = 'block';
+            } else {
+                this.dispatchEvent(new Event('input'));
+            }
+        }
+    });
+
     // البحث المباشر
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
 
         clearTimeout(searchTimeout);
 
-        if (query.length < 2) {
+        if (query.length < 1) {
             searchResults.style.display = 'none';
             clearHighlight();
             return;
@@ -825,8 +968,14 @@ $(document).ready(function() {
         if (e.key !== 'F2') return;
         e.preventDefault();
         barcodeInput.focus();
-        barcodeInput.select();
     });
+
+    // تحديث إجمالي ربح الفاتورة عند التحميل
+    setTimeout(function() {
+        if (typeof window.updateInvoiceTotalProfit === 'function') {
+            window.updateInvoiceTotalProfit();
+        }
+    }, 600);
 }); // end document.ready
 </script>
 
@@ -890,7 +1039,7 @@ $(document).ready(function() {
             
             <!-- السعر -->
             <td>
-                <input type="number" name="itmprice[]" onclick="sT(this)" 
+                <input type="number" step="any" name="itmprice[]" onclick="sT(this)" 
                        class="itmprice form-control form-control-sm" style="width:90px;" 
                        value="<?php echo floatval($price); ?>">
             </td>
@@ -908,13 +1057,13 @@ $(document).ready(function() {
                 ?>
                 <input type="number" name="itmdisc_pct[]" value="<?php echo $disc_pct; ?>"
                        class="itmdisc_pct form-control form-control-sm" style="width:80px;"
-                       step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)">
+                       step="any" placeholder="%" onclick="sT(this)">
             </td>
 
             <!-- الخصم -->
             <td>
                 <input value="<?php echo floatval($detail['discount']); ?>" 
-                       type="number" name="itmdisc[]" onclick="sT(this)" 
+                       type="number" step="any" name="itmdisc[]" onclick="sT(this)" 
                        class="itmdisc form-control form-control-sm" style="width:90px;">
             </td>
 
@@ -940,14 +1089,14 @@ $(document).ready(function() {
                 <input type="number" class="itmprofit_pct form-control form-control-sm"
                        value="<?php echo $profitPct; ?>"
                        style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;"
-                       step="0.1" onclick="sT(this)" title="نسبة الربح - غيّرها لتحديث سعر البيع">
+                       step="any" onclick="sT(this)" title="نسبة الربح - غيّرها لتحديث سعر البيع">
             </td>
 
             <!-- سعر البيع -->
             <td>
                 <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm"
                        value="<?php echo $sellPrice; ?>"
-                       style="width:90px;" step="0.001" onclick="sT(this)"
+                       style="width:90px;" step="any" onclick="sT(this)"
                        title="سعر البيع - يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
             </td>
             <?php endif; ?>
@@ -955,7 +1104,7 @@ $(document).ready(function() {
             <!-- القيمة -->
             <td>
                 <input readonly value="<?php echo floatval($detail['det_value']); ?>" 
-                       type="number" name="itmval[]" 
+                       type="number" step="any" name="itmval[]" 
                        class="itmval bg-light form-control form-control-sm" style="width:150px;">
             </td>
             
@@ -1086,21 +1235,21 @@ $(document).ready(function() {
                             <td>
                                 <input id="itmprice" value="0" type="number"
                                        onclick="sT(this)" class="itmprice form-control form-control-sm nozero" 
-                                       style="width:90px;" step="0.001">
+                                       style="width:90px;" step="any">
                             </td>
                             
                             <!-- الخصم -->
                             <td>
                                 <input id="itmdisc" value="0" type="number"
                                        onclick="sT(this)" class="itmdisc form-control form-control-sm nozero" 
-                                       style="width:120px;" step="0.001">
+                                       style="width:120px;" step="any">
                             </td>
                             
                             <!-- القيمة -->
                             <td>
                                 <input readonly id="itmval" value="0" type="number"
                                        class="itmval bg-light form-control form-control-sm nozero" 
-                                       style="width:150px;" step="0.001">
+                                       style="width:150px;" step="any">
                             </td>
                             
                             <td>

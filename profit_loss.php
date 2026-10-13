@@ -671,6 +671,53 @@ if (expenseData.length > 0 && document.getElementById('expenseChart')) {
         }
     });
 }
+
+// Excel Export for Profit and Loss Report
+document.getElementById('exportExcelPL')?.addEventListener('click', function() {
+    var report = document.getElementById('plReport');
+    if (!report) return;
+
+    var rows = [];
+    // Summary Cards
+    rows.push(['--- ملخص القائمة ---', '']);
+    report.querySelectorAll('.summary-card').forEach(function(card) {
+        var label = card.querySelector('.card-label')?.innerText.replace(/\s+/g, ' ').trim() || '';
+        var val = card.querySelector('.card-amount')?.innerText.replace(/\s+/g, ' ').trim() || '';
+        if (label) rows.push([label, val]);
+    });
+    rows.push([]);
+
+    // Sections and Tables
+    report.querySelectorAll('.pl-section-title, .pl-table').forEach(function(el) {
+        if (el.classList.contains('pl-section-title')) {
+            rows.push(['--- ' + el.innerText.trim() + ' ---', '']);
+        } else if (el.tagName === 'TABLE') {
+            el.querySelectorAll('tr').forEach(function(tr) {
+                var rData = [];
+                tr.querySelectorAll('td, th').forEach(function(td) {
+                    var text = td.innerText.replace(/\s+/g, ' ').trim();
+                    var cleanNum = text.replace(/,/g, '');
+                    if (/^-?\d+(\.\d+)?$/.test(cleanNum) && !/^0\d+/.test(cleanNum)) {
+                        rData.push(parseFloat(cleanNum));
+                    } else {
+                        rData.push(text);
+                    }
+                });
+                if (rData.length) rows.push(rData);
+            });
+            rows.push([]);
+        }
+    });
+
+    KodyExcel.exportData({
+        filename: 'قائمة_الأرباح_والخسائر',
+        title: 'قائمة الأرباح والخسائر',
+        company: '<?= htmlspecialchars($company_name, ENT_QUOTES, "UTF-8") ?>',
+        date: 'الفترة من <?= htmlspecialchars($startdate, ENT_QUOTES, "UTF-8") ?> إلى <?= htmlspecialchars($enddate, ENT_QUOTES, "UTF-8") ?>',
+        headers: ['البند / البيان', 'المبلغ (جنيه)'],
+        rows: rows
+    });
+});
 </script>
 
 <?php include('includes/footer.php'); ?>

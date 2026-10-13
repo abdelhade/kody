@@ -13,6 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 		$calc_type = 'monthly';
 	}
 
+	$salary = (isset($_POST['salary']) && $_POST['salary'] !== '' && is_numeric($_POST['salary'])) ? floatval($_POST['salary']) : 0.00;
+	$active = isset($_POST['active']) ? 1 : 0;
+
 
 	if ($_FILES['imgs']['size'] !== 0) {
 

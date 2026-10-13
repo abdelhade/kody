@@ -14,9 +14,11 @@
                             </div>
                             <select class="select2 form-control form-control-sm" name="acc2_id" id="mySelectEmp">
                             <?php
-                            if ($pro_tybe == '4' OR $pro_tybe == '10' OR $pro_tybe == '12') {
+                            if (!empty($rowstg['allow_all_accounts'])) {
+                                $resclients = $conn->query("SELECT * FROM `acc_head` WHERE (code like '122%' OR code like '211%') AND is_basic = 0 AND isdeleted = 0 order by aname ;");
+                            } elseif ($pro_tybe == '4' OR $pro_tybe == '10' OR $pro_tybe == '12') {
                                 $resclients = $conn->query("SELECT * FROM `acc_head` WHERE code like '211%'  AND is_basic = 0 AND isdeleted = 0 order by id ;");
-                            }elseif ($pro_tybe == '3' OR $pro_tybe == '11' OR $pro_tybe == '13') {
+                            } elseif ($pro_tybe == '3' OR $pro_tybe == '11' OR $pro_tybe == '13') {
                                 $resclients = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0 order by id ;");
                             }
 

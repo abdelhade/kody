@@ -1,156 +1,148 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-  <!-- Content Header (Page header) -->
-  <section class="content-header">
-    <div class="container-fluid">
-      <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1><?= $lang_employeeslist ?></h1>
-        </div>
-        <div class="col-sm-6">
-          <ol class="breadcrumb float-sm-right">
-          </ol>
+// Single optimized query with JOINs instead of N+1 per row
+$sql = "SELECT e.*, j.name AS job_name, d.name AS dept_name, s.name AS shift_name,
+               COALESCE(k.total_kbi, 0) AS total_kbi
+        FROM `employees` e
+        LEFT JOIN `jops` j ON e.jop = j.id
+        LEFT JOIN `departments` d ON e.department = d.id
+        LEFT JOIN `shifts` s ON e.shift = s.id
+        LEFT JOIN (
+            SELECT emp_id, SUM(kbi_sum) AS total_kbi 
+            FROM emp_kbis 
+            GROUP BY emp_id
+        ) k ON k.emp_id = e.id
+        WHERE COALESCE(e.isdeleted, 0) != 1 
+        ORDER BY e.id DESC";
+$res = $conn->query($sql);
+$empCount = $res ? $res->num_rows : 0;
+?>
+
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: $lang_employeeslist ?? 'قائمة الموظفين',
+      icon: 'fa-user-tie',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'الموظفين' => ''
+      ],
+      actions: [
+          [
+              'label' => $lang_add_new ?? 'إضافة موظف جديد',
+              'url'   => 'add_employee.php',
+              'class' => 'k-btn-primary',
+              'icon'  => 'fa-user-plus'
+          ],
+          [
+              'label' => 'حساب الرواتب',
+              'url'   => 'payroll_calcs.php',
+              'class' => 'k-btn-secondary',
+              'icon'  => 'fa-money-bill-wave'
+          ]
+      ],
+      badge: $empCount . ' موظف'
+  ) ?>
+
+  <div class="k-card">
+    <div class="k-toolbar">
+      <div class="k-toolbar-start">
+        <div class="k-search-input-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="بحث باسم الموظف أو الوظيفة أو القسم..." data-kody-table-search="#employeesTable">
         </div>
       </div>
-    </div><!-- /.container-fluid -->
-  </section>
+      <div class="k-toolbar-end">
+        <span class="text-muted small">الموظفين الحاليين: <strong><?= $empCount ?></strong></span>
+      </div>
+    </div>
 
-  <!-- Main content -->
-  <section class="content">
-    <div class="row">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title"><a href="add_employee.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?> </a></h3>
-          </div>
-          <!-- /.card-header -->
-          <div class="card-body table-responsive">
-            <table id="myTable" class="table table-bordered table-hover">
-              <thead>
-                <tr>
-                  <th>م</th>
-                  <th><?= $lang_publicname ?></th>
-                  <th><?= $lang_publicjob ?></th>
-                  <th><?= $lang_pbholder_phone ?></th>
-                  <th>KBI</th>
-                  <th><?= $lang_addemployee_jobdepart ?></th>
-                  <th><?= $lang_addemployee_shift ?></th>
-                  <th><?= $lang_addemployee_salary ?></th>
-                  <th><?= $lang_publicinfo ?></th>
-                  <th><?= $lang_addemployee_basmaid ?? 'رقم البصمة' ?></th>
-                  <th><?= $lang_publicoperations ?></th>
-                </tr>
-              </thead>
-             
-                <tbody >
-                <?php
-              $sql = "SELECT * FROM `employees`  WHERE `isdeleted` != 1 order by id desc";
-              $res = $conn->query($sql);
-              $x = 0;
-              while ($row = $res->fetch_assoc()) {
+    <?php if ($empCount === 0): ?>
+      <?= kody_empty_state(
+          title: 'لا يوجد موظفين مسجلين حالياً',
+          desc: 'قم بإضافة الموظفين وتعيين الأقسام والوظائف ومواعيد الشيفتات والرواتب لهم.',
+          icon: 'fa-user-tie',
+          cta: [
+              'label' => 'إضافة موظف جديد',
+              'url' => 'add_employee.php',
+              'icon' => 'fa-user-plus'
+          ]
+      ) ?>
+    <?php else: ?>
+      <div class="k-table-wrap">
+        <table class="k-table" id="employeesTable">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>اسم الموظف</th>
+              <th>الوظيفة</th>
+              <th>القسم</th>
+              <th>رقم الهاتف</th>
+              <th>الوردية (الشيفت)</th>
+              <th>الراتب الأساسي</th>
+              <th>رقم البصمة</th>
+              <th>مؤشرات الأداء</th>
+              <th style="width: 120px;" class="text-center">العمليات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $x = 0;
+            while ($row = $res->fetch_assoc()):
                 $x++;
-              ?>
-                  <tr>
-                    <td><?= $x ?></td>
-                    <td class=""><a class='btn btn-outline-dark btn-edged font-thin' href="emprofile.php?id=<?= $row['id'] ?>"><?= $row['name'] ?></a></td>
-                    <td><?php 
-                    echo ($rowjop = $conn->query("SELECT name FROM jops WHERE id = '".$row['jop']."'")->fetch_assoc())
-                     ? $rowjop['name'] 
-                     : 'null';
-                     ?></td>
-                    <td><?= $row['number'] ?></td>
-                        <td><?php
-                          $emp_id = $row['id'];
-                            $sumkbi = $conn->query("SELECT SUM(kbi_sum) AS total_kbi FROM emp_kbis WHERE emp_id = $emp_id")->fetch_assoc();
-                            echo $sumkbi['total_kbi'];
-                          ?></td>
-
-                        <td>
-                          <?php
-                          $depid = $row['department'];
-                          $rowdep = $conn->query("select * from departments where id = '$depid' ")->fetch_assoc();
-                          if ($rowdep) {
-                              echo $rowdep['name'];
-                            }
-                            ?></td>
-                        <td><?php
-                          $shiftid = $row['shift']; 
-                          if ($shiftid) {
-                              $rowshift = $conn->query("select * from shifts where id = '$shiftid' ")->fetch_assoc();
-                              if ($rowshift && isset($rowshift['id']) && $rowshift['id'] > 0) {
-                                  echo $rowshift['name'];
-                              }
-                          }
-                          ?></td>
-                        <td><?= $row['salary'] ?> (<?= $row['calc_type'] == 'daily' ? 'يومي' : 'شهري' ?>)</td>
-                          <td><?= $row['info'] ?></td>
-                    <td><?= htmlspecialchars($row['basma_id'] ?? '—') ?></td>
-                    <td><a class="btn btn-warning" href="edit_employee.php?id=<?= $row['id'] ?>"><i class="fa fa-pen"></i></a>
-                      <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#delemp<?= $row['id']?>"><i class="fa fa-trash"></i></button>
-
-                      
-            <div class="modal fade" id="delemp<?= $row['id']?>">
-                        <div class="modal-dialog">
-                          <div class="modal-content bg-danger">
-                            <div class="modal-header">
-                              <h4 class="modal-title">تحذير</h4>
-                              <a href="#">
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                  <span aria-hidden="true">&times;</span>
-                                </button>
-                              </a>
-                            </div>
-
-                            <div class="modal-body">
-                                   <p> هل تريد بالتأكيد الحذف <?= $row['id']?> </p>
-                                  </div>
-                                  <div class="modal-footer justify-content-between">
-                                   <button type="button" class="btn btn-outline-light" data-dismiss="modal">الغاء</button>
-                                     <a href="do/dodel_employee.php?id=<?= $row['id'] ?>"class="btn btn-outline-light">حذف</a>
-                               </div>
-
-                          </div>
-                          <!-- /.modal-content -->
-                        </div>
-                        <!-- /.modal-dialog -->
-                      </div>
-
-                    </td>
-                  </tr>
-                <?php } ?>
-                </tbody>
-                <tfoot>
-                <tr>
-                  <th>م</th>
-                  <th><?= $lang_publicname ?></th>
-                  <th><?= $lang_publicjob ?></th>
-                  <th><?= $lang_pbholder_phone ?></th>
-                  <th>KBI</th>
-                  <th><?= $lang_addemployee_jobdepart ?></th>
-                  <th><?= $lang_addemployee_shift ?></th>
-                  <th><?= $lang_addemployee_salary ?></th>
-                  <th><?= $lang_publicinfo ?></th>
-                  <th><?= $lang_addemployee_basmaid ?? 'رقم البصمة' ?></th>
-                  <th><?= $lang_publicoperations ?></th>
-                </tr>
-                </tfoot>
-            </table>
-
-
-
-<!-- /.col -->
-</div>
-</div>
-</div>
+                $eid = (int)$row['id'];
+                $ename = htmlspecialchars($row['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                $job = htmlspecialchars($row['job_name'] ?? '—', ENT_QUOTES, 'UTF-8');
+                $dept = htmlspecialchars($row['dept_name'] ?? '—', ENT_QUOTES, 'UTF-8');
+                $phone = htmlspecialchars($row['number'] ?? '', ENT_QUOTES, 'UTF-8');
+                $shift = htmlspecialchars($row['shift_name'] ?? '—', ENT_QUOTES, 'UTF-8');
+                $salary = (float)($row['salary'] ?? 0);
+                $calcType = ($row['calc_type'] ?? '') === 'daily' ? 'يومي' : 'شهري';
+                $basma = htmlspecialchars($row['basma_id'] ?? '—', ENT_QUOTES, 'UTF-8');
+                $kbi = (float)($row['total_kbi'] ?? 0);
+            ?>
+              <tr>
+                <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
+                <td>
+                  <a href="emprofile.php?id=<?= $eid ?>" class="font-weight-bold text-primary text-decoration-none" title="عرض ملف الموظف">
+                    <i class="fas fa-id-badge ml-1 text-muted"></i> <?= $ename ?>
+                  </a>
+                </td>
+                <td><span class="k-badge k-badge-secondary"><?= $job ?></span></td>
+                <td><?= $dept !== '—' ? '<span class="text-dark">' . $dept . '</span>' : '<span class="text-muted small">—</span>' ?></td>
+                <td><?= $phone !== '' ? '<span dir="ltr">' . $phone . '</span>' : '<span class="text-muted small">—</span>' ?></td>
+                <td><?= $shift !== '—' ? '<span class="k-badge k-badge-info">' . $shift . '</span>' : '<span class="text-muted small">—</span>' ?></td>
+                <td>
+                  <strong class="text-dark"><?= number_format($salary, 2) ?></strong>
+                  <small class="text-muted mr-1">(<?= $calcType ?>)</small>
+                </td>
+                <td><span class="badge badge-light border text-muted"><?= $basma ?></span></td>
+                <td>
+                  <?php if ($kbi > 0): ?>
+                    <span class="k-badge k-badge-success"><?= number_format($kbi, 1) ?> KBI</span>
+                  <?php else: ?>
+                    <span class="text-muted small">—</span>
+                  <?php endif; ?>
+                </td>
+                <td class="text-center">
+                  <div class="k-actions">
+                    <?= kody_action_btn('view', 'emprofile.php?id=' . $eid, ['title' => 'ملف الموظف']) ?>
+                    <?= kody_action_btn('edit', 'edit_employee.php?id=' . $eid, ['title' => 'تعديل بيانات الموظف']) ?>
+                    <?= kody_action_btn('delete', 'do/dodel_employee.php?id=' . $eid, [
+                        'title' => 'حذف الموظف',
+                        'item_name' => $ename
+                    ]) ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
 
-</section>
-
-</div>
-
-
-<?php include('includes/footer.php') ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

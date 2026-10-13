@@ -188,6 +188,7 @@ hr {
                                     <label>بصمة واحدة فقط (حضور أو انصراف بدون الأخرى)</label>
                                     <?php $singleFpRule = normalize_single_fp_rule($rowshift['single_fp_rule'] ?? 'half'); ?>
                                     <select name="single_fp_rule" class="form-control">
+                                        <option value="none" <?= $singleFpRule === 'none' ? 'selected' : '' ?>>لا تعليق</option>
                                         <option value="half" <?= $singleFpRule === 'half' ? 'selected' : '' ?>>احتساب نصف يوم</option>
                                         <option value="cancel" <?= $singleFpRule === 'cancel' ? 'selected' : '' ?>>إلغاء اليوم (لا يُحسب حضور)</option>
                                     </select>

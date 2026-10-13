@@ -139,6 +139,15 @@ for ($i = 0; $i < $dayscount; $i++) {
 
     $has_fpin = ($fpin !== null && $fpin !== '');
     $has_fpout = ($fpout !== null && $fpout !== '');
+
+    if ($single_fp_rule === 'none') {
+        $crossMidnight = ($shiftend_time <= $shiftstart_time);
+        $fallbackRes = apply_single_fp_no_comment_fallback($fpin, $fpout, $rowshft, $crossMidnight);
+        $fpin = $fallbackRes['fpin'];
+        $fpout = $fallbackRes['fpout'];
+        $has_fpin = ($fpin !== null && $fpin !== '');
+        $has_fpout = ($fpout !== null && $fpout !== '');
+    }
        
     
 

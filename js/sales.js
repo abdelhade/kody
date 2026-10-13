@@ -511,27 +511,27 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
             // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
             const profitCells = window.SHOW_PROFIT_COLS ? `
                 <td>
-                    <input type="number" class="itmprofit_pct form-control form-control-sm" value="${profitPct}" style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;" step="0.1" onclick="sT(this)" title="غيّر نسبة الربح لتحديث سعر البيع">
+                    <input type="number" class="itmprofit_pct form-control form-control-sm" value="${profitPct}" style="width:70px; background:#f0fdf4; color:#16a34a; font-weight:600;" step="any" onclick="sT(this)" title="غيّر نسبة الربح لتحديث سعر البيع">
                 </td>
                 <td>
-                    <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="0.001" onclick="sT(this)" title="يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
+                    <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="any" onclick="sT(this)" title="يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
                 </td>` : '';
 
             const newRow = $(`<tr>
                 <td class="col-1">${counter++}</td>
                 <td class="col-lg-5">
                     <p>${itemName}</p>
-                    <input type="number" name="itmname[]" hidden value="${itemId}">
+                    <input type="number" step="any" name="itmname[]" hidden value="${itemId}">
                 </td>
                 <td>
                     <select name="u_val[]" class="form-control form-control-sm" style="width:100px;"></select>
                 </td>
                 <td><input type="number" name="itmqty[]"     value="${qty}"            class="itmqty     form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="any"></td>
-                <td><input type="number" name="itmprice[]"  value="${price}"           class="itmprice   form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
-                <td><input type="number" name="itmdisc_pct[]" value="0.00"             class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="0.01" min="0" max="100" placeholder="%" onclick="sT(this)"></td>
-                <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="0.001"></td>
+                <td><input type="number" name="itmprice[]"  value="${price}"           class="itmprice   form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="any"></td>
+                <td><input type="number" name="itmdisc_pct[]" value="0.00"             class="itmdisc_pct form-control form-control-sm" style="width:80px;" step="any" placeholder="%" onclick="sT(this)"></td>
+                <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="any"></td>
                 ${profitCells}
-                <td><input type="number" name="itmval[]"    value="${parseFloat(val.toFixed(3))}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="0.001"></td>
+                <td><input type="number" name="itmval[]"    value="${parseFloat(val.toFixed(3))}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="any"></td>
                 <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
             </tr>`);
 

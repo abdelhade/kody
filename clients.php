@@ -1,92 +1,133 @@
-<?php include('includes/header.php') ?>
-<?php include('includes/navbar.php') ?>
-<?php include('includes/sidebar.php') ?>
+<?php
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
 
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-  <!-- Content Header (Page header) -->
-  <section class="content-header">
-    <div class="container-fluid">
-        <div class="card card">
-            <div class="card-header">
-                <div class="row">
-                    <div class="col">
-            <div class="h3">قائمه العملاء  
-                <?php 
-                $sqlcount = "SELECT COUNT(*) AS client_count FROM clients";
-                $rescount = $conn->query($sqlcount);
-                if ($rescount->num_rows > 0) {
-                    $rowcount = $rescount->fetch_assoc();
-                    echo $rowcount["client_count"];
-                } else {
-                    echo "لا يوجد عملاء";
-                }
-                ?>
-</div>
-</div>
-            <div class="col text-right">
-            <a href="add_client.php"><div class="btn  btn-primary">جديد</div></a>
-            </div>
-                </div>
-            </div>
+// Safe count
+$rescount = $conn->query("SELECT COUNT(*) AS total FROM clients");
+$clientCount = $rescount ? (int)($rescount->fetch_assoc()['total'] ?? 0) : 0;
 
-            <div class="card-body">
-            <div class="table-responsive">
-            <table class="table table-responsive table-hover table-striped table-hover table-bordered" id="myTable">
-                <thead>
-                   <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>الميلاد</th>
-                    <th>الشكوي</th>
-                    <th>عمليات</th>
-                   </tr>
-                </thead>
-                <tbody>
-                <?php  
-                $sqlcl="SELECT * from clients order by name " ;
-                $rescl = $conn->query($sqlcl);
-                $x = 0;
-                while ($rowcl = $rescl->fetch_assoc()) {
-                  $x++
-                ?>
-               <tr>
-                    <th><?= $x ?></th>
-                    <th><a class="btn btn-block btn-secondary" href="clprofile.php?id=<?= $rowcl['id'] ?>"><?= $rowcl['name'] ?></a></th>
-                    <th><?= $rowcl['dateofbirth'] ?></th>
-                    <th><?= $rowcl['diseses'] ?></th>
-                    <th>
-                        <a href="edit_client.php?id=<?= $rowcl['id'] ?>"><div class="btn btn-warning btn-sm">تعديل</div></a>
-                        <a href="do/dodel_client.php?id=<?= $rowcl['id'] ?>"><div class="btn btn-danger btn-sm">حذف</div></a></th>
-                   </tr>
-                   <?php }?>
+// Fetch clients
+$sqlcl = "SELECT c.*, t.name AS city_name 
+          FROM clients c 
+          LEFT JOIN towns t ON c.city = t.id 
+          ORDER BY c.id DESC";
+$rescl = $conn->query($sqlcl);
+?>
 
-                </tbody>
-                <tfoot>
-                <tr>
-                    <th>#</th>
-                    <th>الاسم</th>
-                    <th>الميلاد</th>
-                    <th>الشكوي</th>
-                    <th>
-         
-                    عمليات</th>
-                   </tr>
-                </tfoot>
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: 'قائمة العملاء',
+      icon: 'fa-user-friends',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'العملاء' => ''
+      ],
+      actions: [
+          [
+              'label' => 'إضافة عميل جديد',
+              'url'   => 'add_client.php',
+              'class' => 'k-btn-primary',
+              'icon'  => 'fa-user-plus'
+          ]
+      ],
+      badge: $clientCount . ' عميل'
+  ) ?>
 
-            </table>
+  <div class="k-card">
+    <div class="k-toolbar">
+      <div class="k-toolbar-start">
+        <div class="k-search-input-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="بحث باسم العميل أو الهاتف..." data-kody-table-search="#clientsTable">
         </div>
-            </div>
-        </div>
-        <?php if (isset($_GET['w'])) {
-            if ($_GET['w'] == 'del') {
-            
-           ?>
-        <script>
-            alert("لا يمكن الحذف بسبب وجود يعض البيانات المرتبطة .. تأكد من مسح الييانات المرتبطة ثم حاول مرة اخري");
-        </script>
-        <?php } } ?>
-    </section>
+      </div>
+      <div class="k-toolbar-end">
+        <span class="text-muted small">إجمالي العملاء: <strong><?= $clientCount ?></strong></span>
+      </div>
+    </div>
+
+    <?php if ($clientCount === 0): ?>
+      <?= kody_empty_state(
+          title: 'لا يوجد عملاء مسجلون حتى الآن',
+          desc: 'قم بإضافة بيانات العملاء الجدد للبدء في إصدار الفواتير والحجوزات ومتابعة الحسابات.',
+          icon: 'fa-user-friends',
+          cta: [
+              'label' => 'إضافة أول عميل',
+              'url' => 'add_client.php',
+              'icon' => 'fa-user-plus'
+          ]
+      ) ?>
+    <?php else: ?>
+      <div class="k-table-wrap">
+        <table class="k-table" id="clientsTable">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>الاسم</th>
+              <th>رقم الهاتف</th>
+              <th>المدينة / العنوان</th>
+              <th>تاريخ الميلاد</th>
+              <th>الشكوى / الملاحظات</th>
+              <th style="width: 130px;" class="text-center">العمليات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $x = 0;
+            while ($rowcl = $rescl->fetch_assoc()):
+                $x++;
+                $cid = (int)$rowcl['id'];
+                $cname = htmlspecialchars($rowcl['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                $cphone = htmlspecialchars($rowcl['phone'] ?? '', ENT_QUOTES, 'UTF-8');
+                $city = htmlspecialchars($rowcl['city_name'] ?? $rowcl['city'] ?? '', ENT_QUOTES, 'UTF-8');
+                $address = htmlspecialchars($rowcl['address'] ?? '', ENT_QUOTES, 'UTF-8');
+                $dob = htmlspecialchars($rowcl['dateofbirth'] ?? '', ENT_QUOTES, 'UTF-8');
+                $complaint = htmlspecialchars($rowcl['diseses'] ?? $rowcl['info'] ?? '', ENT_QUOTES, 'UTF-8');
+            ?>
+              <tr>
+                <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
+                <td>
+                  <a href="clprofile.php?id=<?= $cid ?>" class="font-weight-bold text-primary text-decoration-none" title="عرض ملف العميل">
+                    <i class="fas fa-user-circle ml-1 text-muted"></i> <?= $cname ?>
+                  </a>
+                </td>
+                <td>
+                  <?= $cphone !== '' ? '<span dir="ltr">' . $cphone . '</span>' : '<span class="text-muted small">—</span>' ?>
+                </td>
+                <td>
+                  <?php if ($city !== '' || $address !== ''): ?>
+                    <span class="text-dark"><?= $city ?></span>
+                    <?php if ($address !== ''): ?>
+                      <small class="text-muted d-block"><?= $address ?></small>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <span class="text-muted small">—</span>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <?= $dob !== '' ? $dob : '<span class="text-muted small">—</span>' ?>
+                </td>
+                <td>
+                  <?= $complaint !== '' ? $complaint : '<span class="text-muted small">—</span>' ?>
+                </td>
+                <td class="text-center">
+                  <div class="k-actions">
+                    <?= kody_action_btn('view', 'clprofile.php?id=' . $cid, ['title' => 'ملف العميل']) ?>
+                    <?= kody_action_btn('edit', 'edit_client.php?id=' . $cid, ['title' => 'تعديل البيانات']) ?>
+                    <?= kody_action_btn('delete', 'do/dodel_client.php?id=' . $cid, [
+                        'title' => 'حذف العميل',
+                        'item_name' => $cname
+                    ]) ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
 
-<?php include('includes/footer.php') ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

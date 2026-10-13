@@ -195,7 +195,7 @@ if (!empty($elements['add_item_modal'])) {
             $form_action = $is_edit_mode ? 'do/doedit_invoice.php' : 'do/doadd_invoice.php';
             ?>
         
-            <form action="<?php echo $form_action; ?>" method="post" id="myForm2">
+            <form action="<?php echo $form_action; ?>" method="post" id="myForm2" novalidate>
                 <input type="hidden" value="<?php echo $opid ?? ''; ?>" name="ot_id">
                 
                 <?php

@@ -1,66 +1,75 @@
 <?php
-include '../includes/connect.php';
+require_once __DIR__ . '/../includes/connect.php';
 
-$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+$id = isset($_REQUEST['id']) ? (int) $_REQUEST['id'] : 0;
 if ($id <= 0) {
-    header('location:../accounts.php');
+    header('Location: ../accounts.php');
     exit;
 }
 
-function accountDeleteBlocked(string $message): void
+function redirectAccountError(string $message): void
 {
-    echo "<center><br><br><br><h1 class='bg-danger' style='padding: 20px; border-radius: 10px; display: inline-block; font-family: sans-serif; color: #fff;'>"
-        . htmlspecialchars($message)
-        . "<br><br><button class='btn btn-light' style='padding: 10px 20px; font-size: 20px; cursor: pointer;' onclick='history.go(-1);'>رجوع</button>"
-        . "</h1></center>";
+    header('Location: ../accounts.php?error=' . urlencode($message));
     exit;
 }
 
-$account = $conn->query("SELECT id, deletable, is_basic FROM acc_head WHERE id = $id")->fetch_assoc();
+$stmt = $conn->prepare("SELECT id, deletable, is_basic FROM acc_head WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$account = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
 if (!$account) {
-    accountDeleteBlocked('الحساب غير موجود');
+    redirectAccountError('الحساب غير موجود');
 }
 
 if ((int) $account['is_basic'] === 1 || (int) $account['deletable'] === 0) {
-    accountDeleteBlocked('لا يمكن حذف هذا الحساب لأنه حساب أساسي في النظام');
+    redirectAccountError('لا يمكن حذف هذا الحساب لأنه حساب أساسي في النظام');
 }
 
-$ops = $conn->query(
-    "SELECT COUNT(*) AS c FROM journal_entries
-     WHERE account_id = $id AND COALESCE(isdeleted, 0) = 0"
-)->fetch_assoc();
-if ((int) $ops['c'] > 0) {
-    accountDeleteBlocked('لا يمكن حذف هذا الحساب لوجود عمليات مرتبطة به. احذف العمليات أولاً ثم حاول مرة أخرى');
+$chkEntries = $conn->prepare("SELECT COUNT(*) AS c FROM journal_entries WHERE account_id = ? AND COALESCE(isdeleted, 0) = 0");
+$chkEntries->bind_param("i", $id);
+$chkEntries->execute();
+$ops = (int)($chkEntries->get_result()->fetch_assoc()['c'] ?? 0);
+$chkEntries->close();
+
+if ($ops > 0) {
+    redirectAccountError('لا يمكن حذف هذا الحساب لوجود قيود يومية مرتبطة به');
 }
 
-$children = $conn->query(
-    "SELECT COUNT(*) AS c FROM acc_head
-     WHERE parent_id = $id AND COALESCE(isdeleted, 0) = 0"
-)->fetch_assoc();
-if ((int) $children['c'] > 0) {
-    accountDeleteBlocked('لا يمكن حذف هذا الحساب لوجود حسابات فرعية مرتبطة به');
+$chkChildren = $conn->prepare("SELECT COUNT(*) AS c FROM acc_head WHERE parent_id = ? AND COALESCE(isdeleted, 0) = 0");
+$chkChildren->bind_param("i", $id);
+$chkChildren->execute();
+$children = (int)($chkChildren->get_result()->fetch_assoc()['c'] ?? 0);
+$chkChildren->close();
+
+if ($children > 0) {
+    redirectAccountError('لا يمكن حذف هذا الحساب لوجود حسابات فرعية متفرعة منه');
 }
 
-$linkedOps = $conn->query(
-    "SELECT COUNT(*) AS c FROM ot_head
-     WHERE (acc1 = $id OR acc2 = $id OR acc_fund = $id)
-       AND COALESCE(isdeleted, 0) = 0"
-)->fetch_assoc();
-if ((int) $linkedOps['c'] > 0) {
-    accountDeleteBlocked('لا يمكن حذف هذا الحساب لوجود فواتير أو سندات مرتبطة به');
+$chkOt = $conn->prepare("SELECT COUNT(*) AS c FROM ot_head WHERE (acc1 = ? OR acc2 = ? OR acc_fund = ?) AND COALESCE(isdeleted, 0) = 0");
+$chkOt->bind_param("iii", $id, $id, $id);
+$chkOt->execute();
+$linkedOps = (int)($chkOt->get_result()->fetch_assoc()['c'] ?? 0);
+$chkOt->close();
+
+if ($linkedOps > 0) {
+    redirectAccountError('لا يمكن حذف هذا الحساب لوجود فواتير أو سندات مرتبطة به');
 }
 
-// إزالة القيود المحذوفة منطقياً حتى لا تمنع الـ FK الحذف الكامل
-$conn->query("DELETE FROM journal_entries WHERE account_id = $id AND isdeleted = 1");
+// Remove any soft-deleted journal entries so FK won't block
+$delSoft = $conn->prepare("DELETE FROM journal_entries WHERE account_id = ? AND isdeleted = 1");
+$delSoft->bind_param("i", $id);
+$delSoft->execute();
+$delSoft->close();
 
-if (!$conn->query("DELETE FROM acc_head WHERE id = $id")) {
-    accountDeleteBlocked('فشل حذف الحساب: قد يكون مرتبطاً ببيانات أخرى في النظام');
+$del = $conn->prepare("DELETE FROM acc_head WHERE id = ?");
+$del->bind_param("i", $id);
+if (!$del->execute()) {
+    $del->close();
+    redirectAccountError('فشل حذف الحساب: قد يكون مرتبطاً ببيانات أخرى في النظام');
 }
+$del->close();
 
-$referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
-if (strpos($referer, 'accounts.php') !== false) {
-    header('location:../accounts.php');
-} else {
-    header('location:../acc_report.php');
-}
+header('Location: ../accounts.php?msg=deleted');
 exit;

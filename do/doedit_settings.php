@@ -5,6 +5,7 @@ error_log('[Settings] POST data: ' . print_r($_POST, true));
 include('../includes/connect.php');
 require_once __DIR__ . '/../includes/barcode_design.php';
 require_once __DIR__ . '/../includes/backup_path.php';
+require_once __DIR__ . '/../includes/receipt_design.php';
 
 // التحقق من طريقة الطلب
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -42,13 +43,18 @@ $pos_type = trim($_POST['pos_type'] ?? 'barcode');
 $pos_has_password = isset($_POST['pos_has_password']) ? 1 : 0;
 $emp_commission = floatval($_POST['emp_commission'] ?? 0);
 $user_commission = floatval($_POST['user_commission'] ?? 0);
-$receipt_show_logo = isset($_POST['receipt_show_logo']) ? 1 : 0;
-$receipt_font_size = (int)($_POST['receipt_font_size'] ?? 14);
-$receipt_paper_width = trim($_POST['receipt_paper_width'] ?? '78mm');
-$receipt_footer_text = trim($_POST['receipt_footer_text'] ?? '❤ perfect place to grow');
-$receipt_show_client = isset($_POST['receipt_show_client']) ? 1 : 0;
-$receipt_header_text = trim($_POST['receipt_header_text'] ?? '');
-$receipt_notes_text  = trim($_POST['receipt_notes_text']  ?? '');
+$allow_all_accounts = isset($_POST['allow_all_accounts']) ? 1 : 0;
+
+$receipt_design = kody_receipt_design_from_post($_POST);
+$receipt_design_json = kody_receipt_design_json($receipt_design);
+$receipt_show_logo = !empty($receipt_design['header']['show_logo']) ? 1 : 0;
+$receipt_font_size = (int)$receipt_design['font_size'];
+$receipt_paper_width = trim($receipt_design['paper_width']);
+$receipt_footer_text = trim($receipt_design['footer']['footer_text']);
+$receipt_show_client = !empty($receipt_design['customer']['show']) ? 1 : 0;
+$receipt_header_text = trim($receipt_design['header']['header_text']);
+$receipt_notes_text  = trim($receipt_design['footer']['notes_text']);
+
 $barcode_design_json = kody_barcode_design_json(kody_barcode_design_from_post($_POST));
 $backup_path_raw = trim((string) ($_POST['backup_path'] ?? ''));
 $backup_path = kody_normalize_backup_path($backup_path_raw);
@@ -138,6 +144,7 @@ if ($col_logo_check && $col_logo_check->num_rows === 0) {
 }
 
 kody_barcode_design_ensure_column($conn);
+kody_receipt_design_ensure_column($conn);
 kody_ensure_backup_path_column($conn);
 
 // إضافة أعمدة النصوص الإضافية للفاتورة إذا لم تكن موجودة
@@ -150,6 +157,18 @@ if ($col_extra_check && $col_extra_check->num_rows === 0) {
     } catch (mysqli_sql_exception $e) {
         if (stripos($e->getMessage(), 'Duplicate column') === false) {
             die('Error adding extra text columns: ' . $e->getMessage());
+        }
+    }
+}
+
+// إضافة عمود allow_all_accounts إذا لم يكن موجوداً
+$col_all_acc = $conn->query("SHOW COLUMNS FROM settings LIKE 'allow_all_accounts'");
+if ($col_all_acc && $col_all_acc->num_rows === 0) {
+    try {
+        $conn->query("ALTER TABLE `settings` ADD COLUMN `allow_all_accounts` TINYINT(1) NOT NULL DEFAULT 0");
+    } catch (mysqli_sql_exception $e) {
+        if (stripos($e->getMessage(), 'Duplicate column') === false) {
+            die('Error adding allow_all_accounts column: ' . $e->getMessage());
         }
     }
 }
@@ -184,7 +203,9 @@ SET company_name = ?,
     receipt_show_client = ?,
     receipt_header_text = ?,
     receipt_notes_text  = ?,
-    barcode_design = ?
+    receipt_design = ?,
+    barcode_design = ?,
+    allow_all_accounts = ?
     " . ($company_logo !== '' ? ", company_logo = ?" : "") . ",
     backup_path = ?
 WHERE 1";
@@ -192,7 +213,7 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississsss",
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississsssiss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
@@ -200,11 +221,13 @@ if ($company_logo !== '') {
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
         $receipt_footer_text, $receipt_show_client,
-        $receipt_header_text, $receipt_notes_text, $barcode_design_json, $company_logo,
+        $receipt_header_text, $receipt_notes_text,
+        $receipt_design_json, $barcode_design_json, $allow_all_accounts,
+        $company_logo,
         $backup_path
     );
 } else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississss",
+    $stmt->bind_param("sssssiiiisiiiiiisiiddiississsssis",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
@@ -212,7 +235,8 @@ if ($company_logo !== '') {
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
         $receipt_footer_text, $receipt_show_client,
-        $receipt_header_text, $receipt_notes_text, $barcode_design_json,
+        $receipt_header_text, $receipt_notes_text,
+        $receipt_design_json, $barcode_design_json, $allow_all_accounts,
         $backup_path
     );
 }

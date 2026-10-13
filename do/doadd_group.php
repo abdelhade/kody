@@ -41,5 +41,5 @@ if ($existing) {
 }
 
 $conn->query("INSERT INTO `process`(`type`) VALUES ('add group')");
-header('location:../mygroups.php');
+header('Location: ../mygroups.php?msg=saved');
 exit;

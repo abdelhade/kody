@@ -264,7 +264,8 @@ body {
                                     <select name="acc2_id" class="form-select form-select-sm" title="العميل"
                                         style="font-size: 0.75rem;" required>
                                         <?php
-                                        $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0;");
+                                        $acc_filter = !empty($rowstg['allow_all_accounts']) ? "(code LIKE '122%' OR code LIKE '211%')" : "code LIKE '122%'";
+                                        $resclient = $conn->query("SELECT * FROM `acc_head` WHERE $acc_filter AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
                                         if(isset($_GET['edit'])){$rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();};
                                         $first_client = true;
                                         while ($rowclient = $resclient->fetch_assoc()) { 
@@ -278,9 +279,11 @@ body {
                                                 $selected = "selected";
                                             }
                                             $first_client = false;
+                                            $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
+                                            $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
                                         ?>
                                         <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>">
-                                            <?= $rowclient['aname'] ?></option>
+                                            <?= $displayName ?></option>
                                         <?php } ?>
                                     </select>
                                 </div>

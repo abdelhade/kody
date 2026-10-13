@@ -1,7 +1,9 @@
 <?php
-include('../includes/connect.php');
+require_once __DIR__ . '/../includes/connect.php';
 
-header('Content-Type: application/json; charset=utf-8');
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+}
 
 if (!isset($_SESSION['userid'])) {
     echo json_encode(['success' => false, 'error' => 'غير مصرح']);

@@ -5,6 +5,8 @@ if ($id_early > 0 && isset($_COOKIE['invoice_print_cashier']) && $_COOKIE['invoi
     exit;
 }
 include('includes/header.php');
+require_once __DIR__ . '/../includes/receipt_design.php';
+$design = kody_receipt_design_load($rowstg ?? []);
 ?>
 <?php
 if (!isset($_GET['id'])) {
@@ -213,15 +215,28 @@ table.table-striped tbody tr:hover {
 <div class="card-body">
 
 <!-- Header -->
+<?php
+$_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
+$logo_path = '../assets/logo/' . $_logo_file;
+if (!file_exists($logo_path)) {
+    $logo_path = '../assets/logo/logo.jpg';
+}
+$show_logo = !empty($design['header']['show_logo']) && file_exists($logo_path);
+?>
 <table class="table table-bordered" style="margin-bottom: 15px;">
 <tr>
-<td class="text-center invoice-header">
-<?= $rowstg['company_name'] ?>
+<td class="text-center invoice-header" style="vertical-align: middle;">
+<?php if ($show_logo): ?>
+    <img src="<?= htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') ?>" alt="" style="max-height: 50px; width: auto; vertical-align: middle; margin-left: 12px; display: inline-block;">
+<?php endif; ?>
+<span style="vertical-align: middle;"><?= htmlspecialchars($rowstg['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
 </td>
 </tr>
 <tr>
 <td class="text-center company-info">
-<?= $rowstg['company_add'] ?> | <?= $rowstg['company_tel'] ?> | <?= $rowstg['company_email'] ?>
+<?= htmlspecialchars($rowstg['company_add'] ?? '', ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars($rowstg['company_tel'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+<?php if (!empty($rowstg['company_email'])): ?> | <?= htmlspecialchars($rowstg['company_email'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
+<?php if (!empty($design['header']['tax_no']) && !empty($design['header']['show_tax_no'])): ?> | الرقم الضريبي: <?= htmlspecialchars($design['header']['tax_no'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
 </td>
 </tr>
 </table>
@@ -436,6 +451,12 @@ if (!in_array($tybe, [12, 13, 14])):
 </td>
 </tr>
 </table>
+
+<?php if (!empty($design['footer']['show_footer_text']) && !empty($design['footer']['footer_text'])): ?>
+<div style="text-align: center; font-size: 13px; font-weight: bold; margin-top: 15px; color: #1a2f5a;">
+    <?= nl2br(htmlspecialchars($design['footer']['footer_text'], ENT_QUOTES, 'UTF-8')) ?>
+</div>
+<?php endif; ?>
 
 </div>
 </div>

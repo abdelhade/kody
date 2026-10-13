@@ -1,61 +1,117 @@
 <?php 
-include('includes/header.php');
-include('includes/navbar.php');
-include('includes/sidebar.php');
+require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/navbar.php';
+require_once __DIR__ . '/includes/sidebar.php';
+
+// Fetch active stores from acc_head
+$sql = "SELECT id, code, aname, phone, address, balance 
+        FROM acc_head 
+        WHERE is_stock = 1 AND COALESCE(isdeleted, 0) != 1 
+        ORDER BY id ASC";
+$res = $conn->query($sql);
+$storeCount = $res ? $res->num_rows : 0;
 ?>
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-      <div class="container-fluid">
 
+<div class="content-wrapper k-page-wrapper">
+  <?= kody_page_header(
+      title: 'إدارة المخازن والمستودعات',
+      icon: 'fa-warehouse',
+      breadcrumbs: [
+          'الرئيسية' => 'dashboard.php',
+          'المخازن' => ''
+      ],
+      actions: [
+          [
+              'label' => 'إضافة مخزن جديد',
+              'url'   => 'add_account.php?parent=123',
+              'class' => 'k-btn-primary',
+              'icon'  => 'fa-plus'
+          ]
+      ],
+      badge: $storeCount . ' مخزن'
+  ) ?>
 
-      <div class="card card-light">
-
-      <div class="card-header">
-        <div class="row">
-        <div class="col-lg-4"><h3>ادارة المخازن</h3></div>
-        <div class="col-lg-4"></div>
-        <div class="col-lg-4 text-right">
-           <a href="add_store.php" id="addNewElement"><p class="btn btn-large btn-dark"  >جديد(f3)</p></a> 
-        </div>
-        </div>
-      </div>
-
-
-      <div class="card-body">
-        <div class="table">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>الاسم</th>
-                        <th>عمليات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>1</td>
-                        <td>
-                            <a href="" class="btn btn-warning">تعديل</a>
-                            <a href="" class="btn btn-danger">حذف</a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
+  <div class="k-card">
+    <div class="k-toolbar">
+      <div class="k-toolbar-start">
+        <div class="k-search-input-wrap">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="بحث باسم المخزن أو الكود..." data-kody-table-search="#storesTable">
         </div>
       </div>
-
-
-
+      <div class="k-toolbar-end">
+        <span class="text-muted small">إجمالي المخازن: <strong><?= $storeCount ?></strong></span>
       </div>
+    </div>
 
-
-
-
-
+    <?php if ($storeCount === 0): ?>
+      <?= kody_empty_state(
+          title: 'لا توجد مخازن مضافة حتى الآن',
+          desc: 'قم بإضافة المخازن لربط الأصناف وحركات المخزون والمبيعات بها.',
+          icon: 'fa-warehouse',
+          cta: [
+              'label' => 'إضافة مخزن جديد',
+              'url' => 'add_account.php?parent=123',
+              'icon' => 'fa-plus'
+          ]
+      ) ?>
+    <?php else: ?>
+      <div class="k-table-wrap">
+        <table class="k-table" id="storesTable">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>كود الحساب</th>
+              <th>اسم المخزن</th>
+              <th>الهاتف</th>
+              <th>العنوان / الموقع</th>
+              <th>الرصيد الدفتري</th>
+              <th style="width: 120px;" class="text-center">العمليات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $x = 0;
+            while ($row = $res->fetch_assoc()):
+                $x++;
+                $sid = (int)$row['id'];
+                $sname = htmlspecialchars($row['aname'] ?? '', ENT_QUOTES, 'UTF-8');
+                $scode = htmlspecialchars($row['code'] ?? '', ENT_QUOTES, 'UTF-8');
+                $sphone = htmlspecialchars($row['phone'] ?? '', ENT_QUOTES, 'UTF-8');
+                $saddr = htmlspecialchars($row['address'] ?? '', ENT_QUOTES, 'UTF-8');
+                $bal = (float)($row['balance'] ?? 0);
+            ?>
+              <tr>
+                <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
+                <td><span class="k-badge k-badge-secondary font-weight-bold"><?= $scode ?></span></td>
+                <td>
+                  <strong class="text-dark font-size-15"><?= $sname ?></strong>
+                </td>
+                <td><?= $sphone !== '' ? $sphone : '<span class="text-muted small">—</span>' ?></td>
+                <td><?= $saddr !== '' ? $saddr : '<span class="text-muted small">—</span>' ?></td>
+                <td>
+                  <span class="font-weight-bold <?= $bal >= 0 ? 'text-success' : 'text-danger' ?>">
+                    <?= number_format($bal, 2) ?>
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="k-actions">
+                    <?= kody_action_btn('edit', 'edit_account.php?id=' . $sid, ['title' => 'تعديل بيانات المخزن']) ?>
+                    <?php if ($x > 1): ?>
+                      <?= kody_action_btn('delete', 'do/dodel_account.php?id=' . $sid, [
+                          'title' => 'حذف المخزن',
+                          'item_name' => $sname
+                      ]) ?>
+                    <?php endif; ?>
+                  </div>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </div>
 </div>
-</section>
-</div>
-<?php include('includes/footer.php'); ?>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

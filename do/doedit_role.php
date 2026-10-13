@@ -16,6 +16,23 @@ if ($rollname === null) {
     $delete_users = isset($_POST['delete_users']) ? 1 : 0; 
     $is_fav_users = isset($_POST['is_fav_users']) ? 1 : 0; 
     
+    // حماية تامة: لا يمكن بأي شكل إلغاء صلاحية المستخدمين عن دور المسؤول الرئيسي (id = 1) أو أي دور مسند للمستخدم الأول
+    $isProtectedRole = ((int)$id === 1);
+    if (!$isProtectedRole) {
+        $chkU1Role = $conn->query("SELECT userrole FROM users WHERE id = 1 LIMIT 1");
+        if ($chkU1Role && ($u1Data = $chkU1Role->fetch_assoc())) {
+            if ((int)($u1Data['userrole'] ?? 0) === (int)$id) {
+                $isProtectedRole = true;
+            }
+        }
+    }
+    if ($isProtectedRole) {
+        $show_users = 1;
+        $add_users = 1;
+        $edit_users = 1;
+        $delete_users = 1;
+    }
+    
     $show_general_entrys = isset($_POST['show_general_entrys']) ? 1 : 0;
     $add_general_entrys = isset($_POST['add_general_entrys']) ? 1 : 0;
     $edit_general_entrys = isset($_POST['edit_general_entrys']) ? 1 : 0; 

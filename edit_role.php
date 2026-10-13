@@ -67,13 +67,57 @@ if ($hash_id !== $hash) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="tr1">
-                        <td>المستخدمين</td>
-                        <td><input type="checkbox" class="user-checkbox" name="show_users" id="" <?php if( $rowrol['show_users'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="add_users" id="" <?php if( $rowrol['add_users'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="edit_users" id="" <?php if( $rowrol['edit_users'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="delete_users" id="" <?php if( $rowrol['delete_users'] == 1){echo "checked"; }?>></td>
-                        <td><input type="checkbox" class="user-checkbox" name="is_fav_users" id="" <?php if( $rowrol['is_fav_users'] == 1){echo "checked"; }?>></td>
+                    <?php
+                    $isProtectedRole = ((int)$rowrol['id'] === 1);
+                    if (!$isProtectedRole) {
+                        $chkU1Role = $conn->query("SELECT userrole FROM users WHERE id = 1 LIMIT 1");
+                        if ($chkU1Role && ($u1Data = $chkU1Role->fetch_assoc())) {
+                            if ((int)($u1Data['userrole'] ?? 0) === (int)$rowrol['id']) {
+                                $isProtectedRole = true;
+                            }
+                        }
+                    }
+                    ?>
+                    <tr class="tr1 <?= $isProtectedRole ? 'table-warning' : '' ?>">
+                        <td>
+                            المستخدمين
+                            <?php if ($isProtectedRole): ?>
+                                <span class="badge badge-warning text-dark ml-1" title="صلاحية أساسية محمية لا يمكن إلغاؤها للمسؤول الرئيسي"><i class="fas fa-lock fa-xs"></i> محمي للمسؤول</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($isProtectedRole): ?>
+                                <input type="checkbox" class="user-checkbox" checked disabled title="لا يمكن إلغاء صلاحية المستخدمين عن المسؤول الرئيسي">
+                                <input type="hidden" name="show_users" value="1">
+                            <?php else: ?>
+                                <input type="checkbox" class="user-checkbox" name="show_users" id="" <?php if(($rowrol['show_users'] ?? 0) == 1){echo "checked"; }?>>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($isProtectedRole): ?>
+                                <input type="checkbox" class="user-checkbox" checked disabled title="لا يمكن إلغاء صلاحية المستخدمين عن المسؤول الرئيسي">
+                                <input type="hidden" name="add_users" value="1">
+                            <?php else: ?>
+                                <input type="checkbox" class="user-checkbox" name="add_users" id="" <?php if(($rowrol['add_users'] ?? 0) == 1){echo "checked"; }?>>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($isProtectedRole): ?>
+                                <input type="checkbox" class="user-checkbox" checked disabled title="لا يمكن إلغاء صلاحية المستخدمين عن المسؤول الرئيسي">
+                                <input type="hidden" name="edit_users" value="1">
+                            <?php else: ?>
+                                <input type="checkbox" class="user-checkbox" name="edit_users" id="" <?php if(($rowrol['edit_users'] ?? 0) == 1){echo "checked"; }?>>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($isProtectedRole): ?>
+                                <input type="checkbox" class="user-checkbox" checked disabled title="لا يمكن إلغاء صلاحية المستخدمين عن المسؤول الرئيسي">
+                                <input type="hidden" name="delete_users" value="1">
+                            <?php else: ?>
+                                <input type="checkbox" class="user-checkbox" name="delete_users" id="" <?php if(($rowrol['delete_users'] ?? 0) == 1){echo "checked"; }?>>
+                            <?php endif; ?>
+                        </td>
+                        <td><input type="checkbox" class="user-checkbox" name="is_fav_users" id="" <?php if(($rowrol['is_fav_users'] ?? 0) == 1){echo "checked"; }?>></td>
                     </tr>
 
 

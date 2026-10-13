@@ -198,6 +198,9 @@
                                 case 2:
                                     $edit_link = "add_voucher.php?t=payment&edit=" . $edit_id;
                                     break;
+                                case 16:
+                                    $edit_link = "add_voucher.php?t=transfer&edit=" . $edit_id;
+                                    break;
                                 case 3:
                                 case 4:
                                 case 10:
@@ -341,44 +344,12 @@ document.getElementById("printBtn").addEventListener("click", function() {
     window.print();
     document.body.innerHTML = originalContents;
 });
-document.getElementById("exportExcel").addEventListener("click", function() {
-    // Get table data
-    var table = document.getElementById("horsTable");
-    var rows = table.querySelectorAll("tr");
-    var data = [];
-
-    rows.forEach(function(row) {
-        var rowData = [];
-        row.querySelectorAll("td").forEach(function(cell) {
-            rowData.push(cell.innerText);
-        });
-        data.push(rowData);
+document.getElementById("exportExcel")?.addEventListener("click", function() {
+    KodyExcel.exportTable("#horsTable", {
+        filename: "كشف_حساب",
+        title: "كشف حساب",
+        sheetName: "كشف الحساب"
     });
-
-    // Create Excel file
-    var wb = XLSX.utils.book_new();
-    var ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, "horsTable");
-
-    // Save Excel file
-    var wbout = XLSX.write(wb, {bookType: "xlsx", type: "array"});
-    var blob = new Blob([wbout], {type: "application/octet-stream"});
-    var fileName = "horsTable.xlsx";
-
-    // Trigger file download
-    if (typeof window.navigator.msSaveBlob !== "undefined") {
-        // For IE
-        window.navigator.msSaveBlob(blob, fileName);
-    } else {
-        var url = window.URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.style.display = "none";
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-    }
 });
 
 

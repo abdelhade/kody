@@ -39,8 +39,9 @@ try {
     }
 
     // البحث في جدول العملاء الرئيسي (acc_head)
+    $acc_code_filter = !empty($rowstg['allow_all_accounts']) ? "(code LIKE '122%' OR code LIKE '211%')" : "code LIKE '122%'";
     $stmt = $conn->prepare(
-        "SELECT aname, phone, address FROM acc_head WHERE code LIKE '122%' AND isdeleted = 0 AND (phone = ? OR aname LIKE ?) LIMIT 1"
+        "SELECT aname, phone, address FROM acc_head WHERE $acc_code_filter AND isdeleted = 0 AND (phone = ? OR aname LIKE ?) LIMIT 1"
     );
 
     if ($stmt) {

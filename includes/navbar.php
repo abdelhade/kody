@@ -15,7 +15,10 @@
           <a class="dropdown-item" href="index.php">
             <i class="fas fa-home ml-2 text-primary"></i><?= htmlspecialchars($lang_sidemain ?? 'الرئيسية', ENT_QUOTES, 'UTF-8') ?>
           </a>
-          <?php if (($role['show_users'] ?? 0) == 1) { ?>
+          <?php 
+          $isRootAdminNav = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
+          if ($isRootAdminNav || (($role['show_users'] ?? 0) == 1)) { 
+          ?>
           <a class="dropdown-item" href="users.php">
             <i class="fas fa-users ml-2 text-primary"></i>المستخدمين
           </a>

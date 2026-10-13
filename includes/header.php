@@ -12,6 +12,7 @@ if (!isset($_SESSION['login'])) {
 header('Content-Type: text/html; charset=utf-8');
 
 require_once __DIR__ . '/connect.php';
+require_once __DIR__ . '/ui_helper.php';
 
 $userid = isset($_SESSION['userid']) ? (int) $_SESSION['userid'] : 0;
 if ($userid < 1) {
@@ -26,6 +27,30 @@ if (!$res_up || $res_up->num_rows === 0) {
     exit;
 }
 $up = $res_up->fetch_assoc();
+
+// مزامنة الدور الفعلي للمستخدم والتأكد من عدم كون $role فارغاً أو null
+$userDbRole = (int) ($up['userrole'] ?? 0);
+if ($userDbRole > 0 && ((int) ($_SESSION['usrole'] ?? 0) !== $userDbRole || empty($role))) {
+    $_SESSION['usrole'] = $userDbRole;
+    $resroleSync = $conn->query('SELECT * FROM usr_pwrs WHERE id = ' . $userDbRole . ' LIMIT 1');
+    if ($resroleSync && ($fetchedRoleSync = $resroleSync->fetch_assoc())) {
+        $role = $fetchedRoleSync;
+    }
+}
+if (!isset($role) || !is_array($role)) {
+    $role = [];
+}
+
+// المستخدم الأول (المسؤول الرئيسي #1) يمتلك دائماً كافة صلاحيات إدارة المستخدمين ولا يمكن منعه منها بأي شكل
+if ($userid === 1 || (isset($up['usertype']) && (int)$up['usertype'] === 2)) {
+    $role['show_users'] = 1;
+    $role['add_users'] = 1;
+    $role['edit_users'] = 1;
+    $role['delete_users'] = 1;
+    $role['edit_user_passwords'] = 1;
+    $role['is_fav_users'] = 1;
+}
+
 
 date_default_timezone_set('Africa/Cairo');
 
@@ -118,6 +143,7 @@ $assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
   <link rel="stylesheet" href="assets/styles/dashboard.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="assets/styles/sidebar-fixes.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
   <link rel="stylesheet" href="css/operations_responsive.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="stylesheet" href="assets/styles/kody-ui.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>">
 
   <style>
   .card-primary:not(.modern-card) > .card-header {

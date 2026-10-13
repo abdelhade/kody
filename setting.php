@@ -3,9 +3,13 @@
 <?php
 $sittingpass = $sittingpass ?? 'hadi@1234';
 $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
+if ($postedPass === $sittingpass) {
+    $_SESSION['settings_unlocked'] = true;
+}
+$isUnlocked = !empty($_SESSION['settings_unlocked']);
 ?>
 
-<?php if ($postedPass === null): ?>
+<?php if (!$isUnlocked && $postedPass === null): ?>
 
 <div class="content-wrapper">
   <section class="content">
@@ -30,7 +34,7 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
                          autocomplete="current-password"
                          placeholder="••••••••">
                 </div>
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <button type="submit" id="btnSubmitSettingsGate" class="btn btn-primary btn-block btn-lg">
                   <i class="fas fa-sign-in-alt ml-1"></i> متابعة
                 </button>
               </form>
@@ -45,7 +49,7 @@ $postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
   </section>
 </div>
 
-<?php elseif ($postedPass !== $sittingpass): ?>
+<?php elseif (!$isUnlocked && $postedPass !== $sittingpass): ?>
 
 <div class="content-wrapper">
   <section class="content">
@@ -146,6 +150,9 @@ $licenseOk = !empty($licenseStatus['licensed']);
                 <div class="nav flex-column nav-pills settings-vertical-pills" id="settingsTabs" role="tablist" aria-orientation="vertical">
                   <a class="nav-link active py-3 px-4 mb-2 d-flex align-items-center" id="company-tab" data-toggle="pill" href="#tab-company" role="tab" aria-controls="tab-company" aria-selected="true" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-building ml-3" style="font-size: 1.1rem; width: 20px;"></i> الشركة واللغة
+                  </a>
+                  <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="invoices-tab" data-toggle="pill" href="#tab-invoices" role="tab" aria-controls="tab-invoices" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
+                    <i class="fas fa-file-invoice-dollar ml-3" style="font-size: 1.1rem; width: 20px;"></i> فواتير البيع والشراء
                   </a>
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="pos-tab" data-toggle="pill" href="#tab-pos" role="tab" aria-controls="tab-pos" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-cash-register ml-3" style="font-size: 1.1rem; width: 20px;"></i> نقطة البيع (POS)
@@ -286,6 +293,44 @@ $licenseOk = !empty($licenseStatus['licensed']);
                             </div>
                           </div>
                           <div id="generalLicenseMsg" class="mt-2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- فواتير البيع والشراء -->
+              <div class="tab-pane fade" id="tab-invoices" role="tabpanel" aria-labelledby="invoices-tab">
+                <div class="card card-outline card-primary shadow-sm border-0" style="border-radius: 12px;">
+                  <div class="card-header bg-white py-3">
+                    <h3 class="card-title text-primary font-weight-bold mb-0">
+                      <i class="fas fa-file-invoice-dollar ml-2"></i> إعدادات فواتير البيع والشراء
+                    </h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="callout callout-info mb-4" style="border-left-color: #17a2b8; background: #f8fafc; border-radius: 8px;">
+                      <h5 class="font-weight-bold text-info"><i class="fas fa-info-circle ml-2"></i> إدارة أطراف المعاملات (العملاء والموردين)</h5>
+                      <p class="text-muted mb-0">
+                        الوضع الافتراضي يقصر فواتير المبيعات ونقاط البيع على العملاء فقط، وفواتير المشتريات على الموردين فقط.
+                        تفعيل هذا الخيار يتيح لك مرونة البيع والشراء لجميع الحسابات (عملاء وموردين) في شاشات الفواتير ونقاط البيع.
+                      </p>
+                    </div>
+
+                    <div class="card bg-light border p-3 mb-3" style="border-radius: 10px;">
+                      <div class="d-flex align-items-center justify-content-between flex-wrap">
+                        <div class="pr-3 mb-2 mb-md-0" style="max-width: 80%;">
+                          <label for="allow_all_accounts" class="h6 font-weight-bold mb-1 text-dark d-block">
+                            <i class="fas fa-users-cog text-primary ml-1"></i> البيع والشراء لجميع الحسابات (عملاء وموردين)
+                          </label>
+                          <small class="text-muted d-block">
+                            عند تفعيل هذا الخيار، ستظهر جميع الحسابات (العملاء والموردين معاً) في قوائم الاختيار في فواتير المبيعات، المشتريات، المردودات، عروض الأسعار، ونقاط البيع (POS).
+                          </small>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-lg pt-1">
+                          <input type="checkbox" class="custom-control-input" id="allow_all_accounts" name="allow_all_accounts" value="1"
+                                 <?= (!empty($rowstg['allow_all_accounts'])) ? 'checked' : '' ?>>
+                          <label class="custom-control-label" for="allow_all_accounts" style="cursor: pointer; font-size: 1.1rem;"></label>
                         </div>
                       </div>
                     </div>
@@ -514,73 +559,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
 
               <!-- 6. إعدادات الطباعة -->
               <div class="tab-pane fade" id="tab-print" role="tabpanel" aria-labelledby="print-tab">
-                <div class="card card-outline card-dark shadow-sm border-0" style="border-radius: 12px;">
-                  <div class="card-header bg-white py-3">
-                    <h3 class="card-title text-dark font-weight-bold mb-0"><i class="fas fa-print ml-2"></i> إعدادات الطباعة للفواتير</h3>
-                  </div>
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label class="d-block">إظهار اللوجو (الشعار)</label>
-                          <div class="custom-control custom-switch pt-1">
-                            <input type="checkbox" class="custom-control-input" id="receipt_show_logo" name="receipt_show_logo" value="1"
-                                   <?= (!isset($rowstg['receipt_show_logo']) || !empty($rowstg['receipt_show_logo'])) ? 'checked' : '' ?>>
-                            <label class="custom-control-label" for="receipt_show_logo">عرض شعار الشركة في الفاتورة المطبوعة</label>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label class="d-block">إظهار بيانات العميل</label>
-                          <div class="custom-control custom-switch pt-1">
-                            <input type="checkbox" class="custom-control-input" id="receipt_show_client" name="receipt_show_client" value="1"
-                                   <?= (!isset($rowstg['receipt_show_client']) || !empty($rowstg['receipt_show_client'])) ? 'checked' : '' ?>>
-                            <label class="custom-control-label" for="receipt_show_client">عرض بيانات العميل في الفواتير (دليفري/آجل)</label>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="receipt_paper_width">عرض ورقة الطباعة</label>
-                          <select class="form-control" id="receipt_paper_width" name="receipt_paper_width">
-                            <option value="78mm" <?= (($rowstg['receipt_paper_width'] ?? '78mm') === '78mm') ? 'selected' : '' ?>>80mm (الافتراضي 78mm)</option>
-                            <option value="58mm" <?= (($rowstg['receipt_paper_width'] ?? '') === '58mm') ? 'selected' : '' ?>>58mm (طابعة صغيرة)</option>
-                            <option value="100%" <?= (($rowstg['receipt_paper_width'] ?? '') === '100%') ? 'selected' : '' ?>>100% (كامل الشاشة / A4)</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="receipt_font_size">حجم الخط الأساسي (px)</label>
-                          <input type="number" class="form-control" id="receipt_font_size" name="receipt_font_size"
-                                 value="<?= htmlspecialchars((string)($rowstg['receipt_font_size'] ?? '14'), ENT_QUOTES, 'UTF-8') ?>" min="8" max="24">
-                        </div>
-                      </div>
-                      <div class="col-12">
-                        <div class="form-group">
-                          <label for="receipt_header_text">نص أعلى الفاتورة (الهيدر)</label>
-                          <textarea class="form-control" id="receipt_header_text" name="receipt_header_text" rows="2" placeholder="مثال: أهلاً بكم في شركتنا"><?= htmlspecialchars((string)($rowstg['receipt_header_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                          <small class="form-text text-muted">يظهر أسفل اللوجو مباشرةً قبل بيانات الفاتورة.</small>
-                        </div>
-                      </div>
-                      <div class="col-12">
-                        <div class="form-group">
-                          <label for="receipt_footer_text">نص أسفل الفاتورة (الفوتر)</label>
-                          <textarea class="form-control" id="receipt_footer_text" name="receipt_footer_text" rows="2" placeholder="❤ perfect place to grow"><?= htmlspecialchars((string)($rowstg['receipt_footer_text'] ?? '❤ perfect place to grow'), ENT_QUOTES, 'UTF-8') ?></textarea>
-                          <small class="form-text text-muted">يمكن كتابة سياسة الاسترجاع أو رسالة شكر للعميل.</small>
-                        </div>
-                      </div>
-                      <div class="col-12">
-                        <div class="form-group">
-                          <label for="receipt_notes_text">ملاحظات / شروط وأحكام</label>
-                          <textarea class="form-control" id="receipt_notes_text" name="receipt_notes_text" rows="3" placeholder="مثال: لا يُقبل الاسترجاع بعد 7 أيام من الشراء"><?= htmlspecialchars((string)($rowstg['receipt_notes_text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                          <small class="form-text text-muted">يظهر في نهاية الفاتورة تحت الفوتر بخط أصغر.</small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <?php include __DIR__ . '/includes/receipt_design_form.php'; ?>
               </div>
 
               <div class="tab-pane fade" id="tab-barcode" role="tabpanel" aria-labelledby="barcode-tab">

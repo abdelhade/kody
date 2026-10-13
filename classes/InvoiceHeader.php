@@ -20,6 +20,24 @@ class InvoiceHeader extends InvoiceElementBase
     }
 
     /**
+     * هل تم تفعيل خيار البيع والشراء لجميع الحسابات (عملاء وموردين)؟
+     */
+    private function isAllowAllAccounts()
+    {
+        global $rowstg;
+        if (isset($rowstg['allow_all_accounts'])) {
+            return !empty($rowstg['allow_all_accounts']);
+        }
+        if ($this->conn) {
+            $res = $this->conn->query("SELECT allow_all_accounts FROM settings WHERE 1 LIMIT 1");
+            if ($res && ($row = $res->fetch_assoc())) {
+                return !empty($row['allow_all_accounts']);
+            }
+        }
+        return false;
+    }
+
+    /**
      * تحميل خيارات القوائم المنسدلة
      */
     private function loadSelectOptions()
@@ -28,11 +46,17 @@ class InvoiceHeader extends InvoiceElementBase
 
         try {
             // تحميل العملاء/الموردين
-            $accountCode = $this->getAccountCode();
-            if ($accountCode) {
-                $query = "SELECT * FROM acc_head WHERE code LIKE ? AND is_basic = 0 AND isdeleted = 0 ORDER BY id";
-                $result = $this->executeSecureQuery($query, [$accountCode . '%'], 's');
+            if ($this->isAllowAllAccounts()) {
+                $query = "SELECT * FROM acc_head WHERE (code LIKE '122%' OR code LIKE '211%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname ASC";
+                $result = $this->executeSecureQuery($query);
                 $this->accounts = $result->fetch_all(MYSQLI_ASSOC);
+            } else {
+                $accountCode = $this->getAccountCode();
+                if ($accountCode) {
+                    $query = "SELECT * FROM acc_head WHERE code LIKE ? AND is_basic = 0 AND isdeleted = 0 ORDER BY id";
+                    $result = $this->executeSecureQuery($query, [$accountCode . '%'], 's');
+                    $this->accounts = $result->fetch_all(MYSQLI_ASSOC);
+                }
             }
 
             // تحميل المخازن
@@ -68,10 +92,20 @@ class InvoiceHeader extends InvoiceElementBase
             <div class="col-lg-2">
                 <div class="tool">
                     <label for="">
-                        <?php echo $clientLabel; ?>
-                        <button type="button" class="btn bg-lime-200 btn-sm"
-                            data-toggle="modal"
-                            data-target="<?php echo ($this->getClientType() === 'supplier') ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
+                        <?php if ($this->isAllowAllAccounts()): ?>
+                            العميل / المورد
+                            <button type="button" class="btn bg-lime-200 btn-sm ml-1"
+                                data-toggle="modal"
+                                data-target="#addClientInlineModal" title="إضافة عميل جديد">+ عميل</button>
+                            <button type="button" class="btn bg-lime-200 btn-sm"
+                                data-toggle="modal"
+                                data-target="#addSupplierInlineModal" title="إضافة مورد جديد">+ مورد</button>
+                        <?php else: ?>
+                            <?php echo $clientLabel; ?>
+                            <button type="button" class="btn bg-lime-200 btn-sm"
+                                data-toggle="modal"
+                                data-target="<?php echo ($this->getClientType() === 'supplier') ? '#addSupplierInlineModal' : '#addClientInlineModal'; ?>">+</button>
+                        <?php endif; ?>
                     </label>
                     <div class="tooltext">إضافة جديد</div>
                     <small id="partyBalance" class="font-weight-bold" style="white-space:nowrap; direction:rtl;"
@@ -304,7 +338,8 @@ class InvoiceHeader extends InvoiceElementBase
                 if (!$pb.length || partyBalanceBefore === null) return;
                 const net  = parseFloat($('#headnet').val()) || 0;
                 const paid = parseFloat($('#paid').val()) || 0;
-                const after = partyBalanceBefore + (net - paid) * (parseInt($pb.data('effect'), 10) || 0);
+                const effect = parseInt($pb.data('effect'), 10);
+                const after = partyBalanceBefore + (net - paid) * (isNaN(effect) ? 1 : effect);
                 $pb.text('قبل:' + fmtBal(partyBalanceBefore) + ' بعد:' + fmtBal(after));
             };
 
@@ -313,17 +348,26 @@ class InvoiceHeader extends InvoiceElementBase
                 partyBalanceBefore = null;
                 $pb.text('');
                 if (!accId) return;
+
+                let sign = parseInt($pb.data('sign'), 10) || 1;
+                const $opt = $('#mySelectEmp').find('option:selected');
+                if ($opt.length && $opt.attr('data-is-supplier') !== undefined) {
+                    sign = ($opt.attr('data-is-supplier') === '1') ? -1 : 1;
+                }
+
                 const reqId = ++partyBalanceReq;
                 $.getJSON('ajax/account_balance.php', { id: accId, exclude_op: $pb.data('exclude-op') || 0 })
                     .done(function(res) {
                         if (reqId !== partyBalanceReq || !res || !res.success) return;
-                        partyBalanceBefore = res.balance * (parseInt($pb.data('sign'), 10) || 1);
+                        partyBalanceBefore = res.balance * sign;
                         window.updatePartyBalance();
                     });
             }
 
             $('#mySelectEmp').on('change', loadPartyBalance);
-            $(document).on('input change', '#paid, #headnet', function() { setTimeout(window.updatePartyBalance, 0); });
+            $(document).on('keyup input change', '#paid, #headnet, #headdisc, #headdisc_pct, #headplus, .itmqty, .itmprice, .itmdisc, .itmdisc_pct', function() {
+                setTimeout(window.updatePartyBalance, 0);
+            });
             loadPartyBalance();
 
             saveAccountInline(null, 'saveSupplierInlineBtn', 'addSupplierInlineMsg', '#addSupplierInlineModal');
@@ -415,18 +459,54 @@ class InvoiceHeader extends InvoiceElementBase
      */
     private function renderAccountOptions()
     {
+        $customers = [];
+        $suppliers = [];
         foreach ($this->accounts as $account) {
-            $selected = '';
-            if ($this->isEditMode && $this->data && $this->getPartyAccountId() == $account['id']) {
-                $selected = 'selected';
+            if (strpos((string)$account['code'], '211') === 0) {
+                $suppliers[] = $account;
+            } else {
+                $customers[] = $account;
             }
-            $priceAttr = '';
-            if ($this->getClientType() !== 'supplier') {
-                $clientPrice = max(1, (int) ($account['price_list'] ?? 1));
-                $priceAttr = " data-price-list=\"{$clientPrice}\"";
-            }
-            echo "<option value='{$account['id']}' {$selected}{$priceAttr}>{$this->sanitizeInput($account['aname'])}</option>";
         }
+
+        if (!empty($customers) && !empty($suppliers)) {
+            $isSupplierType = ($this->getClientType() === 'supplier');
+            $firstGroup  = $isSupplierType ? ['label' => 'الموردين', 'items' => $suppliers] : ['label' => 'العملاء', 'items' => $customers];
+            $secondGroup = $isSupplierType ? ['label' => 'العملاء', 'items' => $customers] : ['label' => 'الموردين', 'items' => $suppliers];
+
+            echo '<optgroup label="' . $firstGroup['label'] . '">';
+            foreach ($firstGroup['items'] as $acc) {
+                $this->renderSingleAccountOption($acc);
+            }
+            echo '</optgroup>';
+
+            echo '<optgroup label="' . $secondGroup['label'] . '">';
+            foreach ($secondGroup['items'] as $acc) {
+                $this->renderSingleAccountOption($acc);
+            }
+            echo '</optgroup>';
+        } else {
+            foreach ($this->accounts as $account) {
+                $this->renderSingleAccountOption($account);
+            }
+        }
+    }
+
+    private function renderSingleAccountOption($account)
+    {
+        $selected = '';
+        if ($this->isEditMode && $this->data && $this->getPartyAccountId() == $account['id']) {
+            $selected = 'selected';
+        }
+        $isSup = (strpos((string)$account['code'], '211') === 0);
+        $priceAttr = '';
+        if (!$isSup) {
+            $clientPrice = max(1, (int) ($account['price_list'] ?? 1));
+            $priceAttr = " data-price-list=\"{$clientPrice}\"";
+        }
+        $supAttr = ' data-is-supplier="' . ($isSup ? '1' : '0') . '"';
+        $aname = $this->sanitizeInput($account['aname']);
+        echo "<option value='{$account['id']}' {$selected}{$priceAttr}{$supAttr}>{$aname}</option>";
     }
 
     /**

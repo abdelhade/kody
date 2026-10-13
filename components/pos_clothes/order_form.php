@@ -102,7 +102,8 @@ if (!empty($rowstg['def_pos_store'])) {
                     </div>
                     <select name="acc2_id" id="clientSelect" class="form-select form-select-sm select2-client" required style="font-size: 0.75rem; padding: 0.25rem 0.4rem;">
                         <?php
-                        $resclient = $conn->query("SELECT id, aname, phone, price_list FROM `acc_head` WHERE code LIKE '122%' AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                        $acc_filter = !empty($rowstg['allow_all_accounts']) ? "(code LIKE '122%' OR code LIKE '211%')" : "code LIKE '122%'";
+                        $resclient = $conn->query("SELECT id, code, aname, phone, price_list FROM `acc_head` WHERE $acc_filter AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
                         $first_client = true;
                         while ($rowclient = $resclient->fetch_assoc()) { 
                             $selected = '';
@@ -112,8 +113,9 @@ if (!empty($rowstg['def_pos_store'])) {
                                 $selected = "selected";
                             }
                             $first_client = false;
+                            $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                             $phone = htmlspecialchars($rowclient['phone'] ?? '');
-                            $displayName = htmlspecialchars($rowclient['aname']);
+                            $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
                         ?>
                         <option <?= $selected ?> value="<?= $rowclient['id'] ?>" data-phone="<?= $phone ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?><?= $phone ? ' - ' . $phone : '' ?></option>
                         <?php } ?>

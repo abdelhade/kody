@@ -113,9 +113,13 @@
 
             <select name="acc2_id" class="" id="">
                 <?php
-                $resclient = $conn->query("SELECT * FROM `acc_head` WHERE code like '122%'  AND is_basic = 0 AND isdeleted = 0;");
-                while ($rowclient = $resclient->fetch_assoc()) { ?>
-                <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo "selected";} ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $rowclient['aname'] ?></option>
+                $acc_filter = !empty($rowstg['allow_all_accounts']) ? "(code LIKE '122%' OR code LIKE '211%')" : "code LIKE '122%'";
+                $resclient = $conn->query("SELECT * FROM `acc_head` WHERE $acc_filter AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
+                while ($rowclient = $resclient->fetch_assoc()) { 
+                    $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
+                    $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
+                ?>
+                <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo "selected";} ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?></option>
                 <?php } ?>
             </select>
 

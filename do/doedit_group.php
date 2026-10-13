@@ -42,5 +42,6 @@ if (!$stmt->execute()) {
 }
 $stmt->close();
 
-header('location:../mygroups.php');
+header('Location: ../mygroups.php?msg=updated');
+exit;
 exit;
