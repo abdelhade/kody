@@ -3,7 +3,6 @@ include('includes/header.php');
 include('includes/navbar.php');
 include('includes/sidebar.php');
 require_once('includes/payroll_calcs_helper.php');
-ensure_payroll_calcs_schema($conn);
 ?>
 
 <?php
@@ -157,6 +156,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                     <th class="no-print">تأمين (−)</th>
                     <th class="no-print">ضريبة (−)</th>
                     <th class="no-print">خصم (−)</th>
+                    <th class="no-print">سلف قصيرة (−)</th>
                     <th>الراتب الصافي</th>
                     <th class="no-print">الانتاجية</th>
                     <th class="no-print"><?= $lang_publicoperations ?></th>
@@ -188,12 +188,13 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                 $sumInsurance = 0;
                 $sumTax = 0;
                 $sumDeduction = 0;
+                $sumAdvance = 0;
                 $sumNet = 0;
                 $sumProd = 0;
                 if ($resdoc && $resdoc->num_rows === 0) {
                 ?>
                   <tr>
-                    <td colspan="19" class="text-center text-muted py-4">لا توجد نتائج مطابقة للفلتر</td>
+                    <td colspan="20" class="text-center text-muted py-4">لا توجد نتائج مطابقة للفلتر</td>
                   </tr>
                 <?php
                 }
@@ -206,22 +207,23 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                     $enddate = $rowdoc['todate'];
                     $rowsh = $conn->query("SELECT SUM(curhours - defhours) AS diffrence FROM attlog WHERE employee = '$empid' AND curhours > defhours AND day >= '$startdate' AND day <= '$enddate'")->fetch_assoc();
                     $rowsh1 = $conn->query("SELECT SUM(curhours) - SUM(defhours) AS diffrence FROM attlog WHERE employee = '$empid' AND day >= '$startdate' AND day <= '$enddate' AND statue != 0")->fetch_assoc();
-                    $empname = $conn->real_escape_string($rowemp['name']);
-                    $rowprod = $conn->query("SELECT SUM(value) AS prod_val FROM productions WHERE emp_name = '$empname' AND date >= '$startdate' AND date <= '$enddate'")->fetch_assoc();
+                    $rowprod = $conn->query("SELECT SUM(value) AS prod_val FROM productions WHERE emp_id = $empid AND isdeleted = 0 AND date >= '$startdate' AND date <= '$enddate'")->fetch_assoc();
                     $entitle = round((float)$rowdoc['entitle'], 2);
                     $bonus = round((float)($rowdoc['bonus'] ?? 0), 2);
                     $insurance = round((float)($rowdoc['insurance'] ?? 0), 2);
                     $tax = round((float)($rowdoc['tax'] ?? 0), 2);
                     $deduction = round((float)($rowdoc['deduction'] ?? 0), 2);
+                    $advance = round((float)($rowdoc['advance'] ?? 0), 2);
                     $netPay = isset($rowdoc['net_pay']) && (float)$rowdoc['net_pay'] != 0
                         ? round((float)$rowdoc['net_pay'], 2)
-                        : round($entitle + $bonus - $insurance - $tax - $deduction, 2);
+                        : payroll_net_pay($entitle, $rowdoc);
                     $prodVal = (float)($rowprod['prod_val'] ?? 0);
                     $sumEntitle += $entitle;
                     $sumBonus += $bonus;
                     $sumInsurance += $insurance;
                     $sumTax += $tax;
                     $sumDeduction += $deduction;
+                    $sumAdvance += $advance;
                     $sumNet += $netPay;
                     $sumProd += $prodVal;
                 ?>
@@ -246,6 +248,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                     <td class="text-danger no-print"><?= $insurance > 0 ? '−' : '' ?><?= number_format($insurance, 2) ?></td>
                     <td class="text-danger no-print"><?= $tax > 0 ? '−' : '' ?><?= number_format($tax, 2) ?></td>
                     <td class="text-danger font-weight-bold no-print"><?= $deduction > 0 ? '−' : '' ?><?= number_format($deduction, 2) ?></td>
+                    <td class="text-danger no-print"><?= $advance > 0 ? '−' : '' ?><?= number_format($advance, 2) ?></td>
                     <td class="bg-green-100 font-weight-bold"><?= number_format($netPay, 2) ?></td>
                     <td class="bg-sky-100 no-print"><?= number_format($prodVal, 2) ?></td>
                     <td class="no-print">
@@ -266,6 +269,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                     <th><?= number_format($sumInsurance, 2) ?></th>
                     <th><?= number_format($sumTax, 2) ?></th>
                     <th><?= number_format($sumDeduction, 2) ?></th>
+                    <th><?= number_format($sumAdvance, 2) ?></th>
                     <th><?= number_format($sumNet, 2) ?></th>
                     <th><?= number_format($sumProd, 2) ?></th>
                     <th class="no-print"></th>
@@ -285,6 +289,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
               <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي التأمينات (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumInsurance, 2) ?></td></tr>
               <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الضرائب (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumTax, 2) ?></td></tr>
               <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الخصومات (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumDeduction, 2) ?></td></tr>
+              <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي السلف القصيرة (−)</th><td class="text-danger font-weight-bold"><?= number_format($sumAdvance, 2) ?></td></tr>
               <tr><th style="background: #e9ecef !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;">إجمالي الانتاجية</th><td class="font-weight-bold"><?= number_format($sumProd, 2) ?></td></tr>
               <tr><th style="background: #ddd !important; font-size: 12pt; -webkit-print-color-adjust: exact; print-color-adjust: exact;">صافي الرواتب المستحقة</th><td style="background: #ddd !important; font-size: 12pt; font-weight:bold; -webkit-print-color-adjust: exact; print-color-adjust: exact;"><?= number_format($sumNet, 2) ?></td></tr>
             </table>

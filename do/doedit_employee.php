@@ -1,5 +1,6 @@
 <?php
 include('../includes/connect.php');
+require_once('../includes/EntitlesSeeder.php');
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
@@ -12,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 	if (!isset($calc_type) || !in_array($calc_type, ['monthly', 'daily'], true)) {
 		$calc_type = 'monthly';
 	}
+	$ent_tybe = EntitlesSeeder::normalize((int) ($_POST['ent_tybe'] ?? EntitlesSeeder::HOURS_ONLY));
 
 	$salary = (isset($_POST['salary']) && $_POST['salary'] !== '' && is_numeric($_POST['salary'])) ? floatval($_POST['salary']) : 0.00;
 	$active = isset($_POST['active']) ? 1 : 0;

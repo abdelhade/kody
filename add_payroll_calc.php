@@ -3,7 +3,6 @@ include('includes/header.php');
 include('includes/navbar.php');
 include('includes/sidebar.php');
 require_once('includes/payroll_calcs_helper.php');
-ensure_payroll_calcs_schema($conn);
 
 $copyRows = [];
 $copyDate = date('Y-m-d');
@@ -124,7 +123,7 @@ function render_line_row($idx, $cr, $employees) {
                             <div class="form-group col-md-3 mb-md-0">
                                 <label class="small font-weight-bold mb-1">نوع الاحتساب</label>
                                 <select name="calc_tybe" class="form-control form-control-sm" required>
-                                    <?php for ($t = 1; $t <= 4; $t++) { ?>
+                                    <?php foreach (array_keys(payroll_calc_types()) as $t) { ?>
                                     <option value="<?= $t ?>" <?= ($opTybe === $t) ? 'selected' : '' ?>>
                                         <?= payroll_calc_type_label($t, true) ?>
                                     </option>

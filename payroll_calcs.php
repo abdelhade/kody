@@ -3,13 +3,13 @@ include('includes/header.php');
 include('includes/navbar.php');
 include('includes/sidebar.php');
 require_once('includes/payroll_calcs_helper.php');
-ensure_payroll_calcs_schema($conn);
 
 $typeMeta = [
-    1 => ['icon' => 'fa-gift', 'color' => 'success', 'sign' => '+'],
-    2 => ['icon' => 'fa-shield-alt', 'color' => 'info', 'sign' => '−'],
-    3 => ['icon' => 'fa-file-invoice-dollar', 'color' => 'warning', 'sign' => '−'],
-    4 => ['icon' => 'fa-minus-circle', 'color' => 'danger', 'sign' => '−'],
+    PAYROLL_CALC_BONUS => ['icon' => 'fa-gift', 'color' => 'success', 'sign' => '+'],
+    PAYROLL_CALC_INSURANCE => ['icon' => 'fa-shield-alt', 'color' => 'info', 'sign' => '−'],
+    PAYROLL_CALC_TAX => ['icon' => 'fa-file-invoice-dollar', 'color' => 'warning', 'sign' => '−'],
+    PAYROLL_CALC_DEDUCTION => ['icon' => 'fa-minus-circle', 'color' => 'danger', 'sign' => '−'],
+    PAYROLL_CALC_ADVANCE => ['icon' => 'fa-hand-holding-usd', 'color' => 'secondary', 'sign' => '−'],
 ];
 
 $grouped = [];
@@ -29,7 +29,7 @@ while ($result && ($row = $result->fetch_assoc())) {
 
 $totalOps = count($grouped);
 $totalLines = 0;
-$typeCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
+$typeCounts = array_fill_keys(array_keys(payroll_calc_types()), 0);
 foreach ($grouped as $lines) {
     $totalLines += count($lines);
     $t = (int) ($lines[0]['calc_tybe'] ?? 1);
@@ -116,7 +116,7 @@ foreach ($grouped as $lines) {
                         <div class="icon"><i class="fas fa-list-ul"></i></div>
                     </div>
                 </div>
-                <?php foreach ([1, 4] as $t) {
+                <?php foreach ([PAYROLL_CALC_BONUS, PAYROLL_CALC_ADVANCE] as $t) {
                     $m = $typeMeta[$t];
                 ?>
                 <div class="col-6 col-lg-3 mb-2">
@@ -136,7 +136,7 @@ foreach ($grouped as $lines) {
                 <div class="card-body empty-state">
                     <i class="fas fa-inbox d-block"></i>
                     <h5 class="text-secondary">لا توجد عمليات احتساب بعد</h5>
-                    <p class="mb-3">أضف عملية جديدة ببنود المكافأة والتأمين والضريبة والخصم</p>
+                    <p class="mb-3">أضف عملية جديدة ببنود المكافأة والتأمين والضريبة والخصم والسلف القصيرة</p>
                     <a href="add_payroll_calc.php" class="btn btn-primary">
                         <i class="fas fa-plus ml-1"></i> إضافة عملية
                     </a>

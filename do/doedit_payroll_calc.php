@@ -1,7 +1,6 @@
 <?php
 include('../includes/connect.php');
 require_once('../includes/payroll_calcs_helper.php');
-ensure_payroll_calcs_schema($conn);
 
 $id = (int) ($_GET['edit'] ?? 0);
 $snd_id = (int) ($_POST['snd_id'] ?? $id);
@@ -9,10 +8,7 @@ $date = $_POST['date'] ?? date('Y-m-d');
 $info = $conn->real_escape_string($_POST['info'] ?? '');
 $user = $conn->real_escape_string($_SESSION['login'] ?? '');
 
-$tybe = (int) ($_POST['calc_tybe'] ?? 1);
-if ($tybe < 1 || $tybe > 4) {
-    $tybe = 1;
-}
+$tybe = payroll_calc_normalize_type((int) ($_POST['calc_tybe'] ?? PAYROLL_CALC_BONUS));
 
 $emp_ids = $_POST['emp_id'] ?? [];
 $amounts = $_POST['amount'] ?? [];

@@ -3,8 +3,6 @@
 <?php include('includes/sidebar.php') ?>
 <?php include('includes/connect.php');
 require_once('includes/shift_attendance.php');
-ensure_shift_single_fp_schema($conn);
-ensure_shift_grace_rules_schema($conn);
 
 $id = $_GET['id'];
 $sqlshift = "SELECT * FROM shifts WHERE id = '$id'";
@@ -178,6 +176,35 @@ hr {
                                 <div class="form-group">
                                     <label><?= $lang_addsh_endout ?></label>
                                     <input value="<?= $rowshift['outend'] ?>" name="outend" type="time" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-3 mb-3" style="background: #f5f7ff; border: 1px solid #c7d2fe;">
+                            <div class="custom-control custom-switch mb-2">
+                                <input name="is_flexible" class="custom-control-input" type="checkbox" id="is_flexible" value="1" <?= !empty($rowshift['is_flexible']) ? 'checked' : '' ?>>
+                                <label class="custom-control-label font-weight-bold" for="is_flexible">وردية بساعات مرنة (بدون مواعيد دخول وخروج)</label>
+                            </div>
+                            <p class="text-muted small mb-2">البصمات بتتقسم أزواج دخول/خروج وتتجمع مددها، ومواعيد الوردية ونطاقات البصمة وفترات السماح مش بتتطبق.</p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group mb-md-0">
+                                        <label>الساعات المطلوبة يوميًا</label>
+                                        <input name="required_hours" type="number" step="0.25" min="0" class="form-control" value="<?= htmlspecialchars((string) ($rowshift['required_hours'] ?? '8')) ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-md-0">
+                                        <label>بداية يوم العمل</label>
+                                        <input name="day_cutoff" type="time" class="form-control" value="<?= htmlspecialchars(substr((string) ($rowshift['day_cutoff'] ?? '06:00:00'), 0, 5)) ?>">
+                                        <small class="text-muted">البصمة قبلها تتبع اليوم السابق</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-0">
+                                        <label>تجاهل البصمة المكررة خلال (دقيقة)</label>
+                                        <input name="dup_fp_minutes" type="number" min="0" class="form-control" value="<?= (int) ($rowshift['dup_fp_minutes'] ?? 2) ?>">
+                                    </div>
                                 </div>
                             </div>
                         </div>

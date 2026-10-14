@@ -3,38 +3,6 @@
  * قواعد الوردية: البصمة الواحدة، وفترات السماح (1 و 2) وإجراءات الخصم (وقت عادي / نصف يوم / يوم).
  */
 
-function ensure_shift_single_fp_schema(mysqli $conn): void
-{
-    static $done = false;
-    if ($done) {
-        return;
-    }
-    $done = true;
-    // الاعتماد الأساسي على MigrationRunner (011_add_single_fp_rule_to_shifts.sql).
-    $check = @$conn->query("SHOW COLUMNS FROM shifts LIKE 'single_fp_rule'");
-    if ($check && $check->num_rows === 0) {
-        @$conn->query("ALTER TABLE shifts ADD COLUMN single_fp_rule VARCHAR(20) NOT NULL DEFAULT 'half' AFTER workingdays");
-    }
-}
-
-function ensure_shift_grace_rules_schema(mysqli $conn): void
-{
-    static $done = false;
-    if ($done) {
-        return;
-    }
-    $done = true;
-    // الاعتماد الأساسي على MigrationRunner (022_add_shift_grace_rules.sql).
-    $check = @$conn->query("SHOW COLUMNS FROM shifts LIKE 'grace1_action'");
-    if ($check && $check->num_rows === 0) {
-        @$conn->query("ALTER TABLE shifts 
-            ADD COLUMN grace1_action VARCHAR(20) NOT NULL DEFAULT 'actual' AFTER earlylimit,
-            ADD COLUMN latelimit_2 INT DEFAULT 0 AFTER grace1_action,
-            ADD COLUMN earlylimit_2 INT DEFAULT 0 AFTER latelimit_2,
-            ADD COLUMN grace2_action VARCHAR(20) NOT NULL DEFAULT 'half' AFTER earlylimit_2");
-    }
-}
-
 function shift_single_fp_rule_label(string $rule): string
 {
     switch ($rule) {
@@ -58,6 +26,23 @@ function normalize_single_fp_rule(?string $rule): string
         return 'none';
     }
     return 'half';
+}
+
+/**
+ * @return array{is_flexible:int, required_hours:float, day_cutoff:string, dup_fp_minutes:int}
+ */
+function shift_flexible_input(array $post): array
+{
+    $cutoff = (string) ($post['day_cutoff'] ?? '');
+    if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $cutoff)) {
+        $cutoff = '06:00';
+    }
+    return [
+        'is_flexible' => !empty($post['is_flexible']) ? 1 : 0,
+        'required_hours' => max(0.0, round((float) ($post['required_hours'] ?? 8), 2)),
+        'day_cutoff' => strlen($cutoff) === 5 ? $cutoff . ':00' : $cutoff,
+        'dup_fp_minutes' => max(0, (int) ($post['dup_fp_minutes'] ?? 2)),
+    ];
 }
 
 function normalize_grace_action(?string $action, string $default = 'actual'): string
@@ -145,6 +130,53 @@ function resolve_single_fp_attendance(
         return ['statue' => 2, 'curhours' => round($defHours, 2)];
     }
     return ['statue' => 2, 'curhours' => round($defHours / 2, 2)];
+}
+
+/**
+ * يوم عمل في وردية مرنة.
+ * البصمات اللي بين بعض أقل من $dupMinutes بتتعد بصمة واحدة، والباقي أزواج دخول/خروج وتتجمع مددها.
+ * بصمة واحدة بس → قاعدة البصمة الواحدة. عدد فردي أكبر من 1 → آخر بصمة بدون زوج بتتجاهل.
+ *
+ * @param list<int> $timestamps بصمات يوم العمل مرتبة تصاعديًا
+ * @return array{statue: int, curhours: float, first: ?int, last: ?int}
+ */
+function resolve_flexible_attendance(
+    array $timestamps,
+    float $requiredHours,
+    int $dupMinutes,
+    string $singleFpRule,
+    int $baseStatue
+): array {
+    $punches = [];
+    foreach ($timestamps as $ts) {
+        if (!empty($punches) && ($ts - end($punches)) < max(0, $dupMinutes) * 60) {
+            continue;
+        }
+        $punches[] = $ts;
+    }
+
+    $count = count($punches);
+    if ($count === 0) {
+        return ['statue' => $baseStatue, 'curhours' => 0.0, 'first' => null, 'last' => null];
+    }
+    if ($count === 1) {
+        $single = resolve_single_fp_attendance(true, false, $requiredHours, $singleFpRule, $baseStatue);
+        return $single + ['first' => $punches[0], 'last' => null];
+    }
+
+    $seconds = 0;
+    for ($i = 0; $i + 1 < $count; $i += 2) {
+        $seconds += $punches[$i + 1] - $punches[$i];
+    }
+    $hours = round($seconds / 3600, 2);
+    $lastPaired = $punches[$count - ($count % 2) - 1];
+
+    return [
+        'statue' => $hours > 0 ? 2 : $baseStatue,
+        'curhours' => $hours,
+        'first' => $punches[0],
+        'last' => $lastPaired,
+    ];
 }
 
 /**

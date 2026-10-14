@@ -5,8 +5,6 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $id = (int)($_GET['id'] ?? 0);
     include('../includes/connect.php');
     require_once('../includes/shift_attendance.php');
-    ensure_shift_single_fp_schema($conn);
-    ensure_shift_grace_rules_schema($conn);
 
     $name = mysqli_real_escape_string($conn, $_POST['name'] ?? '');
     $shiftstart = $_POST['shiftstart'] ?? '';
@@ -50,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
     $ignore_early_in = isset($_POST['ignore_early_in']) ? 1 : 0;
     $ignore_late_out = isset($_POST['ignore_late_out']) ? 1 : 0;
+    $flex = shift_flexible_input($_POST);
 
     $sqlshft = "UPDATE shifts SET 
         name = '$name',
@@ -69,7 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
         hours = '$hours',
         single_fp_rule = '$single_fp_rule',
         ignore_early_in = '$ignore_early_in',
-        ignore_late_out = '$ignore_late_out'
+        ignore_late_out = '$ignore_late_out',
+        is_flexible = {$flex['is_flexible']},
+        required_hours = {$flex['required_hours']},
+        day_cutoff = '{$flex['day_cutoff']}',
+        dup_fp_minutes = {$flex['dup_fp_minutes']}
         WHERE id = '$id'";
 
     $conn->query($sqlshft);

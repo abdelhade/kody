@@ -110,12 +110,15 @@
                     <tr >
                         <td CLASS="mslsl"><?= $x ?></td>
                         <td>
-                            <select autofocus name="emp_name[]" id="" class="form-hors">
+                            <select autofocus name="emp_id[]" id="" class="form-hors">
                                 <?php
                                 $resemp = $conn->query("SELECT * FROM `employees` where isdeleted = 0 order by name");
                                 while($rowemp = $resemp->fetch_assoc()){
+                                    $isSel = !empty($rowpro['emp_id'])
+                                        ? (int) $rowpro['emp_id'] === (int) $rowemp['id']
+                                        : $rowemp['name'] == $rowpro['emp_name'];
                                 ?>
-                            <option <?php echo $rowemp['name'] == $rowpro['emp_name'] ? ' selected ' : '' ?> value="<?= $rowemp['name']?>"><?= $rowemp['name']?></option>
+                            <option <?php echo $isSel ? ' selected ' : '' ?> value="<?= (int) $rowemp['id'] ?>"><?= $rowemp['name']?></option>
                             <?php }?>
                             </select>
                         </td>

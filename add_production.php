@@ -77,13 +77,15 @@ if (empty($copyRows)) {
                     <tr>
                         <td CLASS="mslsl"><?= $idx + 1 ?></td>
                         <td>
-                            <select autofocus name="emp_name[]" class="form-hors">
+                            <select autofocus name="emp_id[]" class="form-hors">
                                 <?php
                                 $resemp = $conn->query("SELECT * FROM `employees` where isdeleted = 0 order by name");
                                 while ($rowemp = $resemp->fetch_assoc()) {
-                                    $sel = (($cr['emp_name'] ?? '') === $rowemp['name']) ? 'selected' : '';
+                                    $sel = !empty($cr['emp_id'])
+                                        ? ((int) $cr['emp_id'] === (int) $rowemp['id'] ? 'selected' : '')
+                                        : ((($cr['emp_name'] ?? '') === $rowemp['name']) ? 'selected' : '');
                                 ?>
-                            <option value="<?= $rowemp['name'] ?>" <?= $sel ?>><?= $rowemp['name'] ?></option>
+                            <option value="<?= (int) $rowemp['id'] ?>" <?= $sel ?>><?= $rowemp['name'] ?></option>
                             <?php } ?>
                             </select>
                         </td>

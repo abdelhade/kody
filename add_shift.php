@@ -149,6 +149,37 @@
               <?= $lang_Attendance_rules ?>
             </p>
 
+            <div class="card card-outline card-primary shadow-sm mb-2">
+              <div class="card-header py-2">
+                <h3 class="card-title mb-0">
+                  <i class="fas fa-random mr-1"></i>
+                  ساعات مرنة
+                </h3>
+              </div>
+              <div class="card-body py-3">
+                <div class="custom-control custom-switch mb-2">
+                  <input name="is_flexible" class="custom-control-input" type="checkbox" id="is_flexible" value="1">
+                  <label class="custom-control-label" for="is_flexible">وردية بساعات مرنة (بدون مواعيد دخول وخروج)</label>
+                </div>
+                <p class="section-hint mb-2">البصمات بتتقسم أزواج دخول/خروج وتتجمع مددها، ومواعيد الوردية ونطاقات البصمة وفترات السماح مش بتتطبق.</p>
+                <div class="row">
+                  <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                    <label>الساعات المطلوبة يوميًا</label>
+                    <input name="required_hours" type="number" step="0.25" min="0" class="form-control form-control-sm" value="8">
+                  </div>
+                  <div class="col-12 col-md-4 form-group mb-2 mb-md-0">
+                    <label>بداية يوم العمل</label>
+                    <input name="day_cutoff" type="time" class="form-control form-control-sm" value="06:00">
+                    <small class="text-muted">البصمة قبلها تتبع اليوم السابق</small>
+                  </div>
+                  <div class="col-12 col-md-4 form-group mb-0">
+                    <label>تجاهل البصمة المكررة خلال (دقيقة)</label>
+                    <input name="dup_fp_minutes" type="number" min="0" class="form-control form-control-sm" value="2">
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="card card-outline card-success shadow-sm mb-2">
               <div class="card-header py-2">
                 <h3 class="card-title mb-0">

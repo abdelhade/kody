@@ -109,6 +109,7 @@ class MigrationRunner
         $this->ensureTracker();
         $pending = $this->pending();
         if (empty($pending)) {
+            $this->runSeeders();
             return [
                 'success' => true,
                 'message' => 'قاعدة البيانات محدّثة — لا توجد migrations ناقصة',
@@ -129,6 +130,9 @@ class MigrationRunner
         }
 
         $okCount = count(array_filter($results, fn($r) => $r['ok']));
+        if ($failed === 0) {
+            $this->runSeeders();
+        }
         if ($failed > 0) {
             return [
                 'success' => false,
@@ -142,6 +146,15 @@ class MigrationRunner
             'message' => "تم تطبيق {$okCount} تحديث بنجاح",
             'results' => $results,
         ];
+    }
+
+    /**
+     * البيانات الأساسية اللي ليها مصدر في الكود (آمنة للتكرار).
+     */
+    public function runSeeders(): void
+    {
+        require_once __DIR__ . DIRECTORY_SEPARATOR . 'EntitlesSeeder.php';
+        EntitlesSeeder::seed($this->conn);
     }
 
     /**

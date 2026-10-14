@@ -309,22 +309,8 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                                     <label>نوع الاستحقاق</label>
                                     <select name="ent_tybe" class="custom-select">
                                         <?php
-                                        $entitlesList = [];
-                                        $resentitle = $conn->query('SELECT * FROM entitles ORDER BY id');
-                                        if ($resentitle && $resentitle->num_rows > 0) {
-                                            while ($rowentitle = $resentitle->fetch_assoc()) {
-                                                $entitlesList[] = $rowentitle;
-                                            }
-                                        } else {
-                                            $entitlesList = [
-                                                ['id' => 1, 'tybe' => 'بالساعات فقط', 'info' => 'احتساب الراتب بناءً على الساعات الفعلية فقط'],
-                                                ['id' => 2, 'tybe' => 'ساعات عمل وإضافي يومي', 'info' => 'احتساب ساعات العمل بالإضافة إلى الإضافي اليومي'],
-                                                ['id' => 3, 'tybe' => 'ساعات عمل وإضافي خلال الفترة', 'info' => 'احتساب ساعات العمل بالإضافة إلى الإضافي التراكمي خلال الفترة'],
-                                                ['id' => 4, 'tybe' => 'بناءً على الحضور', 'info' => 'احتساب الراتب بناءً على عدد أيام الحضور'],
-                                                ['id' => 5, 'tybe' => 'بالإنتاجية', 'info' => 'احتساب الراتب بناءً على إجمالي الإنتاجية'],
-                                            ];
-                                        }
-                                        foreach ($entitlesList as $rowentitle):
+                                        require_once __DIR__ . '/../includes/EntitlesSeeder.php';
+                                        foreach (EntitlesSeeder::getList($conn) as $rowentitle):
                                         ?>
                                         <option value="<?= (int) $rowentitle['id'] ?>" <?= $sel('ent_tybe', $rowentitle['id']) ?>
                                                 title="<?= htmlspecialchars($rowentitle['info'] ?? '') ?>">

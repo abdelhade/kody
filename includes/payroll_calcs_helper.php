@@ -1,24 +1,43 @@
 <?php
 /**
- * Payroll adjustments: bonus, insurance, income tax, deduction.
+ * Payroll adjustments: bonus, insurance, income tax, deduction, short advance.
  * Applied during attendance processing by date range (like productions).
  */
 
-/** المكافأة تُضاف للراتب؛ التأمين والضريبة والخصم تُطرح منه */
+const PAYROLL_CALC_BONUS = 1;
+const PAYROLL_CALC_INSURANCE = 2;
+const PAYROLL_CALC_TAX = 3;
+const PAYROLL_CALC_DEDUCTION = 4;
+const PAYROLL_CALC_ADVANCE = 5;
+
+/**
+ * @return array<int, array{key:string, label:string}>
+ */
+function payroll_calc_types(): array
+{
+    return [
+        PAYROLL_CALC_BONUS => ['key' => 'bonus', 'label' => 'مكافأة'],
+        PAYROLL_CALC_INSURANCE => ['key' => 'insurance', 'label' => 'تأمين'],
+        PAYROLL_CALC_TAX => ['key' => 'tax', 'label' => 'ضريبة دخل'],
+        PAYROLL_CALC_DEDUCTION => ['key' => 'deduction', 'label' => 'خصم'],
+        PAYROLL_CALC_ADVANCE => ['key' => 'advance', 'label' => 'سلفة قصيرة'],
+    ];
+}
+
+function payroll_calc_normalize_type(int $tybe): int
+{
+    return isset(payroll_calc_types()[$tybe]) ? $tybe : PAYROLL_CALC_BONUS;
+}
+
+/** المكافأة تُضاف للراتب؛ التأمين والضريبة والخصم والسلفة تُطرح منه */
 function payroll_calc_is_addition(int $tybe): bool
 {
-    return $tybe === 1;
+    return $tybe === PAYROLL_CALC_BONUS;
 }
 
 function payroll_calc_type_label(int $tybe, bool $withSign = false): string
 {
-    $labels = [
-        1 => 'مكافأة',
-        2 => 'تأمين',
-        3 => 'ضريبة دخل',
-        4 => 'خصم',
-    ];
-    $label = $labels[$tybe] ?? '—';
+    $label = payroll_calc_types()[$tybe]['label'] ?? '—';
     if (!$withSign) {
         return $label;
     }
@@ -41,35 +60,39 @@ function payroll_calc_line_amount(array $row, float $baseEntitle): float
 }
 
 /**
+ * @return array{bonus: float, insurance: float, tax: float, deduction: float, advance: float}
+ */
+function payroll_empty_sums(): array
+{
+    $sums = [];
+    foreach (payroll_calc_types() as $t) {
+        $sums[$t['key']] = 0.0;
+    }
+    return $sums;
+}
+
+/**
  * Sum payroll_calcs for an employee in a date range, grouped by type.
  *
- * @return array{bonus: float, insurance: float, tax: float, deduction: float}
+ * @return array{bonus: float, insurance: float, tax: float, deduction: float, advance: float}
  */
-function payroll_sum_for_period(mysqli $conn, int $empId, string $empName, string $startDate, string $endDate, float $baseEntitle): array
+function payroll_sum_for_period(mysqli $conn, int $empId, string $startDate, string $endDate, float $baseEntitle): array
 {
-    $empNameEsc = $conn->real_escape_string($empName);
-    $sql = "SELECT calc_tybe, amount, percent FROM payroll_calcs
+    $types = payroll_calc_types();
+    $sums = payroll_empty_sums();
+    $start = $conn->real_escape_string($startDate);
+    $end = $conn->real_escape_string($endDate);
+    $res = $conn->query("SELECT calc_tybe, amount, percent FROM payroll_calcs
             WHERE isdeleted = 0
-              AND date >= '$startDate' AND date <= '$endDate'
-              AND (emp_id = $empId OR emp_name = '$empNameEsc')
-            ORDER BY date ASC, id ASC";
-    $res = $conn->query($sql);
-    $sums = ['bonus' => 0.0, 'insurance' => 0.0, 'tax' => 0.0, 'deduction' => 0.0];
-    if (!$res) {
-        return $sums;
-    }
-    while ($row = $res->fetch_assoc()) {
-        $val = payroll_calc_line_amount($row, $baseEntitle);
+              AND emp_id = $empId
+              AND date >= '$start' AND date <= '$end'
+            ORDER BY date ASC, id ASC");
+    while ($res && ($row = $res->fetch_assoc())) {
         $tybe = (int) $row['calc_tybe'];
-        if ($tybe === 1) {
-            $sums['bonus'] += $val;
-        } elseif ($tybe === 2) {
-            $sums['insurance'] += $val;
-        } elseif ($tybe === 3) {
-            $sums['tax'] += $val;
-        } elseif ($tybe === 4) {
-            $sums['deduction'] += $val;
+        if (!isset($types[$tybe])) {
+            continue;
         }
+        $sums[$types[$tybe]['key']] += payroll_calc_line_amount($row, $baseEntitle);
     }
     foreach ($sums as $k => $v) {
         $sums[$k] = round($v, 2);
@@ -78,56 +101,14 @@ function payroll_sum_for_period(mysqli $conn, int $empId, string $empName, strin
 }
 
 /**
- * الراتب الصافي = المستحق الأساسي + مكافأة − تأمين − ضريبة − خصم
+ * الراتب الصافي = المستحق الأساسي + مكافأة − تأمين − ضريبة − خصم − سلف قصيرة
  */
 function payroll_net_pay(float $entitle, array $sums): float
 {
-    $bonus = abs((float) ($sums['bonus'] ?? 0));
-    $insurance = abs((float) ($sums['insurance'] ?? 0));
-    $tax = abs((float) ($sums['tax'] ?? 0));
-    $deduction = abs((float) ($sums['deduction'] ?? 0));
-
-    return round($entitle + $bonus - $insurance - $tax - $deduction, 2);
-}
-
-function ensure_payroll_calcs_schema(mysqli $conn): void
-{
-    static $done = false;
-    if ($done) {
-        return;
+    $net = $entitle;
+    foreach (payroll_calc_types() as $tybe => $t) {
+        $val = abs((float) ($sums[$t['key']] ?? 0));
+        $net += payroll_calc_is_addition($tybe) ? $val : -$val;
     }
-    $done = true;
-
-    // الاعتماد الأساسي على MigrationRunner (010_add_payroll_calcs.sql).
-    // يبقى إنشاء/توسعة آمنة للتوافق مع قواعد قديمة.
-    @$conn->query("CREATE TABLE IF NOT EXISTS `payroll_calcs` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `snd_id` int(11) NOT NULL,
-      `calc_tybe` tinyint(4) NOT NULL DEFAULT 1,
-      `date` date NOT NULL,
-      `emp_id` int(11) DEFAULT NULL,
-      `emp_name` varchar(100) DEFAULT NULL,
-      `amount` double NOT NULL DEFAULT 0,
-      `percent` double NOT NULL DEFAULT 0,
-      `info` varchar(250) DEFAULT NULL,
-      `info2` varchar(250) DEFAULT NULL,
-      `user` varchar(50) DEFAULT NULL,
-      `crtime` timestamp NOT NULL DEFAULT current_timestamp(),
-      `isdeleted` tinyint(1) DEFAULT 0,
-      `tenant` int(11) DEFAULT 0,
-      `branch` int(11) DEFAULT 0,
-      PRIMARY KEY (`id`),
-      KEY `snd_id` (`snd_id`),
-      KEY `emp_date` (`emp_id`, `date`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
-
-    $check = @$conn->query("SHOW COLUMNS FROM attdocs LIKE 'bonus'");
-    if ($check && $check->num_rows === 0) {
-        @$conn->query("ALTER TABLE attdocs
-            ADD COLUMN bonus double NOT NULL DEFAULT 0 AFTER entitle,
-            ADD COLUMN insurance double NOT NULL DEFAULT 0 AFTER bonus,
-            ADD COLUMN tax double NOT NULL DEFAULT 0 AFTER insurance,
-            ADD COLUMN deduction double NOT NULL DEFAULT 0 AFTER tax,
-            ADD COLUMN net_pay double NOT NULL DEFAULT 0 AFTER deduction");
-    }
+    return round($net, 2);
 }

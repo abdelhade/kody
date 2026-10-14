@@ -1,8 +1,6 @@
 <?php
 include('../includes/connect.php');
 require_once('../includes/shift_attendance.php');
-ensure_shift_single_fp_schema($conn);
-ensure_shift_grace_rules_schema($conn);
 
 $name = mysqli_real_escape_string($conn, $_POST['name'] ?? '');
 $shiftstart = $_POST['shiftstart'] ?? '';
@@ -46,15 +44,18 @@ $workingdays = implode(",", $day);
 $single_fp_rule = normalize_single_fp_rule($_POST['single_fp_rule'] ?? 'half');
 $ignore_early_in = isset($_POST['ignore_early_in']) ? 1 : 0;
 $ignore_late_out = isset($_POST['ignore_late_out']) ? 1 : 0;
+$flex = shift_flexible_input($_POST);
 
 $sqlshft = "INSERT INTO shifts (
     name, shiftstart, shiftend, hours, instart, inend, outstart, outend,
     latelimit, earlylimit, grace1_action, latelimit_2, earlylimit_2, grace2_action,
-    workingdays, single_fp_rule, ignore_early_in, ignore_late_out
+    workingdays, single_fp_rule, ignore_early_in, ignore_late_out,
+    is_flexible, required_hours, day_cutoff, dup_fp_minutes
 ) VALUES (
     '$name', '$shiftstart', '$shiftend', '$hours', '$instart', '$inend', '$outstart', '$outend',
     '$latelimit', '$earlylimit', '$grace1_action', '$latelimit_2', '$earlylimit_2', '$grace2_action',
-    '$workingdays', '$single_fp_rule', '$ignore_early_in', '$ignore_late_out'
+    '$workingdays', '$single_fp_rule', '$ignore_early_in', '$ignore_late_out',
+    {$flex['is_flexible']}, {$flex['required_hours']}, '{$flex['day_cutoff']}', {$flex['dup_fp_minutes']}
 )";
 
 $conn->query($sqlshft);
