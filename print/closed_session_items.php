@@ -69,9 +69,34 @@ $items_data = [];
 $total_qty_all = 0;
 $total_value_all = 0;
 
+if ((int) ($shift['user_id'] ?? 0) > 0) {
+    $items_query = "
+        SELECT 
+            COALESCE(c.gname, 'بدون مجموعة') as category_name,
+            i.iname as item_name,
+            SUM(d.qty_out) as total_qty,
+            SUM(d.det_value) as total_value
+        FROM fat_details d
+        JOIN ot_head h ON d.fatid = h.id
+        JOIN myitems i ON d.item_id = i.id
+        LEFT JOIN item_group c ON i.group1 = c.id
+        WHERE h.shift_id = ?
+          AND d.isdeleted = 0
+          AND h.isdeleted = 0
+          AND h.pro_tybe IN (3, 9)
+        GROUP BY c.gname, i.iname
+        HAVING total_qty > 0
+        ORDER BY c.gname ASC, total_qty DESC
+    ";
+}
+
 $stmt = $conn->prepare($items_query);
 if ($stmt) {
-    $stmt->bind_param("sssi", $shift_date, $start_time, $end_time, $user_id);
+    if ((int) ($shift['user_id'] ?? 0) > 0) {
+        $stmt->bind_param("i", $id);
+    } else {
+        $stmt->bind_param("sssi", $shift_date, $start_time, $end_time, $user_id);
+    }
     $stmt->execute();
     $res_items = $stmt->get_result();
     while ($row = $res_items->fetch_assoc()) {

@@ -41,6 +41,7 @@ $def_pos_employee = (int)($_POST['def_pos_employee'] ?? 0);
 $def_pos_fund = (int)($_POST['def_pos_fund'] ?? 0);
 $pos_type = trim($_POST['pos_type'] ?? 'barcode');
 $pos_has_password = isset($_POST['pos_has_password']) ? 1 : 0;
+$pos_blind_close = isset($_POST['pos_blind_close']) ? 1 : 0;
 $emp_commission = floatval($_POST['emp_commission'] ?? 0);
 $user_commission = floatval($_POST['user_commission'] ?? 0);
 $allow_all_accounts = isset($_POST['allow_all_accounts']) ? 1 : 0;
@@ -193,6 +194,7 @@ SET company_name = ?,
     def_pos_fund = ?,
     pos_type = ?,
     pos_has_password = ?,
+    pos_blind_close = ?,
     showpulse = ?,
     emp_commission = ?,
     user_commission = ?,
@@ -213,11 +215,11 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississssiss",
+    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississssiss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
-        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
         $receipt_footer_text, $receipt_show_client,
@@ -227,11 +229,11 @@ if ($company_logo !== '') {
         $backup_path
     );
 } else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiddiississssis",
+    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississssis",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
-        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
         $receipt_footer_text, $receipt_show_client,

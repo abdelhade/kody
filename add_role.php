@@ -537,6 +537,10 @@
                                         <td>السماح بطلبات الدليفري في نقاط البيع (POS)</td>
                                         <td class="text-center"><input type="checkbox" name="allow_pos_delivery" class="user-checkbox" checked></td>
                                     </tr>
+                                    <tr class="tr1">
+                                        <td>عرض المبلغ المتوقع في تقفيل الشيفت (حتى مع الجرد الأعمى)</td>
+                                        <td class="text-center"><input type="checkbox" name="view_shift_expected" class="user-checkbox"></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>

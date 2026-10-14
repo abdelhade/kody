@@ -586,6 +586,10 @@ if ($hash_id !== $hash) {
                                 <td>السماح بطلبات الدليفري في نقاط البيع (POS)</td>
                                 <td><input type="checkbox"  name="allow_pos_delivery"  class="user-checkbox" <?php if( ($rowrol['allow_pos_delivery'] ?? 1) == 1){echo "checked"; }?>></td>
                             </tr>
+                            <tr class="tr1">
+                                <td>عرض المبلغ المتوقع في تقفيل الشيفت (حتى مع الجرد الأعمى)</td>
+                                <td><input type="checkbox"  name="view_shift_expected"  class="user-checkbox" <?php if( ($rowrol['view_shift_expected'] ?? 0) == 1){echo "checked"; }?>></td>
+                            </tr>
                         </tbody>
                         </table>
                         </div>

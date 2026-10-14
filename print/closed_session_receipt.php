@@ -1,18 +1,21 @@
 <?php
 session_start();
 include('../includes/connect.php');
+require_once __DIR__ . '/../classes/ShiftCloser.php';
 
 if (!isset($_GET['id'])) {
     die("رقم الشيفت غير محدد.");
 }
 
 $id = intval($_GET['id']);
-$query = "SELECT * FROM closed_orders WHERE id = $id";
-$res = $conn->query($query);
-if ($res->num_rows == 0) {
+$detail = (new ShiftCloser($conn))->getShift($id);
+if (!$detail) {
     die("الشيفت غير موجود.");
 }
-$shift = $res->fetch_assoc();
+$shift = $detail['shift'];
+$payments = $detail['payments'];
+$changes = $detail['changes'];
+$isNewShift = (int) ($shift['user_id'] ?? 0) > 0;
 
 // جلب إعدادات النظام للترويسة
 $settings_query = $conn->query("SELECT * FROM settings WHERE id = 1");
@@ -105,13 +108,67 @@ $settings = $settings_query->fetch_assoc();
         </div>
         <div class="info-row">
             <span>الكاشير:</span>
-            <span><?= $shift['user'] ?></span>
+            <span><?= htmlspecialchars((string) $shift['user']) ?></span>
         </div>
         <div class="info-row">
             <span>رقم الشيفت:</span>
             <span>#<?= $shift['id'] ?></span>
         </div>
 
+        <?php if ($isNewShift): ?>
+        <div class="info-row">
+            <span>من:</span>
+            <span><?= htmlspecialchars($shift['opened_at'] ?? '') ?></span>
+        </div>
+
+        <?php if (!empty($changes)): ?>
+        <div style="border: 2px solid #000; padding: 4px; margin-top: 6px; font-size: 11px;">
+            <b>تنبيه: فواتير الشيفت اتعدلت بعد التقفيل</b>
+            <?php foreach ($changes as $c): ?>
+            <div>- <?= htmlspecialchars($c) ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <div class="summary-box">
+            <div class="info-row"><span>عدد فواتير البيع:</span><span><?= (int) $shift['orders_count'] ?></span></div>
+            <div class="info-row"><span>صافي فواتير البيع:</span><span><?= number_format($shift['total_sales'], 2) ?></span></div>
+            <?php if ((float) $shift['total_returns'] > 0): ?>
+            <div class="info-row"><span>المرتجعات:</span><span><?= number_format($shift['total_returns'], 2) ?></span></div>
+            <?php endif; ?>
+            <?php if ((float) $shift['expenses'] > 0): ?>
+            <div class="info-row"><span>المصروفات:</span><span><?= number_format($shift['expenses'], 2) ?></span></div>
+            <?php endif; ?>
+            <?php if ((float) $shift['total_receipts'] > 0): ?>
+            <div class="info-row"><span>سندات قبض:</span><span><?= number_format($shift['total_receipts'], 2) ?></span></div>
+            <?php endif; ?>
+            <div class="total-row">
+                <span>صافي المبيعات:</span>
+                <span><?= number_format($shift['total_sales'] - $shift['total_returns'], 2) ?></span>
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <?php foreach ($payments as $p): ?>
+            <div style="font-size: 12px; font-weight: bold; border-bottom: 1px dotted #000; margin-bottom: 3px;">
+                <?= htmlspecialchars($p['aname'] ?? ('#' . $p['account_id'])) ?>
+            </div>
+            <?php if ((float) $p['start_amount'] != 0): ?>
+            <div class="info-row"><span>بداية:</span><span><?= number_format($p['start_amount'], 2) ?></span></div>
+            <?php endif; ?>
+            <div class="info-row"><span>المتوقع:</span><span><?= number_format($p['expected'], 2) ?></span></div>
+            <div class="info-row"><span>المعدود:</span><span><?= number_format($p['counted'], 2) ?></span></div>
+            <div class="info-row"><span><?= $p['diff'] < 0 ? 'عجز' : 'زيادة' ?>:</span><span><?= number_format(abs($p['diff']), 2) ?></span></div>
+            <?php endforeach; ?>
+
+            <div class="total-row">
+                <span><?= $shift['deficit'] < 0 ? 'إجمالي العجز:' : 'إجمالي الزيادة:' ?></span>
+                <span><?= number_format(abs($shift['deficit']), 2) ?></span>
+            </div>
+            <div class="info-row mt-1"><span>تسليم نقدية:</span><span><?= number_format($shift['cash'], 2) ?></span></div>
+            <div class="info-row"><span>متبقي في الدرج:</span><span><?= number_format($shift['fund_after'], 2) ?></span></div>
+        </div>
+        <?php else: ?>
         <div class="summary-box">
             <div class="info-row">
                 <span>مبلغ بداية الشيفت:</span>
@@ -136,6 +193,7 @@ $settings = $settings_query->fetch_assoc();
                 <span><?= number_format($shift['fund_after'], 2) ?></span>
             </div>
         </div>
+        <?php endif; ?>
 
         <?php if (!empty($shift['info'])): ?>
         <div class="info-row" style="flex-direction: column; text-align: center;">

@@ -753,90 +753,7 @@ body {
     </div>
 
 
-    <!-- Modal إغلاق الشيفت -->
-    <div class="modal fade" id="closeShiftModal" tabindex="-1" aria-labelledby="closeShiftModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
-                <div class="modal-header bg-warning text-dark border-0 py-3">
-                    <h5 class="modal-title fw-bold" id="closeShiftModalLabel">
-                        <i class="fas fa-power-off me-2"></i>إغلاق الشيفت
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body px-4 py-3">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-                        <h6 class="fw-bold text-dark">هل أنت متأكد من إغلاق الشيفت؟</h6>
-                        <p class="text-muted small">سيتم احتساب مبيعات الوردية الحالية وإغلاقها.</p>
-                    </div>
-
-                    <div class="table-responsive mb-3">
-                        <table class="table table-bordered table-sm text-center mb-0" style="font-size: 0.85rem;">
-                            <thead class="bg-light text-dark">
-                                <tr>
-                                    <th class="py-2">البيان</th>
-                                    <th class="py-2">القيمة</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="text-start py-2 px-3 fw-bold">عدد الطلبات</td>
-                                    <td class="py-2 px-3 fw-bold text-primary" id="tbl_total_orders">0</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-start py-2 px-3">إجمالي المبيعات</td>
-                                    <td class="py-2 px-3" id="tbl_total_gross">0.00 ج.م</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-start py-2 px-3">إجمالي الخصومات</td>
-                                    <td class="py-2 px-3 text-danger" id="tbl_total_discount">0.00 ج.م</td>
-                                </tr>
-                                <tr class="table-success fw-bold">
-                                    <td class="text-start py-2 px-3">صافي المبيعات</td>
-                                    <td class="py-2 px-3 text-success" id="tbl_total_net">0.00 ج.م</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card bg-light border-0 mb-3" style="border-radius: 8px;">
-                        <div class="card-body p-3">
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <label class="form-label small mb-1">مبلغ بداية الشيفت</label>
-                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white" id="shift_start_cash" readonly value="0.00">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small mb-1">صافي النقدية الواردة</label>
-                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white" id="shift_cash_received" readonly value="0.00">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small mb-1 text-danger fw-bold">المصروفات (مصروف)</label>
-                                    <input type="number" class="form-control form-control-sm text-center fw-bold border-danger" id="shift_expenses" placeholder="0.00" step="0.01" value="0">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small mb-1 text-success fw-bold">الباقي (مستنتج)</label>
-                                    <input type="text" class="form-control form-control-sm text-center fw-bold bg-white text-success border-success" id="shift_fund_after" readonly value="0.00">
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <label class="form-label small mb-1">ملاحظات إضافية</label>
-                                    <textarea class="form-control form-control-sm" id="shift_notes" rows="2" placeholder="أدخل أي ملاحظات إضافية هنا..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0 px-4">
-                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>إلغاء
-                    </button>
-                    <button type="button" class="btn btn-warning btn-sm px-4 fw-bold" onclick="closeShift()">
-                        <i class="fas fa-check-circle me-1"></i>إغلاق الشيفت
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <?php include(__DIR__ . '/../elements/pos/shift_close_modal.php'); ?>
 
     <!-- Modal معلومات الشيفت -->
     <div class="modal fade" id="shiftInfoModal" tabindex="-1" aria-labelledby="shiftInfoModalLabel" aria-hidden="true">
@@ -1030,84 +947,9 @@ body {
             // تحديث معلومات الشيفت على الزر عند تحميل الصفحة
             updateShiftInfoButton();
 
-            let globalStartCash = 0;
-            let globalNetSales = 0;
-
-            function calculateShiftRemaining() {
-                const expenses = parseFloat($('#shift_expenses').val()) || 0;
-                const remaining = globalStartCash + globalNetSales - expenses;
-                $('#shift_fund_after').val(remaining.toFixed(2) + ' ج.م');
-            }
-
-            window.closeShift = function () {
-                const expenses = parseFloat($('#shift_expenses').val()) || 0;
-                const notes = $('#shift_notes').val() || '';
-                const fundAfter = globalStartCash + globalNetSales - expenses;
-                const cash = globalNetSales;
-
-                const form = $('<form>', {
-                    method: 'POST',
-                    action: 'close_shift.php'
-                });
-
-                form.append($('<input>', { type: 'hidden', name: 'expenses', value: expenses }));
-                form.append($('<input>', { type: 'hidden', name: 'exp_notes', value: 'مصروفات شيفت' }));
-                form.append($('<input>', { type: 'hidden', name: 'cash', value: cash }));
-                form.append($('<input>', { type: 'hidden', name: 'fund_after', value: fundAfter }));
-                form.append($('<input>', { type: 'hidden', name: 'fund_before', value: globalStartCash }));
-                form.append($('<input>', { type: 'hidden', name: 'notes', value: notes }));
-
-                $('body').append(form);
-                form.submit();
-            };
-
-            $('#shift_expenses').on('input', calculateShiftRemaining);
-
-            $('#closeShiftModal').on('show.bs.modal', function () {
-                loadShiftPreview();
-            });
-
             $('#shiftInfoModal').on('show.bs.modal', function () {
                 loadShiftInfo();
             });
-
-            function loadShiftPreview() {
-                $.ajax({
-                    url: 'do/get_shift_preview.php',
-                    method: 'GET',
-                    success: function(data) {
-                        try {
-                            var response = (typeof data === 'object') ? data : JSON.parse(data);
-
-                            if (response.success) {
-                                globalStartCash = parseFloat(response.data.start_cash) || 0;
-                                globalNetSales = parseFloat(response.data.total_net) || 0;
-
-                                $('#tbl_total_orders').text(response.data.total_orders);
-                                $('#tbl_total_gross').text(parseFloat(response.data.total_gross).toFixed(2) + ' ج.م');
-                                $('#tbl_total_discount').text(parseFloat(response.data.total_discount).toFixed(2) + ' ج.م');
-                                $('#tbl_total_net').text(globalNetSales.toFixed(2) + ' ج.م');
-
-                                $('#shift_start_cash').val(globalStartCash.toFixed(2) + ' ج.م');
-                                $('#shift_cash_received').val(globalNetSales.toFixed(2) + ' ج.م');
-
-                                calculateShiftRemaining();
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطأ',
-                                    text: response.error || 'لا يمكن تحميل بيانات الوردية حالياً'
-                                });
-                            }
-                        } catch (e) {
-                            console.error('Error parsing shift preview:', e);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX Error:', error);
-                    }
-                });
-            }
 
             function loadShiftInfo() {
                 $.ajax({
@@ -1118,11 +960,13 @@ body {
                             var response = (typeof data === 'object') ? data : JSON.parse(data);
 
                             if (response.success) {
-                                $('#shift_cashier_name').text(response.data.cashier_name || 'الكاشير');
-                                $('#shift_total_orders').text(response.data.total_orders || 0);
-                                $('#shift_total_gross').text(parseFloat(response.data.total_gross || 0).toFixed(2) + ' ج.م');
-                                $('#shift_total_discount').text(parseFloat(response.data.total_discount || 0).toFixed(2) + ' ج.م');
-                                $('#shift_total_net').text(parseFloat(response.data.total_net || 0).toFixed(2) + ' ج.م');
+                                var d = response.data;
+                                var fmt = function (v) { return d.blind ? '—' : parseFloat(v || 0).toFixed(2) + ' ج.م'; };
+                                $('#shift_cashier_name').text(d.cashier_name || 'الكاشير');
+                                $('#shift_total_orders').text(d.total_orders || 0);
+                                $('#shift_total_gross').text(fmt(d.total_gross));
+                                $('#shift_total_discount').text(fmt(d.total_discount));
+                                $('#shift_total_net').text(fmt(d.total_net));
                             } else {
                                 $('#shift_cashier_name').text('خطأ');
                                 $('#shift_total_orders').text('0');
@@ -1160,8 +1004,10 @@ body {
 
                             if (response.success) {
                                 var cashierName = response.data.cashier_name || 'الكاشير';
-                                var totalNet = parseFloat(response.data.total_net || 0).toFixed(2);
-                                $('#shift_info_display').text(cashierName + ' - ' + totalNet + ' ج.م');
+                                var shiftLabel = response.data.blind
+                                    ? (response.data.total_orders || 0) + ' فاتورة'
+                                    : parseFloat(response.data.total_net || 0).toFixed(2) + ' ج.م';
+                                $('#shift_info_display').text(cashierName + ' - ' + shiftLabel);
                             } else {
                                 $('#shift_info_display').text('غير متاح');
                             }
@@ -1965,59 +1811,6 @@ body {
     };
     </script>
 
-
-    <!-- Modal إغلاق الشيفت -->
-    <div class="modal fade" id="shiftPreviewModal" tabindex="-1" aria-labelledby="shiftPreviewModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="shiftPreviewModalLabel">
-                        <i class="fas fa-receipt me-2"></i>ملخص الشيفت الحالي
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="shiftPreview">
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-success" role="status">
-                                <span class="visually-hidden">جاري التحميل...</span>
-                            </div>
-                            <p class="mt-2 text-muted">جاري تحميل بيانات الشيفت...</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <form action="close_shift.php" method="POST" id="closeShiftForm" class="d-inline">
-                        <!-- بيانات المصروفات والعهدة -->
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">مصروفات</span>
-                            <input type="number" class="form-control" name="expenses" value="0" step="0.01">
-                        </div>
-                         <div class="input-group mb-3">
-                            <span class="input-group-text">السبب</span>
-                            <input type="text" class="form-control" name="exp_notes" placeholder="سبب المصروفات...">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">عهدة تالية</span>
-                            <input type="number" class="form-control" name="fund_after" value="0" step="0.01">
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">الكاش الفعلي</span>
-                            <input type="number" class="form-control" name="cash" step="0.01" required placeholder="المبلغ الموجود بالدرج">
-                        </div>
-                         <div class="input-group mb-3">
-                            <span class="input-group-text">ملاحظات</span>
-                            <input type="text" class="form-control" name="notes" placeholder="ملاحظات الإغلاق...">
-                        </div>
-                        <button type="submit" class="btn btn-success fw-bold w-100">
-                            <i class="fas fa-check-circle me-1"></i>تأكيد إغلاق الشيفت
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Order Items Modal -->
     <div class="modal fade" id="orderItemsModal" tabindex="-1" aria-labelledby="orderItemsModalLabel" aria-hidden="true">

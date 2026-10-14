@@ -21,64 +21,61 @@ register_shutdown_function(function () {
 
 try {
     include(__DIR__ . '/../includes/ajax_header.php');
-    include(__DIR__ . '/../classes/ShiftReport.php');
+    require_once __DIR__ . '/../classes/ShiftCloser.php';
 
     if (!isset($_SESSION['userid'])) {
         throw new Exception('الرجاء تسجيل الدخول أولاً');
     }
 
     $user_id = (int) $_SESSION['userid'];
-    $shift_date = isset($today) ? $today : ShiftReport::getBusinessDate();
+    $closer = new ShiftCloser($conn);
+    $p = $closer->preview($user_id);
+    $showExpected = ShiftCloser::canSeeExpected($rowstg ?? [], $role ?? []);
 
-    $report = new ShiftReport($conn, $user_id, $shift_date);
-    $totals = $report->getTotals();
-
-    $cashier_name = 'الكاشير';
-    $user_stmt = $conn->prepare('SELECT uname FROM users WHERE id = ?');
-    if ($user_stmt) {
-        $user_stmt->bind_param('i', $user_id);
-        $user_stmt->execute();
-        $user_result = $user_stmt->get_result();
-        if ($row = $user_result->fetch_assoc()) {
-            $cashier_name = $row['uname'];
+    $accounts = [];
+    foreach ($p['accounts'] as $acc) {
+        $row = [
+            'account_id' => $acc['account_id'],
+            'name' => $acc['name'],
+            'is_fund' => $acc['is_fund'],
+            'is_primary' => $acc['account_id'] === $p['primary_fund'],
+        ];
+        if ($showExpected) {
+            $row['start_amount'] = $acc['start_amount'];
+            $row['movement'] = $acc['movement'];
+            $row['expected'] = $acc['expected'];
         }
-        $user_stmt->close();
+        $accounts[] = $row;
     }
 
-    $start_cash = 0.00;
-    $prev_shift_stmt = $conn->prepare('SELECT fund_after FROM closed_orders WHERE user = ? ORDER BY id DESC LIMIT 1');
-    if ($prev_shift_stmt) {
-        $prev_shift_stmt->bind_param('s', $cashier_name);
-        $prev_shift_stmt->execute();
-        $prev_res = $prev_shift_stmt->get_result();
-        if ($prev_row = $prev_res->fetch_assoc()) {
-            $start_cash = floatval($prev_row['fund_after']);
-        }
-        $prev_shift_stmt->close();
-    }
-
-    $response_data = [
-        'success' => true,
-        'data' => [
-            'total_orders' => intval($totals['total_orders'] ?? 0),
-            'total_gross' => floatval($totals['total_gross'] ?? 0),
-            'total_discount' => floatval($totals['total_discount'] ?? 0),
-            'total_net' => floatval($totals['total_net'] ?? 0),
-            'start_cash' => $start_cash,
-            'cashier_name' => $cashier_name,
-            'shift_number' => date('Ymd', strtotime($shift_date)) . '_' . $user_id,
-            'shift_date' => $shift_date,
-        ]
+    $data = [
+        'blind' => !$showExpected,
+        'cashier_name' => $p['cashier_name'] ?: 'الكاشير',
+        'opened_at' => $p['opened_at'],
+        'total_orders' => $p['orders_count'],
+        'returns_count' => $p['returns_count'],
+        'accounts' => $accounts,
     ];
+    if ($showExpected) {
+        $data += [
+            'total_gross' => $p['sales_gross'],
+            'total_discount' => $p['sales_discount'],
+            'sales_net' => $p['sales_net'],
+            'returns_total' => $p['returns_total'],
+            'total_net' => $p['net_sales'],
+            'expenses' => $p['expenses'],
+            'receipts' => $p['receipts'],
+            'start_cash' => $p['start_cash'],
+        ];
+    }
 
     while (ob_get_level()) {
         ob_end_clean();
     }
-
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response_data, JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
     exit;
-} catch (Exception $e) {
+} catch (Throwable $e) {
     while (ob_get_level()) {
         ob_end_clean();
     }

@@ -61,6 +61,7 @@ endif;
                     <th class="py-3 border-0">بيان المصاريف</th>
                     <th class="py-3 border-0">تسليم الكاش</th>
                     <th class="py-3 border-0">نهاية الدرج</th>
+                    <th class="py-3 border-0">عجز / زيادة</th>
                     <th class="py-3 border-0">ملاحظات</th>
                     <th class="py-3 border-0">الإجراءات</th>
                 </tr>
@@ -110,6 +111,19 @@ endif;
                     </td>
                     <td>
                         <span class="badge badge-secondary px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(108, 117, 125, 0.15);"><?= number_format($rowcl['fund_after'], 2) ?> ج.م</span>
+                    </td>
+                    <td>
+                        <?php if ((int) ($rowcl['user_id'] ?? 0) > 0): $diff = (float) $rowcl['deficit']; ?>
+                            <?php if (abs($diff) < 0.01): ?>
+                                <span class="text-success fw-bold">مظبوط</span>
+                            <?php else: ?>
+                                <span class="badge <?= $diff < 0 ? 'badge-danger' : 'badge-warning' ?> px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px;">
+                                    <?= $diff < 0 ? 'عجز' : 'زيادة' ?> <?= number_format(abs($diff), 2) ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span class="text-muted">-</span>
+                        <?php endif; ?>
                     </td>
                     <td class="text-wrap" style="max-width: 180px;"><?= htmlspecialchars($rowcl['info'] ?? '') ?: '<span class="text-muted">-</span>' ?></td>
                     <td class="text-center">

@@ -367,6 +367,17 @@ $licenseOk = !empty($licenseStatus['licensed']);
                           <small class="form-text text-muted">عند التفعيل يُطلب التحقق قبل استخدام الكاشير.</small>
                         </div>
                       </div>
+                      <div class="col-lg-6">
+                        <div class="form-group">
+                          <label class="d-block">جرد أعمى عند تقفيل الشيفت</label>
+                          <div class="custom-control custom-switch pt-1">
+                            <input type="checkbox" class="custom-control-input" id="pos_blind_close" name="pos_blind_close" value="1"
+                                   <?= (!empty($rowstg['pos_blind_close'])) ? 'checked' : '' ?>>
+                            <label class="custom-control-label" for="pos_blind_close">الكاشير ميشوفش المبلغ المتوقع قبل ما يدخل الجرد</label>
+                          </div>
+                          <small class="form-text text-muted">اللي عنده صلاحية "عرض المتوقع في تقفيل الشيفت" يشوفه دايماً.</small>
+                        </div>
+                      </div>
                     </div>
                     <hr class="my-3">
                     <h5 class="text-muted mb-3"><i class="fas fa-link ml-2"></i> الحسابات الافتراضية للكاشير</h5>
