@@ -233,6 +233,7 @@ class ShiftCloser
         $stmt->close();
 
         $changes = [];
+        $live = null;
         if ((int) $shift['user_id'] > 0) {
             $live = $this->summarize('oh.shift_id = ?', 'i', [$shiftId]);
             if (abs($live['sales_net'] - (float) $shift['total_sales']) >= 0.01) {
@@ -257,13 +258,14 @@ class ShiftCloser
             }
         }
 
-        return ['shift' => $shift, 'payments' => $payments, 'changes' => $changes];
+        return ['shift' => $shift, 'payments' => $payments, 'changes' => $changes, 'summary' => $live];
     }
 
     // ─── Internals ──────────────────────────────────────────────
 
     /**
      * @return array{orders_count:int, sales_gross:float, sales_discount:float, sales_net:float,
+     *   cash_sales:float, credit_sales:float,
      *   returns_count:int, returns_total:float, net_sales:float, expenses:float, receipts:float,
      *   movements:array<int,float>, opened_at:?string}
      */
@@ -272,6 +274,7 @@ class ShiftCloser
         $t = InvoiceProcessor::INVOICE_TYPES;
         $out = [
             'orders_count' => 0, 'sales_gross' => 0.0, 'sales_discount' => 0.0, 'sales_net' => 0.0,
+            'cash_sales' => 0.0, 'credit_sales' => 0.0,
             'returns_count' => 0, 'returns_total' => 0.0, 'net_sales' => 0.0,
             'expenses' => 0.0, 'receipts' => 0.0, 'movements' => [], 'opened_at' => null,
         ];
@@ -280,7 +283,8 @@ class ShiftCloser
             "SELECT oh.pro_tybe, COUNT(*) AS cnt,
                     COALESCE(SUM(oh.fat_total), 0) AS gross,
                     COALESCE(SUM(oh.fat_disc), 0) AS disc,
-                    COALESCE(SUM(oh.fat_net), 0) AS net
+                    COALESCE(SUM(oh.fat_net), 0) AS net,
+                    COALESCE(SUM(LEAST(GREATEST(COALESCE(oh.paid_amount, 0), 0), GREATEST(COALESCE(oh.fat_net, 0), 0))), 0) AS collected
              FROM ot_head oh
              WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)
              GROUP BY oh.pro_tybe"
@@ -298,6 +302,9 @@ class ShiftCloser
                 $out['sales_gross'] += (float) $row['gross'];
                 $out['sales_discount'] += (float) $row['disc'];
                 $out['sales_net'] += (float) $row['net'];
+                $collected = (float) $row['collected'];
+                $out['cash_sales'] += $collected;
+                $out['credit_sales'] += (float) $row['net'] - $collected;
             }
         }
         $stmt->close();
@@ -341,7 +348,7 @@ class ShiftCloser
         foreach ($out['movements'] as $k => $v) {
             $out['movements'][$k] = round($v, 2);
         }
-        foreach (['sales_gross', 'sales_discount', 'sales_net', 'returns_total', 'expenses', 'receipts'] as $k) {
+        foreach (['sales_gross', 'sales_discount', 'sales_net', 'cash_sales', 'credit_sales', 'returns_total', 'expenses', 'receipts'] as $k) {
             $out[$k] = round($out[$k], 2);
         }
         $out['net_sales'] = round($out['sales_net'] - $out['returns_total'], 2);
@@ -356,7 +363,17 @@ class ShiftCloser
     private function buildAccountRows(array $movements, int $primary, float $startCash, array $extraAccounts = []): array
     {
         $money = $this->moneyAccounts();
-        $ids = array_keys(array_filter($movements, static fn($v) => abs($v) >= 0.005));
+        $ids = [];
+        foreach ($money as $id => $acc) {
+            if ($acc['is_fund']) {
+                $ids[] = (int) $id;
+            }
+        }
+        foreach ($movements as $id => $v) {
+            if (abs($v) >= 0.005) {
+                $ids[] = (int) $id;
+            }
+        }
         if ($primary > 0) {
             array_unshift($ids, $primary);
         }

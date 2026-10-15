@@ -244,6 +244,12 @@ class InvoiceFooter extends InvoiceElementBase
                        placeholder="ملاحظات على الفاتورة..." value="<?php echo $this->getInfo(); ?>" style="height:30px; font-size:12px;">
             </div>
 
+            <?php if ((int) $this->invoiceType === InvoiceProcessor::INVOICE_TYPES['SALES'] && Can::check('pos.close_shift')) { ?>
+            <button type="button" class="btn btn-warning btn-sm d-flex align-items-center" style="gap:4px; height:30px; font-size:11.5px; white-space:nowrap;" data-toggle="modal" data-target="#closeShiftModal">
+                <i class="fas fa-power-off"></i> تقفيل الشيفت
+            </button>
+            <?php } ?>
+
             <!-- زر إظهار الفواتير السابقة -->
             <div id="showOps" style="cursor:pointer;">
                 <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center" style="gap:4px; height:30px; font-size:11.5px; white-space:nowrap;">

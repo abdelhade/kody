@@ -58,6 +58,8 @@ function zr_money($v)
         <?php if ($showExpected): ?>
         <tr><td>إجمالي المبيعات</td><td class="amount"><?= zr_money($p['sales_gross']) ?></td></tr>
         <tr><td>الخصومات</td><td class="amount"><?= zr_money($p['sales_discount']) ?></td></tr>
+        <tr><td>مبيعات نقدية</td><td class="amount"><?= zr_money($p['cash_sales']) ?></td></tr>
+        <tr><td>مبيعات آجلة</td><td class="amount"><?= zr_money($p['credit_sales']) ?></td></tr>
         <?php if ($p['returns_total'] > 0): ?>
         <tr><td>المرتجعات</td><td class="amount"><?= zr_money($p['returns_total']) ?></td></tr>
         <?php endif; ?>

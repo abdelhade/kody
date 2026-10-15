@@ -6,7 +6,7 @@
                 <h5 class="modal-title fw-bold" id="closeShiftModalLabel">
                     <i class="fas fa-power-off me-2"></i>تقفيل الشيفت
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body px-4 py-3">
                 <div id="scm_loading" class="text-center py-4">
@@ -53,7 +53,7 @@
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0 px-4">
-                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-dismiss="modal" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>إلغاء
                 </button>
                 <button type="button" class="btn btn-warning btn-sm px-4 fw-bold" id="scm_submit" disabled>
@@ -99,6 +99,8 @@
         }
         if (!state.blind) {
             s += '<tr><td class="text-start">صافي فواتير البيع</td><td>' + money(d.sales_net) + '</td></tr>';
+            s += '<tr><td class="text-start">مبيعات نقدية</td><td>' + money(d.cash_sales) + '</td></tr>';
+            s += '<tr><td class="text-start">مبيعات آجلة</td><td>' + money(d.credit_sales) + '</td></tr>';
             if (parseFloat(d.returns_total)) {
                 s += '<tr><td class="text-start">المرتجعات</td><td class="text-danger">' + money(d.returns_total) + '</td></tr>';
             }
@@ -184,7 +186,7 @@
                 var icon = Math.abs(r.total_diff) < 0.01 ? 'success' : 'warning';
                 notify(icon, 'تم تقفيل الشيفت', r.message).then(function () {
                     if (r.receipt_url) window.open(r.receipt_url, '_blank');
-                    location.reload();
+                    if (window.shiftCloseReload !== false) location.reload();
                 });
             }).fail(function () {
                 $btn.prop('disabled', false);

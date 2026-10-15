@@ -133,6 +133,10 @@ $settings = $settings_query->fetch_assoc();
         <div class="summary-box">
             <div class="info-row"><span>عدد فواتير البيع:</span><span><?= (int) $shift['orders_count'] ?></span></div>
             <div class="info-row"><span>صافي فواتير البيع:</span><span><?= number_format($shift['total_sales'], 2) ?></span></div>
+            <?php if (!empty($detail['summary'])): ?>
+            <div class="info-row"><span>مبيعات نقدية:</span><span><?= number_format($detail['summary']['cash_sales'], 2) ?></span></div>
+            <div class="info-row"><span>مبيعات آجلة:</span><span><?= number_format($detail['summary']['credit_sales'], 2) ?></span></div>
+            <?php endif; ?>
             <?php if ((float) $shift['total_returns'] > 0): ?>
             <div class="info-row"><span>المرتجعات:</span><span><?= number_format($shift['total_returns'], 2) ?></span></div>
             <?php endif; ?>

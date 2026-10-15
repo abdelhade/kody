@@ -61,6 +61,8 @@ try {
             'total_gross' => $p['sales_gross'],
             'total_discount' => $p['sales_discount'],
             'sales_net' => $p['sales_net'],
+            'cash_sales' => $p['cash_sales'],
+            'credit_sales' => $p['credit_sales'],
             'returns_total' => $p['returns_total'],
             'total_net' => $p['net_sales'],
             'expenses' => $p['expenses'],
