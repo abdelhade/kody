@@ -17,7 +17,6 @@ $canEditPassword = Can::check('users.change_password');
 
 // التقاط القيم المرسلة (اللي معهوش users.edit يقدر يغيّر كلمة المرور بس)
 $uname = $canEditUser ? ($_POST['uname'] ?? '') : '';
-$usertype = $canEditUser && Can::isSuperAdmin() ? ($_POST['usertype'] ?? '') : '';
 $userrole = $canEditUser ? ($_POST['userrole'] ?? '') : '';
 $password = $canEditPassword ? ($_POST['password'] ?? '') : '';
 $confirm_password = $_POST['confirm_password'] ?? '';
@@ -44,13 +43,6 @@ if ($uname !== '') {
     $fields[] = "uname = ?";
     $types .= "s";
     $values[] = $uname;
-}
-
-// usertype (اختياري)
-if ($usertype !== '') {
-    $fields[] = "usertype = ?";
-    $types .= "s";
-    $values[] = $usertype;
 }
 
 // userrole

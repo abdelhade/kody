@@ -632,7 +632,8 @@ WHERE SUBSTRING_INDEX(p.name, '.', -1) IN ('add', 'edit', 'delete');</code></pre
     <tr><td>ملف مش في الخريطة</td><td>صفحة: تسجيل دخول بس + سطر في <code>logs/authz.log</code>. ملف في <code>do/</code>, <code>ajax/</code>, <code>get/</code>, <code>api/</code>, <code>print/</code>: مرفوض.</td></tr>
     <tr><td>ملفات <code>custom</code></td><td>الصلاحية بتتحدد جوه الملف بعد ما يعرف العملية: الفواتير (<code>InvoiceProcessor::permissionFor()</code> بالنوع المتخزن)، الحسابات (<code>Can::authorizeAccountId()</code> بكود الحساب)، حذف السندات، الأدوار. الخريطة بتطلب تسجيل الدخول بس.</td></tr>
     <tr><td>التطبيق التدريجي</td><td><code>AUTHZ_ENFORCE=0</code> (الافتراضي): الرفض بيتسجل بس. <code>users.*</code>, <code>roles.*</code>, <code>settings.*</code>, <code>system.*</code>, <code>news.*</code> بتترفض دايماً.</td></tr>
-    <tr><td>قاعدة بيانات ما شغّلتش الـ migrations</td><td><code>Can::login()</code> بيحسب الصلاحيات من صف <code>usr_pwrs</code> (<code>RbacLegacy::permsFromRow()</code>) بنفس قواعد 030، فالنظام بيشتغل قبل التحديث.</td></tr>
+    <tr><td>مصدر الصلاحيات وقت التشغيل</td><td><code>roles</code> / <code>permissions</code> / <code>role_has_permissions</code> بس (زي Spatie). <code>usr_pwrs</code> مش بيتقري خالص. قاعدة ما خدتش التحديث = مفيش صلاحيات، والـ super admin بس اللي يدخل يشغّل التحديث. <code>tools/RbacLegacy.php</code> أداة نقل واختبار بس.</td></tr>
+    <tr><td>دور الأدمن (1)</td><td>بياخد كل الصلاحيات (<code>update/031</code>).</td></tr>
     <tr><td>تغيير قاعدة البيانات</td><td><code>Can::boot()</code> بيعيد تحميل الصلاحيات لو المستخدم أو قاعدة البيانات اتغيروا، من غير logout.</td></tr>
     <tr><td>صلاحيات مستخدم تاني</td><td><code>Can::userCan($conn, $userId, ...)</code> (زي كاشير الـ POS والدليفري).</td></tr>
     <tr><td>إسناد الأدوار</td><td><code>Roles::assignError()</code>: ممنوع تدّي دور فيه صلاحية انت معندكش، أو الدور 1 لو مش super admin، أو تغيّر دورك.</td></tr>

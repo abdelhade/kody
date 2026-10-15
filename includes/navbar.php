@@ -15,17 +15,21 @@
           <a class="dropdown-item" href="index.php">
             <i class="fas fa-home ml-2 text-primary"></i><?= htmlspecialchars($lang_sidemain ?? 'الرئيسية', ENT_QUOTES, 'UTF-8') ?>
           </a>
-          <?php 
-          $isRootAdminNav = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
-          if ($isRootAdminNav || Can::check('users.view')) { 
-          ?>
+          <?php if (Can::canVisit('users.php')) { ?>
           <a class="dropdown-item" href="users.php">
             <i class="fas fa-users ml-2 text-primary"></i>المستخدمين
           </a>
           <?php } ?>
+          <?php if (Can::canVisit('roles.php')) { ?>
+          <a class="dropdown-item" href="roles.php">
+            <i class="fas fa-user-shield ml-2 text-primary"></i>الأدوار والصلاحيات
+          </a>
+          <?php } ?>
+          <?php if (Can::canVisit('setting.php')) { ?>
           <a class="dropdown-item" href="setting.php">
             <i class="fas fa-cog ml-2 text-primary"></i>إعدادات النظام
           </a>
+          <?php } ?>
           <a class="dropdown-item" href="about.php">
             <i class="fas fa-building ml-2 text-primary"></i>بيانات الشركة
           </a>
@@ -58,16 +62,19 @@
             }
         }
         if ($activeDbName):
+            $periodTag = Can::canVisit('setting.php') ? 'a' : 'span';
         ?>
-        <a class="dropdown-item" href="setting.php" title="<?= htmlspecialchars($activePeriodLabel . ' (' . $activeDbName . ')', ENT_QUOTES, 'UTF-8') ?>">
+        <<?= $periodTag ?> class="<?= $periodTag === 'a' ? 'dropdown-item' : 'dropdown-item-text' ?>"<?= $periodTag === 'a' ? ' href="setting.php"' : '' ?> title="<?= htmlspecialchars($activePeriodLabel . ' (' . $activeDbName . ')', ENT_QUOTES, 'UTF-8') ?>">
           <i class="fas fa-calendar-alt ml-2 text-primary"></i><?= htmlspecialchars($activePeriodLabel, ENT_QUOTES, 'UTF-8') ?>
-        </a>
+        </<?= $periodTag ?>>
         <div class="dropdown-divider"></div>
         <?php endif; ?>
 
+        <?php if (Can::canVisit('do/dobackup.php')) { ?>
         <button type="button" id="exportDB" class="dropdown-item">
           <i class="fas fa-database ml-2 text-primary"></i>حفظ نسخة احتياطية
         </button>
+        <?php } ?>
         <button type="button" id="fullscreenBtn" class="dropdown-item">
           <i class="fas fa-expand ml-2 text-muted"></i><span id="fullscreenLabel">وضع ملء الشاشة</span>
         </button>

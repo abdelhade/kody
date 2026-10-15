@@ -14,7 +14,7 @@ if (PHP_SAPI !== 'cli') {
 
 $root = dirname(__DIR__);
 require_once $root . '/classes/Can.php';
-require_once $root . '/classes/RbacLegacy.php';
+require_once $root . '/tools/RbacLegacy.php';
 
 $routes = require $root . '/includes/rbac_routes.php';
 $known  = array_flip(array_column(RbacLegacy::flatten(), 'name'));

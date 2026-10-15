@@ -1,0 +1,11 @@
+[2026-10-15 11:57:23] legacy perms role=1 (usr_pwrs)
+[2026-10-15 11:57:43] legacy perms role=1 (usr_pwrs)
+[2026-10-15 12:08:11] unmapped page _as_user.php
+[2026-10-15 12:08:11] deny user=31 role=31 need=[users.view] script=/kody/users.php query=
+[2026-10-15 12:08:11] deny user=31 role=31 need=[roles.view] script=/kody/roles.php query=
+[2026-10-15 12:08:11] deny user=31 role=31 need=[settings.manage,system.manage] script=/kody/setting.php query=
+[2026-10-15 12:08:11] deny user=31 role=31 need=[sales.add] script=/kody/sales.php query=q=sale
+[2026-10-15 12:08:11] deny user=31 role=31 need=[clients.view] script=/kody/acc_report.php query=acc=clients
+[2026-10-15 12:08:11] deny user=31 role=31 need=[items.view] script=/kody/myitems.php query=
+[2026-10-15 12:18:49] unmapped page _as_user.php
+[2026-10-15 12:21:35] unmapped page _as_user.php

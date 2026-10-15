@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_message = "يرجى إدخال اسم المستخدم وكلمة المرور";
         } else {
             // استعلام مستخدم بواسطة prepared statement
-            $stmt = $conn->prepare("SELECT id, uname, password, userrole, usertype FROM users WHERE uname = ? AND isdeleted != 1 LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, uname, password, userrole FROM users WHERE uname = ? AND isdeleted != 1 LIMIT 1");
             if ($stmt === false) {
                 $error_message = "خطأ في إعداد الاستعلام";
             } else {
@@ -122,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         session_regenerate_id(true);
                         $_SESSION['userid'] = $row['id'];
                         $_SESSION['usrole'] = $row['userrole'];
-                        $_SESSION['usty'] = $row['usertype'];
                         $_SESSION['login'] = $row['uname'];
                         Can::login($conn, $userId, $dbname);
 

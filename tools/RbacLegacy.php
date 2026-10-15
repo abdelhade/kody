@@ -1,6 +1,7 @@
 <?php
 /**
- * الربط بين usr_pwrs القديم والصلاحيات الجديدة (مؤقت لحد حذف usr_pwrs).
+ * أداة نقل بس (tools/ و tests/) — النظام وقت التشغيل مش بيقرا usr_pwrs خالص، Can بيقرا من roles / role_has_permissions.
+ * الربط بين usr_pwrs القديم والصلاحيات الجديدة، للتأكد إن update/030 نقل صح.
  *
  * - permsFromRow(): صلاحيات دور لسه ما اتنقلش (قاعدة بيانات ما شغّلتش update/030).
  *
@@ -49,6 +50,10 @@ final class RbacLegacy
      */
     public static function permsFromRow(array $row, int $roleId): array
     {
+        // دور الأدمن بياخد كل الصلاحيات (update/031)
+        if ($roleId === 1) {
+            return array_column(self::flatten(), 'group', 'name');
+        }
         $on = static fn (string $col): bool => (int) ($row[$col] ?? 0) === 1;
         $perms = [];
 

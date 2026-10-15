@@ -15,7 +15,7 @@ if ($sourceId > 0) {
         exit;
     }
 }
-$isOwnRole = $roleId > 0 && $roleId === Can::roleId() && !Can::isSuperAdmin();
+$isLockedRole = $roleId === 1 || ($roleId > 0 && $roleId === Can::roleId());
 
 $granted = [];
 if ($sourceId > 0) {
@@ -53,6 +53,18 @@ $actions = ['view' => 'عرض', 'add' => 'إضافة', 'edit' => 'تعديل', '
 $title = $roleId > 0 ? 'تعديل دور' : 'إضافة دور';
 $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
+// checked / disabled لكل صلاحية: مقدرش أدّي صلاحية أنا معنديش، وصلاحيات إدارة الأدوار ثابتة في الدور 1 ودوري
+$cbAttrs = static function (array $p) use ($granted, $isLockedRole): string {
+    $isGranted = isset($granted[$p['id']]);
+    if ($isLockedRole && in_array($p['name'], Roles::LOCK_PERMISSIONS, true)) {
+        return 'checked disabled';
+    }
+    if (!$isGranted && !Can::check($p['name'])) {
+        return 'disabled';
+    }
+    return $isGranted ? 'checked' : '';
+};
+
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
 }
@@ -85,8 +97,8 @@ require_once __DIR__ . '/includes/sidebar.php';
       actions: [['label' => 'رجوع للأدوار', 'url' => 'roles.php', 'class' => 'k-btn-secondary', 'icon' => 'fa-arrow-right']]
   ) ?>
 
-  <?php if ($isOwnRole): ?>
-    <div class="alert alert-warning mx-3">ده الدور بتاعك؛ مش مسموح تعدّل صلاحياته بنفسك. اطلب من مسؤول النظام.</div>
+  <?php if ($isLockedRole): ?>
+    <div class="alert alert-warning mx-3">عرض وتعديل الأدوار ثابتين في الدور ده عشان إدارة الصلاحيات متتقفلش.</div>
   <?php endif; ?>
 
   <form action="do/dosave_role.php" method="post" id="roleForm" class="px-3 pb-4">
@@ -112,7 +124,7 @@ require_once __DIR__ . '/includes/sidebar.php';
       </div>
       <div class="alert alert-info small mb-0">
         <i class="fas fa-info-circle ml-1"></i>
-        تعديل الصلاحيات بيسري على المستخدمين بعد ما يسجّلوا خروج ودخول تاني. اختيار إضافة أو تعديل أو حذف بيختار العرض تلقائياً.
+        تعديل الصلاحيات بيسري على المستخدمين بعد ما يسجّلوا خروج ودخول تاني. اختيار إضافة أو تعديل أو حذف بيختار العرض تلقائياً. الصلاحيات المقفولة انت معندكش، فمتقدرش تدّيها.
       </div>
     </div>
 
@@ -149,7 +161,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                       <td>
                         <?php if ($p): ?>
                           <input type="checkbox" name="perms[]" value="<?= $p['id'] ?>" class="perm-cb" data-action="<?= $action ?>"
-                                 title="<?= $e($p['name']) ?>" <?= isset($granted[$p['id']]) ? 'checked' : '' ?>>
+                                 title="<?= $e($p['name']) ?>" <?= $cbAttrs($p) ?>>
                         <?php endif; ?>
                       </td>
                     <?php endforeach; ?>
@@ -162,7 +174,7 @@ require_once __DIR__ . '/includes/sidebar.php';
             <div class="perm-singles">
               <?php foreach ($g['single'] as $p): ?>
                 <label class="perm-row" data-search="<?= $e($p['label'] . ' ' . $p['name']) ?>" title="<?= $e($p['name']) ?>">
-                  <input type="checkbox" name="perms[]" value="<?= $p['id'] ?>" class="perm-cb" <?= isset($granted[$p['id']]) ? 'checked' : '' ?>>
+                  <input type="checkbox" name="perms[]" value="<?= $p['id'] ?>" class="perm-cb" <?= $cbAttrs($p) ?>>
                   <?= $e($p['label']) ?>
                 </label>
               <?php endforeach; ?>
@@ -173,7 +185,7 @@ require_once __DIR__ . '/includes/sidebar.php';
     <?php endforeach; ?>
 
     <div class="text-left">
-      <button type="submit" class="btn btn-primary px-4" <?= $isOwnRole ? 'disabled' : '' ?>><i class="fas fa-save ml-1"></i> حفظ الدور</button>
+      <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save ml-1"></i> حفظ الدور</button>
     </div>
   </form>
 </div>
@@ -198,7 +210,7 @@ require_once __DIR__ . '/includes/sidebar.php';
       view.checked = true;
     }
     if (cb.dataset.action === 'view' && !cb.checked) {
-      row.querySelectorAll('.perm-cb').forEach(function (other) { other.checked = false; });
+      row.querySelectorAll('.perm-cb:not(:disabled)').forEach(function (other) { other.checked = false; });
     }
   }
 
@@ -206,7 +218,7 @@ require_once __DIR__ . '/includes/sidebar.php';
     var t = ev.target;
     var group = t.closest('.perm-group');
     if (t.classList.contains('group-all')) {
-      group.querySelectorAll('.perm-cb').forEach(function (cb) { cb.checked = t.checked; });
+      group.querySelectorAll('.perm-cb:not(:disabled)').forEach(function (cb) { cb.checked = t.checked; });
     } else if (t.classList.contains('perm-cb')) {
       syncRow(t);
     }
@@ -221,7 +233,7 @@ require_once __DIR__ . '/includes/sidebar.php';
   });
 
   function setAll(value) {
-    form.querySelectorAll('.perm-cb').forEach(function (cb) { cb.checked = value; });
+    form.querySelectorAll('.perm-cb:not(:disabled)').forEach(function (cb) { cb.checked = value; });
     document.querySelectorAll('.perm-group').forEach(refreshGroup);
   }
   document.getElementById('checkAll').addEventListener('click', function () { setAll(true); });

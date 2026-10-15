@@ -51,7 +51,7 @@
             }else{
             $sqltsk = "SELECT * FROM `tasks` where (isdeleted != 1 OR isdeleted IS NULL) order by crtime desc;";  
             }
-          }elseif ($_SESSION['usty'] != 1 && $_SESSION['usty'] != 2) {
+          }elseif (!Can::check('tasks.view_all')) {
             $userid = $_SESSION['userid'];
             $sqltsk = "SELECT * FROM `tasks` where user = '$userid' AND (isdeleted != 1 OR isdeleted IS NULL)  order by crtime desc;"; 
           } else {

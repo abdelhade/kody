@@ -5,6 +5,20 @@
  */
 final class Roles
 {
+    /** بتفضل دايماً في الدور 1 وفي دور اللي بيعدّل، عشان محدش يقفل إدارة الأدوار على نفسه */
+    public const LOCK_PERMISSIONS = ['roles.view', 'roles.edit'];
+
+    /** @return list<string> أسماء صلاحيات الدور */
+    public static function permissionNames(mysqli $conn, int $roleId): array
+    {
+        $stmt = $conn->prepare('SELECT p.`name` FROM `role_has_permissions` rhp JOIN `permissions` p ON p.`id` = rhp.`permission_id` WHERE rhp.`role_id` = ?');
+        $stmt->bind_param('i', $roleId);
+        $stmt->execute();
+        $names = array_column($stmt->get_result()->fetch_all(), 0);
+        $stmt->close();
+        return $names;
+    }
+
     /**
      * كل الصلاحيات مترتبة زي شاشة الدور.
      *
@@ -149,7 +163,7 @@ final class Roles
 
     /**
      * هل المستخدم الحالي يقدر يدّي الدور ده لمستخدم؟ null = مسموح، غير كده رسالة الرفض.
-     * غير المسؤول الرئيسي ميقدرش يدّي دور فيه صلاحية هو نفسه مش عنده.
+     * محدش يقدر يدّي دور فيه صلاحية هو نفسه مش عنده.
      */
     public static function assignError(mysqli $conn, int $roleId): ?string
     {
@@ -157,18 +171,7 @@ final class Roles
         if (!$role || (int) $role['is_active'] !== 1) {
             return 'الدور غير موجود أو معطّل';
         }
-        if (Can::isSuperAdmin()) {
-            return null;
-        }
-        if ($roleId === 1) {
-            return 'الدور الأساسي يدّيه مسؤول النظام بس';
-        }
-        $stmt = $conn->prepare('SELECT p.`name` FROM `role_has_permissions` rhp JOIN `permissions` p ON p.`id` = rhp.`permission_id` WHERE rhp.`role_id` = ?');
-        $stmt->bind_param('i', $roleId);
-        $stmt->execute();
-        $names = array_column($stmt->get_result()->fetch_all(), 0);
-        $stmt->close();
-        foreach ($names as $name) {
+        foreach (self::permissionNames($conn, $roleId) as $name) {
             if (!Can::check($name)) {
                 return 'الدور فيه صلاحيات أكبر من صلاحياتك (' . $name . ')';
             }

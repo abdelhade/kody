@@ -5,7 +5,6 @@ session_start();
 echo "<h1>Debug Info</h1>";
 echo "<h2>Session</h2>";
 echo "User ID: " . ($_SESSION['userid'] ?? 'Not Set') . "<br>";
-echo "User Type (usty): " . ($_SESSION['usty'] ?? 'Not Set') . "<br>";
 echo "Login: " . ($_SESSION['login'] ?? 'Not Set') . "<br>";
 
 echo "<h2>Last 5 Tasks</h2>";

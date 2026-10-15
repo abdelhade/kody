@@ -18,7 +18,7 @@ final class Can
     {
         self::forget();
 
-        $stmt = $conn->prepare('SELECT `userrole`, `usertype`, `isdeleted` FROM `users` WHERE `id` = ? LIMIT 1');
+        $stmt = $conn->prepare('SELECT `userrole`, `isdeleted` FROM `users` WHERE `id` = ? LIMIT 1');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
@@ -28,26 +28,13 @@ final class Can
             return false;
         }
 
-        $roleId  = (int) $user['userrole'];
-        $isSuper = $userId === 1 || (int) $user['usertype'] === 2;
-        $perms   = [];
-        $legacy  = false;
-
-        if ($roleId > 0) {
-            $perms = self::loadRolePerms($conn, $roleId);
-            if ($perms === null) {
-                $legacy = true;
-                $perms  = self::loadLegacyPerms($conn, $roleId);
-            }
-        }
+        $roleId = (int) $user['userrole'];
 
         $_SESSION[self::KEY] = [
-            'user_id'  => $userId,
-            'role_id'  => $roleId,
-            'db'       => $db,
-            'is_super' => $isSuper,
-            'legacy'   => $legacy,
-            'perms'    => $perms,
+            'user_id' => $userId,
+            'role_id' => $roleId,
+            'db'      => $db,
+            'perms'   => self::loadRolePerms($conn, $roleId),
         ];
         return true;
     }
@@ -61,7 +48,7 @@ final class Can
         if ($userId === self::userId()) {
             return self::any(...$permissions);
         }
-        $stmt = $conn->prepare('SELECT `userrole`, `usertype`, `isdeleted` FROM `users` WHERE `id` = ? LIMIT 1');
+        $stmt = $conn->prepare('SELECT `userrole`, `isdeleted` FROM `users` WHERE `id` = ? LIMIT 1');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
@@ -69,11 +56,7 @@ final class Can
         if (!$user || (int) $user['isdeleted'] === 1) {
             return false;
         }
-        if ($userId === 1 || (int) $user['usertype'] === 2) {
-            return true;
-        }
-        $roleId = (int) $user['userrole'];
-        $perms = self::loadRolePerms($conn, $roleId) ?? self::loadLegacyPerms($conn, $roleId);
+        $perms = self::loadRolePerms($conn, (int) $user['userrole']);
         foreach ($permissions as $p) {
             if (isset($perms[$p])) {
                 return true;
@@ -83,12 +66,16 @@ final class Can
     }
 
     /**
-     * صلاحيات الدور من الجداول الجديدة. null = الدور لسه ما اتنقلش (update/030 ما اتشغلش على القاعدة دي).
+     * صلاحيات الدور من roles / role_has_permissions. دور مش موجود أو متعطّل = مفيش صلاحيات.
+     * لو الجداول مش موجودة (القاعدة ما خدتش التحديث): الدور 1 بياخد الإعدادات والنظام بس عشان يشغّل التحديث، والباقي مفيش.
      *
-     * @return array<string, string>|null
+     * @return array<string, string>
      */
-    private static function loadRolePerms(mysqli $conn, int $roleId): ?array
+    private static function loadRolePerms(mysqli $conn, int $roleId): array
     {
+        if ($roleId < 1) {
+            return [];
+        }
         try {
             $stmt = $conn->prepare('SELECT `is_active` FROM `roles` WHERE `id` = ? LIMIT 1');
             $stmt->bind_param('i', $roleId);
@@ -96,7 +83,8 @@ final class Can
             $role = $stmt->get_result()->fetch_assoc();
             $stmt->close();
             if (!$role) {
-                return null;
+                self::log(sprintf('role %d not found in roles', $roleId));
+                return [];
             }
             if ((int) $role['is_active'] !== 1) {
                 return [];
@@ -118,25 +106,9 @@ final class Can
             $stmt->close();
             return $perms;
         } catch (mysqli_sql_exception $e) {
-            return null;
+            self::log('rbac tables missing — run database update: ' . $e->getMessage());
+            return $roleId === 1 ? ['settings.manage' => 'system', 'system.manage' => 'system'] : [];
         }
-    }
-
-    /** @return array<string, string> */
-    private static function loadLegacyPerms(mysqli $conn, int $roleId): array
-    {
-        require_once __DIR__ . '/RbacLegacy.php';
-        try {
-            $stmt = $conn->prepare('SELECT * FROM `usr_pwrs` WHERE `id` = ? LIMIT 1');
-            $stmt->bind_param('i', $roleId);
-            $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-        } catch (mysqli_sql_exception $e) {
-            $row = null;
-        }
-        self::log(sprintf('legacy perms role=%d (%s)', $roleId, $row ? 'usr_pwrs' : 'not found'));
-        return $row ? RbacLegacy::permsFromRow($row, $roleId) : [];
     }
 
     /**
@@ -164,7 +136,7 @@ final class Can
         if (!is_array($auth)) {
             return false;
         }
-        return $auth['is_super'] || isset($auth['perms'][$permission]);
+        return isset($auth['perms'][$permission]);
     }
 
     public static function any(string ...$permissions): bool
@@ -184,9 +156,6 @@ final class Can
         if (!is_array($auth)) {
             return false;
         }
-        if ($auth['is_super']) {
-            return true;
-        }
         foreach ($auth['perms'] as $group) {
             if (in_array($group, $groupKeys, true)) {
                 return true;
@@ -198,11 +167,6 @@ final class Can
     public static function isLoggedIn(): bool
     {
         return isset($_SESSION[self::KEY]);
-    }
-
-    public static function isSuperAdmin(): bool
-    {
-        return !empty($_SESSION[self::KEY]['is_super']);
     }
 
     public static function userId(): int
@@ -343,7 +307,7 @@ final class Can
      */
     public static function filterMenu(string $html): string
     {
-        if (self::isSuperAdmin() || trim($html) === '') {
+        if (trim($html) === '') {
             return $html;
         }
         $doc = new DOMDocument();

@@ -1,6 +1,6 @@
 <div class="dashboard-cards">
     <div class="row">
-        <?php if(Can::anyIn('rents')){ ?>
+        <?php if(Can::canVisit('myrentables.php')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-dark) !important;">
                 <div class="card-icon">
@@ -16,7 +16,7 @@
                     <p class="stat-label">الاقساط المستحقة</p>
                 </div>
                 <div class="card-footer-det">
-                    <a href="#" class="card-link">
+                    <a href="myrentables.php" class="card-link">
                         <span>عرض التفاصيل</span>
                         <i class="fas fa-chevron-left"></i>
                     </a>
@@ -26,6 +26,7 @@
         </div>
         <?php } ?>
 
+        <?php if(Can::canVisit('acc_report.php?acc=clients')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-color) !important;">
                 <div class="card-icon">
@@ -49,7 +50,9 @@
                 <div class="wave-effect"></div>
             </div>
         </div>
+        <?php } ?>
 
+        <?php if(Can::check('users.view')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-light) !important;">
                 <div class="card-icon">
@@ -73,7 +76,9 @@
                 <div class="wave-effect"></div>
             </div>
         </div>
+        <?php } ?>
 
+        <?php if(Can::canVisit('operations_summary.php?q=sale')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
                 <div class="card-icon" style="color: var(--primary-dark) !important;">
@@ -99,8 +104,9 @@
                 <div class="wave-effect"></div>
             </div>
         </div>
+        <?php } ?>
 
-        <?php if(Can::anyIn('sales', 'pos')){ ?>
+        <?php if(Can::canVisit('tasks.php')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-dark) !important;">
                 <div class="card-icon">
@@ -126,7 +132,7 @@
         </div>
         <?php } ?>
 
-        <?php if(Can::anyIn('hr')){ ?>
+        <?php if(Can::canVisit('tasks.php')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-color) !important;">
                 <div class="card-icon">
@@ -152,7 +158,7 @@
         </div>
         <?php } ?>
 
-        <?php if(Can::anyIn('clinics')){ ?>
+        <?php if(Can::canVisit('reservations.php')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-light) !important;">
                 <div class="card-icon">

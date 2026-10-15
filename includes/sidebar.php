@@ -48,8 +48,7 @@
 
 
         <!--                                             البيانات الاساسيه                                                                        -->
-        <?php if (Can::anyIn('basic')) { ?>
-          <li class="nav-item has-treeview">
+                  <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-pen"></i>
               <p>
@@ -166,25 +165,21 @@
                 </a>
               </li>
 
-              <?php if (Can::check('delivery.view')) { ?>
               <li class="nav-item">
                 <a href="acc_report.php?acc=delivery" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
                   <p>ديليفري</p>
                 </a>
               </li>
-              <?php } ?>
             </ul>
           </li>
-        <?php } ?>
-
+        
 
 
 
 
         <!--                                                                        -->
-        <?php if (Can::anyIn('inventory')) { ?>
-
+        
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-store"></i>
@@ -308,14 +303,12 @@
 
             </ul>
           </li>
-        <?php } ?>
-
+        
 
 
 
 <!-- -------------------نقاط البيع  -->
-        <?php if (Can::anyIn('sales', 'pos')) { ?>
-
+        
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-store"></i>
@@ -373,21 +366,17 @@
                 </a>
               </li>
 
-              <?php if (Can::anyIn('visits')) { ?>
-                <li class="nav-item">
+                              <li class="nav-item">
                   <a href="visits.php" class="nav-link">
                     <i class="nav-icon fas fa-user-check"></i>
                     <p><?= $lang_visits ?? 'الزيارات' ?></p>
                   </a>
                 </li>
-              <?php } ?>
-
+              
             </ul>
           </li>
-        <?php } ?>
-
-        <?php if (Can::anyIn('cards')) { ?>
-
+        
+        
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-credit-card"></i>
@@ -432,16 +421,14 @@
 
             </ul>
           </li>
-        <?php } ?>
+        
 
 
 
 
 
 
-
-        <?php if (Can::anyIn('purchases')) { ?>
-
+        
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -486,13 +473,11 @@
               </li>
             </ul>
           </li>
-        <?php } ?>
+        
 
 
 
-
-        <?php if (Can::anyIn('sales', 'pos')) { ?>
-            <li class="nav-item has-treeview">
+                    <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
                 <p>
@@ -544,16 +529,14 @@
                 </li>
               </ul>
             </li>
-        <?php } ?>
+        
 
 
 
 
 
 
-
-        <?php if (Can::anyIn('vouchers')) { ?>
-          <li class="nav-item has-treeview">
+                  <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-money-bill-wave"></i>
               <p>
@@ -593,8 +576,7 @@
               </li>
             </ul>
           </li>
-        <?php } ?>
-
+        
 
 
 
@@ -612,8 +594,7 @@
 
 
 
-        <?php if (Can::anyIn('hr')) { ?>
-
+        
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
 
@@ -637,14 +618,12 @@
                   </a>
                 </li> -->
 
-                <?php if (Can::check('delivery.view')) { ?>
                 <li class="nav-item">
                   <a href="acc_report.php?acc=delivery" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
                     <p>ديليفري</p>
                   </a>
                 </li>
-                <?php } ?>
 
                 <li class="nav-item">
                   <a href="shifts.php" class="nav-link">
@@ -699,11 +678,9 @@
 
               </ul>
             </li>
-        <?php } ?>
+        
 
-
-        <?php if (Can::anyIn('hr')) { ?>
-            <li class="nav-item has-treeview">
+                    <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-bolt text-warning"></i>
                 <p>
@@ -732,11 +709,9 @@
                 </li>
               </ul>
             </li>
-        <?php } ?>
+        
 
-
-        <?php if (Can::anyIn('rents')) { ?>
-            <li class="nav-item has-treeview">
+                    <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-money-bill-wave"></i>
                 <p>
@@ -792,8 +767,7 @@
 
 
 
-        <?php } ?>
-
+        
 
 
 
@@ -803,8 +777,7 @@
 
 
         <!-- clinck -->
-        <?php if (Can::anyIn('clinics')) { ?>
-            <li class="nav-item has-treeview">
+                    <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
                 <p>
@@ -847,15 +820,13 @@
               </ul>
 
             </li>
-        <?php } ?>
-
+        
         <li class="divider"></li>
 
 
 
         <!-------------------------------الحضور---------------------------------------->
-        <?php if (Can::anyIn('tasks', 'payroll')) { ?>
-
+        
 
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -950,14 +921,12 @@
                   </ul>
                 </li>
               </ul>
-        <?php } ?>
-
+        
 
 
           <!--                                            المرتبات                               -->
 
-            <?php if (Can::anyIn('tasks', 'payroll')) { ?>
-
+            
 
 
 
@@ -1122,7 +1091,7 @@
 
 
 
-        <?php } ?>
+        
 
 
 
@@ -1132,9 +1101,7 @@
 
 
 
-
-        <?php if (Can::anyIn('crm')) { ?>
-
+        
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-tasks"></i>
@@ -1199,8 +1166,7 @@
             </ul>
           </li>
 
-        <?php } ?>
-
+        
 
 
 
@@ -1215,8 +1181,7 @@
           </a>
         </li>
 
-        <?php if (Can::anyIn('accounting')) { ?>
-          <li class="nav-item has-treeview">
+                  <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
               <p>
@@ -1306,13 +1271,11 @@
 
             </ul>
           </li>
-        <?php } ?>
+        
 
 
 
-
-        <?php if (Can::anyIn('accounting')) { ?>
-          <li class="nav-item has-treeview">
+                  <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
               <p><?= $lang_system ?>
@@ -1342,7 +1305,7 @@
 
             </ul>
           </li>
-        <?php } ?>
+        
 
 
 
@@ -1351,9 +1314,7 @@
 
 
 
-
-        <?php if (Can::anyIn('assets_ops')) { ?>
-
+        
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
@@ -1396,19 +1357,16 @@
 
             </ul>
           </li>
-        <?php } ?>
+        
 
 
-
-        <?php if (Can::anyIn('reports')) { ?>
-          <li class="nav-item" id="reports-menu">
+                  <li class="nav-item" id="reports-menu">
             <a href="reports.php" class="nav-link" id="reports-link">
               <i class="nav-icon fas fa-chart-line"></i>
               <p><?= $lang_sidereports ?></p>
             </a>
           </li>
-        <?php } ?>
-
+        
 
 
 

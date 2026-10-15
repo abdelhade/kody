@@ -43,9 +43,6 @@ class ShiftCloser
         if (empty($settings['pos_blind_close'])) {
             return true;
         }
-        if ((int) ($_SESSION['userid'] ?? 0) === 1 || (int) ($_SESSION['usty'] ?? 0) === 2) {
-            return true;
-        }
         return Can::check('pos.view_shift_expected');
     }
 

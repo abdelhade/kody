@@ -18,14 +18,23 @@ if (!hash_equals((string) ($_SESSION['csrf_token'] ?? ''), (string) ($_POST['csr
     $back('error=' . urlencode('انتهت صلاحية الصفحة، افتحها تاني وحاول مرة أخرى'));
 }
 
-if ($roleId > 0 && $roleId === Can::roleId() && !Can::isSuperAdmin()) {
-    $back('error=' . urlencode('مش مسموح تعدّل صلاحيات الدور بتاعك'));
-}
-
 $name        = trim((string) ($_POST['name'] ?? ''));
 $description = trim((string) ($_POST['description'] ?? ''));
 $isActive    = !empty($_POST['is_active']);
 $permIds     = array_map('intval', (array) ($_POST['perms'] ?? []));
+
+// محدش يدّي صلاحية هو نفسه معندوش (الصلاحيات اللي في الدور أصلاً تفضل زي ما هي)
+$current = $roleId > 0 ? array_flip(Roles::permissionNames($conn, $roleId)) : [];
+$nameById = array_column(Roles::allPermissions($conn), 'name', 'id');
+foreach ($permIds as $pid) {
+    $permName = $nameById[$pid] ?? null;
+    if ($permName !== null && !isset($current[$permName]) && !Can::check($permName)) {
+        $back('error=' . urlencode('مش مسموح تدّي صلاحية انت معندكش: ' . $permName));
+    }
+}
+if ($roleId === 1 || ($roleId > 0 && $roleId === Can::roleId())) {
+    $permIds = array_merge($permIds, Roles::idsFor($conn, Roles::LOCK_PERMISSIONS));
+}
 
 if ($name === '' || mb_strlen($name) > 190) {
     $back('error=' . urlencode('اسم الدور مطلوب (190 حرف بحد أقصى)'));
