@@ -25,7 +25,9 @@
       <div class="col-12">
         <div class="card">
           <div class="card-header">
+            <?php if (Can::check('allowances.add')) { ?>
             <h3 class="card-title"><a href="add_allowances.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?></a></h3>
+            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">
@@ -44,6 +46,8 @@
               $res = $conn->query($sql);
 
               $x = 0;
+              $canEdit = Can::check('allowances.edit');
+              $canDelete = Can::check('allowances.delete');
 
               while ($row = $res->fetch_assoc()) {
                 $x++;
@@ -54,7 +58,8 @@
                     <th><a href='#'><?= $row['name'] ?></a></th>
                     <th><?= $row['info'] ?></th>
                     <th><?= ($row['tybe'] == 0) ? "استقطاع" : "بدل" ?></th>
-                    <th><a class="btn btn-warning" href="edit_allowances.php?id=<?= $row['id'] ?>"><?= $lang_edit ?></a>
+                    <th><?php if ($canEdit) { ?><a class="btn btn-warning" href="edit_allowances.php?id=<?= $row['id'] ?>"><?= $lang_edit ?></a><?php } ?>
+                      <?php if ($canDelete) { ?>
                       <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger">
                         حذف
                       </a>
@@ -85,6 +90,7 @@
                         </div>
                         <!-- /.modal-dialog -->
                       </div>
+                      <?php } ?>
                   </tr>
                 <?php } ?>
                 </tbody>

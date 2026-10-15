@@ -14,14 +14,7 @@ if (!isset($_POST['password'])) {
 Can::authorize('system.manage');
 
 // تأكيد بكلمة مرور المستخدم الحالي قبل مسح البيانات
-$pass = (string) $_POST['password'];
-$stmt = $conn->prepare('SELECT password FROM users WHERE id = ? LIMIT 1');
-$uid = Can::userId();
-$stmt->bind_param('i', $uid);
-$stmt->execute();
-$storedHash = (string) ($stmt->get_result()->fetch_row()[0] ?? '');
-$stmt->close();
-$passwordOk = $storedHash !== '' && (password_verify($pass, $storedHash) || (strlen($storedHash) === 32 && hash_equals($storedHash, md5($pass))));
+$passwordOk = Can::verifyPassword($conn, (string) $_POST['password']);
 
     if ($passwordOk) {
         $tables = [

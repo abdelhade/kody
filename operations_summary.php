@@ -267,6 +267,11 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                             <tbody>
                                 <?php
                                 $x = $offset; // بدء العد من الـ offset
+                                if (!class_exists('InvoiceProcessor')) {
+                                    require_once __DIR__ . '/classes/InvoiceProcessor.php';
+                                }
+                                $canInvOperations = Can::check('items.pricing');
+                                $canSettleCredit = Can::check('receipts.add');
                                 while ($rowop = $resop->fetch_assoc()) {
                                     $x++;
                                     $proid = $rowop['id'];
@@ -335,12 +340,14 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                         <td><?= !empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '' ?></td>
                                         <td>
                                             <?= $rowop['id'] ?>
+                                            <?php if ($canInvOperations) { ?>
                                             <a href="inv_operations.php?h=<?= md5($proid) ?>&q=<?= $proid ?>&t=<?= md5($tybe) ?>">
                                                 <i class="fa fa-barcode"></i>
                                             </a>
+                                            <?php } ?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4, 13, 14])) { // مبيعات، مشتريات، أمر بيع، عرض سعر (الكاشير tybe=9 ليس له صفحة تعديل) ?>
+                                            <?php if(in_array($tybe, [3, 4, 13, 14]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، أمر بيع، عرض سعر (الكاشير tybe=9 ليس له صفحة تعديل) ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>
@@ -380,12 +387,14 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
                                                             
+                                                            <?php if ($canSettleCredit) { ?>
                                                             <form action="do/settle_credit.php" method="POST" onsubmit="return confirm('هل أنت متأكد من تسوية هذا المبلغ؟ سيتم تصفير الأجل واعتباره مدفوعاً.');">
                                                                 <input type="hidden" name="id" value="<?= $rowop['id'] ?>">
                                                                 <button type="submit" class="btn btn-success">
                                                                     <i class="fa fa-check me-1"></i> تم الدفع (تسوية)
                                                                 </button>
                                                             </form>
+                                                            <?php } ?>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -393,6 +402,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                             <?php endif; ?>
 
                                             <!-- زر الحذف -->
+                                            <?php if (Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'delete'))) { ?>
                                             <a href="#" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal<?= $rowop['id']?>" data-id="<?= $id; ?>">
                                                 <i class="fa fa-trash"></i>
                                             </a>
@@ -432,6 +442,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                                 </div>
                                             </div>
                                             </form>
+                                            <?php } ?>
 
                                         </td>
                                     </tr>

@@ -163,18 +163,12 @@ final class Roles
 
     /**
      * هل المستخدم الحالي يقدر يدّي الدور ده لمستخدم؟ null = مسموح، غير كده رسالة الرفض.
-     * محدش يقدر يدّي دور فيه صلاحية هو نفسه مش عنده.
      */
     public static function assignError(mysqli $conn, int $roleId): ?string
     {
         $role = self::find($conn, $roleId);
         if (!$role || (int) $role['is_active'] !== 1) {
             return 'الدور غير موجود أو معطّل';
-        }
-        foreach (self::permissionNames($conn, $roleId) as $name) {
-            if (!Can::check($name)) {
-                return 'الدور فيه صلاحيات أكبر من صلاحياتك (' . $name . ')';
-            }
         }
         return null;
     }

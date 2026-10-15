@@ -77,6 +77,7 @@ function render_edit_line_row($idx, $cr, $employees) {
 
     <section class="content pb-4">
         <div class="container-fluid">
+            <?php if (Can::check('payroll.delete')) { ?>
             <button type="button" class="btn btn-danger btn-sm mb-2" data-toggle="modal" data-target="#deleteModal">
                 <i class="fa fa-trash"></i> حذف العملية
             </button>
@@ -92,6 +93,7 @@ function render_edit_line_row($idx, $cr, $employees) {
                     </div>
                 </div>
             </div>
+            <?php } ?>
 
             <form action="do/doedit_payroll_calc.php?edit=<?= $id ?>" method="post">
                 <input type="hidden" name="snd_id" value="<?= $id ?>">

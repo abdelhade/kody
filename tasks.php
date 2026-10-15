@@ -34,7 +34,9 @@
           
         
         <div class="col">
+          <?php if (Can::check('tasks.add')) { ?>
           <a class="btn btn-primary float-right" href="add_task.php" id="addNewElement">جديد</a>
+          <?php } ?>
                 </div>
       </div>
     </div>
@@ -60,6 +62,8 @@
           
           $restsk = $conn->query($sqltsk);
           $x = 0;
+          $canEdit = Can::check('tasks.edit');
+          $canDelete = Can::check('tasks.delete');
           while ($rowtsk = $restsk->fetch_assoc()) {
             $x++;
           ?>
@@ -109,9 +113,12 @@
                 <p class="text-muted text-sm">crtime <?= $rowtsk['crtime'] ?> </p>
                   <br>
                   <div class="row">
+                    <?php if ($canEdit) { ?>
                     <div class="col">
                       <a href="edit_task.php?id=<?= $rowtsk['id'] ?>" class="btn btn-warning text-center btn-block "><?= $lang_edit ?></a>
                     </div>
+                    <?php } ?>
+                    <?php if ($canDelete) { ?>
                     <div class="col">
                       <a href="#" class="btn btn-danger btn-block" data-toggle="modal" data-target="#modal-danger<?=$rowtsk['id']?>">
                         انهاء
@@ -145,6 +152,7 @@
                         <!-- /.modal-dialog -->
                       </div>
                     </div>
+                    <?php } ?>
                   </div>
                 </div>
               </div>

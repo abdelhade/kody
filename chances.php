@@ -364,10 +364,18 @@
         </div>
     </div>
 
+    <?php
+    $canAddChance  = Can::check('chances.add');
+    $canEditChance = Can::check('chances.edit');
+    $canEditTask   = Can::check('tasks.edit');
+    $canDeleteTask = Can::check('tasks.delete');
+    ?>
+    <?php if ($canAddChance) { ?>
     <!-- Add Chance Button -->
     <button id="addChanceBtn" type="button" class="add-chance-btn" data-toggle="modal" data-target="#addchance">
         +
     </button>
+    <?php } ?>
 
     <!-- Kanban Board -->
     <div class="kanban-board">
@@ -421,19 +429,26 @@
                     </div>
                     <div class="card-footer">
                         <div class="action-buttons">
+                            <?php if ($canEditChance) { ?>
                             <button type="button" class="action-btn btn-edit" data-toggle="modal" data-target="#editchance<?= $rowcha['id']?>">
                                 تعديل
                             </button>
+                            <?php } ?>
+                            <?php if ($canEditTask) { ?>
                             <a href="edit_task.php?id=<?= $rowcha['id'] ?>" class="action-btn btn-assign">
                                 تعهيد
                             </a>
+                            <?php } ?>
+                            <?php if ($canDeleteTask) { ?>
                             <button type="button" class="action-btn btn-delete" data-toggle="modal" data-target="#delchance<?= $rowcha['id']?>">
                                 حذف
                             </button>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>
                 
+                <?php if ($canEditChance) { ?>
                 <!-- Edit Modal -->
                 <div class="modal fade" id="editchance<?= $rowcha['id']?>">
                     <div class="modal-dialog" role="document">
@@ -493,7 +508,9 @@
                         </div>
                     </div>
                 </div>
+                <?php } ?>
                 
+                <?php if ($canDeleteTask) { ?>
                 <!-- Delete Modal -->
                 <div class="modal fade" id="delchance<?= $rowcha['id']?>">
                     <div class="modal-dialog" role="document">
@@ -522,12 +539,14 @@
                     </div>
                 </div>
                 <?php } ?>
+                <?php } ?>
             </div>
         </div>
         <?php } ?>
     </div>
 </div>
 
+<?php if ($canAddChance) { ?>
 <!-- Add Chance Modal -->
 <div class="modal fade" id="addchance">
     <div class="modal-dialog modal-lg" role="document">
@@ -611,6 +630,7 @@
         </div>
     </div>
 </div>
+<?php } ?>
 
 <script>
 $(document).ready(function() {

@@ -25,7 +25,9 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        <?php if (Can::check('cvs.add')) { ?>
                         <h3 class="card-title"><a href="add_cv.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?></a></h3>
+                        <?php } ?>
                     </div>
                     <!-- /.card-header -->
                     <div class="card-body">
@@ -45,6 +47,7 @@
 
                             <?php $rescv = $conn->query("SELECT * FROM `cvs` where isdeleted != 1 order by id desc");
                             $x=0;
+                            $canEdit = Can::check('cvs.edit');
                             while($rowcv = $rescv->fetch_assoc()){
                                 $x++;
                                 ?>
@@ -61,7 +64,9 @@
                                         <?= isset($rowcv['exp5']) ? $rowcv['exp5'] : '' ?>
                                     </th>
                                     <th>
+                                        <?php if ($canEdit) { ?>
                                         <a href="edit_cv.php?id=<?= $rowcv['id'] ?>" class="btn btn-warning"><i class="fas fa-pen"></i></a>
+                                        <?php } ?>
                                     </th>
                                     
                                 </tr>

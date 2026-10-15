@@ -16,7 +16,9 @@
                 <div class="col"><h3>Follow UP</h3></div>
 
                 <div class="col">
+                    <?php if (Can::check('tasks.add')) { ?>
                     <a class="btn btn-primary btn-lg" href="add_task.php">جديد</a>
+                    <?php } ?>
                 </div>
             </div><div class="row">
                 <div class="col-md-4"><input type="text" class="form-control" placeholder="filter" id="itmsearch"></div>
@@ -41,6 +43,8 @@
                 <?php
                 $restsk = $conn->query("SELECT * FROM tasks where isdeleted = 1 order by mdtime desc ");
                 $x = 0;
+                $canEdit = Can::check('tasks.edit');
+                $canDelete = Can::check('tasks.delete');
                 while ($rowtsk = $restsk->fetch_assoc()) {
                 $x++;
                 ?>
@@ -52,11 +56,16 @@
                     <td><?= $rowtsk['emp_comment'] ?></td>
                     <td><?= $rowtsk['cl_comment'] ?></td>
                     <td>
+                        <?php if ($canEdit) { ?>
                         <a href="edit_task.php?id=<?= $rowtsk['id'] ?>" class="btn btn-warning btn-sm">تعديل</a>
+                        <?php } ?>
+                        <?php if ($canDelete) { ?>
                         <button class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deltask<?= $rowtsk['id']?>" >حذف</button>
+                        <?php } ?>
                     </td>
                 </tr>
 
+                <?php if ($canDelete) { ?>
 
 
 
@@ -89,6 +98,7 @@
         </div>
             </div>
                 </div>
+                <?php } ?>
 
 
 

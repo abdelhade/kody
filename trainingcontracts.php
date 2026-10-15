@@ -25,7 +25,9 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        <?php if (Can::check('contracts.add')) { ?>
                         <h3 class="card-title"><a href="add_trainingcontract.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?></a></h3>
+                        <?php } ?>
                     </div>
                     <!-- /.card-header -->
                     <div class="card-body">
@@ -44,6 +46,8 @@
                             $sqlcntr = "SELECT * FROM  `hiringcontracts` WHERE `type` = 1 AND isdeleted is NULL";
                             $rescntr = $conn->query($sqlcntr);
                             $x = 0;
+                            $canEdit = Can::check('employees.edit');
+                            $canDelete = Can::check('contracts.delete');
                             while ($rowcntr = $rescntr->fetch_assoc()) {
                                 $x++;
                             ?>
@@ -60,7 +64,8 @@
                                                         echo $rowjop['name'] ?><a></th>
                                         <th><?= $rowcntr['salary'] ?></th>
                                         <th><a href="print/contracta4.php?id=<?= $rowcntr['id'] ?>" class="btn btn-secondary text-center">تفاصيل</a></th>
-                                        <th><a class="btn btn-warning" href="edit_employee.php?id=<?= $rowcntr['id'] ?>"><?= $lang_edit ?></a>
+                                        <th><?php if ($canEdit) { ?><a class="btn btn-warning" href="edit_employee.php?id=<?= $rowcntr['id'] ?>"><?= $lang_edit ?></a><?php } ?>
+                                            <?php if ($canDelete) { ?>
                                             <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger">
                                                 حذف
                                             </a>
@@ -90,6 +95,7 @@
                                                 </div>
                                                 <!-- /.modal-dialog -->
                                             </div>
+                                            <?php } ?>
 
                                         </th>
                                     </tr>

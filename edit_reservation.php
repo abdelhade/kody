@@ -42,9 +42,11 @@ $rowrsv = $conn->query("SELECT * FROM reservations WHERE id= $id")->fetch_assoc(
 
 
                   
+                  <?php if (Can::check('crm_clients.add')) { ?>
                   <div class="input-group-append">
                     <a class="btn btn-warning" href="add_client.php" target="_blank">جديد</a>
                     </div>
+                  <?php } ?>
                 </div>
                   </div>
                     </div>

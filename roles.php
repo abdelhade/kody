@@ -84,12 +84,12 @@ $err = (string) ($_GET['error'] ?? '');
             title: 'لا توجد أدوار مسجلة حالياً',
             desc: 'قم بإضافة الأدوار لتعيين الصلاحيات المختلفة لموظفي ومستخدمي النظام، أو قم بتوليد الأدوار القياسية الجاهزة بنقرة واحدة.',
             icon: 'fa-user-shield',
-            cta: [
+            cta: $canAddRole ? [
                 'label' => 'توليد أدوار جاهزة (Seeder)',
                 'url' => '#rolesSeederModal',
                 'icon' => 'fa-seedling',
                 'attr' => 'data-toggle="modal" data-target="#rolesSeederModal"'
-            ]
+            ] : null
         ) ?>
       <?php else: ?>
         <div class="k-table-wrap">
@@ -166,6 +166,7 @@ $err = (string) ($_GET['error'] ?? '');
 </div>
 
 <!-- Modal توليد الأدوار الجاهزة (Roles Seeder Modal) -->
+<?php if ($canAddRole) { ?>
 <div class="modal fade" id="rolesSeederModal" tabindex="-1" role="dialog" aria-labelledby="rolesSeederModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
@@ -258,6 +259,7 @@ $err = (string) ($_GET['error'] ?? '');
     </div>
   </div>
 </div>
+<?php } ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

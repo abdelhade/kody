@@ -17,6 +17,15 @@ $dbname = kody_preferred_dbname();
 
 mysqli_report(MYSQLI_REPORT_OFF);
 
+// مفتوح من غير دخول للتجهيز أول مرة بس (مفيش قاعدة بيانات). لو فيه قاعدة شغّالة لازم system.manage
+$probe = @new mysqli($dbhost, $dbuser, $dbpass);
+$hasDatabase = !$probe->connect_error && kody_select_existing_db($probe) !== null;
+$probe->close();
+if ($hasDatabase) {
+    require_once __DIR__ . '/../classes/Can.php';
+    Can::authorize('system.manage');
+}
+
 /**
  * Parse SQL file into executable statements (respects DELIMITER / comments).
  *

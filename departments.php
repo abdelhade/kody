@@ -7,6 +7,9 @@ require_once __DIR__ . '/includes/sidebar.php';
 $sql = "SELECT * FROM `departments` WHERE COALESCE(isdeleted, 0) != 1 ORDER BY id DESC";
 $res = $conn->query($sql);
 $deptCount = $res ? $res->num_rows : 0;
+$canAdd = Can::check('departments.add');
+$canEdit = Can::check('departments.edit');
+$canDelete = Can::check('departments.delete');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -17,14 +20,14 @@ $deptCount = $res ? $res->num_rows : 0;
           'الرئيسية' => 'dashboard.php',
           ($lang_departlist ?? 'الأقسام') => ''
       ],
-      actions: [
+      actions: $canAdd ? [
           [
               'label' => $lang_add_new ?? 'إضافة قسم جديد',
               'url'   => 'add_department.php',
               'class' => 'k-btn-primary',
               'icon'  => 'fa-plus'
           ]
-      ],
+      ] : [],
       badge: $deptCount . ' قسم'
   ) ?>
 
@@ -46,11 +49,11 @@ $deptCount = $res ? $res->num_rows : 0;
           title: 'لا توجد أقسام مسجلة حالياً',
           desc: 'قم بإضافة الأقسام التنظيمية للشركة لربط الموظفين والعمليات بها بسهولة.',
           icon: 'fa-sitemap',
-          cta: [
+          cta: $canAdd ? [
               'label' => 'إضافة أول قسم',
               'url' => 'add_department.php',
               'icon' => 'fa-plus'
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -82,11 +85,11 @@ $deptCount = $res ? $res->num_rows : 0;
                 </td>
                 <td class="text-center">
                   <div class="k-actions">
-                    <?= kody_action_btn('edit', 'edit_department.php?id=' . $deptId, ['title' => 'تعديل القسم']) ?>
-                    <?= kody_action_btn('delete', 'do/dodel_department.php?id=' . $deptId, [
+                    <?= $canEdit ? kody_action_btn('edit', 'edit_department.php?id=' . $deptId, ['title' => 'تعديل القسم']) : '' ?>
+                    <?= $canDelete ? kody_action_btn('delete', 'do/dodel_department.php?id=' . $deptId, [
                         'title' => 'حذف القسم',
                         'item_name' => $deptName
-                    ]) ?>
+                    ]) : '' ?>
                   </div>
                 </td>
               </tr>

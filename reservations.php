@@ -17,8 +17,10 @@
 
         <div class="card <?php echo $_GET ? "card-warning" : "card-primary" ?>" >
             <div class="card-header">
+            <?php if (Can::check('reservations.add')) { ?>
             <h3 class="card-title">
                             <a href="add_reservation.php" class="btn btn-large bg-sky-300"> اضافة حجز جديد</a></h3>
+            <?php } ?>
                         <h1> الحجوزات<?php echo $_GET ? " المنتهية " : "" ?></h1>
             </div>
             <div class="card-body">
@@ -81,6 +83,8 @@
                                     }
                                     $resrsv = $conn->query($sqlrsv);
                                     $x=0;
+                                    $canEdit = Can::check('reservations.edit');
+                                    $canDelete = Can::check('reservations.delete');
                                     while ($rowrsv = $resrsv->fetch_assoc()) {
                                     $x++
                                     ?>
@@ -93,8 +97,8 @@
                                     <td><?php $vtybeid = $rowrsv['visittybe']; echo $conn->query("SELECT name FROM visittybes WHERE id = $vtybeid")->fetch_assoc()['name'] ?? '';?></td>
                                     <td class="paid"><?= $rowrsv['paid'] ?></td>
                                     <td><?= $rowrsv['duration'] ?> د </td>
-                                    <td> <a href="edit_reservation.php?id=<?= $rowrsv['id'] ?>"><div class="btn btn-warning btn-sm">تعديل</div></a>
-                                     <a href="do/dodel_reservation.php?id=<?= $rowrsv['id'] ?>"><div class="btn btn-danger btn-sm">حذف</div></a></td>
+                                    <td><?php if ($canEdit) { ?> <a href="edit_reservation.php?id=<?= $rowrsv['id'] ?>"><div class="btn btn-warning btn-sm">تعديل</div></a><?php } ?>
+                                     <?php if ($canDelete) { ?><a href="do/dodel_reservation.php?id=<?= $rowrsv['id'] ?>"><div class="btn btn-danger btn-sm">حذف</div></a><?php } ?></td>
                                        
                                     </tr>
                                    <?php } ?>

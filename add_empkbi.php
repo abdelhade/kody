@@ -65,7 +65,9 @@ $hasKbis = count($kbisList) > 0;
                 <div class="alert alert-warning">
                   <i class="fas fa-exclamation-triangle ml-1"></i>
                   لا توجد مؤشرات KPI معرّفة.
+                  <?php if (Can::check('kpis.add')) { ?>
                   <a href="add_kbi.php" class="alert-link">أضف مؤشراً أولاً</a>
+                  <?php } ?>
                 </div>
                 <?php } else { ?>
                 <div class="form-group">

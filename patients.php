@@ -11,7 +11,7 @@
             <div class="card-header">
                 <div class="row">
                     <div class="col">
-            <div class="h3">قائمه العملاء::            <a href="add_client.php"><div class="btn  btn-primary">جديد</div></a>
+            <div class="h3">قائمه العملاء::            <?php if (Can::check('crm_clients.add')) { ?><a href="add_client.php"><div class="btn  btn-primary">جديد</div></a><?php } ?>
 </div></div>
             <div class="col">
             </div>
@@ -35,6 +35,8 @@
                 $sqlcl="SELECT * from clients order by name " ;
                 $rescl = $conn->query($sqlcl);
                 $x = 0;
+                $canEdit = Can::check('crm_clients.edit');
+                $canDelete = Can::check('crm_clients.delete');
                 while ($rowcl = $rescl->fetch_assoc()) {
                   $x++
                 ?>
@@ -44,8 +46,12 @@
                     <th><?= $rowcl['dateofbirth'] ?></th>
                     <th><?= $rowcl['diseses'] ?></th>
                     <th>
+                        <?php if ($canEdit) { ?>
                         <a href="edit_client.php?id=<?= $rowcl['id'] ?>"><div class="btn btn-warning btn-sm">تعديل</div></a>
-                        <a href="do/dodel_client.php?id=<?= $rowcl['id'] ?>"><div class="btn btn-danger btn-sm">حذف</div></a></th>
+                        <?php } ?>
+                        <?php if ($canDelete) { ?>
+                        <a href="do/dodel_client.php?id=<?= $rowcl['id'] ?>"><div class="btn btn-danger btn-sm">حذف</div></a>
+                        <?php } ?></th>
                    </tr>
                    <?php }?>
 

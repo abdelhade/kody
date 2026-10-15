@@ -14,6 +14,43 @@ final class Can
     /** المجموعات اللي الرفض فيها بيتطبّق دايماً حتى لو AUTHZ_ENFORCE = 0 */
     private const ALWAYS_ENFORCED = ['users.', 'roles.', 'settings.', 'system.', 'news.'];
 
+    /** الإعدادات والنظام بيطلبوا باسورد المستخدم، وبيفضلوا مفتوحين المدة دي (ثواني) */
+    private const SETTINGS_LOCK_PREFIXES = ['settings.', 'system.'];
+    private const SETTINGS_UNLOCK_TTL = 1800;
+    /** setting.php هي اللي بتعرض فورم الباسورد، والنسخة الاحتياطية من الناف بار */
+    private const SETTINGS_LOCK_EXEMPT = ['setting.php', 'do/dobackup.php'];
+
+    /** باسورد المستخدم الحالي (password_hash أو md5 القديم) */
+    public static function verifyPassword(mysqli $conn, string $password): bool
+    {
+        $uid = self::userId();
+        if ($uid < 1 || $password === '') {
+            return false;
+        }
+        $stmt = $conn->prepare('SELECT `password` FROM `users` WHERE `id` = ? LIMIT 1');
+        $stmt->bind_param('i', $uid);
+        $stmt->execute();
+        $hash = (string) ($stmt->get_result()->fetch_row()[0] ?? '');
+        $stmt->close();
+        return $hash !== '' && (password_verify($password, $hash) || (strlen($hash) === 32 && hash_equals($hash, md5($password))));
+    }
+
+    public static function settingsUnlocked(): bool
+    {
+        $u = $_SESSION['settings_unlock'] ?? null;
+        return is_array($u) && ($u['user_id'] ?? 0) === self::userId() && ($u['until'] ?? 0) > time();
+    }
+
+    public static function unlockSettings(mysqli $conn, string $password): bool
+    {
+        if (!self::verifyPassword($conn, $password)) {
+            self::log(sprintf('settings unlock failed user=%d', self::userId()));
+            return false;
+        }
+        $_SESSION['settings_unlock'] = ['user_id' => self::userId(), 'until' => time() + self::SETTINGS_UNLOCK_TTL];
+        return true;
+    }
+
     public static function login(mysqli $conn, int $userId, string $db): bool
     {
         self::forget();
@@ -241,6 +278,25 @@ final class Can
             return;
         }
         self::authorize(...(array) $needed);
+
+        if (!in_array($script, self::SETTINGS_LOCK_EXEMPT, true) && self::isSettingsRule((array) $needed) && !self::settingsUnlocked()) {
+            self::respond(403, 'الإعدادات مقفولة — افتح صفحة الإعدادات واكتب كلمة المرور الأول');
+        }
+    }
+
+    /** كل الصلاحيات المطلوبة من الإعدادات / النظام */
+    private static function isSettingsRule(array $needed): bool
+    {
+        foreach ($needed as $p) {
+            $hit = false;
+            foreach (self::SETTINGS_LOCK_PREFIXES as $prefix) {
+                $hit = $hit || str_starts_with($p, $prefix);
+            }
+            if (!$hit) {
+                return false;
+            }
+        }
+        return $needed !== [];
     }
 
     /**
@@ -324,10 +380,11 @@ final class Can
 
         foreach (iterator_to_array($xp->query("//li[$hasClass]/a[@href]")) as $a) {
             $href = trim($a->getAttribute('href'));
-            if ($href === '' || $href[0] === '#' || str_starts_with($href, 'javascript:') || preg_match('~^[a-z]+://~i', $href)) {
+            if ($href !== '' && ($href[0] === '#' || str_starts_with($href, 'javascript:') || preg_match('~^[a-z]+://~i', $href))) {
                 continue;
             }
-            if (!self::canVisit($href)) {
+            // رابط فاضي = صفحة مش موجودة
+            if ($href === '' || !self::canVisit($href)) {
                 $li = $a->parentNode;
                 $li->parentNode?->removeChild($li);
             }

@@ -47,6 +47,7 @@
 
 
 
+              <?php if (Can::check('attendance.add')) { ?>
               <form role="form" action="do/doadd_mopfp.php" method="post">
                 <div class="card-body">
 
@@ -72,6 +73,7 @@
                  
                 </div>
               </form>
+              <?php } ?>
             </div>
             </center>
 </div>

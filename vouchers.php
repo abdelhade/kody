@@ -66,7 +66,7 @@ $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
           'الحسابات' => 'accounts.php',
           'السندات المالية' => ''
       ],
-      actions: [
+      actions: array_values(array_filter([
           [
               'label' => 'سند قبض جديد (وارد)',
               'url'   => 'add_voucher.php?t=recive',
@@ -85,7 +85,7 @@ $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
               'class' => 'k-btn-info text-white font-weight-bold',
               'icon'  => 'fa-exchange-alt'
           ]
-      ],
+      ], fn ($a) => Can::canVisit($a['url']))),
       badge: $voucherCount . ' عملية'
   ) ?>
 
@@ -125,11 +125,11 @@ $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
           title: 'لا توجد سجلات مطابقة لخيارات البحث',
           desc: 'يمكنك إنشاء سندات قبض للمبالغ الواردة، أو سندات صرف للمصروفات، أو تحويل مبالغ نقدية مباشرة بين الصناديق والبنوك.',
           icon: 'fa-money-check-alt',
-          cta: [
+          cta: Can::canVisit($filterType === 'transfer' ? 'add_voucher.php?t=transfer' : ($filterType === 'payment' ? 'add_voucher.php?t=payment' : 'add_voucher.php?t=recive')) ? [
               'label' => ($filterType === 'transfer' ? 'تحويل نقدية جديد' : ($filterType === 'payment' ? 'سند صرف جديد' : 'سند قبض جديد')),
               'url' => ($filterType === 'transfer' ? 'add_voucher.php?t=transfer' : ($filterType === 'payment' ? 'add_voucher.php?t=payment' : 'add_voucher.php?t=recive')),
               'icon' => ($filterType === 'transfer' ? 'fa-exchange-alt' : ($filterType === 'payment' ? 'fa-arrow-up' : 'fa-arrow-down'))
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -202,11 +202,15 @@ $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
                 <td><?= $info !== '' ? $info : '<span class="text-muted small">—</span>' ?></td>
                 <td class="text-center">
                   <div class="k-actions">
+                    <?php if (Can::canVisit('add_voucher.php?edit=' . $vid . '&t=' . $typeKey)) { ?>
                     <?= kody_action_btn('edit', 'add_voucher.php?edit=' . $vid . '&t=' . $typeKey, ['title' => 'تعديل ' . ($proType === 16 ? 'التحويل' : 'السند')]) ?>
+                    <?php } ?>
+                    <?php if (Can::check($proType === 1 ? 'receipts.delete' : 'payments.delete')) { ?>
                     <?= kody_action_btn('delete', 'do/dodel_voucher.php?del=' . $vid, [
                         'title' => 'حذف ' . ($proType === 16 ? 'التحويل' : 'السند'),
                         'item_name' => ($proType === 16 ? 'تحويل نقدية رقم ' : 'سند رقم ') . $proId
                     ]) ?>
+                    <?php } ?>
                   </div>
                 </td>
               </tr>

@@ -25,7 +25,9 @@
       <div class="col-12">
         <div class="card">
           <div class="card-header">
+            <?php if (Can::check('jobs.add')) { ?>
             <h3 class="card-title"><a href="add_jop.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?></a></h3>
+            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">
@@ -53,9 +55,12 @@
                     <td><?= $row['name'] ?></td>
                     <td><?= $row['info'] ?></td>
                     <td>
+                      <?php if (Can::check('jobs.edit')) { ?>
                       <a class="btn btn-sm btn-warning" href="edit_jop.php?id=<?= $row['id'] ?>">
                         <i class="fas fa-edit"></i>
                       </a>
+                      <?php } ?>
+                      <?php if (Can::check('jobs.delete')) { ?>
                       <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
                         <i class="fas fa-trash"></i>
                       </button>
@@ -87,6 +92,7 @@
                         </div>
                       </div>
                       </form>
+                      <?php } ?>
                     </td>
                   </tr>
                 <?php } ?>

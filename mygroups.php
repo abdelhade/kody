@@ -21,6 +21,9 @@ $sqlgrb = "SELECT g.*, a.aname AS supplier_name,
            ORDER BY g.id ASC";
 $resgrb = $conn->query($sqlgrb);
 $groupCount = $resgrb ? $resgrb->num_rows : 0;
+$canAdd = Can::check('item_groups.add');
+$canEdit = Can::check('item_groups.edit');
+$canDelete = Can::check('item_groups.delete');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -33,13 +36,13 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
           'المجموعات' => ''
       ],
       actions: [
-          [
+          ...($canAdd ? [[
               'label' => 'إضافة مجموعة جديدة',
               'url'   => '#',
               'class' => 'k-btn-primary',
               'icon'  => 'fa-plus',
               'attr'  => 'data-toggle="modal" data-target="#addGroupModal"'
-          ],
+          ]] : []),
           [
               'label' => 'قائمة الأصناف',
               'url'   => 'myitems.php',
@@ -68,11 +71,11 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
           title: 'لا توجد مجموعات أصناف مسجلة',
           desc: 'قم بإنشاء المجموعات لتصنيف الأصناف وتسهيل البحث والفلترة في نقاط البيع وتقارير المبيعات.',
           icon: 'fa-layer-group',
-          cta: [
+          cta: $canAdd ? [
               'label' => 'إضافة أول مجموعة',
               'url' => '#',
               'icon' => 'fa-plus'
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -112,6 +115,7 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
                 </td>
                 <td class="text-center">
                   <div class="k-actions">
+                    <?php if ($canEdit) { ?>
                     <button type="button" 
                             class="k-btn-action k-btn-action-edit btn-edit-group" 
                             title="تعديل المجموعة"
@@ -120,6 +124,8 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
                             data-supplier="<?= $supId ?>">
                       <i class="fas fa-edit"></i>
                     </button>
+                    <?php } ?>
+                    <?php if ($canDelete) { ?>
                     <?php if ($icnt === 0): ?>
                       <?= kody_action_btn('delete', 'do/dodel_group.php?id=' . $gid, [
                           'title' => 'حذف المجموعة',
@@ -130,6 +136,7 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
                         <i class="fas fa-lock"></i>
                       </span>
                     <?php endif; ?>
+                    <?php } ?>
                   </div>
                 </td>
               </tr>
@@ -142,6 +149,7 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
 </div>
 
 <!-- Modal: إضافة مجموعة -->
+<?php if ($canAdd) { ?>
 <div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
@@ -173,8 +181,10 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
     </div>
   </div>
 </div>
+<?php } ?>
 
 <!-- Modal: تعديل مجموعة -->
+<?php if ($canEdit) { ?>
 <div class="modal fade" id="editGroupModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
@@ -206,6 +216,7 @@ $groupCount = $resgrb ? $resgrb->num_rows : 0;
     </div>
   </div>
 </div>
+<?php } ?>
 
 <?php 
 $extra_footer_scripts = '

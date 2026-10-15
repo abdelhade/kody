@@ -25,7 +25,9 @@
       <div class="col-12">
         <div class="card">
           <div class="card-header">
+            <?php if (Can::check('job_rules.add')) { ?>
             <h3 class="card-title"><a href="add_joprule.php" class="btn btn-large btn-primary"> <?= $lang_add_new ?></a></h3>
+            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">
@@ -44,6 +46,8 @@
               $res = $conn->query($sql);
 
               $x = 0;
+              $canEdit = Can::check('job_rules.edit');
+              $canDelete = Can::check('job_rules.delete');
 
               while ($row = $res->fetch_assoc()) {
                 $x++;
@@ -53,9 +57,12 @@
                     <td><?= $row['name'] ?></td>
                     <td><?= $row['info'] ?></td>
                     <td>
+                      <?php if ($canEdit) { ?>
                       <a class="btn btn-sm btn-warning" href="edit_joprule.php?id=<?= $row['id'] ?>">
                         <i class="fas fa-edit"></i>
                       </a>
+                      <?php } ?>
+                      <?php if ($canDelete) { ?>
                       <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
                         <i class="fas fa-trash"></i>
                       </button>
@@ -86,6 +93,7 @@
                           </div>
                         </div>
                       </div>
+                      <?php } ?>
                     </td>
                   </tr>
                 <?php } ?>

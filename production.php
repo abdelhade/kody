@@ -1,7 +1,9 @@
 <?php 
 include('includes/header.php');
 include('includes/navbar.php');
-include('includes/sidebar.php');?>
+include('includes/sidebar.php');
+$canAdd = Can::check('production.add');
+$canEdit = Can::check('production.edit');?>
 <div class="content-wrapper">
     <section class="content-header">
       <div class="container-fluid">
@@ -12,7 +14,9 @@ include('includes/sidebar.php');?>
                         الوحدات المنتجه
                     </h2>
                 </div>
+                <?php if ($canAdd) { ?>
                 <a href="add_production.php" class="btn float-right bg-green-600 text-slate-50">+</a>
+                <?php } ?>
 
             </div>
             <div class="card-body">
@@ -52,10 +56,14 @@ include('includes/sidebar.php');?>
                                 <td class="p-1 "><?= $row['info'] ?></td>
                                 <td class="p-1 "><?= $row['info2'] ?></td>
                                 <td class="p-1 ">
+                                    <?php if ($canEdit) { ?>
                                     <a href="edit_production.php?edit=<?= $row['snd_id'] ?>" class="btn btn-sm bg-yellow-300"><span class="fa fa-pen "></span></a>
+                                    <?php } ?>
                                 </td>
                                 <td class="p-1 ">
+                                    <?php if ($canAdd) { ?>
                                     <a href="add_production.php?copy=<?= $row['snd_id'] ?>" class="btn btn-sm btn-info" title="نسخ العملية"><span class="fa fa-copy"></span></a>
+                                    <?php } ?>
                                 </td>
                             </tr>
                             <?php }?>

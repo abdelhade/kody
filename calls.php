@@ -13,7 +13,9 @@
                         <h3>ادارة المكالمات</h3>
                         </div>
                         <div class="col">
+                            <?php if (Can::check('calls.add')) { ?>
                             <a class="btn btn-primary right" href="add_call.php">مكالمة جديدة</a>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>

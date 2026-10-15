@@ -13,6 +13,7 @@ $filterFrom = isset($_GET['from']) ? $conn->real_escape_string($_GET['from']) : 
 $filterTo = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : '';
 $companyName = $rowstg['company_name'] ?? 'FOCUS';
 $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFrom !== '' || $filterTo !== '';
+$canDelete = Can::check('attendance.delete');
 ?>
 
 <div class="content-wrapper calcsalary-page">
@@ -27,10 +28,14 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
           <button type="button" class="btn btn-primary" onclick="printCalcsalary()">
             <i class="fas fa-print"></i> طباعة
           </button>
+          <?php if ($canDelete) { ?>
           <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteAllModal">
             <i class="fas fa-trash"></i> حذف الكل
           </button>
+          <?php } ?>
+          <?php if (Can::check('attendance.process')) { ?>
           <a href="add_calcsalary.php" class="btn btn-success"><?= $lang_add_new ?></a>
+          <?php } ?>
         </div>
       </div>
     <?php } ?>
@@ -252,7 +257,9 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
                     <td class="bg-green-100 font-weight-bold"><?= number_format($netPay, 2) ?></td>
                     <td class="bg-sky-100 no-print"><?= number_format($prodVal, 2) ?></td>
                     <td class="no-print">
+                      <?php if ($canDelete) { ?>
                       <a href="do/dodel_attdoc.php?doc=<?= (int)$rowdoc['id'] ?>" class="btn btn-danger btn-sm" onclick="return confirm('حذف هذه المعالجة؟')">X</a>
+                      <?php } ?>
                       <?php if (!empty($rowdoc['info'])) { ?>
                       <span title="<?= htmlspecialchars($rowdoc['info']) ?>" class="btn btn-sm btn-secondary">?</span>
                       <?php } ?>
@@ -345,6 +352,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
 </style>
 
 <!-- Delete All Modal -->
+<?php if ($canDelete) { ?>
 <div class="modal fade" id="deleteAllModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -370,6 +378,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
     </div>
   </div>
 </div>
+<?php } ?>
 
 <script>
 var calcsalaryDt = null;

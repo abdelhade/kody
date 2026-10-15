@@ -5,6 +5,9 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 $resunits = $conn->query("SELECT u.*, (SELECT COUNT(*) FROM myitems m WHERE m.unit = u.id) AS items_count FROM myunits u ORDER BY u.id ASC");
 $unitCount = $resunits ? $resunits->num_rows : 0;
+$canAdd = Can::check('units.add');
+$canEdit = Can::check('units.edit');
+$canDelete = Can::check('units.delete');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -29,6 +32,7 @@ $unitCount = $resunits ? $resunits->num_rows : 0;
 
   <div class="row">
     <!-- كارت إضافة وحدة جديدة -->
+    <?php if ($canAdd) { ?>
     <div class="col-lg-4 col-md-5 mb-3">
       <div class="k-card h-100">
         <div class="k-card-header">
@@ -50,6 +54,7 @@ $unitCount = $resunits ? $resunits->num_rows : 0;
         </form>
       </div>
     </div>
+    <?php } ?>
 
     <!-- كارت جدول الوحدات -->
     <div class="col-lg-8 col-md-7 mb-3">
@@ -95,12 +100,16 @@ $unitCount = $resunits ? $resunits->num_rows : 0;
                   <tr>
                     <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
                     <td>
+                      <?php if ($canEdit) { ?>
                       <form action="do/doedit_unit.php?id=<?= $uid ?>" method="POST" class="d-flex align-items-center gap-2 m-0" id="form-unit-<?= $uid ?>">
                         <input type="text" name="uname" value="<?= $uname ?>" class="k-input form-control-sm" style="max-width: 220px;" required>
                         <button type="submit" class="k-btn-action k-btn-action-edit" title="حفظ تعديل الاسم">
                           <i class="fas fa-check"></i>
                         </button>
                       </form>
+                      <?php } else { ?>
+                      <strong class="text-dark"><?= $uname ?></strong>
+                      <?php } ?>
                     </td>
                     <td class="text-center">
                       <span class="k-badge <?= $icnt > 0 ? 'k-badge-info' : 'k-badge-secondary' ?>">
@@ -109,6 +118,7 @@ $unitCount = $resunits ? $resunits->num_rows : 0;
                     </td>
                     <td class="text-center">
                       <div class="k-actions">
+                        <?php if ($canDelete) { ?>
                         <?php if ($icnt === 0): ?>
                           <?= kody_action_btn('delete', 'do/dodel_unit.php?id=' . $uid, [
                               'title' => 'حذف الوحدة',
@@ -119,6 +129,7 @@ $unitCount = $resunits ? $resunits->num_rows : 0;
                             <i class="fas fa-lock"></i>
                           </span>
                         <?php endif; ?>
+                        <?php } ?>
                       </div>
                     </td>
                   </tr>

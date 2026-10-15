@@ -18,11 +18,14 @@
                 <div class="col-md-3">
 
 
+                <?php if (Can::check('visit_types.add')) { ?>
                 <button id="addNewElement" type="button" class="btn  btn-success btn-sm hadi-white-flash" data-toggle="modal" data-target="#modal-xl">+</button>
+                <?php } ?>
                 </div>
    
             </div>
 
+<?php if (Can::check('visit_types.add')) { ?>
 
 
 
@@ -62,6 +65,7 @@
 </div>
 </div>
 </div>
+<?php } ?>
 
 
 
@@ -82,6 +86,8 @@
                     <tbody>
                         <?php 
                         $restyb = $conn->query("SELECT * FROM visittybes where isdeleted != 1 order by id");
+                        $canEdit = Can::check('visit_types.edit');
+                        $canDelete = Can::check('visit_types.delete');
                         while($rowtyb = $restyb->fetch_assoc()){
                         ?>
                         
@@ -90,8 +96,12 @@
                             <td><input class="form-control" name="name" type="text" value="<?=$rowtyb['name'] ?>"></td>
                             <td><input class="form-control" name="value" type="text" value="<?=$rowtyb['value'] ?>"></td>
                             <td>
+                                <?php if ($canEdit) { ?>
                                 <button type="submit" class="btn btn-warning btn-sm">تعديل</button>
+                                <?php } ?>
+                                <?php if ($canDelete) { ?>
                                 <a href="do/dodel_vtybe.php?id=<?= $rowtyb['id']?>" class="btn btn-danger btn-sm">حذف</a>
+                                <?php } ?>
 
                                
                                 

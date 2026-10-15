@@ -37,9 +37,11 @@
           </h1>
         </div>
         <div class="col-auto">
+          <?php if (Can::check('attendance.add')) { ?>
           <a href="add_manualfp.php" class="btn btn-success btn-sm">
             <i class="fas fa-plus mr-1"></i> إضافة
           </a>
+          <?php } ?>
         </div>
       </div>
 
@@ -203,7 +205,10 @@
               <i class="fas fa-inbox d-block mb-2" style="font-size: 1.5rem;"></i>
               لا توجد سجلات في الفترة المحددة.
             </p>
-          <?php } else { ?>
+          <?php } else {
+            $canEdit = Can::check('attendance.edit');
+            $canDelete = Can::check('attendance.delete');
+          ?>
 
           <div class="row">
             <?php foreach ($records as $rec) { ?>
@@ -228,15 +233,19 @@
                   <span><?= htmlspecialchars($rec['time']) ?></span>
                 </div>
                 <div class="att-actions">
+                  <?php if ($canEdit) { ?>
                   <a class="btn btn-warning btn-act" href="edit_manualfp.php?id=<?= (int) $rec['id'] ?>"><?= $lang_edit ?></a>
+                  <?php } ?>
+                  <?php if ($canDelete) { ?>
                   <button type="button" class="btn btn-danger btn-act" data-toggle="modal" data-target="#modal-del-<?= (int) $rec['id'] ?>">حذف</button>
+                  <?php } ?>
                 </div>
               </div>
             </div>
             <?php } ?>
           </div>
 
-          <?php foreach ($records as $rec) { ?>
+          <?php if ($canDelete) { foreach ($records as $rec) { ?>
           <div class="modal fade" id="modal-del-<?= (int) $rec['id'] ?>" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
               <div class="modal-content bg-danger">
@@ -256,7 +265,7 @@
               </div>
             </div>
           </div>
-          <?php } ?>
+          <?php } } ?>
 
           <?php } ?>
         </div>

@@ -1,6 +1,7 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
+<?php $canAdd = Can::check('employee_kpis.add'); ?>
 <div class="content-wrapper">
   <section class="content-header">
     <div class="container-fluid">
@@ -10,7 +11,9 @@
                     معدلات التقييم بالنسبه للموظفين 
                 </h2>
                 <div >  
+                    <?php if ($canAdd) { ?>
                     <a class="btn bg-lime-400 float-right" href="add_empkbi.php">+</a>
+                    <?php } ?>
                 </div>
 
             </div>
@@ -41,7 +44,7 @@
                             ?>
                         <tr>
                             <td><?= $x ?></td>
-                            <td><a href="emprofile.php?id=<?= $row['emp_id'] ?>"><?= $row['emp_name'] ?></a><a href="add_empkbi.php?c=<?= $row['emp_name']?>&i=<?= $row['emp_id']?>&q=f898sd897fg98"><i class="fa fa-copy btn btn-sm bg-slate-200 float-right"></a></i></td>
+                            <td><a href="emprofile.php?id=<?= $row['emp_id'] ?>"><?= $row['emp_name'] ?></a><?php if ($canAdd) { ?><a href="add_empkbi.php?c=<?= $row['emp_name']?>&i=<?= $row['emp_id']?>&q=f898sd897fg98"><i class="fa fa-copy btn btn-sm bg-slate-200 float-right"></a></i><?php } ?></td>
                             <td>
                                 <?php foreach ($knames as $kname): ?>
                                     <span class="badge badge-primary"><?= $kname ?></span>

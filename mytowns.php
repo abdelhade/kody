@@ -14,7 +14,13 @@
                 </div>
                 <div class="card-body" style="padding: 20px;">
                     
+                    <?php
+                    $canAdd = Can::check('towns.add');
+                    $canEdit = Can::check('towns.edit');
+                    $canDelete = Can::check('towns.delete');
+                    ?>
                     <!-- Add New Town -->
+                    <?php if ($canAdd) { ?>
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <form action="do/doadd_town.php" method="post" class="form-inline">
@@ -30,6 +36,7 @@
                             </form>
                         </div>
                     </div>
+                    <?php } ?>
 
                     <!-- Towns Table -->
                     <div class="table-responsive">
@@ -54,9 +61,12 @@
                                     $x++;
                                 ?>
                                 <tr>
+                                    <?php if ($canEdit) { ?>
                                     <form action="do/doedit_town.php?id=<?= $rowtwn['id']?>" method="post" class="d-contents">
+                                    <?php } ?>
                                         <td><?= $x ?></td>
                                         <td>
+                                            <?php if ($canEdit) { ?>
                                             <input 
                                                 type="text" 
                                                 value="<?= htmlspecialchars($rowtwn['name']) ?>" 
@@ -64,11 +74,17 @@
                                                 required
                                                 class="form-control"
                                             >
+                                            <?php } else { ?>
+                                            <?= htmlspecialchars($rowtwn['name']) ?>
+                                            <?php } ?>
                                         </td>
                                         <td class="text-center">
+                                            <?php if ($canEdit) { ?>
                                             <button type="submit" class="btn btn-sm btn-warning">
                                                 <i class="fas fa-edit"></i> 
                                             </button>
+                                            <?php } ?>
+                                            <?php if ($canDelete) { ?>
                                             <a 
                                                 href="do/dodel_town.php?id=<?= $rowtwn['id'] ?>" 
                                                 onclick="return confirm('هل أنت متأكد من الحذف؟')"
@@ -76,8 +92,11 @@
                                             >
                                                 <i class="fas fa-trash"></i> 
                                             </a>
+                                            <?php } ?>
                                         </td>
+                                    <?php if ($canEdit) { ?>
                                     </form>
+                                    <?php } ?>
                                 </tr>
                                 <?php } ?>
                             </tbody>

@@ -43,6 +43,10 @@ if ($params) {
 $stmt->execute();
 $visits = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+
+$canAdd    = Can::check('visits.add');
+$canEdit   = Can::check('visits.edit');
+$canDelete = Can::check('visits.delete');
 ?>
 <div class="container">
   
@@ -52,9 +56,11 @@ $stmt->close();
       <i class="fas fa-user-check me-2"></i>
       سجل الزيارات
     </h3>
+    <?php if ($canAdd) { ?>
     <a href="add_visit.php" class="btn btn-primary btn-sm">
       <i class="fas fa-plus me-1"></i> زيارة جديدة
     </a>
+    <?php } ?>
   </div>
 
   <!-- Filters -->
@@ -116,17 +122,23 @@ $stmt->close();
                 <td><?= htmlspecialchars($mode_labels[$v['mode']] ?? $v['mode']) ?></td>
                 <td><?= htmlspecialchars(substr($v['start_time'], 0, 5)) ?></td>
                 <td>
+                  <?php if ($canEdit) { ?>
                   <input type="time" class="form-control form-control-sm update-end-time" data-id="<?= (int)$v['id'] ?>" value="<?= htmlspecialchars(substr($v['end_time'], 0, 5)) ?>" style="width: 100px; display: inline-block;">
+                  <?php } else { ?>
+                  <?= htmlspecialchars(substr((string)$v['end_time'], 0, 5)) ?>
+                  <?php } ?>
                 </td>
                 <td><?= htmlspecialchars($value_labels[$v['order_value']] ?? $v['order_value']) ?></td>
                 <td><?= htmlspecialchars($type_labels[$v['type']] ?? $v['type']) ?></td>
                 <td><?= htmlspecialchars(date('Y-m-d', strtotime($v['created_at']))) ?></td>
                 <td>
+                  <?php if ($canDelete) { ?>
                   <a href="do/dodel_visit.php?id=<?= (int)$v['id'] ?>"
                      class="btn btn-danger btn-xs"
                      onclick="return confirm('هل تريد حذف هذه الزيارة؟')">
                     <i class="fas fa-trash"></i>
                   </a>
+                  <?php } ?>
                 </td>
               </tr>
             <?php endforeach; ?>

@@ -10,6 +10,7 @@ $sql = "SELECT id, code, aname, phone, address, balance
         ORDER BY id ASC";
 $res = $conn->query($sql);
 $storeCount = $res ? $res->num_rows : 0;
+$canAdd = Can::canVisit('add_account.php?parent_id=123');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -20,14 +21,14 @@ $storeCount = $res ? $res->num_rows : 0;
           'الرئيسية' => 'dashboard.php',
           'المخازن' => ''
       ],
-      actions: [
+      actions: $canAdd ? [
           [
               'label' => 'إضافة مخزن جديد',
-              'url'   => 'add_account.php?parent=123',
+              'url'   => 'add_account.php?parent_id=123',
               'class' => 'k-btn-primary',
               'icon'  => 'fa-plus'
           ]
-      ],
+      ] : [],
       badge: $storeCount . ' مخزن'
   ) ?>
 
@@ -49,11 +50,11 @@ $storeCount = $res ? $res->num_rows : 0;
           title: 'لا توجد مخازن مضافة حتى الآن',
           desc: 'قم بإضافة المخازن لربط الأصناف وحركات المخزون والمبيعات بها.',
           icon: 'fa-warehouse',
-          cta: [
+          cta: $canAdd ? [
               'label' => 'إضافة مخزن جديد',
-              'url' => 'add_account.php?parent=123',
+              'url' => 'add_account.php?parent_id=123',
               'icon' => 'fa-plus'
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -96,8 +97,10 @@ $storeCount = $res ? $res->num_rows : 0;
                 </td>
                 <td class="text-center">
                   <div class="k-actions">
+                    <?php if (Can::check(Can::accountPermission((string) $row['code'], 'edit'))) { ?>
                     <?= kody_action_btn('edit', 'edit_account.php?id=' . $sid, ['title' => 'تعديل بيانات المخزن']) ?>
-                    <?php if ($x > 1): ?>
+                    <?php } ?>
+                    <?php if ($x > 1 && Can::check(Can::accountPermission((string) $row['code'], 'delete'))): ?>
                       <?= kody_action_btn('delete', 'do/dodel_account.php?id=' . $sid, [
                           'title' => 'حذف المخزن',
                           'item_name' => $sname

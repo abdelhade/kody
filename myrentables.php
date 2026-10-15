@@ -36,6 +36,7 @@ include('includes/sidebar.php');
                     <?php 
                 
                     $x=0;
+                    $canCollect = Can::canVisit('add_voucher.php?t=recive');
                     $start = $conn->query("SELECT MIN(start_date) AS start_date1 FROM myrents")->fetch_assoc();
                     $end = $conn->query("SELECT MAX(end_date) AS end_date FROM myrents")->fetch_assoc();
                     $startStr = strtotime($start['start_date1']);
@@ -63,9 +64,13 @@ include('includes/sidebar.php');
                         <?php echo $conn->query("SELECT * FROM acc_head where id = {$rowins['rent_id']}")->fetch_assoc()['aname']; ?>
                         </td>
                         <td>
+                        <?php if ($canCollect) { ?>
                         <a  style="color:black;" href="add_voucher.php?t=recive&acc=<?= $rowins['cl_id'] ?>&v=<?= $rowins['ins_value'] ?>&ins=<?=$rowins['id']?>">
+                        <?php } ?>
                         <?php echo $conn->query("SELECT * FROM acc_head where id = {$rowins['cl_id']}")->fetch_assoc()['aname']; ?>
+                        <?php if ($canCollect) { ?>
                         </a>
+                        <?php } ?>
                         </td>
                         <td><?= $rowins['ins_date'] ?></td>
                         <td><?= $rowins['ins_value'] ?></td>

@@ -13,6 +13,9 @@ $sqlcl = "SELECT c.*, t.name AS city_name
           LEFT JOIN towns t ON c.city = t.id 
           ORDER BY c.id DESC";
 $rescl = $conn->query($sqlcl);
+$canAdd = Can::check('crm_clients.add');
+$canEdit = Can::check('crm_clients.edit');
+$canDelete = Can::check('crm_clients.delete');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -23,14 +26,14 @@ $rescl = $conn->query($sqlcl);
           'الرئيسية' => 'dashboard.php',
           'العملاء' => ''
       ],
-      actions: [
+      actions: $canAdd ? [
           [
               'label' => 'إضافة عميل جديد',
               'url'   => 'add_client.php',
               'class' => 'k-btn-primary',
               'icon'  => 'fa-user-plus'
           ]
-      ],
+      ] : [],
       badge: $clientCount . ' عميل'
   ) ?>
 
@@ -52,11 +55,11 @@ $rescl = $conn->query($sqlcl);
           title: 'لا يوجد عملاء مسجلون حتى الآن',
           desc: 'قم بإضافة بيانات العملاء الجدد للبدء في إصدار الفواتير والحجوزات ومتابعة الحسابات.',
           icon: 'fa-user-friends',
-          cta: [
+          cta: $canAdd ? [
               'label' => 'إضافة أول عميل',
               'url' => 'add_client.php',
               'icon' => 'fa-user-plus'
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -114,11 +117,15 @@ $rescl = $conn->query($sqlcl);
                 <td class="text-center">
                   <div class="k-actions">
                     <?= kody_action_btn('view', 'clprofile.php?id=' . $cid, ['title' => 'ملف العميل']) ?>
+                    <?php if ($canEdit) { ?>
                     <?= kody_action_btn('edit', 'edit_client.php?id=' . $cid, ['title' => 'تعديل البيانات']) ?>
+                    <?php } ?>
+                    <?php if ($canDelete) { ?>
                     <?= kody_action_btn('delete', 'do/dodel_client.php?id=' . $cid, [
                         'title' => 'حذف العميل',
                         'item_name' => $cname
                     ]) ?>
+                    <?php } ?>
                   </div>
                 </td>
               </tr>

@@ -10,7 +10,9 @@
             <div class="card-header">
                 <h2>KBIs</h2>
                 <div class="col-md-2 float-right">
+                    <?php if (Can::check('kpis.add')) { ?>
                     <a href="add_kbi.php" class="btn btn-primary hadi-white-flash">اضافة kbi</a>
+                    <?php } ?>
                 </div>
             </div>
             <div class="card-body">
@@ -29,6 +31,8 @@
                         <tbody>
                             <?php 
                             $x=0;
+                            $canEdit = Can::check('kpis.edit');
+                            $canDelete = Can::check('kpis.delete');
                             $reskbi =$conn->query("SELECT * FROM kbis where isdeleted = 0");
                             while ($rowkbi = $reskbi->fetch_assoc()) {
                             $x++;
@@ -39,9 +43,13 @@
                                 <th><input type="text" value="<?= $rowkbi['kname']?>" name="kname" class="form-control"></th>
                                 <th><input type="text" value="<?= $rowkbi['info']?>" name="info" class="form-control"></th>
                                 <th>
+                                    <?php if ($canEdit) { ?>
                                     <button type="submit" class="btn btn-sm btn-warning">
                                     <i class="fa fa-pen"></i></button>
+                                    <?php } ?>
+                                <?php if ($canDelete) { ?>
                                 <a hidden href="do/dodel_kbi.php?id=<?= $rowkbi['id'] ?>" class="btn bg-red-600 text-red-100"><i class="fa fa-trash"></i></a>
+                                <?php } ?>
                                 </th>
                             </tr>
                             </form>

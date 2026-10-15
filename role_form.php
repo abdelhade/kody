@@ -53,16 +53,12 @@ $actions = ['view' => 'عرض', 'add' => 'إضافة', 'edit' => 'تعديل', '
 $title = $roleId > 0 ? 'تعديل دور' : 'إضافة دور';
 $e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-// checked / disabled لكل صلاحية: مقدرش أدّي صلاحية أنا معنديش، وصلاحيات إدارة الأدوار ثابتة في الدور 1 ودوري
+// صلاحيات إدارة الأدوار ثابتة في الدور 1 ودوري عشان الإدارة متتقفلش
 $cbAttrs = static function (array $p) use ($granted, $isLockedRole): string {
-    $isGranted = isset($granted[$p['id']]);
     if ($isLockedRole && in_array($p['name'], Roles::LOCK_PERMISSIONS, true)) {
         return 'checked disabled';
     }
-    if (!$isGranted && !Can::check($p['name'])) {
-        return 'disabled';
-    }
-    return $isGranted ? 'checked' : '';
+    return isset($granted[$p['id']]) ? 'checked' : '';
 };
 
 if (empty($_SESSION['csrf_token'])) {

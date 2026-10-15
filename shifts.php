@@ -68,11 +68,13 @@
       <div class="col-12">
         <div class="card">
           <div class="card-header">
+            <?php if (Can::check('shifts.add')) { ?>
             <h3 class="card-title">
               <a href="add_shift.php" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i> <?= $lang_addshift ?>
               </a>
             </h3>
+            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">
@@ -92,6 +94,8 @@
                   $sqlshft = "SELECT * FROM shifts ORDER BY id DESC";
                   $resshft = $conn->query($sqlshft);
                   $x = 0;
+                  $canEdit = Can::check('shifts.edit');
+                  $canDelete = Can::check('shifts.delete');
                   while ($rowshft = $resshft->fetch_assoc()) {
                     $wd = $rowshft['workingdays'];
                     $days = explode(",", $wd);
@@ -130,9 +134,12 @@
                       </div>
                     </td>
                     <td>
+                      <?php if ($canEdit) { ?>
                       <a href="edit_shift.php?id=<?= $rowshft['id'] ?>" class="btn btn-sm btn-warning">
                         <i class="fas fa-edit"></i>
                       </a>
+                      <?php } ?>
+                      <?php if ($canDelete) { ?>
                       <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal<?= $rowshft['id'] ?>">
                         <i class="fas fa-trash"></i>
                       </button>
@@ -163,6 +170,7 @@
                           </div>
                         </div>
                       </div>
+                      <?php } ?>
                     </td>
                   </tr>
                 <?php 

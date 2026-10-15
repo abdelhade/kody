@@ -62,11 +62,11 @@ $userCount = $res ? $res->num_rows : 0;
             title: 'لا يوجد مستخدمين مسجلين',
             desc: 'يمكنك إضافة مستخدم جديد وتحديد دوره وصلاحياته في النظام.',
             icon: 'fa-users-slash',
-            cta: [
+            cta: Can::check('users.add') ? [
                 'label' => 'إضافة مستخدم جديد',
                 'url' => 'add_user.php',
                 'icon' => 'fa-user-plus'
-            ]
+            ] : null
         ) ?>
       <?php else: ?>
         <div class="k-table-wrap">
@@ -115,7 +115,11 @@ $userCount = $res ? $res->num_rows : 0;
                     </span>
                   </td>
                   <td>
-                    <?php if ($isWaiter): ?>
+                    <?php if ($isWaiter && !Can::check('users.waiter_codes')): ?>
+                      <span class="k-badge k-badge-success">
+                        <i class="fas fa-user-tie"></i> ويتر
+                      </span>
+                    <?php elseif ($isWaiter): ?>
                       <a href="waiter_barcode.php?id=<?= $uid ?>" class="k-badge k-badge-success text-decoration-none" title="اضغط لعرض وطباعة باركود الويتر">
                         <i class="fas fa-user-tie"></i> ويتر <i class="fas fa-barcode mr-1"></i>
                       </a>

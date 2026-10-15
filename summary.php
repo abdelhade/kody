@@ -220,7 +220,7 @@
                             <td><?= $x ?></td>
                             <td><?= $rowacc['pro_date'] ?></td>
                             <td>
-                                <?php if($edit_link !== "#"): ?>
+                                <?php if($edit_link !== "#" && Can::canVisit($edit_link)): ?>
                                     <a href="<?= $edit_link ?>" title="تعديل">
                                         <?= htmlspecialchars($rowacc['pro_type_name'] ?? 'قيد محاسبي') ?>
                                     </a>

@@ -19,6 +19,7 @@
     <div class="container-fluid">
       
       <!-- Assignment Form -->
+      <?php if (Can::check('employee_operations.add')) { ?>
       <div class="card card-default">
           <div class="card-header">
               <h3 class="card-title"><?= $lang_assign_operation ?></h3>
@@ -67,6 +68,7 @@
             </div>
           </form>
       </div>
+      <?php } ?>
 
       <!-- Assignments List -->
       <div class="card">
@@ -94,6 +96,8 @@
                         ORDER BY eo.id DESC";
                 $res = $conn->query($sql);
                 $x = 0;
+                $canEdit = Can::check('employee_operations.edit');
+                $canDelete = Can::check('employee_operations.delete');
                 while($row = $res->fetch_assoc()){
                     $x++;
                     $status_badge = ($row['status'] == 'completed') ? 'badge-success' : 'badge-warning';
@@ -105,15 +109,17 @@
                     <td><span class="badge <?= $status_badge ?>"><?= $row['status'] ?></span></td>
                     <td><?= $row['assigned_at'] ?></td>
                     <td>
-                        <?php if($row['status'] != 'completed'): ?>
+                        <?php if($canEdit && $row['status'] != 'completed'): ?>
                         <a href="DO/doupdate_operation_status.php?id=<?= $row['id'] ?>&status=completed" class="btn btn-success btn-xs">
                            <i class="fas fa-check"></i> Complete
                         </a>
                         <?php endif; ?>
                         
+                        <?php if ($canDelete) { ?>
                         <a href="DO/dodel_employee_operation.php?id=<?= $row['id'] ?>" class="btn btn-danger btn-xs" onclick="return confirm('<?= $lang_confirm ?>')">
                             <i class="fas fa-trash"></i>
                         </a>
+                        <?php } ?>
                     </td>
                 </tr>
                 <?php } ?>

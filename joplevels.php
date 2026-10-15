@@ -25,7 +25,9 @@
       <div class="col-12">
         <div class="card">
           <div class="card-header">
+            <?php if (Can::check('job_levels.add')) { ?>
             <h3 class="card-title"><a href="add_joplevel.php" class="btn btn-large btn-primary"><?= $lang_add_new ?> </a></h3>
+            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">
@@ -43,6 +45,8 @@
               $res = $conn->query($sql);
 
               $x = 0;
+              $canEdit = Can::check('job_levels.edit');
+              $canDelete = Can::check('job_levels.delete');
 
               while ($row = $res->fetch_assoc()) {
                 $x++;
@@ -52,9 +56,10 @@
                     <th><?php echo $x ?></th>
                     <th><a href='#'><?= $row['name'] ?></a></th>
                     <th><?= $row['info'] ?></th>
-                    <th><a class="btn btn-warning" href="edit_joplevel.php?id=<?= $row['id'] ?>">
-                        <?= $lang_edit ?></a>
+                    <th><?php if ($canEdit) { ?><a class="btn btn-warning" href="edit_joplevel.php?id=<?= $row['id'] ?>">
+                        <?= $lang_edit ?></a><?php } ?>
 
+                      <?php if ($canDelete) { ?>
                       <a href="#" class="btn btn-danger" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
                         <?= $lang_delete ?>
                       </a>
@@ -82,6 +87,7 @@
                         </div>
                         <!-- /.modal-dialog -->
                       </div>
+                      <?php } ?>
                   </tr>
                 <?php } ?>
                 </tbody>

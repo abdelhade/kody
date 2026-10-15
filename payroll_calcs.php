@@ -77,6 +77,10 @@ foreach ($grouped as $lines) {
 .payroll-calc-page .op-meta i { width: 18px; text-align: center; }
 </style>
 
+<?php
+$canAdd = Can::check('payroll.add');
+$canEdit = Can::check('payroll.edit');
+?>
 <div class="payroll-calc-page">
 <div class="content-wrapper">
     <section class="content-header">
@@ -86,9 +90,11 @@ foreach ($grouped as $lines) {
                     <h1><i class="fas fa-coins ml-2"></i> احتسابات الموظفين</h1>
                     <small class="d-block mt-1 opacity-90">عملية واحدة — بنود منفصلة — النسخ للعملية كاملة</small>
                 </div>
+                <?php if ($canAdd) { ?>
                 <a href="add_payroll_calc.php" class="btn btn-light btn-sm font-weight-bold">
                     <i class="fas fa-plus ml-1"></i> عملية جديدة
                 </a>
+                <?php } ?>
             </div>
         </div>
     </section>
@@ -137,9 +143,11 @@ foreach ($grouped as $lines) {
                     <i class="fas fa-inbox d-block"></i>
                     <h5 class="text-secondary">لا توجد عمليات احتساب بعد</h5>
                     <p class="mb-3">أضف عملية جديدة ببنود المكافأة والتأمين والضريبة والخصم والسلف القصيرة</p>
+                    <?php if ($canAdd) { ?>
                     <a href="add_payroll_calc.php" class="btn btn-primary">
                         <i class="fas fa-plus ml-1"></i> إضافة عملية
                     </a>
+                    <?php } ?>
                 </div>
             </div>
             <?php } ?>
@@ -175,12 +183,16 @@ foreach ($grouped as $lines) {
                         </div>
                     </div>
                     <div class="btn-group">
+                        <?php if ($canEdit) { ?>
                         <a href="edit_payroll_calc.php?edit=<?= $sndId ?>" class="btn btn-warning btn-sm" title="تعديل العملية">
                             <i class="fas fa-pen"></i> تعديل
                         </a>
+                        <?php } ?>
+                        <?php if ($canAdd) { ?>
                         <a href="add_payroll_calc.php?copy=<?= $sndId ?>" class="btn btn-info btn-sm" title="نسخ العملية كاملة">
                             <i class="fas fa-copy"></i> نسخ
                         </a>
+                        <?php } ?>
                     </div>
                 </div>
                 <div class="card-body bg-light">

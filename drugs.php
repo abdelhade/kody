@@ -25,7 +25,9 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        <?php if (Can::check('drugs.add')) { ?>
                         <h3 class="card-title"><a href="add_drugs.php" class="btn btn-large btn-primary">    اضافه دواء جديد</a></h3>
+                        <?php } ?>
                     </div>
                     <!-- /.card-header -->
                     <div class="card-body">
@@ -47,6 +49,7 @@
                                 $sqldrg= "SELECT * FROM DRUGS order by id desc" ;
                                 $resdrg = $conn->query($sqldrg);
                                 $x=0;
+                                $canEditDrug = Can::check('drugs.edit');
                                 while ($rowdrg = $resdrg->fetch_assoc()) {
                                     $x++
 
@@ -57,7 +60,7 @@
                                     <th><?= $rowdrg['effectivematerial']; ?></th>
                                     <th><?= $rowdrg['purpose']; ?></th>                                    
                                     <th><?= $rowdrg['sideeffects']; ?></th>                                    
-                                    <th> <a href="edit_drugs.php" class="btn btn-primary">Edit</a></th>
+                                    <th><?php if ($canEditDrug) { ?> <a href="edit_drugs.php" class="btn btn-primary">Edit</a><?php } ?></th>
                                                                    </tr>
 
                                 <?php } ?>

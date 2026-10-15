@@ -1,6 +1,11 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
+<?php
+$canEditProfile = Can::check('client_profile.edit');
+$canAddProfile  = Can::check('client_profile.add');
+$canPresc       = Can::any('patients.add', 'patients.edit');
+?>
 <style>
   .hors-inp{
     border-style:solid !important;
@@ -110,7 +115,9 @@ $age = $dateOfBirth->diff($today)->y;
                 
        
        
+                <?php if ($canEditProfile) { ?>
                 <button class="btn bg-sky-500 btn-block" type="submit">تعديل</button>
+                <?php } ?>
                 <br>
 
                 <?php
@@ -278,9 +285,11 @@ $age = $dateOfBirth->diff($today)->y;
                  <div class="tab-pane" id="docs">
                      <div class="post clearfix">
 
+                    <?php if ($canAddProfile) { ?>
                     <button type="button" class="btn bg-sky-200" id="tash" data-toggle="modal" data-target="#addDocModal">
                       اضافه ملفات
                     </button>
+                    <?php } ?>
 <div class="row">
                             <?php
                             $resdoc = $conn->query("SELECT * FROM imgs where clprofile = $id " );
@@ -355,6 +364,7 @@ $age = $dateOfBirth->diff($today)->y;
         </div>
     
              
+    <?php if ($canAddProfile) { ?>
     <div class="modal fade" id="modal1">
         <div class="modal-dialog">
         <form action="do/doadd_dis.php?id=<?= $rowcl['id'] ?>" method="post">  
@@ -379,12 +389,14 @@ $age = $dateOfBirth->diff($today)->y;
           </form>
         </div>
       </div>
+    <?php } ?>
     
       
 
       
              
       
+      <?php if ($canPresc) { ?>
       <div class="modal fade" id="modal-2">
         <div class="modal-dialog modal-md">
           <div class="modal-content ">
@@ -433,9 +445,11 @@ $age = $dateOfBirth->diff($today)->y;
         </div>
         
       </div>
+      <?php } ?>
 
 
             
+    <?php if ($canAddProfile) { ?>
     <div class="modal fade" id="addDocModal">
         <div class="modal-dialog">
         <form action="do/doadd_docs.php?id=<?= $rowcl['id'] ?>" method="post" enctype="multipart/form-data">  
@@ -471,6 +485,7 @@ $age = $dateOfBirth->diff($today)->y;
           </form>
         </div>
       </div>
+    <?php } ?>
       
 
 
@@ -565,8 +580,10 @@ $(document).ready(function(){
         </script>
 
         
+<?php if ($canAddProfile) { ?>
 <script>
       document.getElementById('img_date').valueAsDate = new Date();
 </script>
+<?php } ?>
 
 <?php include('includes/footer.php') ?>

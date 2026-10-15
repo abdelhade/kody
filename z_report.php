@@ -68,6 +68,7 @@ function zr_money($v)
         <?php endif; ?>
     </table>
 
+    <?php if (Can::check('pos.close_shift')) { ?>
     <div class="input-section no-print">
         <form action="do/doclose_shift.php" method="POST">
             <div class="section-title">جرد الخزائن</div>
@@ -110,6 +111,7 @@ function zr_money($v)
             <a href="pos_barcode.php" style="display:block; text-align:center; color:#666;">رجوع لنقطة البيع</a>
         </form>
     </div>
+    <?php } ?>
 </div>
 
 </body>

@@ -29,11 +29,18 @@
                         </div>
                     <?php endif; ?>
 
+                    <?php
+                    $canAdd = Can::check('item_groups.add');
+                    $canEdit = Can::check('item_groups.edit');
+                    $canDelete = Can::check('item_groups.delete');
+                    ?>
+                    <?php if ($canAdd) { ?>
                     <div class="mb-3">
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addCategoryModal">
                             <i class="fas fa-plus"></i> إضافة تصنيف
                         </button>
                     </div>
+                    <?php } ?>
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
@@ -62,6 +69,7 @@
                                     <td><?= $x ?></td>
                                     <td><?= htmlspecialchars($gname) ?></td>
                                     <td class="text-center">
+                                        <?php if ($canEdit) { ?>
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-warning btn-edit-category"
@@ -71,6 +79,8 @@
                                         >
                                             <i class="fas fa-edit"></i>
                                         </button>
+                                        <?php } ?>
+                                        <?php if ($canDelete) { ?>
                                         <a
                                             href="do/dodel_group2.php?id=<?= $gid ?>"
                                             class="btn btn-sm btn-danger"
@@ -78,6 +88,7 @@
                                         >
                                             <i class="fas fa-trash"></i>
                                         </a>
+                                        <?php } ?>
                                     </td>
                                 </tr>
                                 <?php } ?>
@@ -99,6 +110,7 @@
     </section>
 </div>
 
+<?php if ($canAdd) { ?>
 <div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -123,7 +135,9 @@
         </div>
     </div>
 </div>
+<?php } ?>
 
+<?php if ($canEdit) { ?>
 <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -148,6 +162,7 @@
         </div>
     </div>
 </div>
+<?php } ?>
 
 <?php include('includes/footer.php') ?>
 <script>

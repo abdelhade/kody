@@ -63,7 +63,7 @@ return [
     'indexmop.php'           => 'public',
     'do/do_logout.php'       => 'public',
     'ajax/save_js_error.php' => 'public',
-    'ajax/db_setup.php'      => 'public',
+    'ajax/db_setup.php'      => 'public', // جوه الملف: system.manage لو فيه قاعدة بيانات
 
     // ===== أي مستخدم مسجّل =====
     'dashboard.php'          => 'login',
@@ -74,7 +74,7 @@ return [
     'forbidden.php'          => 'login',
     'change_password.php'    => 'login',
     'do/dochange_password.php' => 'login',
-    'ajax/save_license.php'  => 'login',
+    'ajax/save_license.php'  => 'system.manage',
 
     // ===== البيانات الأساسية (الحسابات) =====
     'acc_report.php' => ['param' => 'acc', 'map' => [
@@ -109,7 +109,7 @@ return [
     'get/get_iteminfo.php'     => $itemLookup,
     'api/items.php'            => $itemLookup,
     'api/categories.php'       => $itemLookup,
-    'add_item.php'             => 'items.add',
+    'add_item.php'             => ['param' => 'edit', 'map' => ['' => 'items.add'], 'default' => 'items.edit'],
     'items_factory.php'        => 'items.add',
     'doimport.php'             => 'items.add',
     'do/doadd_item.php'        => 'items.add',
@@ -297,11 +297,8 @@ return [
     'add_rent.php'             => 'rent_contracts.add',
     'rentables.php'            => ['rent_contracts.view', 'reports.rents'],
     'rentcontracts.php'        => ['rent_contracts.view', 'reports.rents'],
-    'edit_contract.php'        => 'rent_contracts.edit',
     'do/doadd_rent.php'        => 'rent_contracts.add',
     'do/start/dodel_rent.php'  => 'rent_contracts.delete',
-    'do/dodel_contract.php'    => 'rent_contracts.delete',
-    'print/contracta4.php'     => 'rent_contracts.view',
     'myrentables.php'          => ['rent_installments.collect', 'reports.rents'],
     'do/start/doaddinstallment.php' => 'rent_installments.collect',
 
@@ -412,7 +409,11 @@ return [
     'add_trainingcontract.php' => 'contracts.add',
     'add_hiringcontract.php'   => 'contracts.add',
     'add_externalcontract.php' => 'contracts.add',
-    'do/doadd_hiringcontract.php' => 'contracts.add',
+    // edit_contract.php بيبعت لنفس ملف الإضافة
+    'do/doadd_hiringcontract.php' => ['contracts.add', 'contracts.edit'],
+    'edit_contract.php'        => 'contracts.edit',
+    'do/dodel_contract.php'    => 'contracts.delete',
+    'print/contracta4.php'     => 'contracts.view',
     'cvs.php'                  => 'cvs.view',
     'add_cv.php'               => 'cvs.add',
     'edit_cv.php'              => 'cvs.edit',

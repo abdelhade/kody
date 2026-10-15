@@ -276,9 +276,11 @@ if ($empValid) {
                                 <input type="text" id="totalSum" readonly aria-label="التقييم العام">
                             </div>
 
+                            <?php if (Can::check('employees.edit')) { ?>
                             <a href="edit_employee.php?id=<?= $id ?>" class="btn btn-edit-emp btn-block mb-3">
                                 <i class="fas fa-edit ml-1"></i> تعديل البيانات
                             </a>
+                            <?php } ?>
                         </div>
                     </div>
 

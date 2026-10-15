@@ -28,7 +28,9 @@
         <div class="card">
             
           <div class="card-header">
+            <?php if (Can::check('hr_operations.add')) { ?>
             <h3 class="card-title"><a href="add_hr_operation.php" class="btn btn-large btn-primary"><?= $lang_add_operation ?> </a></h3>
+            <?php } ?>
           </div>
           
           <!-- /.card-header -->
@@ -54,6 +56,8 @@
               
               $res = $conn->query($sql);
               $x = 0;
+              $canEdit = Can::check('hr_operations.edit');
+              $canDelete = Can::check('hr_operations.delete');
               while ($row = $res->fetch_assoc()) {
                 $x++;
                 $parent_display = $row['parent_name'] ? $row['parent_name'] : '-';
@@ -66,10 +70,13 @@
                     <td><?= $parent_display ?></td>
                     <td><?= $row['description'] ?></td>
                     <td>
+                        <?php if ($canEdit) { ?>
                         <a class="btn btn-info btn-sm" href="edit_hr_operation.php?id=<?= $row['id'] ?>">
                             <i class="fas fa-pencil-alt"></i> <?= $lang_edit ?>
                         </a>
+                        <?php } ?>
                         
+                        <?php if ($canDelete) { ?>
                         <a href="#" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#modal-danger<?= $row['id'] ?>">
                             <i class="fas fa-trash"></i> <?= $lang_delete ?>
                         </a>
@@ -95,6 +102,7 @@
                           </div>
                         </div>
                       </div>
+                      <?php } ?>
 
                     </td>
                   </tr>

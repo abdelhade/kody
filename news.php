@@ -21,7 +21,9 @@
         <div class="container-fluid">
         <div class="card">
            <div class="card-header">
+            <?php if (Can::check('news.add')) { ?>
             <a href="add_news.php" target="_blank" rel="noopener noreferrer">Add</a>
+            <?php } ?>
            </div>
            <div class="row">
            <?php 

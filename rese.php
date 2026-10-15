@@ -25,10 +25,13 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        <?php if (Can::check('patients.add')) { ?>
                         <h3 class="card-title"><a href="add_rese.php" class="btn btn-large btn-primary">    اضافه روشته</a></h3>
+                        <?php } ?>
                     </div>
                     <!-- /.card-header -->
                     <div class="card-body">
+                        <?php $canEditRese = Can::check('patients.edit'); ?>
                         <table id="example2" class="table table-bordered table-hover">
                             <thead>
                                 <tr>
@@ -38,7 +41,7 @@
                                     <th>  الاشعه</th>
                                     <th>    التحاليل</th>
                                     
-                                    <th> <a href="edit_rese.php" class="btn btn-primary">Edit</a></th>
+                                    <th><?php if ($canEditRese) { ?> <a href="edit_rese.php" class="btn btn-primary">Edit</a><?php } ?></th>
                                    
                                 </tr>
                             </thead>
@@ -52,7 +55,7 @@
                                     <th>  الاشعه</th>
                                     <th>    التحاليل</th>
                                     
-                                    <th> <a href="edit_rese.php" class="btn btn-primary">Edit</a></th>
+                                    <th><?php if ($canEditRese) { ?> <a href="edit_rese.php" class="btn btn-primary">Edit</a><?php } ?></th>
                                        
                                     </tr>
                                 </tfoot>

@@ -19,6 +19,27 @@ $sql = "SELECT e.*, j.name AS job_name, d.name AS dept_name, s.name AS shift_nam
         ORDER BY e.id DESC";
 $res = $conn->query($sql);
 $empCount = $res ? $res->num_rows : 0;
+$canAdd = Can::check('employees.add');
+$canEdit = Can::check('employees.edit');
+$canDelete = Can::check('employees.delete');
+
+$pageActions = [];
+if ($canAdd) {
+    $pageActions[] = [
+        'label' => $lang_add_new ?? 'إضافة موظف جديد',
+        'url'   => 'add_employee.php',
+        'class' => 'k-btn-primary',
+        'icon'  => 'fa-user-plus'
+    ];
+}
+if (Can::check('payroll.view')) {
+    $pageActions[] = [
+        'label' => 'حساب الرواتب',
+        'url'   => 'payroll_calcs.php',
+        'class' => 'k-btn-secondary',
+        'icon'  => 'fa-money-bill-wave'
+    ];
+}
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -29,20 +50,7 @@ $empCount = $res ? $res->num_rows : 0;
           'الرئيسية' => 'dashboard.php',
           'الموظفين' => ''
       ],
-      actions: [
-          [
-              'label' => $lang_add_new ?? 'إضافة موظف جديد',
-              'url'   => 'add_employee.php',
-              'class' => 'k-btn-primary',
-              'icon'  => 'fa-user-plus'
-          ],
-          [
-              'label' => 'حساب الرواتب',
-              'url'   => 'payroll_calcs.php',
-              'class' => 'k-btn-secondary',
-              'icon'  => 'fa-money-bill-wave'
-          ]
-      ],
+      actions: $pageActions,
       badge: $empCount . ' موظف'
   ) ?>
 
@@ -64,11 +72,11 @@ $empCount = $res ? $res->num_rows : 0;
           title: 'لا يوجد موظفين مسجلين حالياً',
           desc: 'قم بإضافة الموظفين وتعيين الأقسام والوظائف ومواعيد الشيفتات والرواتب لهم.',
           icon: 'fa-user-tie',
-          cta: [
+          cta: $canAdd ? [
               'label' => 'إضافة موظف جديد',
               'url' => 'add_employee.php',
               'icon' => 'fa-user-plus'
-          ]
+          ] : null
       ) ?>
     <?php else: ?>
       <div class="k-table-wrap">
@@ -129,11 +137,11 @@ $empCount = $res ? $res->num_rows : 0;
                 <td class="text-center">
                   <div class="k-actions">
                     <?= kody_action_btn('view', 'emprofile.php?id=' . $eid, ['title' => 'ملف الموظف']) ?>
-                    <?= kody_action_btn('edit', 'edit_employee.php?id=' . $eid, ['title' => 'تعديل بيانات الموظف']) ?>
-                    <?= kody_action_btn('delete', 'do/dodel_employee.php?id=' . $eid, [
+                    <?= $canEdit ? kody_action_btn('edit', 'edit_employee.php?id=' . $eid, ['title' => 'تعديل بيانات الموظف']) : '' ?>
+                    <?= $canDelete ? kody_action_btn('delete', 'do/dodel_employee.php?id=' . $eid, [
                         'title' => 'حذف الموظف',
                         'item_name' => $ename
-                    ]) ?>
+                    ]) : '' ?>
                   </div>
                 </td>
               </tr>

@@ -41,6 +41,7 @@
 <div class="container">
 
 
+  <?php if (Can::check('requests.add')) { ?>
   <!-- First Row -->
   <div class="row mt-5">
 
@@ -117,6 +118,7 @@
     </div>
 
   </div>
+  <?php } ?>
 
   <!-- /.content -->
 </div>

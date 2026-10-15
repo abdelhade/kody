@@ -36,6 +36,7 @@
             
         </div>
         <div class="card-body">
+        <?php if (Can::check('production.delete')) { ?>
         <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteProductionModal"><i class="fa fa-trash"></i></button>
 
         <div class="modal fade" id="deleteProductionModal">
@@ -57,6 +58,7 @@
                     </div>
                 </div>
             </div>
+        <?php } ?>
 
                         
 

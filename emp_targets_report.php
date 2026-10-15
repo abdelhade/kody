@@ -325,13 +325,17 @@ function achBg(float $pct): string {
                     </tr>
                 </thead>
                 <tbody>
-                <?php $x=0; foreach ($data as $row): $x++; ?>
+                <?php $x=0; $canEditEmp = Can::check('employees.edit'); foreach ($data as $row): $x++; ?>
                     <tr>
                         <td><?= $x ?></td>
                         <td class="text-right font-weight-bold">
+                            <?php if ($canEditEmp) { ?>
                             <a href="edit_employee.php?id=<?= (int)$row['emp_id'] ?>" class="text-dark" target="_blank">
                                 <?= htmlspecialchars($row['emp_name']) ?>
                             </a>
+                            <?php } else { ?>
+                                <?= htmlspecialchars($row['emp_name']) ?>
+                            <?php } ?>
                         </td>
                         <td><?= htmlspecialchars($row['dept_name'] ?? '—') ?></td>
                         <td class="font-weight-bold">

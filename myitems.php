@@ -130,6 +130,8 @@ if (!empty($itemRows)) {
     }
 }
 $shownRows = $offset + count($itemRows);
+$canEditItem = Can::check('items.edit');
+$canDeleteItem = Can::check('items.delete');
 
 if (!$isLazyAjax):
 ?>
@@ -213,9 +215,15 @@ if (!$isLazyAjax):
                         <button type="button" class="btn btn-success btn-sm" id="btnExportExcelSql" title="تصدير كل الأصناف المطابقة للبحث والفلترة">
                             <i class="fas fa-file-excel mr-1"></i> تصدير Excel
                         </button>
+                        <?php if (Can::check('items.add')) { ?>
                         <a href="add_item.php" id="addNewElement" class="btn btn-primary btn-sm"> f3 جديد</a>
+                        <?php } ?>
+                        <?php if ($canDeleteItem) { ?>
                         <a href="deleted_items.php" class="btn btn-outline-danger btn-sm">الاصناف المحذوفه</a>
+                        <?php } ?>
+                        <?php if (Can::check('items.pricing')) { ?>
                         <a href="do/recost.php" class="btn btn-secondary btn-sm">اعادة حساب</a>
+                        <?php } ?>
                     </div>
                 </div>
                 </div> 
@@ -298,7 +306,10 @@ if (!$isLazyAjax):
                                 <td><b><?= $rowitm['cost_price'] ?></b></td>
                                
                                     <td class="no-export">
+                                        <?php if ($canEditItem) { ?>
                                         <a class="btn btn-warning btn-sm" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>
+                                        <?php } ?>
+                                        <?php if ($canDeleteItem) { ?>
                                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteitm<?= $rowitm['id']?>">
                                             <i class="fa fa-trash"></i>
                                         </button>
@@ -337,6 +348,7 @@ if (!$isLazyAjax):
                                     </div>
                                     <!-- /.modal-dialog -->
                                 </div>
+                                        <?php } ?>
 
                             
                                 </td>

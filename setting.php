@@ -11,6 +11,50 @@ $licenseOk = !empty($licenseStatus['licensed']);
 <?php include('includes/navbar.php'); ?>
 <?php include('includes/sidebar.php'); ?>
 
+<?php
+// الإعدادات بباسورد المستخدم نفسه، وبتفضل مفتوحة نص ساعة
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
+}
+$unlockError = '';
+if (isset($_POST['settings_unlock_password'])) {
+    if (!hash_equals((string) $_SESSION['csrf_token'], (string) ($_POST['csrf_token'] ?? ''))) {
+        $unlockError = 'انتهت صلاحية الصفحة، حاول تاني';
+    } elseif (Can::unlockSettings($conn, (string) $_POST['settings_unlock_password'])) {
+        echo '<script>location.replace("setting.php");</script>';
+        exit;
+    } else {
+        $unlockError = 'كلمة المرور غلط';
+    }
+}
+if (!Can::settingsUnlocked()):
+?>
+<div class="content-wrapper">
+  <section class="content pt-5">
+    <div class="container" style="max-width: 420px;">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3"><i class="fas fa-lock text-primary ml-2"></i> الإعدادات محمية</h5>
+          <p class="text-muted small">اكتب كلمة المرور بتاعتك عشان تفتح الإعدادات (هتفضل مفتوحة نص ساعة).</p>
+          <?php if ($unlockError !== ''): ?>
+            <div class="alert alert-danger py-2"><?= htmlspecialchars($unlockError, ENT_QUOTES, 'UTF-8') ?></div>
+          <?php endif; ?>
+          <form method="post" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="password" name="settings_unlock_password" class="form-control mb-3" placeholder="كلمة المرور" required autofocus>
+            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-unlock ml-1"></i> فتح الإعدادات</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<?php
+    include('includes/footer.php');
+    exit;
+endif;
+?>
+
 <style>
   .settings-vertical-pills .nav-link {
     color: #4a5568 !important;
@@ -556,9 +600,11 @@ $licenseOk = !empty($licenseStatus['licensed']);
                       <button type="button" class="btn btn-success" id="btnRunMigrations">
                         <i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات
                       </button>
+                      <?php if (Can::check('items.pricing')) { ?>
                       <button type="button" class="btn btn-outline-info" id="btnRecostSp">
                         <i class="fas fa-calculator ml-1"></i> إعادة حساب التكاليف (Stored Procedure)
                       </button>
+                      <?php } ?>
                       <button type="button" class="btn btn-outline-warning" id="btnRestoreBackup">
                         <i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية
                       </button>
