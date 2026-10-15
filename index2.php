@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 
 // Parse the URL path
 $requestUri = $_SERVER['REQUEST_URI'];

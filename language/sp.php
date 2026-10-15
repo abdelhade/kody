@@ -21,7 +21,6 @@ $lang_main_back = "Volver al menú principal";
 $lang_warningmsg3 = "Usuario no autorizado ";
 $lang_warningmsg4 = "Consulte al administrador del sistema";
 $lang_warningmsg5 = "¿Desea eliminar esta tarea? ";
-$sittingpass = "hadi@1234";
 
 // ENCABEZADO
 $lang_title = "HORS TECH";

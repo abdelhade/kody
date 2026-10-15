@@ -11,13 +11,19 @@ if (!isset($_POST['password'])) {
     exit();
 }
 
-$pass = $_POST['password'];
+Can::authorize('system.manage');
 
-// Sanitize input
-$pass = $conn->real_escape_string($pass);
+// تأكيد بكلمة مرور المستخدم الحالي قبل مسح البيانات
+$pass = (string) $_POST['password'];
+$stmt = $conn->prepare('SELECT password FROM users WHERE id = ? LIMIT 1');
+$uid = Can::userId();
+$stmt->bind_param('i', $uid);
+$stmt->execute();
+$storedHash = (string) ($stmt->get_result()->fetch_row()[0] ?? '');
+$stmt->close();
+$passwordOk = $storedHash !== '' && (password_verify($pass, $storedHash) || (strlen($storedHash) === 32 && hash_equals($storedHash, md5($pass))));
 
-
-    if ( $pass == "hadi@1234") {
+    if ($passwordOk) {
         $tables = [
             "acc_groups",
             "allowances",

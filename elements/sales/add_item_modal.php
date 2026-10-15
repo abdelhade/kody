@@ -14,7 +14,7 @@
           
             <div class="modal-body">
               <p id="msgitem" class="text-lime-400"></p>
-              <?php if ($role['add_items'] == 1){?>
+              <?php if (Can::check('items.add')){?>
                 <div class="card card-primary">
                 <form action="" method="post" id="addItemForm">
                   <?php 

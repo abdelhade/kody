@@ -5,30 +5,34 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 require_once __DIR__ . '/includes/RolesSeeder.php';
 
-$isRootAdmin = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
-$canShowUsers = $isRootAdmin || (isset($role) && is_array($role) && ((int)($role['show_users'] ?? 0) === 1));
-
-// Fetch presets and existing roles
 $presets = RolesSeeder::getPresets();
 $existingRoles = RolesSeeder::getExistingRoles($conn);
+$canAddRole = Can::check('roles.add');
+$canEditRole = Can::check('roles.edit');
+$canDeleteRole = Can::check('roles.delete');
 
-// Fetch roles with user counts
-$sql = "SELECT r.id, r.rollname, r.info,
-            (SELECT COUNT(*) FROM users u WHERE u.userrole = r.id AND COALESCE(u.isdeleted, 0) != 1) AS users_count
-        FROM usr_pwrs r 
-        ORDER BY r.id ASC";
-$res = $conn->query($sql);
-$rolesCount = $res ? $res->num_rows : 0;
+$res = $conn->query(
+    "SELECT r.id, r.name, r.description, r.is_active,
+            (SELECT COUNT(*) FROM users u WHERE u.userrole = r.id AND COALESCE(u.isdeleted, 0) <> 1) AS users_count,
+            (SELECT COUNT(*) FROM role_has_permissions rhp WHERE rhp.role_id = r.id) AS perms_count
+     FROM roles r
+     WHERE r.guard_name = 'web'
+     ORDER BY r.id ASC"
+);
+$rolesCount = $res->num_rows;
+$msg = (string) ($_GET['msg'] ?? '');
+$err = (string) ($_GET['error'] ?? '');
 ?>
 
 <div class="content-wrapper k-page-wrapper">
-  <?php if (!$canShowUsers): ?>
-    <div class="alert alert-danger text-center p-4 m-4">
-      <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-      <h4>صلاحية غير كافية</h4>
-      <p class="mb-0"><?= $userErrorMassage ?? 'ليس لديك صلاحية لإدارة الأدوار والصلاحيات.' ?></p>
-    </div>
-  <?php else: ?>
+    <?php if ($msg === 'saved'): ?>
+      <div class="alert alert-success m-3">تم حفظ الدور. التغييرات بتسري على المستخدمين بعد ما يسجّلوا دخول تاني.</div>
+    <?php elseif ($msg === 'deleted'): ?>
+      <div class="alert alert-success m-3">تم حذف الدور.</div>
+    <?php endif; ?>
+    <?php if ($err !== ''): ?>
+      <div class="alert alert-danger m-3"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
     <?= kody_page_header(
         title: 'أدوار وصلاحيات المستخدمين',
         icon: 'fa-user-shield',
@@ -44,20 +48,21 @@ $rolesCount = $res ? $res->num_rows : 0;
                 'class' => 'k-btn-secondary',
                 'icon'  => 'fa-users'
             ],
-            [
+        ] + ($canAddRole ? [
+            1 => [
                 'label' => 'توليد أدوار جاهزة (Seeder)',
                 'url'   => '#rolesSeederModal',
                 'class' => 'k-btn-success',
                 'icon'  => 'fa-seedling',
                 'attr'  => 'data-toggle="modal" data-target="#rolesSeederModal"'
             ],
-            [
+            2 => [
                 'label' => 'إضافة دور جديد',
-                'url'   => 'add_role.php',
+                'url'   => 'role_form.php',
                 'class' => 'k-btn-primary',
                 'icon'  => 'fa-plus'
             ]
-        ],
+        ] : []),
         badge: $rolesCount . ' دور'
     ) ?>
 
@@ -94,8 +99,9 @@ $rolesCount = $res ? $res->num_rows : 0;
                 <th style="width: 50px;">#</th>
                 <th>اسم الدور</th>
                 <th>الوصف والملاحظات</th>
+                <th style="width: 110px;" class="text-center">الصلاحيات</th>
                 <th style="width: 140px;" class="text-center">المستخدمين المرتبطين</th>
-                <th style="width: 120px;" class="text-center">العمليات</th>
+                <th style="width: 150px;" class="text-center">العمليات</th>
               </tr>
             </thead>
             <tbody>
@@ -104,10 +110,10 @@ $rolesCount = $res ? $res->num_rows : 0;
               while ($r = $res->fetch_assoc()):
                   $x++;
                   $rid = (int)$r['id'];
-                  $rname = htmlspecialchars($r['rollname'] ?? '', ENT_QUOTES, 'UTF-8');
-                  $rinfo = htmlspecialchars($r['info'] ?? '', ENT_QUOTES, 'UTF-8');
+                  $rname = htmlspecialchars($r['name'] ?? '', ENT_QUOTES, 'UTF-8');
+                  $rinfo = htmlspecialchars($r['description'] ?? '', ENT_QUOTES, 'UTF-8');
                   $ucnt = (int)($r['users_count'] ?? 0);
-                  $editUrl = 'edit_role.php?id=' . md5((string)$rid) . '&no=' . $rid . '&name=' . urlencode($r['rollname'] ?? '');
+                  $pcnt = (int)($r['perms_count'] ?? 0);
               ?>
                 <tr>
                   <td><span class="text-muted small font-weight-bold"><?= $x ?></span></td>
@@ -116,10 +122,14 @@ $rolesCount = $res ? $res->num_rows : 0;
                     <?php if ($rid === 1): ?>
                       <span class="badge badge-light border text-muted mr-1 small">دور أساسي</span>
                     <?php endif; ?>
+                    <?php if ((int)$r['is_active'] !== 1): ?>
+                      <span class="badge badge-secondary mr-1 small">معطّل</span>
+                    <?php endif; ?>
                   </td>
                   <td>
                     <?= $rinfo !== '' ? $rinfo : '<span class="text-muted small">—</span>' ?>
                   </td>
+                  <td class="text-center"><span class="k-badge k-badge-secondary"><?= $pcnt ?></span></td>
                   <td class="text-center">
                     <span class="k-badge <?= $ucnt > 0 ? 'k-badge-info' : 'k-badge-secondary' ?>">
                       <i class="fas fa-users ml-1"></i> <?= $ucnt ?> مستخدم
@@ -127,8 +137,14 @@ $rolesCount = $res ? $res->num_rows : 0;
                   </td>
                   <td class="text-center">
                     <div class="k-actions">
-                      <?= kody_action_btn('edit', $editUrl, ['title' => 'تعديل الصلاحيات']) ?>
-                      <?php if ($rid !== 1 && $ucnt === 0): ?>
+                      <?php if ($canEditRole): ?>
+                        <?= kody_action_btn('edit', 'role_form.php?id=' . $rid, ['title' => 'تعديل الصلاحيات']) ?>
+                      <?php endif; ?>
+                      <?php if ($canAddRole): ?>
+                        <a class="k-btn-action" href="role_form.php?copy=<?= $rid ?>" title="نسخ الدور"><i class="fas fa-copy"></i></a>
+                      <?php endif; ?>
+                      <?php if (!$canDeleteRole): ?>
+                      <?php elseif ($rid !== 1 && $ucnt === 0): ?>
                         <?= kody_action_btn('delete', 'do/dodel_role.php?id=' . $rid, [
                             'title' => 'حذف الدور',
                             'item_name' => $rname
@@ -147,7 +163,6 @@ $rolesCount = $res ? $res->num_rows : 0;
         </div>
       <?php endif; ?>
     </div>
-  <?php endif; ?>
 </div>
 
 <!-- Modal توليد الأدوار الجاهزة (Roles Seeder Modal) -->

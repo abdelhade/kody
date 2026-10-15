@@ -149,8 +149,8 @@ if (isset($rowstg) && is_array($rowstg)) {
 
             <?php
             $canUseItemForm = $isEdit
-                ? ((int) ($role['edit_items'] ?? 0) === 1 || (int) ($role['add_items'] ?? 0) === 1)
-                : ((int) ($role['add_items'] ?? 0) === 1);
+                ? Can::any('items.edit', 'items.add')
+                : Can::check('items.add');
             ?>
             <?php if ($canUseItemForm): ?>
 

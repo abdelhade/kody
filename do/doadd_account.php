@@ -16,6 +16,12 @@ $address = trim($_POST['address'] ?? '');
 $q = (int)($_POST['q'] ?? 0);
 $price_list = ($q === 122) ? max(1, min(3, (int)($_POST['price_list'] ?? 1))) : 1;
 
+if ($parent_id > 0) {
+    Can::authorizeAccountId($conn, $parent_id, 'add');
+} else {
+    Can::authorize('accounts.chart');
+}
+
 // التحقق من صحة البيانات المطلوبة
 if (empty($code) || empty($aname)) {
     die("Error: Required fields are missing");

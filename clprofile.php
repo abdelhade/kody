@@ -18,7 +18,7 @@
 
 
         <?php
-        if ($role['show_client_profile'] == 0) {
+        if (!Can::check('client_profile.view')) {
           echo $userErrorMassage;
         }else{ ?>
 

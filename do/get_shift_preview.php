@@ -30,7 +30,7 @@ try {
     $user_id = (int) $_SESSION['userid'];
     $closer = new ShiftCloser($conn);
     $p = $closer->preview($user_id);
-    $showExpected = ShiftCloser::canSeeExpected($rowstg ?? [], $role ?? []);
+    $showExpected = ShiftCloser::canSeeExpected($rowstg ?? []);
 
     $accounts = [];
     foreach ($p['accounts'] as $acc) {

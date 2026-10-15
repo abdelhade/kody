@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 
 function getSaveFilename($value) {
     return preg_replace('/[^a-zA-Z0-9_ \-+]/s', '-', $value);

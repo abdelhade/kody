@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خطة إعادة بناء الصلاحيات (RBAC) — Kody</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #fff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
+    --primary: #2563eb; --danger: #dc2626; --warn: #d97706; --ok: #059669; --code: #f3f4f6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Tahoma, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.hero { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; border-radius: 14px; padding: 28px 32px; margin-bottom: 24px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 28px; }
+  header.hero p { margin: 0; opacity: .9; }
+  nav.toc { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; margin-bottom: 24px; }
+  nav.toc ol { margin: 0; padding-right: 20px; columns: 2; }
+  nav.toc a { color: var(--primary); text-decoration: none; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 28px; margin-bottom: 20px; }
+  h2 { margin-top: 0; font-size: 22px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 18px; margin: 22px 0 6px; color: #1e3a8a; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 12.5px; direction: ltr; unicode-bidi: embed; white-space: nowrap; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 14px 18px; border-radius: 8px; overflow-x: auto; direction: ltr; text-align: left; font-size: 13px; line-height: 1.6; }
+  pre code { background: none; padding: 0; color: inherit; white-space: pre; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--border); padding: 7px 9px; text-align: right; vertical-align: top; }
+  th { background: #f9fafb; position: sticky; top: 0; }
+  td.perm code { display: inline-block; margin: 1px 0; }
+  td.files { font-size: 12.5px; color: #374151; }
+  td.files code { white-space: normal; }
+  .decisions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .decisions div { border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+  .decisions b { display: block; color: var(--primary); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+  .stat { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; background: #fafafa; }
+  .stat b { display: block; font-size: 24px; color: var(--primary); }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+  .flow span { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 14px; }
+  .flow i { color: var(--muted); font-style: normal; }
+  .tag { display: inline-block; font-size: 11.5px; padding: 1px 8px; border-radius: 99px; font-weight: 600; white-space: nowrap; }
+  .t-crit { background: #fee2e2; color: var(--danger); }
+  .t-high { background: #fef3c7; color: var(--warn); }
+  .t-new { background: #ede9fe; color: #6d28d9; }
+  .t-all { background: #d1fae5; color: var(--ok); }
+  .phase { border-right: 5px solid var(--primary); }
+  .phase .meta { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  .accept { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 10px 16px; margin-top: 12px; }
+  .risk { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 16px; margin-top: 10px; }
+  .accept h4, .risk h4 { margin: 0 0 4px; }
+  .note { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 16px; margin: 10px 0; }
+  .legend span { margin-left: 14px; }
+  img, pre, table { max-width: 100%; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  @media (max-width: 900px) {
+    .wrap { padding: 20px 14px 60px; }
+    section { padding: 18px 18px; }
+    header.hero { padding: 22px 20px; }
+    header.hero h1 { font-size: 23px; }
+    th { position: static; }
+  }
+
+  @media (max-width: 760px) {
+    body { line-height: 1.7; }
+    .wrap { padding: 12px 10px 40px; }
+    nav.toc { padding: 12px 16px; }
+    nav.toc ol { columns: 1; }
+    section { padding: 14px 14px; border-radius: 10px; }
+    h2 { font-size: 19px; }
+    h3 { font-size: 16px; }
+    header.hero { padding: 18px 16px; border-radius: 10px; }
+    header.hero h1 { font-size: 20px; }
+    header.hero p { font-size: 14px; }
+    pre { font-size: 11.5px; padding: 10px 12px; }
+    code { white-space: normal; word-break: break-word; }
+    pre code { white-space: pre; word-break: normal; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat b { font-size: 20px; }
+    .decisions { grid-template-columns: 1fr; }
+    .phase { padding-right: 10px !important; }
+    ol, ul { padding-right: 20px; }
+
+    /* الجداول تتحول لكروت: كل صف كارت، وكل خلية فيها عنوان العمود */
+    table.cards, table.cards tbody, table.cards tr, table.cards td { display: block; width: 100%; }
+    table.cards tr.head { display: none; }
+    table.cards tr { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; background: #fff; overflow: hidden; }
+    table.cards td { border: none; border-bottom: 1px solid #f1f5f9; padding: 7px 12px; }
+    table.cards td:last-child { border-bottom: none; }
+    table.cards td::before { content: attr(data-label); display: block; font-size: 11.5px; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+    table.cards td[data-label=""]::before { display: none; }
+    table.cards td:first-child { background: #f8fafc; font-weight: 600; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>خطة إعادة بناء الصلاحيات من الأول (RBAC)</h1>
+  <p>كل مستخدم له دور، وكل دور له صلاحيات. الصلاحيات متحصورة من الشاشات الفعلية في النظام (القائمة الجانبية، الـ navbar، صفحة التقارير، وملفات <code>do/</code> و<code>ajax/</code>).</p>
+</header>
+
+<nav class="toc">
+  <strong>المحتوى</strong>
+  <ol>
+    <li><a href="#decisions">القرارات المتفق عليها</a></li>
+    <li><a href="#schema">الجداول</a></li>
+    <li><a href="#can">الكلاس Can والـ session</a></li>
+    <li><a href="#rules">قواعد الحصر</a></li>
+    <li><a href="#inventory">حصر الواجهات والصلاحيات</a></li>
+    <li><a href="#invoice-map">أنواع الفواتير ← الصلاحيات</a></li>
+    <li><a href="#public">شاشات متاحة لأي مستخدم</a></li>
+    <li><a href="#found">مشاكل اتكشفت أثناء الحصر</a></li>
+    <li><a href="#phases">مراحل التنفيذ</a></li>
+    <li><a href="#migrations">ملخص الـ migrations</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<section id="decisions">
+  <h2>1. القرارات المتفق عليها</h2>
+  <div class="decisions">
+    <div><b>جدول الأدوار</b>جدول <code>roles</code> جديد، والأدوار القديمة بتتنقل بنفس الـ <code>id</code></div>
+    <div><b>أسماء الصلاحيات</b><code>module.action</code> زي <code>sales.add</code></div>
+    <div><b>تغيير صلاحيات دور</b>يسري بعد إعادة تسجيل الدخول</div>
+    <div><b>المسؤول الرئيسي</b>يعدّي كل الفحوصات</div>
+    <div><b>أسماء الجداول</b>زي spatie</div>
+    <div><b>أساس الحصر</b>الشاشات الموجودة فعلاً، مش أعمدة <code>usr_pwrs</code></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="schema">
+  <h2>2. الجداول</h2>
+<pre><code>CREATE TABLE `roles` (
+  `id`          INT AUTO_INCREMENT PRIMARY KEY,
+  `name`        VARCHAR(100) NOT NULL,
+  `guard_name`  VARCHAR(50)  NOT NULL DEFAULT 'web',
+  `description` VARCHAR(255) NULL,
+  `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
+  `created_at`  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `roles_name_guard` (`name`, `guard_name`)
+);
+
+CREATE TABLE `permissions` (
+  `id`          INT AUTO_INCREMENT PRIMARY KEY,
+  `name`        VARCHAR(100) NOT NULL,          -- sales.add
+  `guard_name`  VARCHAR(50)  NOT NULL DEFAULT 'web',
+  `label`       VARCHAR(150) NOT NULL,          -- إضافة فاتورة مبيعات
+  `group_name`  VARCHAR(50)  NOT NULL,          -- المبيعات = قسم القائمة الجانبية
+  `sort`        INT NOT NULL DEFAULT 0,
+  `created_at`  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `permissions_name_guard` (`name`, `guard_name`)
+);
+
+CREATE TABLE `role_has_permissions` (
+  `permission_id` INT NOT NULL,
+  `role_id`       INT NOT NULL,
+  PRIMARY KEY (`permission_id`, `role_id`),
+  KEY `rhp_role` (`role_id`),
+  CONSTRAINT `rhp_perm_fk` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `rhp_role_fk` FOREIGN KEY (`role_id`)       REFERENCES `roles` (`id`)       ON DELETE CASCADE
+);</code></pre>
+  <p><code>users.userrole</code> بيفضل هو الربط بين المستخدم ودوره (دور واحد لكل مستخدم).</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="can">
+  <h2>3. الكلاس Can والـ session</h2>
+  <div class="flow">
+    <span>تسجيل الدخول</span><i>←</i>
+    <span>Can::login() — query واحدة</span><i>←</i>
+    <span>$_SESSION['auth']</span><i>←</i>
+    <span>Can::check() من الـ session</span>
+  </div>
+<pre><code>// classes/Can.php
+final class Can
+{
+    public static function login(mysqli $conn, int $userId): void;
+    public static function check(string $permission): bool;
+    public static function any(string ...$permissions): bool;
+    public static function authorize(string ...$permissions): void; // أي واحدة منهم تكفي، وإلا 403 / JSON
+    public static function isSuperAdmin(): bool;
+    public static function logout(): void;
+}
+
+$_SESSION['auth'] = [
+    'user_id'  => 7,
+    'role_id'  => 3,
+    'db'       => 'kody26',   // لو اتغيّرت قاعدة البيانات في نفس الـ session ← logout
+    'is_super' => false,
+    'perms'    => ['sales.view' => true, 'sales.add' => true],
+];</code></pre>
+  <ul>
+    <li><strong>المسؤول الرئيسي</strong> (<code>users.id = 1</code> أو <code>usertype = 2</code>): <code>check()</code> ترجع <code>true</code> دايماً.</li>
+    <li><strong>صلاحية مش موجودة = رفض.</strong></li>
+    <li><strong>دور معطّل</strong> وقت الدخول = مفيش صلاحيات.</li>
+    <li><strong>تغيير الصلاحيات</strong> يسري بعد إعادة الدخول، وده مكتوب كتنبيه في شاشة تعديل الدور.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="rules">
+  <h2>4. قواعد الحصر</h2>
+  <ol>
+    <li><strong>المجموعة = قسم القائمة الجانبية.</strong> شاشة الدور بتعرض الصلاحيات بنفس ترتيب القائمة، فالأدمن بيلاقي الحاجة في نفس المكان اللي بيشوفها فيه.</li>
+    <li><strong>مفيش صلاحيات للقائمة (<code>sid_*</code>).</strong> القسم بيظهر لو المستخدم معاه أي صلاحية جوه المجموعة. ده بيشيل 15 عمود كانوا بيتلخبطوا مع صلاحيات الموديولات.</li>
+    <li><strong>قاعدة CRUD ثابتة:</strong> أي كيان بيتعرض ويتضاف ويتعدّل ويتحذف بياخد دايماً الأربع صلاحيات دول، حتى لو صغير زي الوحدات أو المدن، ومفيش <code>.manage</code> بتجمّعهم:
+      <table>
+        <tr><th>الصلاحية</th><th>CRUD</th><th>الاسم في شاشة الدور</th><th>بتحمي إيه</th></tr>
+        <tr><td><code>X.view</code></td><td>Read</td><td>عرض</td><td>شاشة القائمة/التفاصيل + ملفات البحث والتصدير بتاعة الكيان</td></tr>
+        <tr><td><code>X.add</code></td><td>Create</td><td>إضافة</td><td>شاشة الإضافة + <code>do/doadd_*</code> + الاستيراد</td></tr>
+        <tr><td><code>X.edit</code></td><td>Update</td><td>تعديل</td><td>شاشة التعديل + <code>do/doedit_*</code></td></tr>
+        <tr><td><code>X.delete</code></td><td>Delete</td><td>حذف</td><td><code>do/dodel_*</code> + الاسترجاع والحذف النهائي</td></tr>
+      </table>
+      <code>add</code> و<code>edit</code> و<code>delete</code> من غير <code>view</code> ملهمش معنى، فشاشة الدور بتعلّم <code>view</code> تلقائياً لما تعلّم أي واحدة منهم، و<code>dosave_role.php</code> بيطبّق نفس القاعدة في السيرفر.</li>
+    <li><strong>اللي مش CRUD</strong> (تقارير، عمليات زي التسعير والجرد وتقفيل الشيفت، أعلام زي البيع بالسالب) بتاخد صلاحية فعل واحدة باسم واضح.</li>
+    <li><strong>كل صلاحية جديدة ليها "مصدر في النقل"</strong> من <code>usr_pwrs</code>، عشان محدش يكسب أو يخسر صلاحية يوم النقل:
+      <ul class="legend">
+        <li><code>add_sales</code> = بتتدّي للأدوار اللي العمود ده عندهم 1.</li>
+        <li><code>sid_hr</code> = الشاشة النهارده مش محمية غير بإخفاء القسم، فبتتدّي لمين معاه القسم.</li>
+        <li><span class="tag t-all">الكل</span> = الشاشة النهارده مفتوحة لأي حد، فبتتدّي لكل الأدوار.</li>
+        <li><span class="tag t-new">دور 1</span> = صلاحية جديدة حساسة، بتتدّي للدور رقم 1 بس (والمسؤول الرئيسي بيعدّيها أصلاً).</li>
+      </ul>
+    </li>
+  </ol>
+  <div class="stats">
+    <div class="stat"><b>20</b>مجموعة</div>
+    <div class="stat"><b>284</b>صلاحية</div>
+    <div class="stat"><b>62</b>كيان CRUD (× 4 = 248)</div>
+    <div class="stat"><b>36</b>صلاحية فعل / تقرير</div>
+    <div class="stat"><b>~185</b>شاشة</div>
+    <div class="stat"><b>~200</b>ملف سيرفر (do / ajax / get)</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="inventory">
+  <h2>5. حصر الواجهات والصلاحيات</h2>
+  <p class="note">عمود "ملفات السيرفر" هو اللي هيتحط فيه <code>Can::authorize()</code> في مرحلة الحماية. أي <code>X.*</code> معناها الأربعة: <code>X.view</code>, <code>X.add</code>, <code>X.edit</code>, <code>X.delete</code>.</p>
+
+  <!-- 1 -->
+  <h3>1. لوحة التحكم</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم في الشاشة</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">مصدرها في النقل</th></tr>
+    <tr><td class="perm"><code>dashboard.cards</code></td><td>كروت الملخص</td><td class="files"><code>dashboard.php</code>, <code>elements/main/main_cards.php</code></td><td class="files">—</td><td><code>show_main_cards</code></td></tr>
+    <tr><td class="perm"><code>dashboard.shortcuts</code></td><td>الاختصارات</td><td class="files"><code>dashboard.php</code></td><td class="files">—</td><td><code>show_main_elements</code></td></tr>
+    <tr><td class="perm"><code>dashboard.tables</code></td><td>جداول الشاشة الرئيسية</td><td class="files"><code>elements/main/main_tables.php</code></td><td class="files">—</td><td><code>show_main_tables</code></td></tr>
+    <tr><td class="perm"><code>dashboard.hr</code></td><td>ملخص الموارد البشرية</td><td class="files"><code>dashboard.php</code></td><td class="files">—</td><td><code>show_main_hr</code></td></tr>
+  </table>
+
+  <!-- 2 -->
+  <h3>2. البيانات الأساسية (الحسابات)</h3>
+  <p>كل الكيانات دي بتستخدم نفس الشاشات: <code>acc_report.php?acc=X</code> (القائمة)، <code>add_account.php</code>، <code>edit_account.php</code>. والسيرفر: <code>do/doadd_account.php</code>، <code>do/doedit_account.php</code>، <code>do/dodel_account.php</code>، <code>ajax/modal_add_account.php</code>. الصلاحية بتتحدد من كود الحساب الأب (<code>122</code> عملاء، <code>211</code> موردين...) مش من الـ URL.</p>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات الإضافية</th><th>ملفات السيرفر الإضافية</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>clients.*</code></td><td>العملاء</td><td class="files"><code>?acc=clients</code></td><td class="files"><code>get/chk_client.php</code></td><td><code>*_clients</code></td></tr>
+    <tr><td class="perm"><code>suppliers.*</code></td><td>الموردين</td><td class="files"><code>?acc=suppliers</code></td><td class="files">—</td><td><code>*_suppliers</code></td></tr>
+    <tr><td class="perm"><code>funds.*</code></td><td>الخزائن</td><td class="files"><code>?acc=funds</code></td><td class="files">—</td><td><code>*_funds</code></td></tr>
+    <tr><td class="perm"><code>banks.*</code></td><td>البنوك</td><td class="files"><code>?acc=banks</code></td><td class="files">—</td><td><code>*_banks</code></td></tr>
+    <tr><td class="perm"><code>stores.*</code></td><td>المخازن</td><td class="files"><code>?acc=stores</code>, <code>add_store.php</code>, <code>mystores.php</code></td><td class="files"><code>do/doadd_store.php</code></td><td><code>*_stock</code></td></tr>
+    <tr><td class="perm"><code>expenses.*</code></td><td>المصروفات</td><td class="files"><code>?acc=expenses</code></td><td class="files">—</td><td><code>*_expenses</code></td></tr>
+    <tr><td class="perm"><code>revenues.*</code></td><td>الإيرادات</td><td class="files"><code>?acc=revenous</code></td><td class="files">—</td><td><code>*_revenuses</code></td></tr>
+    <tr><td class="perm"><code>creditors.*</code></td><td>دائنين آخرين</td><td class="files"><code>?acc=creditors</code></td><td class="files">—</td><td><code>*_credits</code></td></tr>
+    <tr><td class="perm"><code>debtors.*</code></td><td>مدينين آخرين</td><td class="files"><code>?acc=depitors</code></td><td class="files">—</td><td><code>*_depits</code></td></tr>
+    <tr><td class="perm"><code>partners.*</code></td><td>الشركاء</td><td class="files"><code>?acc=partners</code></td><td class="files">—</td><td><code>*_partners</code></td></tr>
+    <tr><td class="perm"><code>assets.*</code></td><td>الأصول</td><td class="files"><code>?acc=assets</code></td><td class="files">—</td><td><code>*_assets</code></td></tr>
+    <tr><td class="perm"><code>rentables.*</code></td><td>الأصول القابلة للتأجير</td><td class="files"><code>?acc=rentable</code></td><td class="files">—</td><td><code>*_rentables</code></td></tr>
+    <tr><td class="perm"><code>delivery.*</code></td><td>الديليفري</td><td class="files"><code>?acc=delivery</code>, <code>add_delivery_link.php</code>, <code>add_delivery_link2.php</code></td><td class="files">—</td><td><code>*_delivery</code></td></tr>
+    <tr><td class="perm"><code>towns.*</code></td><td>المدن / المناطق</td><td class="files"><code>mytowns.php</code></td><td class="files"><code>do/doadd_town.php</code>, <code>do/doedit_town.php</code>, <code>do/dodel_town.php</code></td><td><code>sid_entry</code></td></tr>
+  </table>
+  <p class="note">حسابات الموظفين (<code>?acc=employees</code>) تابعة لـ <code>employees.*</code> في مجموعة الموارد البشرية.</p>
+
+  <!-- 3 -->
+  <h3>3. المخزون</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>items.view</code></td><td>عرض الأصناف</td><td class="files"><code>myitems.php</code>, <code>items_report.php</code>, <code>item_summery.php</code></td><td class="files"><code>do/export_excel.php</code>, <code>get/get_iteminfo.php</code>, <code>api/items.php</code>, <code>api/categories.php</code></td><td><code>show_items</code></td></tr>
+    <tr><td class="perm"><code>items.add</code></td><td>إضافة صنف</td><td class="files"><code>add_item.php</code>, <code>items_factory.php</code></td><td class="files"><code>do/doadd_item.php</code>, <code>ajax/modal_add_item.php</code>, <code>ajax/generate_items.php</code>, <code>do/uploaditems.php</code>, <code>do/items_template.php</code>, <code>do/importdata.php</code>, <code>do/import_errors.php</code></td><td><code>add_items</code></td></tr>
+    <tr><td class="perm"><code>items.edit</code></td><td>تعديل صنف</td><td class="files"><code>edit_item.php</code></td><td class="files"><code>do/doedit_item.php</code></td><td><code>edit_items</code></td></tr>
+    <tr><td class="perm"><code>items.delete</code></td><td>حذف / استرجاع صنف</td><td class="files"><code>deleted_items.php</code></td><td class="files"><code>do/dodel_item.php</code>, <code>do/dorestore_item.php</code>, <code>do/doforce_delete_item.php</code>, <code>do/dobulk_deleted_items.php</code></td><td><code>delete_items</code></td></tr>
+    <tr><td class="perm"><code>item_groups.*</code></td><td>المجموعات والتصنيفات</td><td class="files"><code>mygroups.php</code>, <code>item_categories.php</code>, <code>edit_item_groups.php</code></td><td class="files"><code>do/doadd_group.php</code>, <code>do/doadd_group2.php</code>, <code>do/doedit_group.php</code>, <code>do/doedit_group2.php</code>, <code>do/dodel_group.php</code>, <code>do/dodel_group2.php</code>, <code>do/doedit_item_groups.php</code></td><td><code>*_item_groups</code></td></tr>
+    <tr><td class="perm"><code>units.*</code></td><td>الوحدات</td><td class="files"><code>myunits.php</code></td><td class="files"><code>do/doadd_unit.php</code>, <code>do/doedit_unit.php</code>, <code>do/dodel_unit.php</code></td><td><code>edit_items</code></td></tr>
+    <tr><td class="perm"><code>items.pricing</code></td><td>التسعير والباركود وإعادة احتساب التكلفة</td><td class="files"><code>inv_operations.php</code>, <code>barcode_search.php</code>, <code>barcode_designer.php</code>, <code>get_barcode.php</code></td><td class="files"><code>do/update_item_price.php</code>, <code>do/reset_manual_prices.php</code>, <code>do/recost.php</code>, <code>ajax/sp_recost.php</code></td><td><code>edit_items</code></td></tr>
+    <tr><td class="perm"><code>items.opening_balance</code></td><td>أرصدة أول المدة للأصناف</td><td class="files"><code>items_start_balance.php</code></td><td class="files">—</td><td><code>edit_items</code></td></tr>
+    <tr><td class="perm"><code>inventory.audit</code></td><td>جرد المخزن</td><td class="files"><code>inventory_audit.php</code></td><td class="files"><code>ajax/save_inventory_audit.php</code>, <code>ajax/get_audit_history.php</code></td><td><code>sid_stock</code></td></tr>
+    <tr><td class="perm"><code>stock.sell_negative</code></td><td>البيع بأكتر من رصيد المخزن</td><td class="files">— (قاعدة جوه الحفظ)</td><td class="files"><code>do/doadd_invoice.php</code>, <code>do/doedit_invoice.php</code>, <code>do/doadd_invoice_clothes.php</code></td><td><span class="tag t-high">معكوسة</span> <code>prevent_negative_stock = 0</code></td></tr>
+  </table>
+
+  <!-- 4 -->
+  <h3>4. المبيعات</h3>
+  <p>كل الفواتير بتستخدم <code>sales.php?q=...</code> (القائمة)، <code>fat.php</code> / <code>invoice.php</code> (الفاتورة). السيرفر: <code>do/doadd_invoice.php</code>, <code>do/doedit_invoice.php</code>, <code>do/dodel_invoice.php</code>، والصلاحية بتتحدد من نوع الفاتورة (<a href="#invoice-map">الجدول تحت</a>).</p>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر الإضافية</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>sales.*</code></td><td>فواتير المبيعات (3)</td><td class="files"><code>sales.php?q=sale</code></td><td class="files"><code>get/get_price1.php</code>, <code>ajax/last_sale_price.php</code></td><td><code>*_sales</code></td></tr>
+    <tr><td class="perm"><code>sales_returns.*</code></td><td>مردود المبيعات (11)</td><td class="files"><code>sales.php?q=rebuy</code></td><td class="files">—</td><td><code>*_resale</code></td></tr>
+    <tr><td class="perm"><code>sales_orders.*</code></td><td>أوامر البيع (13)</td><td class="files"><code>sales.php?q=so</code></td><td class="files">—</td><td><code>*_sales</code></td></tr>
+    <tr><td class="perm"><code>quotations.*</code></td><td>عروض الأسعار (14)</td><td class="files"><code>sales.php?q=offer</code></td><td class="files">—</td><td><code>*_sales</code></td></tr>
+  </table>
+
+  <!-- 5 -->
+  <h3>5. نقاط البيع (POS)</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>pos.use</code></td><td>استخدام نقطة البيع</td><td class="files"><code>pos_clothes.php</code>, <code>pos_barcode.php</code>, <code>pos_supermarket.php</code>, <code>pos_mobile.php</code>, <code>pos_simple.php</code>, <code>pos_tables.php</code>, <code>pos_time.php</code></td><td class="files"><code>do/doadd_invoice_clothes.php</code>, <code>do/doadd_invoice_waiter.php</code>, <code>do/offline_sync.php</code>, <code>pos_sync.php</code>, <code>ajax/save_order.php</code>, <code>ajax/load_order.php</code>, <code>ajax/add_item_to_order.php</code>, <code>ajax/process_payment.php</code>, <code>ajax/cofe_create_order.php</code>, <code>ajax/get_tables.php</code>, <code>ajax/get_table_*.php</code>, <code>ajax/tables_panel.php</code>, <code>ajax/get_recent_orders.php</code>, <code>ajax/get_order_items.php</code>, <code>ajax/get_daily_sales.php</code>, <code>do/save_customer.php</code>, <code>do/search_customer.php</code>, <code>do/update_customer.php</code></td><td><code>add_sales</code></td></tr>
+    <tr><td class="perm"><code>pos.cancel_order</code></td><td>إلغاء طلب / حذف صنف من طلب</td><td class="files">—</td><td class="files"><code>ajax/cancel_order.php</code>, <code>ajax/delete_order.php</code>, <code>ajax/delete_order_item.php</code></td><td><code>delete_sales</code></td></tr>
+    <tr><td class="perm"><code>pos.delivery</code></td><td>طلبات الديليفري من الكاشير</td><td class="files">زر الديليفري في شاشات POS</td><td class="files"><code>do/doadd_invoice.php</code></td><td><code>allow_pos_delivery</code></td></tr>
+    <tr><td class="perm"><code>tables.*</code></td><td>الطاولات</td><td class="files"><code>crud_tables.php</code></td><td class="files"><code>crud_tables.php</code> نفسه (POST: <code>add_table</code> / <code>edit_table</code> / الحذف)</td><td><code>sid_sales</code></td></tr>
+    <tr><td class="perm"><code>pos.closed_sessions</code></td><td>الجلسات المقفولة</td><td class="files"><code>closed_sessions.php</code></td><td class="files"><code>print/closed_session_items.php</code>, <code>print/closed_session_receipt.php</code></td><td><code>show_sales</code></td></tr>
+    <tr><td class="perm"><code>pos.close_shift</code></td><td>تقفيل الشيفت</td><td class="files"><code>close_shift.php</code>, <code>print_my_shift.php</code></td><td class="files"><code>do/doclose_shift.php</code>, <code>do/doadd_close.php</code>, <code>do/get_shift_preview.php</code>, <code>ajax/get_shift_preview.php</code>, <code>do_close_shift_z.php</code></td><td><code>add_sales</code></td></tr>
+    <tr><td class="perm"><code>pos.view_shift_expected</code></td><td>عرض المتوقع في التقفيل (حتى مع الجرد الأعمى)</td><td class="files">مودال التقفيل</td><td class="files"><code>classes/ShiftCloser.php</code></td><td><code>view_shift_expected</code></td></tr>
+  </table>
+
+  <!-- 6 -->
+  <h3>6. الزيارات</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>visits.*</code></td><td>الزيارات</td><td class="files"><code>visits.php</code>, <code>add_visit.php</code>, <code>edit_visit.php</code></td><td class="files"><code>do/doadd_visit.php</code>, <code>do/dodel_visit.php</code>, <code>ajax/update_visit_end_time.php</code></td><td><code>sid_visits</code></td></tr>
+    <tr><td class="perm"><code>visit_types.*</code></td><td>أنواع الزيارات</td><td class="files"><code>vtybes.php</code>, <code>add_vtybe.php</code></td><td class="files"><code>do/doadd_vtybe.php</code>, <code>do/doedit_vtybe.php</code>, <code>do/dodel_vtybe.php</code></td><td><code>sid_visits</code></td></tr>
+  </table>
+
+  <!-- 7 -->
+  <h3>7. إدارة الكروت</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>cards.*</code></td><td>الكروت</td><td class="files"><code>bookings.php</code>, <code>add_booking.php</code></td><td class="files"><code>do/doadd_booking.php</code></td><td><code>sid_cards</code></td></tr>
+    <tr><td class="perm"><code>cards.pass</code></td><td>تمرير كارت</td><td class="files"><code>booking.php</code></td><td class="files">—</td><td><code>sid_cards</code></td></tr>
+  </table>
+
+  <!-- 8 -->
+  <h3>8. المشتريات</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>purchases.*</code></td><td>فواتير المشتريات (4)</td><td class="files"><code>sales.php?q=purchase</code></td><td class="files">ملفات الفواتير المشتركة</td><td><code>*_purchases</code></td></tr>
+    <tr><td class="perm"><code>purchase_returns.*</code></td><td>مردود المشتريات (10)</td><td class="files"><code>sales.php?q=resale</code></td><td class="files">ملفات الفواتير المشتركة</td><td><code>*_repurchases</code></td></tr>
+    <tr><td class="perm"><code>purchase_orders.*</code></td><td>أوامر الشراء (12)</td><td class="files"><code>sales.php?q=po</code></td><td class="files">ملفات الفواتير المشتركة</td><td><code>*_purchases</code></td></tr>
+  </table>
+  <p class="note">لاحظ: في الـ URL الحالي <code>q=resale</code> معناها مردود مشتريات، لكن في شاشة الدور القديمة عمود <code>*_resale</code> معناه مردود مبيعات. النقل بيعتمد على معنى العمود في شاشة الدور.</p>
+
+  <!-- 9 -->
+  <h3>9. السندات</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>receipts.*</code></td><td>سندات القبض</td><td class="files"><code>add_voucher.php?t=recive</code>, <code>vouchers.php</code></td><td class="files"><code>do/doadd_voucher.php</code>, <code>do/doedit_voucher.php</code>, <code>do/dodel_voucher.php</code> (حسب النوع), <code>do/settle_credit.php</code></td><td><code>*_recive</code></td></tr>
+    <tr><td class="perm"><code>payments.*</code></td><td>سندات الصرف</td><td class="files"><code>add_voucher.php?t=payment</code>, <code>vouchers.php</code></td><td class="files">نفس ملفات السندات (حسب النوع)</td><td><code>*_payment</code></td></tr>
+  </table>
+
+  <!-- 10 -->
+  <h3>10. الحسابات العامة</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>journals.*</code></td><td>قيود اليومية</td><td class="files"><code>add_journal.php</code>, <code>addmulti_journal.php</code>, <code>daily_journal.php</code></td><td class="files"><code>do/doadd_journal.php</code>, <code>do/doadd_multijournal.php</code></td><td><code>*_journals</code> أو <code>*_general_entrys</code></td></tr>
+    <tr><td class="perm"><code>accounts.chart</code></td><td>دليل الحسابات وقائمة الحسابات</td><td class="files"><code>accounts.php</code>, <code>myaccounts.php</code>, <code>acc_report.php</code> (من غير <code>acc</code>)</td><td class="files"><code>get/get_accinfo.php</code>, <code>get/refresh_acc.php</code>, <code>ajax/account_balance.php</code></td><td><code>sid_accounts</code></td></tr>
+    <tr><td class="perm"><code>accounts.opening_balance</code></td><td>أرصدة أول المدة للحسابات</td><td class="files"><code>start_balance.php</code></td><td class="files"><code>do/doadd_start_balance.php</code>, <code>save_start_balance.php</code></td><td><code>sid_accounts</code></td></tr>
+  </table>
+
+  <!-- 11 -->
+  <h3>11. عمليات الأصول</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>assets.operations</code></td><td>شراء / بيع / إهلاك أصل</td><td class="files"><code>add_journal.php?a=1</code>, <code>add_journal.php?a=2</code>, إهلاك</td><td class="files"><code>do/doadd_journal.php</code> (لما <code>a</code> موجودة)</td><td><code>sid_assets</code></td></tr>
+  </table>
+
+  <!-- 12 -->
+  <h3>12. التأجير</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>rent_contracts.*</code></td><td>عقود الإيجار</td><td class="files"><code>add_rent.php</code>, <code>rentables.php</code>, <code>rentcontracts.php</code>, <code>edit_contract.php</code></td><td class="files"><code>do/doadd_rent.php</code>, <code>do/start/dodel_rent.php</code>, <code>do/dodel_contract.php</code></td><td><code>sid_rents</code></td></tr>
+    <tr><td class="perm"><code>rent_installments.collect</code></td><td>تحصيل الأقساط</td><td class="files"><code>myrentables.php</code></td><td class="files"><code>do/start/doaddinstallment.php</code></td><td><code>sid_rents</code></td></tr>
+  </table>
+
+  <!-- 13 -->
+  <h3>13. العيادات</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>reservations.*</code></td><td>الحجوزات</td><td class="files"><code>reservations.php</code>, <code>add_reservation.php</code>, <code>edit_reservation.php</code>, <code>edit_res.php</code></td><td class="files"><code>do/doadd_reservation.php</code>, <code>do/doedit_reservation.php</code>, <code>do/dodel_reservation.php</code></td><td><code>*_reservations</code></td></tr>
+    <tr><td class="perm"><code>reservations.view_ended</code></td><td>الحجوزات المنتهية</td><td class="files"><code>reservations.php?c=end</code></td><td class="files">—</td><td><code>show_ended_reservation</code></td></tr>
+    <tr><td class="perm"><code>reservations.view_total</code></td><td>إجمالي الحجوزات</td><td class="files"><code>reservations.php</code></td><td class="files">—</td><td><code>show_total_reservation</code></td></tr>
+    <tr><td class="perm"><code>patients.*</code></td><td>بيانات المرضى والروشتات</td><td class="files"><code>patients.php</code>, <code>rese.php</code>, <code>add_rese.php</code>, <code>edit_rese.php</code>, <code>presc.php</code></td><td class="files"><code>do/doadd_presc.php</code></td><td><code>*_clinic_clients</code></td></tr>
+    <tr><td class="perm"><code>drugs.*</code></td><td>الأدوية</td><td class="files"><code>drugs.php</code>, <code>add_drugs.php</code>, <code>edit_drugs.php</code></td><td class="files"><code>do/doadd_drug.php</code></td><td><code>*_drugs</code></td></tr>
+  </table>
+
+  <!-- 14 -->
+  <h3>14. الموارد البشرية</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>employees.*</code></td><td>الموظفين</td><td class="files"><code>employees.php</code>, <code>add_employee.php</code>, <code>edit_employee.php</code>, <code>emprofile.php</code>, <code>acc_report.php?acc=employees</code></td><td class="files"><code>do/doadd_employee.php</code>, <code>do/doedit_employee.php</code>, <code>do/dodel_employee.php</code></td><td><code>*_employees</code></td></tr>
+    <tr><td class="perm"><code>jobs.*</code></td><td>الوظائف</td><td class="files"><code>jops.php</code>, <code>add_jop.php</code>, <code>edit_jop.php</code></td><td class="files"><code>do/doadd_jop.php</code>, <code>do/doedit_jop.php</code>, <code>do/dodel_jop.php</code></td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>job_levels.*</code></td><td>المستويات الوظيفية</td><td class="files"><code>joplevels.php</code>, <code>add_joplevel.php</code>, <code>edit_joplevel.php</code></td><td class="files"><code>do/doadd_joplevel.php</code>, <code>do/doedit_joplevel.php</code>, <code>do/dodel_joplevel.php</code></td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>job_rules.*</code></td><td>قواعد الوظائف</td><td class="files"><code>joprules.php</code>, <code>add_joprule.php</code>, <code>edit_joprule.php</code></td><td class="files"><code>do/doadd_joprule.php</code>, <code>do/doedit_joprule.php</code>, <code>do/dodel_joprule.php</code></td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>departments.*</code></td><td>الأقسام</td><td class="files"><code>departments.php</code>, <code>add_department.php</code>, <code>edit_department.php</code></td><td class="files"><code>do/doadd_department.php</code>, <code>do/doedit_department.php</code>, <code>do/dodel_department.php</code></td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>shifts.*</code></td><td>الورديات</td><td class="files"><code>shifts.php</code>, <code>add_shift.php</code>, <code>edit_shift.php</code></td><td class="files"><code>do/doadd_shift.php</code>, <code>do/doedit_shift.php</code>, <code>do/dodel_shift.php</code></td><td><code>sid_hr</code> أو <code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>hr_operations.*</code></td><td>تعريف العمليات وخطواتها</td><td class="files"><code>hr_operations.php</code>, <code>add_hr_operation.php</code>, <code>edit_hr_operation.php</code></td><td class="files"><code>do/doadd_hr_operation.php</code>, <code>do/doedit_hr_operation.php</code>, <code>do/dodel_hr_operation.php</code>, <code>do/doadd_operation_step.php</code>, <code>do/dodel_operation_step.php</code></td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>employee_operations.*</code></td><td>عمليات الموظفين</td><td class="files"><code>employee_operations.php</code></td><td class="files"><code>do/doassign_operation.php</code> (add), <code>do/doupdate_operation_status.php</code> (edit), <code>do/dodel_employee_operation.php</code> (delete)</td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>pulse.*</code></td><td>تقييمات Pulse</td><td class="files"><code>pulse.php</code> (add), <code>pulse_stats.php</code> (view)</td><td class="files"><code>ajax/pulse_ajax.php</code> (الفعل حسب الـ action)</td><td><code>sid_hr</code></td></tr>
+    <tr><td class="perm"><code>pulse_types.*</code></td><td>أنواع التقييم</td><td class="files"><code>pulse_types.php</code></td><td class="files"><code>ajax/pulse_ajax.php</code></td><td><code>sid_hr</code></td></tr>
+  </table>
+
+  <!-- 15 -->
+  <h3>15. المهام والأداء والتعاقدات</h3>
+  <p>القسم ده في القائمة الحالية تحت شرط <code>sid_payroll</code>.</p>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>tasks.*</code></td><td>المهام</td><td class="files"><code>tasks.php</code>, <code>add_task.php</code>, <code>edit_task.php</code>, <code>followup.php</code></td><td class="files"><code>do/doadd_task.php</code>, <code>do/do_edittask.php</code>, <code>do/dodel_task.php</code>, <code>do/do_deletetask.php</code>, <code>do/dodel_follow.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>tasks.view_all</code></td><td>مهام كل الموظفين</td><td class="files"><code>tasks.php</code></td><td class="files">—</td><td><code>show_all_tasks</code></td></tr>
+    <tr><td class="perm"><code>kpis.*</code></td><td>معدلات الأداء</td><td class="files"><code>kbis.php</code>, <code>add_kbi.php</code></td><td class="files"><code>do/doadd_kbi.php</code>, <code>do/doedit_kbi.php</code>, <code>do/dodel_kbi.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>employee_kpis.*</code></td><td>أوزان الأداء للموظفين</td><td class="files"><code>emp_kbis.php</code>, <code>add_empkbi.php</code></td><td class="files"><code>do/doadd_empkbi.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>contracts.*</code></td><td>عقود التدريب والتعيين والتعهيد</td><td class="files"><code>trainingcontracts.php</code>, <code>hiringcontracts.php</code>, <code>externalcontracts.php</code>, <code>add_trainingcontract.php</code>, <code>add_hiringcontract.php</code>, <code>add_externalcontract.php</code></td><td class="files"><code>do/doadd_hiringcontract.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>cvs.*</code></td><td>السير الذاتية</td><td class="files"><code>cvs.php</code>, <code>add_cv.php</code>, <code>edit_cv.php</code></td><td class="files"><code>do/doadd_cv.php</code>, <code>do/doedit_cv.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>requests.*</code></td><td>الطلبات (إجازات وغيرها)</td><td class="files"><code>orders.php</code>, <code>add_order.php</code>, <code>edit_order.php</code></td><td class="files"><code>do/doadd_order.php</code></td><td><span class="tag t-all">الكل</span></td></tr>
+  </table>
+
+  <!-- 16 -->
+  <h3>16. الحضور والمرتبات</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>attendance.*</code></td><td>سجل الحضور والبصمات والأذونات</td><td class="files"><code>manualattandance.php</code>, <code>machinelog.php</code>, <code>calcsalary.php</code>, <code>permits.php</code>, <code>add_permit.php</code>, <code>add_manualfp.php</code>, <code>edit_manualfp.php</code>, <code>importfplog.php</code>, <code>scan_att.php</code>, <code>accattlogs.php</code>, <code>attandance.php</code>, <code>mop.php</code>, <code>conectedmachines.php</code></td><td class="files"><code>do/doadd_manualfp.php</code>, <code>do/doedit_fp.php</code>, <code>do/dodel_fp.php</code>, <code>do/doimportfp.php</code>, <code>do/doadd_mopfp.php</code>, <code>do/dodel_attdoc.php</code>, <code>do/dodel_all_attdocs.php</code></td><td><code>*_attandance</code></td></tr>
+    <tr><td class="perm"><code>allowances.*</code></td><td>البدلات والاستقطاعات</td><td class="files"><code>allowences.php</code>, <code>add_allowances.php</code>, <code>edit_allowances.php</code></td><td class="files"><code>do/doadd_allowance.php</code>, <code>do/doedit_allowances.php</code>, <code>do/dodel_allowances.php</code></td><td><code>*_attandance</code></td></tr>
+    <tr><td class="perm"><code>attendance.process</code></td><td>معالجة الحضور</td><td class="files"><code>add_calcsalary.php</code></td><td class="files"><code>do/doadd_calcsalary.php</code>, <code>do/doadd_calcgroup.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>production.*</code></td><td>الإنتاجية اليومية</td><td class="files"><code>production.php</code>, <code>add_production.php</code>, <code>edit_production.php</code></td><td class="files"><code>do/doadd_production.php</code>, <code>do/doedit_production.php</code>, <code>do/dodel_production.php</code>, <code>do/doadd_prod.php</code>, <code>do/doedit_prod.php</code>, <code>do/dodel_pro.php</code>, <code>do/do_delprod.php</code></td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>payroll.*</code></td><td>احتسابات الرواتب</td><td class="files"><code>payroll_calcs.php</code>, <code>add_payroll_calc.php</code>, <code>edit_payroll_calc.php</code></td><td class="files"><code>do/doadd_payroll_calc.php</code>, <code>do/doedit_payroll_calc.php</code>, <code>do/dodel_payroll_calc.php</code></td><td><code>sid_payroll</code></td></tr>
+  </table>
+
+  <!-- 17 -->
+  <h3>17. إدارة علاقات العملاء (CRM)</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>crm_clients.*</code></td><td>العملاء (متقدم)</td><td class="files"><code>clients.php</code>, <code>add_client.php</code>, <code>edit_client.php</code></td><td class="files"><code>do/doadd_client.php</code>, <code>do/doedit_client.php</code>, <code>do/dodel_client.php</code>, <code>ajax/add_client_ajax.php</code></td><td><code>*_advanced_clients</code></td></tr>
+    <tr><td class="perm"><code>client_profile.*</code></td><td>بروفايل العميل ومستنداته</td><td class="files"><code>clprofile.php</code>, <code>clprofile2.php</code></td><td class="files"><code>do/doadd_dis.php</code>, <code>do/doadd_docs.php</code> (add), <code>do/doeditclprofile.php</code> (edit)</td><td><code>*_client_profile</code></td></tr>
+    <tr><td class="perm"><code>chances.*</code></td><td>الفرص</td><td class="files"><code>chances.php</code></td><td class="files"><code>do/doadd_chance.php</code>, <code>do/doedit_chance.php</code>, <code>do/dodelete_chance.php</code></td><td><code>*_chances</code></td></tr>
+    <tr><td class="perm"><code>calls.*</code></td><td>المكالمات</td><td class="files"><code>calls.php</code>, <code>add_call.php</code></td><td class="files">—</td><td><code>*_calls</code></td></tr>
+  </table>
+
+  <!-- 18 -->
+  <h3>18. التقارير</h3>
+  <p>الشاشة الرئيسية <code>reports.php</code> بتظهر لو المستخدم معاه أي صلاحية <code>reports.*</code>، وكل كارت جواها بيتفلتر بالصلاحية بتاعته.</p>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>reports.sales</code></td><td>تقارير المبيعات</td><td class="files"><code>operations_summary.php?q=sale|sales_order|price_offer</code>, <code>items_summery.php</code>, <code>sales-by-group.php</code>, <code>sales-by-hour.php</code>, <code>sales-by-day.php</code>, <code>sales-by-week.php</code>, <code>sales-by-month.php</code>, <code>sales_returns_report.php</code>, <code>top_products_report.php</code>, <code>stagnant-items-report.php</code>, <code>sales-by-employee.php</code>, <code>sales-by-user.php</code>, <code>emp_targets_report.php</code>, <code>sales-reports.php</code></td><td class="files"><code>ajax/employee_targets.php</code></td><td><code>sid_reports</code></td></tr>
+    <tr><td class="perm"><code>reports.shift</code></td><td>تقارير الشيفت</td><td class="files"><code>shift_sales_report.php</code>, <code>z_report.php</code></td><td class="files"><code>print/shift_sales_receipt.php</code></td><td><code>sid_reports</code></td></tr>
+    <tr><td class="perm"><code>reports.purchases</code></td><td>تقارير المشتريات</td><td class="files"><code>operations_summary.php?q=purchase</code>, <code>monthly_purchases.php</code>, <code>purchase_returns_report.php</code>, <code>consignment_items_report.php</code>, <code>supplier_settlement_report.php</code>, <code>purchase-reports.php</code></td><td class="files">—</td><td><code>sid_reports</code></td></tr>
+    <tr><td class="perm"><code>reports.accounting</code></td><td>كشوف الحسابات والقوائم المالية</td><td class="files"><code>summary.php</code>, <code>balance_sheet.php</code>, <code>profit_loss.php</code>, <code>journals_without_operations.php</code>, <code>unbalanced_journals.php</code></td><td class="files"><code>get/export_summery_excel.php</code></td><td><code>sid_reports</code> أو <code>show_gl_reports</code></td></tr>
+    <tr><td class="perm"><code>reports.rents</code></td><td>تقارير التأجير</td><td class="files"><code>rentables.php</code>, <code>rentcontracts.php?del=0|1</code>, <code>myrentables.php</code> (عرض)</td><td class="files">—</td><td><code>sid_reports</code> أو <code>show_rent_reports</code></td></tr>
+    <tr><td class="perm"><code>reports.clinics</code></td><td>تقارير العيادات</td><td class="files"><code>reps_cl.php</code></td><td class="files">—</td><td><code>sid_clinics</code></td></tr>
+    <tr><td class="perm"><code>reports.visits</code></td><td>إحصائيات الزيارات</td><td class="files"><code>visits_stats.php</code></td><td class="files">—</td><td><code>sid_visits</code></td></tr>
+    <tr><td class="perm"><code>reports.payroll</code></td><td>تقارير المرتبات والحضور</td><td class="files"><code>attendance_report.php</code></td><td class="files">—</td><td><code>sid_payroll</code></td></tr>
+    <tr><td class="perm"><code>reports.hr</code></td><td>تقرير الموظفين</td><td class="files"><code>staff_report.php</code></td><td class="files">—</td><td><code>sid_hr</code></td></tr>
+  </table>
+
+  <!-- 19 -->
+  <h3>19. المستخدمين والأدوار</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>users.*</code></td><td>المستخدمين</td><td class="files"><code>users.php</code>, <code>add_user.php</code>, <code>edit_user.php</code></td><td class="files"><code>do/doadd_user.php</code>, <code>do/doedit_user.php</code>, <code>do/do_deluser.php</code></td><td><code>*_users</code></td></tr>
+    <tr><td class="perm"><code>users.change_password</code></td><td>تغيير كلمات مرور المستخدمين</td><td class="files"><code>edit_user.php</code></td><td class="files"><code>do/doedit_user.php</code></td><td><code>edit_user_passwords</code></td></tr>
+    <tr><td class="perm"><code>users.waiter_codes</code></td><td>باركود الويترز</td><td class="files"><code>waiter_barcode.php</code></td><td class="files"><code>do/update_waiter_barcode.php</code></td><td><code>edit_users</code></td></tr>
+    <tr><td class="perm"><code>roles.*</code></td><td>الأدوار والصلاحيات</td><td class="files"><code>roles.php</code>, <code>role_form.php</code> (جديدة)</td><td class="files"><code>do/dosave_role.php</code> (add / edit حسب وجود id), <code>do/dodel_role.php</code>, <code>ajax/seed_roles.php</code> (add)</td><td><code>*_users</code></td></tr>
+  </table>
+
+  <!-- 20 -->
+  <h3>20. الإعدادات والنظام</h3>
+  <table>
+    <tr><th style="width:22%">الصلاحية</th><th style="width:20%">الاسم</th><th>الواجهات</th><th>ملفات السيرفر</th><th style="width:13%">المصدر</th></tr>
+    <tr><td class="perm"><code>settings.manage</code></td><td>الإعدادات العامة</td><td class="files"><code>setting.php</code>: تبويبات الشركة، الفواتير، POS، الثيم، العمولات، القائمة، الطباعة، الباركود</td><td class="files"><code>do/doedit_settings.php</code></td><td><span class="tag t-new">دور 1</span></td></tr>
+    <tr><td class="perm"><code>system.manage</code></td><td>النظام وقاعدة البيانات والترخيص</td><td class="files"><code>setting.php</code>: تبويبات الترخيص، قاعدة البيانات، النظام. و<code>logs_viewer.php</code>, <code>view_logs.php</code></td><td class="files"><code>ajax/db_setup.php</code>, <code>ajax/run_migrations.php</code>, <code>ajax/period_ops.php</code>, <code>ajax/git_pull.php</code>, <code>ajax/save_license.php</code>, <code>do/dobackup.php</code>, <code>do/docreatedatabase.php</code>, <code>do/dbase/do_turncate.php</code></td><td><span class="tag t-new">دور 1</span></td></tr>
+    <tr><td class="perm"><code>news.*</code></td><td>الأخبار والإعلانات</td><td class="files"><code>news.php</code>, <code>add_news.php</code></td><td class="files"><code>do/doadd_news.php</code></td><td><span class="tag t-new">دور 1</span></td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="invoice-map">
+  <h2>6. أنواع الفواتير ← الصلاحيات</h2>
+  <p>الـ map ده هيبقى ثابت جوه <code>InvoiceProcessor</code>، وتستخدمه ملفات الفواتير المشتركة:</p>
+<pre><code>// classes/InvoiceProcessor.php
+public const TYPE_PERMISSION = [
+    3  => 'sales',            // مبيعات
+    4  => 'purchases',        // مشتريات
+    9  => 'pos',              // كاشير ← pos.use للإضافة
+    10 => 'purchase_returns', // مردود مشتريات
+    11 => 'sales_returns',    // مردود مبيعات
+    12 => 'purchase_orders',  // أمر شراء
+    13 => 'sales_orders',     // أمر بيع
+    14 => 'quotations',       // عرض سعر
+];
+
+// do/doadd_invoice.php
+Can::authorize(InvoiceProcessor::permissionFor($type, 'add')); // sales.add</code></pre>
+</section>
+
+<!-- ============================================================ -->
+<section id="public">
+  <h2>7. شاشات متاحة لأي مستخدم مسجّل</h2>
+  <p>من غير صلاحية، بس لازم يكون مسجّل دخول (<code>Can::requireLogin()</code>):</p>
+  <ul>
+    <li><code>dashboard.php</code> (الكروت جواها بتتفلتر بـ <code>dashboard.*</code>)، <code>change_password.php</code> + <code>do/dochange_password.php</code> (لنفسه بس)، <code>about.php</code>، <code>roadmap.php</code>، <code>do/do_logout.php</code>، <code>ajax/save_js_error.php</code>.</li>
+    <li><strong>ملفات بحث مشتركة</strong> بتستخدمها كذا شاشة، فبتتحمي بأي صلاحية من المجموعة دي: <code>Can::authorize('sales.add', 'purchases.add', 'pos.use', 'items.view', 'inventory.audit')</code>:
+      <code>ajax/search_item.php</code>, <code>ajax/search_items*.php</code>, <code>ajax/get_items.php</code>, <code>ajax/load_items_lazy.php</code>, <code>ajax/get_category_items.php</code>, <code>ajax/lookup_barcode.php</code>, <code>ajax/check_exact_barcode.php</code>, <code>ajax/validate_item.php</code>, <code>get/check_barcode.php</code>, <code>get/get_barcode_info.php</code>, <code>get/get_bvalue.php</code>, <code>get/iname.php</code>, <code>get/refresh_items.php</code>, <code>get/reduce_remain.php</code>.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="found">
+  <h2>8. مشاكل اتكشفت أثناء الحصر</h2>
+  <table>
+    <tr><th style="width:32%">المشكلة</th><th>الأثر والتعامل معاها</th></tr>
+    <tr><td>شاشة الدور القديمة فيها "الحضور" و"الفرص" متبدّلين: <code>show_attandance</code> مكتوب جنبه "الفرص"، و<code>show_chances</code> مكتوب جنبه "الحضور والانصراف"</td><td>الأدمن ممكن يكون فعّل الصلاحية الغلط. النقل بيعتمد على العمود (اللي الشاشات بتفحصه فعلاً)، فالسلوك مش هيتغيّر. لكن تقرير ما بعد النقل لازم يعرض الأدوار دي عشان تراجعها.</td></tr>
+    <tr><td>3 checkboxes في <code>add_role.php</code> أسماؤها مش مطابقة لأعمدة الجدول: <code>show_clinics</code>، <code>show_payroll_reports</code>، <code>show_hr_reports</code> (الأعمدة: <code>show_clinic_clients</code>، <code>show_payroll_report</code>، <code>show_hr_report</code>)</td><td>قيمتها عمرها ما اتحفظت من الشاشة دي. في النظام الجديد الأسماء جاية من الجدول، فالمشكلة دي مش هتتكرر.</td></tr>
+    <tr><td><code>*_general_entrys</code> مش موجودة في شاشة الدور خالص</td><td>بتندمج في <code>journals.*</code>.</td></tr>
+    <tr><td><code>edit_user.php</code> بيسمح بالتعديل لو <code>$role['edit_users']</code> مش موجود (<code>!isset(...) ||</code>)</td><td>بيتشال مع <code>Can</code> (صلاحية مش موجودة = رفض).</td></tr>
+    <tr><td><code>acc_report.php</code> بيسمح بالديليفري افتراضياً (<code>?? 1</code>)، والقائمة بتسمح بالزيارات افتراضياً</td><td>بيتشال مع <code>Can</code>.</td></tr>
+    <tr><td>ملفات في <code>do/</code> محدش بيستدعيها: <code>doadd_ctp.php</code>, <code>doadd_ctp copy.php</code>, <code>doedit_ctp.php</code>, <code>doadd_printer.php</code>, <code>doedit_printer.php</code>, <code>do_delprint.php</code>, <code>doadd_service.php</code>, <code>doedit_service.php</code>, <code>do_delservice.php</code>, <code>doadd_ptype.php</code>, <code>doedit_ptype.php</code>, <code>do_delptypes.php</code>, <code>doedit_userprev.php</code>, <code>dosearch.php</code>, <code>dotest.php</code>, <code>debug_*.php</code> (5)</td><td>شغالة ومتاحة لأي حد يعرف الـ URL. مرشّحة للحذف بعد تأكيد أخير (grep على JS كمان).</td></tr>
+    <tr><td>شاشات مش في أي قائمة: <code>add_zanka.php</code>, <code>edit_zanka.php</code>, <code>deletezanka.php</code>, <code>old_summary.php</code>, <code>stamp-add.php</code>, <code>blogcontent.php</code>, <code>index2.php</code>, <code>indexmop.php</code>, <code>operations.php</code>, <code>ajax/debug_items.php</code>, <code>ajax/test_orders.php</code></td><td>محتاج قرارك: تتحذف ولا تتربط بصلاحية.</td></tr>
+    <tr><td>القائمة الجانبية فيها لينك <code>prints.php</code> (تقارير المرتبات) والملف مش موجود</td><td>يتشال من القائمة ومن <code>reports.php</code>.</td></tr>
+    <tr><td>كلمة السر الثابتة <code>hadi@1234</code> في <code>language/*.php</code> و<code>do/dbase/do_turncate.php</code></td><td>تتشال وتحل محلها <code>system.manage</code>.</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="phases">
+  <h2>9. مراحل التنفيذ</h2>
+  <p class="note">المراحل 1–5 اتنفذت — التفاصيل والفروق في <a href="#implemented">القسم 11</a>.</p>
+
+  <div class="phase" style="padding-right:14px; margin-bottom:18px;">
+    <h3>المرحلة 1 — قاعدة البيانات</h3>
+    <div class="meta">3 ملفات migration · من غير ما نلمس الكود الشغال</div>
+    <ol>
+      <li><code>028_usr_pwrs_legacy_columns.sql</code>: يضيف الأعمدة اللي <code>connect.php</code> بيضيفها وقت التشغيل، عشان النسخ ميقعش على tenant ناقصه عمود. وبعدها نشيل الـ <code>ALTER</code> من <code>connect.php</code>.</li>
+      <li><code>029_rbac_tables.sql</code>: الجداول + الـ 284 صلاحية بالحصر اللي فوق (<code>name</code>, <code>label</code>, <code>group_name</code>, <code>sort</code>).</li>
+      <li><code>030_rbac_copy_from_usr_pwrs.sql</code>: الأدوار بنفس الـ id، والصلاحيات بعمود "المصدر":
+<pre><code>-- مصدر عمود
+INSERT IGNORE INTO role_has_permissions (permission_id, role_id)
+SELECT p.id, u.id FROM usr_pwrs u JOIN permissions p ON p.name = 'sales.add'
+WHERE u.add_sales = 1 AND COALESCE(u.isdeleted, 0) = 0;
+
+-- مصدر عمود قسم (sid_*) لكيان CRUD: الأربعة مرة واحدة
+INSERT IGNORE INTO role_has_permissions (permission_id, role_id)
+SELECT p.id, u.id FROM usr_pwrs u JOIN permissions p ON p.name LIKE 'units.%'
+WHERE u.edit_items = 1 AND COALESCE(u.isdeleted, 0) = 0;
+
+-- مصدر "الكل"
+INSERT IGNORE INTO role_has_permissions (permission_id, role_id)
+SELECT p.id, r.id FROM roles r JOIN permissions p ON p.name LIKE 'requests.%';
+
+-- مصدر "دور 1"
+INSERT IGNORE INTO role_has_permissions (permission_id, role_id)
+SELECT p.id, 1 FROM permissions p
+WHERE (p.name IN ('settings.manage', 'system.manage') OR p.name LIKE 'news.%')
+  AND EXISTS (SELECT 1 FROM roles WHERE id = 1);
+
+-- قاعدة CRUD: أي دور معاه add/edit/delete لكيان ياخد view بتاعه
+INSERT IGNORE INTO role_has_permissions (permission_id, role_id)
+SELECT v.id, rhp.role_id
+FROM role_has_permissions rhp
+JOIN permissions p ON p.id = rhp.permission_id
+JOIN permissions v ON v.name = CONCAT(SUBSTRING_INDEX(p.name, '.', 1), '.view')
+WHERE SUBSTRING_INDEX(p.name, '.', -1) IN ('add', 'edit', 'delete');</code></pre>
+      </li>
+    </ol>
+    <div class="accept"><h4>معيار القبول</h4>على نسخة من قاعدة production: كل <code>users.userrole</code> موجود في <code>roles</code>، وتقرير بالأدوار اللي اتأثرت بالمشاكل في <a href="#found">القسم 8</a>.</div>
+  </div>
+
+  <div class="phase" style="padding-right:14px; margin-bottom:18px;">
+    <h3>المرحلة 2 — Can وتسجيل الدخول</h3>
+    <ol>
+      <li><code>classes/Can.php</code>.</li>
+      <li><code>index.php</code> يستدعي <code>Can::login()</code> بعد نجاح الباسورد، ونراجع <code>includes/waiter_auth.php</code> و<code>includes/pos_login_screen.php</code>.</li>
+      <li>طبقة توافق مؤقتة: <code>$role</code> بيتبني من <code>Can</code> بـ map عكسي (<code>add_sales</code> ← <code>sales.add</code>)، فالـ 91 فحص القديم يفضلوا شغالين.</li>
+      <li>حذف تحميل الدور القديم من <code>connect.php</code> و<code>header.php</code> و<code>userprev.php</code>.</li>
+    </ol>
+    <div class="accept"><h4>معيار القبول</h4>أدمن وكاشير ومحاسب بيشوفوا نفس اللي كانوا بيشوفوه بالظبط.</div>
+  </div>
+
+  <div class="phase" style="padding-right:14px; margin-bottom:18px;">
+    <h3>المرحلة 3 — شاشات الأدوار</h3>
+    <ol>
+      <li><code>roles.php</code>: القائمة، عدد المستخدمين، تفعيل/تعطيل، نسخ دور.</li>
+      <li><code>role_form.php</code>: الـ 20 مجموعة بنفس ترتيب القائمة الجانبية. الموديولات اللي ليها <code>view/add/edit/delete</code> بتتعرض كجدول (صف لكل موديول، و4 أعمدة)، والباقي checkboxes. "تحديد الكل" لكل مجموعة.</li>
+      <li><code>do/dosave_role.php</code> في transaction، و<code>do/dodel_role.php</code> بيمنع حذف دور عليه مستخدمين.</li>
+      <li><code>RolesSeeder</code> بالأسماء الجديدة، وبيرمي خطأ لو اسم مش موجود.</li>
+      <li>حذف <code>add_role.php</code>, <code>edit_role.php</code>, <code>myroles.php</code>, <code>do/doadd_role.php</code>, <code>do/doedit_role.php</code>.</li>
+    </ol>
+  </div>
+
+  <div class="phase" style="padding-right:14px; margin-bottom:18px;">
+    <h3>المرحلة 4 — حماية السيرفر</h3>
+    <div class="meta"><span class="tag t-crit">الأهم أمنياً</span> · بالمجموعات، وكل مجموعة commit لوحدها</div>
+    <p>كل ملف في عمود "ملفات السيرفر" في الحصر بياخد <code>Can::authorize()</code> بالصلاحية بتاعته. وكل شاشة في عمود "الواجهات" بتاخد نفس الفحص في أولها. الترتيب: المجموعات 19 و20 الأول (المستخدمين والإعدادات)، وبعدين الحذف في كل المجموعات، وبعدين الفواتير، وبعدين الباقي.</p>
+    <p>سكربت <code>tests/check_authorize.php</code> بيطلع أي ملف في <code>do/</code> أو <code>ajax/</code> أو <code>get/</code> أو <code>api/</code> مفيهوش <code>Can::authorize</code> أو <code>Can::requireLogin</code>.</p>
+    <div class="risk"><h4>المخاطرة</h4>دور كان بيعمل حاجة لأن مفيش فحص. الحل: <code>AUTHZ_ENFORCE=0</code> في <code>.env</code> أسبوع (تسجيل بس)، وبعدين المنع الفعلي.</div>
+  </div>
+
+  <div class="phase" style="padding-right:14px; margin-bottom:18px;">
+    <h3>المرحلة 5 — نقل الكود القديم</h3>
+    <ol>
+      <li>استبدال الـ 91 فحص <code>$role[...]</code> بـ <code>Can::check()</code>.</li>
+      <li>القائمة الجانبية: كل قسم بيظهر بـ <code>Can::any(...)</code> على صلاحيات مجموعته، وكل لينك بيظهر بصلاحية الشاشة بتاعته من الحصر.</li>
+      <li>حذف طبقة التوافق.</li>
+    </ol>
+  </div>
+
+  <div class="phase" style="padding-right:14px;">
+    <h3>المرحلة 6 — حذف usr_pwrs</h3>
+    <p>بعد شهر من غير مشاكل: تحديث Laravel يقرا من <code>roles</code>، وبعدين <code>031_drop_usr_pwrs.sql</code>.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="migrations">
+  <h2>10. ملخص الـ migrations</h2>
+  <table>
+    <tr><th>الملف</th><th>المرحلة</th><th>المحتوى</th></tr>
+    <tr><td><code>028_usr_pwrs_legacy_columns.sql</code></td><td>1</td><td>توحيد أعمدة <code>usr_pwrs</code> قبل النسخ + <code>acc_head.price_list</code></td></tr>
+    <tr><td><code>029_rbac_tables.sql</code></td><td>1</td><td>الجداول + الـ 284 صلاحية</td></tr>
+    <tr><td><code>030_rbac_copy_from_usr_pwrs.sql</code></td><td>1</td><td>نقل الأدوار والصلاحيات</td></tr>
+    <tr><td><code>031_drop_usr_pwrs.sql</code></td><td>6</td><td>حذف الجدول القديم</td></tr>
+  </table>
+  <p class="note">الإعدادات (كلاس <code>Settings</code>، <code>edit_pass</code>، الافتراضيات) مسار منفصل بعد الصلاحيات. الربط الوحيد بينهم دلوقتي هو <code>settings.manage</code> و<code>system.manage</code>.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="implemented">
+  <h2>11. اللي اتنفذ (والفروق عن الخطة)</h2>
+  <p>المراحل من 1 لـ 5 اتنفذت. المرحلة 6 (حذف <code>usr_pwrs</code>) مستنية شهر.</p>
+  <table>
+    <tr><th>الموضوع</th><th>اللي اتعمل</th></tr>
+    <tr><td>مصدر الصلاحيات</td><td><code>includes/rbac_catalog.php</code> هو المصدر الوحيد. <code>tools/gen_rbac_sql.php</code> بيولّد منه migrations 028–030.</td></tr>
+    <tr><td>حماية السيرفر</td><td>بدل ما كل ملف ياخد <code>Can::authorize()</code> لوحده: خريطة مركزية <code>includes/rbac_routes.php</code> (ملف ← صلاحية، أو حسب بارامتر زي <code>?acc=</code> و<code>?q=</code> و<code>tybe</code>)، و<code>Can::guardRoute()</code> بيتنادى من <code>connect.php</code>. الملفات اللي مش بتعمل include لـ <code>connect.php</code> بتعمل include لـ <code>includes/rbac_guard.php</code>.</td></tr>
+    <tr><td>ملف مش في الخريطة</td><td>صفحة: تسجيل دخول بس + سطر في <code>logs/authz.log</code>. ملف في <code>do/</code>, <code>ajax/</code>, <code>get/</code>, <code>api/</code>, <code>print/</code>: مرفوض.</td></tr>
+    <tr><td>ملفات <code>custom</code></td><td>الصلاحية بتتحدد جوه الملف بعد ما يعرف العملية: الفواتير (<code>InvoiceProcessor::permissionFor()</code> بالنوع المتخزن)، الحسابات (<code>Can::authorizeAccountId()</code> بكود الحساب)، حذف السندات، الأدوار. الخريطة بتطلب تسجيل الدخول بس.</td></tr>
+    <tr><td>التطبيق التدريجي</td><td><code>AUTHZ_ENFORCE=0</code> (الافتراضي): الرفض بيتسجل بس. <code>users.*</code>, <code>roles.*</code>, <code>settings.*</code>, <code>system.*</code>, <code>news.*</code> بتترفض دايماً.</td></tr>
+    <tr><td>قاعدة بيانات ما شغّلتش الـ migrations</td><td><code>Can::login()</code> بيحسب الصلاحيات من صف <code>usr_pwrs</code> (<code>RbacLegacy::permsFromRow()</code>) بنفس قواعد 030، فالنظام بيشتغل قبل التحديث.</td></tr>
+    <tr><td>تغيير قاعدة البيانات</td><td><code>Can::boot()</code> بيعيد تحميل الصلاحيات لو المستخدم أو قاعدة البيانات اتغيروا، من غير logout.</td></tr>
+    <tr><td>صلاحيات مستخدم تاني</td><td><code>Can::userCan($conn, $userId, ...)</code> (زي كاشير الـ POS والدليفري).</td></tr>
+    <tr><td>إسناد الأدوار</td><td><code>Roles::assignError()</code>: ممنوع تدّي دور فيه صلاحية انت معندكش، أو الدور 1 لو مش super admin، أو تغيّر دورك.</td></tr>
+    <tr><td>القائمة الجانبية وصفحة التقارير</td><td>الأقسام بـ <code>Can::anyIn()</code>، والروابط بتتفلتر أوتوماتيك بـ <code>Can::canVisit()</code> من نفس الخريطة (<code>Can::filterMenu()</code>)، فاللينك والحماية مش ممكن يختلفوا.</td></tr>
+    <tr><td>باسورد الإعدادات</td><td>اتشال (<code>$sittingpass</code>). الإعدادات بـ <code>settings.manage</code>، وتبويبات الترخيص وقاعدة البيانات والنظام بـ <code>system.manage</code>. مسح البيانات بيطلب باسورد المستخدم نفسه.</td></tr>
+    <tr><td>الكود القديم</td><td>كل فحوص <code>$role[...]</code> اتنقلت لـ <code>Can</code>، و<code>$role</code> و<code>includes/userprev.php</code> اتشالوا.</td></tr>
+    <tr><td>اختبارات</td><td><code>tests/check_authorize.php</code> (كل ملف متغطي، ومفيش صلاحية مش في الكتالوج)، و<code>tests/rbac_migrate_test.php &lt;db&gt;</code> (بيشغّل الـ migrations ويقارن كل دور بالحساب من <code>usr_pwrs</code>).</td></tr>
+  </table>
+</section>
+
+</div>
+<script>
+  document.querySelectorAll('table').forEach(function (table) {
+    var headRow = table.querySelector('tr');
+    if (!headRow || !headRow.querySelector('th')) return;
+    var labels = Array.prototype.map.call(headRow.children, function (th) { return th.textContent.trim(); });
+    headRow.classList.add('head');
+    table.classList.add('cards');
+    table.querySelectorAll('tr').forEach(function (tr) {
+      if (tr === headRow) return;
+      Array.prototype.forEach.call(tr.children, function (td, i) {
+        td.setAttribute('data-label', labels[i] || '');
+      });
+    });
+  });
+</script>
+</body>
+</html>

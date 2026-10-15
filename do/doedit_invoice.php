@@ -103,9 +103,10 @@ if (!$rowop) {
 // echo "</pre>";
 
 $pro_tybe = intval($rowop['pro_tybe']);
+Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'edit'));
 
 $store_id = isset($_POST['store_id']) ? (int)$_POST['store_id'] : (int)$rowop['store_id'];
-$prevent_negative_stock = isset($role['prevent_negative_stock']) && $role['prevent_negative_stock'] == 1;
+$prevent_negative_stock = !Can::check('stock.sell_negative');
 $lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $id);
 if ($lineErrors) {
     die(implode(' — ', $lineErrors));

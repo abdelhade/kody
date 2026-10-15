@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/rbac_guard.php';
 $conn = new mysqli('localhost', 'root', '', 'focus');
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

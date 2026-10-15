@@ -5,7 +5,7 @@
 <div class="content-wrapper">
   <section class="content-header">
     <div class="container-fluid">
-    <?php if ($role['show_attandance'] == 1) { ?>
+    <?php if (Can::check('attendance.view')) { ?>
 
       <div class="row mb-3">
         <div class="col-sm-6">

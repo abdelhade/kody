@@ -28,29 +28,6 @@ if (!$res_up || $res_up->num_rows === 0) {
 }
 $up = $res_up->fetch_assoc();
 
-// مزامنة الدور الفعلي للمستخدم والتأكد من عدم كون $role فارغاً أو null
-$userDbRole = (int) ($up['userrole'] ?? 0);
-if ($userDbRole > 0 && ((int) ($_SESSION['usrole'] ?? 0) !== $userDbRole || empty($role))) {
-    $_SESSION['usrole'] = $userDbRole;
-    $resroleSync = $conn->query('SELECT * FROM usr_pwrs WHERE id = ' . $userDbRole . ' LIMIT 1');
-    if ($resroleSync && ($fetchedRoleSync = $resroleSync->fetch_assoc())) {
-        $role = $fetchedRoleSync;
-    }
-}
-if (!isset($role) || !is_array($role)) {
-    $role = [];
-}
-
-// المستخدم الأول (المسؤول الرئيسي #1) يمتلك دائماً كافة صلاحيات إدارة المستخدمين ولا يمكن منعه منها بأي شكل
-if ($userid === 1 || (isset($up['usertype']) && (int)$up['usertype'] === 2)) {
-    $role['show_users'] = 1;
-    $role['add_users'] = 1;
-    $role['edit_users'] = 1;
-    $role['delete_users'] = 1;
-    $role['edit_user_passwords'] = 1;
-    $role['is_fav_users'] = 1;
-}
-
 
 date_default_timezone_set('Africa/Cairo');
 

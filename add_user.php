@@ -33,12 +33,14 @@
           <label for="">دور المستخدم</label>
           <select name="userrole" class="form-control">
          <?php
-         $sqlrol = "SELECT id,rollname fROM usr_pwrs order by id";
-         $resrol = $conn->query($sqlrol);
-         while ($rowrol =$resrol->fetch_assoc()) {
+         require_once __DIR__ . '/classes/Roles.php';
+         foreach (Roles::options($conn) as $opt):
+             if (Roles::assignError($conn, $opt['id']) !== null) {
+                 continue;
+             }
          ?>
-         <option value="<?= $rowrol['id'] ?>"><?= $rowrol['rollname'] ?></option>
-         <?php } ?>
+         <option value="<?= $opt['id'] ?>"><?= htmlspecialchars($opt['name'], ENT_QUOTES, 'UTF-8') ?></option>
+         <?php endforeach; ?>
         </select>
 
         </div>

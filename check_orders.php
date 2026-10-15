@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 // Enable error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

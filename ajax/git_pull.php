@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/rbac_guard.php';
 // ajax/git_pull.php
 header('Content-Type: application/json');
 

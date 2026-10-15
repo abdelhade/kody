@@ -3,13 +3,10 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
-$isRootAdmin = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
-$canShowUsers = $isRootAdmin || (isset($role) && is_array($role) && ((int)($role['show_users'] ?? 0) === 1));
-
 // Fetch active users joined with their roles
-$sql = "SELECT u.*, r.rollname 
+$sql = "SELECT u.*, r.name AS rollname 
         FROM `users` u 
-        LEFT JOIN `usr_pwrs` r ON u.userrole = r.id 
+        LEFT JOIN `roles` r ON u.userrole = r.id 
         WHERE COALESCE(u.isdeleted, 0) != 1 
         ORDER BY u.id DESC";
 $res = $conn->query($sql);
@@ -17,13 +14,6 @@ $userCount = $res ? $res->num_rows : 0;
 ?>
 
 <div class="content-wrapper k-page-wrapper">
-  <?php if (!$canShowUsers): ?>
-    <div class="alert alert-danger text-center p-4 m-4">
-      <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-      <h4>صلاحية غير كافية</h4>
-      <p class="mb-0"><?= $userErrorMassage ?? 'ليس لديك صلاحية لعرض قائمة المستخدمين.' ?></p>
-    </div>
-  <?php else: ?>
     <?= kody_page_header(
         title: $lang_users ?? 'إدارة المستخدمين',
         icon: 'fa-users',
@@ -31,26 +21,26 @@ $userCount = $res ? $res->num_rows : 0;
             'الرئيسية' => 'dashboard.php',
             'المستخدمين' => ''
         ],
-        actions: [
-            [
+        actions: array_values(array_filter([
+            Can::check('roles.view') ? [
                 'label' => 'أدوار المستخدمين',
-                'url'   => 'myroles.php',
+                'url'   => 'roles.php',
                 'class' => 'k-btn-secondary',
                 'icon'  => 'fa-user-shield'
-            ],
-            [
+            ] : null,
+            Can::check('roles.add') ? [
                 'label' => 'زراعة أدوار جاهزة',
                 'url'   => 'seed_roles.php',
                 'class' => 'k-btn-success',
                 'icon'  => 'fa-seedling'
-            ],
-            [
+            ] : null,
+            Can::check('users.add') ? [
                 'label' => $lang_add_new ?? 'إضافة مستخدم جديد',
                 'url'   => 'add_user.php',
                 'class' => 'k-btn-primary',
                 'icon'  => 'fa-user-plus'
-            ]
-        ],
+            ] : null,
+        ])),
         badge: $userCount . ' مستخدم'
     ) ?>
 
@@ -137,8 +127,10 @@ $userCount = $res ? $res->num_rows : 0;
                   </td>
                   <td class="text-center">
                     <div class="k-actions">
-                      <?= kody_action_btn('edit', 'edit_user.php?id=' . $uid, ['title' => 'تعديل المستخدم']) ?>
-                      <?php if ($uid !== 1 && $uid !== (int)($_SESSION['userid'] ?? 0)): ?>
+                      <?php if (Can::any('users.edit', 'users.change_password')): ?>
+                        <?= kody_action_btn('edit', 'edit_user.php?id=' . $uid, ['title' => 'تعديل المستخدم']) ?>
+                      <?php endif; ?>
+                      <?php if ($uid !== 1 && $uid !== (int)($_SESSION['userid'] ?? 0) && Can::check('users.delete')): ?>
                         <?= kody_action_btn('delete', 'do/do_deluser.php?id=' . $uid, [
                             'title' => 'حذف المستخدم',
                             'item_name' => $uname
@@ -153,7 +145,6 @@ $userCount = $res ? $res->num_rows : 0;
         </div>
       <?php endif; ?>
     </div>
-  <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

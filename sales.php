@@ -9,6 +9,7 @@ include('includes/sidebar.php');
 
 // تضمين فئات العناصر مرة واحدة فقط
 require_once 'classes/InvoiceElementFactory.php';
+require_once 'classes/InvoiceProcessor.php';
 
 // تعريف ثوابت أنواع الفواتير (Cached)
 if (!defined('INVOICE_TYPES')) {
@@ -74,6 +75,10 @@ if (!empty($q_param) && isset(INVOICE_TYPES[$q_param])) {
     error_log("Invalid invoice type: " . $q_param);
 } else {
     $invoice_title = 'يرجى تحديد نوع الفاتورة';
+}
+
+if (!empty($pro_tybe)) {
+    Can::authorize(InvoiceProcessor::permissionFor((int) $pro_tybe, $is_edit_mode ? 'edit' : 'add'));
 }
 
 // تحديد لون الخلفية (Optimized with array lookup)

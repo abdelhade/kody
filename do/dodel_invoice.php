@@ -53,6 +53,7 @@ if ($pass !== $rowstg['edit_pass']) {
 try {
     $invoice = InvoiceProcessor::getActiveInvoice($conn, $id);
     $pro_tybe = intval($invoice['pro_tybe']);
+    Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'delete'));
     InvoiceProcessor::hardDelete($conn, $id);
 } catch (RuntimeException $e) {
     if ($e->getMessage() === 'invoice_not_found') {

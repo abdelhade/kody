@@ -1,6 +1,6 @@
 <div class="dashboard-cards">
     <div class="row">
-        <?php if(($role['sid_rents'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('rents')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-dark) !important;">
                 <div class="card-icon">
@@ -100,7 +100,7 @@
             </div>
         </div>
 
-        <?php if(($role['sid_sales'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('sales', 'pos')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-dark) !important;">
                 <div class="card-icon">
@@ -126,7 +126,7 @@
         </div>
         <?php } ?>
 
-        <?php if(($role['sid_hr'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('hr')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-color) !important;">
                 <div class="card-icon">
@@ -152,7 +152,7 @@
         </div>
         <?php } ?>
 
-        <?php if(($role['sid_clinics'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('clinics')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
             <div class="stat-card" style="background: var(--primary-light) !important;">
                 <div class="card-icon">

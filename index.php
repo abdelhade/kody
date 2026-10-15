@@ -7,6 +7,7 @@ session_start();
 
 require_once __DIR__ . '/includes/load_env.php';
 require_once __DIR__ . '/includes/db_name.php';
+require_once __DIR__ . '/classes/Can.php';
 
 // -------------------- إعدادات الداتابيس --------------------
 $dbhost = env('DB_HOST', 'localhost');
@@ -123,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['usrole'] = $row['userrole'];
                         $_SESSION['usty'] = $row['usertype'];
                         $_SESSION['login'] = $row['uname'];
+                        Can::login($conn, $userId, $dbname);
 
                         // تسجيل وقت الجلسة (prepared)
                         $session_stmt = $conn->prepare("INSERT INTO session_time(user) VALUES (?)");

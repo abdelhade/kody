@@ -32,6 +32,7 @@
           id="searchSide" style="padding-right: 35px;">
       </div>
     </div>
+    <?php ob_start(); ?>
     <nav class="mt-2">
 
       <!--                                             main                                                                        -->
@@ -47,7 +48,7 @@
 
 
         <!--                                             البيانات الاساسيه                                                                        -->
-        <?php if (($role['sid_entry'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('basic')) { ?>
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-pen"></i>
@@ -165,7 +166,7 @@
                 </a>
               </li>
 
-              <?php if (($role['show_delivery'] ?? 0) == 1) { ?>
+              <?php if (Can::check('delivery.view')) { ?>
               <li class="nav-item">
                 <a href="acc_report.php?acc=delivery" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
@@ -182,7 +183,7 @@
 
 
         <!--                                                                        -->
-        <?php if (($role['sid_stock'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('inventory')) { ?>
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -313,7 +314,7 @@
 
 
 <!-- -------------------نقاط البيع  -->
-        <?php if (($role['sid_sales'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('sales', 'pos')) { ?>
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -372,7 +373,7 @@
                 </a>
               </li>
 
-              <?php if (($role['sid_visits'] ?? 1) == 1) { ?>
+              <?php if (Can::anyIn('visits')) { ?>
                 <li class="nav-item">
                   <a href="visits.php" class="nav-link">
                     <i class="nav-icon fas fa-user-check"></i>
@@ -385,7 +386,7 @@
           </li>
         <?php } ?>
 
-        <?php if (($role['sid_cards'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('cards')) { ?>
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -439,7 +440,7 @@
 
 
 
-        <?php if (($role['sid_purchases'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('purchases')) { ?>
 
 
           <li class="nav-item has-treeview">
@@ -490,7 +491,7 @@
 
 
 
-        <?php if (($role['sid_sales'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('sales', 'pos')) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
@@ -551,7 +552,7 @@
 
 
 
-        <?php if (($role['sid_vouchers'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('vouchers')) { ?>
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -611,7 +612,7 @@
 
 
 
-        <?php if (($role['sid_hr'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('hr')) { ?>
 
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -636,7 +637,7 @@
                   </a>
                 </li> -->
 
-                <?php if (($role['show_delivery'] ?? 0) == 1) { ?>
+                <?php if (Can::check('delivery.view')) { ?>
                 <li class="nav-item">
                   <a href="acc_report.php?acc=delivery" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
@@ -701,7 +702,7 @@
         <?php } ?>
 
 
-        <?php if (($role['sid_hr'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('hr')) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-bolt text-warning"></i>
@@ -734,7 +735,7 @@
         <?php } ?>
 
 
-        <?php if (($role['sid_rents'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('rents')) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-money-bill-wave"></i>
@@ -802,7 +803,7 @@
 
 
         <!-- clinck -->
-        <?php if (($role['sid_clinics'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('clinics')) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
@@ -853,7 +854,7 @@
 
 
         <!-------------------------------الحضور---------------------------------------->
-        <?php if (($role['sid_payroll'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('tasks', 'payroll')) { ?>
 
 
             <li class="nav-item has-treeview">
@@ -955,7 +956,7 @@
 
           <!--                                            المرتبات                               -->
 
-            <?php if (($role['sid_payroll'] ?? 0) == 1) { ?>
+            <?php if (Can::anyIn('tasks', 'payroll')) { ?>
 
 
 
@@ -1132,7 +1133,7 @@
 
 
 
-        <?php if (($role['sid_crm'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('crm')) { ?>
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -1193,13 +1194,6 @@
                     </a>
                   </li>
 
-                  <li class="nav-item">
-                    <a href="prints.php" class="nav-link">
-                      <i class="far "> --- </i>
-                      <p><?= $lang_sidesettings ?></p>
-                    </a>
-                  </li>
-
                 </ul>
               </li>
             </ul>
@@ -1221,7 +1215,7 @@
           </a>
         </li>
 
-        <?php if (($role['sid_accounts'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('accounting')) { ?>
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
@@ -1317,7 +1311,7 @@
 
 
 
-        <?php if (($role['sid_accounts'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('accounting')) { ?>
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
@@ -1358,7 +1352,7 @@
 
 
 
-        <?php if (($role['sid_assets'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('assets_ops')) { ?>
 
           <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
@@ -1406,7 +1400,7 @@
 
 
 
-        <?php if (($role['sid_reports'] ?? 0) == 1) { ?>
+        <?php if (Can::anyIn('reports')) { ?>
           <li class="nav-item" id="reports-menu">
             <a href="reports.php" class="nav-link" id="reports-link">
               <i class="nav-icon fas fa-chart-line"></i>
@@ -1420,6 +1414,7 @@
 
 
     </nav>
+    <?= Can::filterMenu(ob_get_clean()) ?>
 
 
     <!-- /.sidebar-menu -->

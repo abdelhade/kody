@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/rbac_guard.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Database connection details
     $servername = "localhost"; // Change this to your database server

@@ -526,8 +526,7 @@ class AddItemModal extends InvoiceElementBase
 
     private function checkPermissions()
     {
-        global $role;
-        return isset($role['add_items']) && $role['add_items'] == 1;
+        return Can::check('items.add');
     }
 
     public function validate()

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 /**
  * ملف حذف ملف إصلاح كلمات المرور
  */

@@ -6,6 +6,12 @@ ob_start();
 include('includes/connect.php'); // ملف الاتصال بقاعدة البيانات
 
 // Process form submissions before any HTML output
+Can::authorize(match (true) {
+    isset($_POST['add_table'])  => 'tables.add',
+    isset($_POST['edit_table']) => 'tables.edit',
+    isset($_GET['delete'])      => 'tables.delete',
+    default                     => 'tables.view',
+});
 
 // إضافة طاولة جديدة
 if (isset($_POST['add_table'])) {

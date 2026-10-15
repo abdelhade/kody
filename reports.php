@@ -70,25 +70,12 @@ $reportGroups = [
         'items' => [
             ['href' => 'reps_cl.php', 'icon' => 'fa-clinic-medical', 'title' => $lang_clinic_reports ?? 'تقارير العيادات', 'perm' => 'sid_clinics'],
             ['href' => 'visits_stats.php', 'icon' => 'fa-chart-bar', 'title' => 'إحصائيات الزيارات', 'perm' => 'sid_visits'],
-            ['href' => 'prints.php', 'icon' => 'fa-money-check-alt', 'title' => $lang_sidesalariesreports ?? 'تقارير المرتبات', 'perm' => 'sid_payroll'],
-            ['href' => 'attendance_report.php', 'icon' => 'fa-clock', 'title' => 'تقرير الحضور والانصراف', 'perm' => 'sid_payroll'],
-            ['href' => 'staff_report.php', 'icon' => 'fa-user-tie', 'title' => 'تقرير الموظفين', 'perm' => 'sid_hr'],
         ],
     ],
 ];
 
-$hasReportPerm = function ($perm) use ($role) {
-    return $perm === null || (int)($role[$perm] ?? 0) === 1;
-};
-
 foreach ($reportGroups as $gi => $group) {
-    if (!$hasReportPerm($group['perm'] ?? null)) {
-        unset($reportGroups[$gi]);
-        continue;
-    }
-    $reportGroups[$gi]['items'] = array_filter($group['items'], function ($item) use ($hasReportPerm) {
-        return $hasReportPerm($item['perm'] ?? null);
-    });
+    $reportGroups[$gi]['items'] = array_filter($group['items'], fn($item) => Can::canVisit($item['href']));
     if (empty($reportGroups[$gi]['items'])) {
         unset($reportGroups[$gi]);
     }

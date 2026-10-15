@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 // ملف تشخيص مشكلة الدليفري
 header('Content-Type: text/html; charset=utf-8');
 ?>

@@ -24,6 +24,7 @@ if ($pro_tybe !== 1 && $pro_tybe !== 2 && $pro_tybe !== 16) {
     header('Location: ../vouchers.php?error=' . urlencode('هذا السند مرتبط بعمليات أخرى ولا يمكن حذفه'));
     exit;
 }
+Can::authorize($pro_tybe === 1 ? 'receipts.delete' : 'payments.delete');
 
 InvoiceProcessor::softDelete($conn, $id);
 

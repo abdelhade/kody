@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 // ملف إنشاء جدول acc_head إذا لم يكن موجوداً
 $conn = new mysqli("localhost", "root", "", "focus");
 

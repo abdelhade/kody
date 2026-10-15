@@ -1,76 +1,5 @@
 <?php include('includes/header.php'); ?>
 
-<?php
-$sittingpass = $sittingpass ?? 'hadi@1234';
-$postedPass = isset($_POST['password']) ? (string) $_POST['password'] : null;
-if ($postedPass === $sittingpass) {
-    $_SESSION['settings_unlocked'] = true;
-}
-$isUnlocked = !empty($_SESSION['settings_unlocked']);
-?>
-
-<?php if (!$isUnlocked && $postedPass === null): ?>
-
-<div class="content-wrapper">
-  <section class="content">
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-12 col-sm-10 col-md-6 col-lg-4">
-          <div class="card card-outline card-primary shadow-sm">
-            <div class="card-header text-center border-0 pt-4">
-              <div class="mb-2 text-primary" style="font-size:2.5rem;"><i class="fas fa-shield-alt"></i></div>
-              <h3 class="card-title font-weight-bold mb-0">إعدادات النظام</h3>
-              <p class="text-muted small mb-0 mt-2">أدخل كلمة مرور الإعدادات للمتابعة</p>
-            </div>
-            <div class="card-body pt-0">
-              <form method="post" action="<?= htmlspecialchars($_SERVER['PHP_SELF'], ENT_QUOTES, 'UTF-8') ?>" autocomplete="off">
-                <div class="form-group">
-                  <label for="settings-gate-password">كلمة المرور</label>
-                  <input type="password"
-                         name="password"
-                         id="settings-gate-password"
-                         class="form-control form-control-lg frst"
-                         required
-                         autocomplete="current-password"
-                         placeholder="••••••••">
-                </div>
-                <button type="submit" id="btnSubmitSettingsGate" class="btn btn-primary btn-block btn-lg">
-                  <i class="fas fa-sign-in-alt ml-1"></i> متابعة
-                </button>
-              </form>
-            </div>
-          </div>
-          <p class="text-center text-muted small mt-3 mb-0">
-            <i class="fas fa-info-circle"></i> هذه الشاشة تحمي التعديلات الحساسة للنظام.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<?php elseif (!$isUnlocked && $postedPass !== $sittingpass): ?>
-
-<div class="content-wrapper">
-  <section class="content">
-    <div class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-          <div class="alert alert-danger shadow-sm text-center mb-0">
-            <i class="fas fa-times-circle fa-2x mb-3 d-block"></i>
-            <h4 class="alert-heading">كلمة المرور غير صحيحة</h4>
-            <p class="mb-3">لا يمكن فتح صفحة الإعدادات دون كلمة المرور الصحيحة.</p>
-            <a href="setting.php" class="btn btn-outline-danger">
-              <i class="fas fa-redo ml-1"></i> إعادة المحاولة
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<?php else: ?>
 
 <?php
 require_once __DIR__ . '/includes/license.php';
@@ -172,6 +101,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="barcode-tab" data-toggle="pill" href="#tab-barcode" role="tab" aria-controls="tab-barcode" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-barcode ml-3" style="font-size: 1.1rem; width: 20px;"></i> تصميم الباركود
                   </a>
+                  <?php if (Can::check('system.manage')): ?>
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="license-tab" data-toggle="pill" href="#tab-license" role="tab" aria-controls="tab-license" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fas fa-key ml-3" style="font-size: 1.1rem; width: 20px;"></i> الترخيص
                   </a>
@@ -181,6 +111,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
                   <a class="nav-link py-3 px-4 mb-2 d-flex align-items-center" id="system-tab" data-toggle="pill" href="#tab-system" role="tab" aria-controls="tab-system" aria-selected="false" style="border-radius: 8px; font-weight: 600; transition: all 0.2s ease;">
                     <i class="fab fa-git-alt ml-3" style="font-size: 1.1rem; width: 20px;"></i> تحديث النظام (Git)
                   </a>
+                  <?php endif; ?>
                 </div>
               </div>
             </div>
@@ -577,6 +508,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
                 <?php include __DIR__ . '/includes/barcode_design_form.php'; ?>
               </div>
 
+              <?php if (Can::check('system.manage')): ?>
               <!-- الترخيص -->
               <div class="tab-pane fade" id="tab-license" role="tabpanel" aria-labelledby="license-tab">
                 <div class="card card-outline <?= $licenseOk ? 'card-success' : 'card-danger' ?> shadow-sm border-0" style="border-radius: 12px;">
@@ -714,6 +646,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
                   </div>
                 </div>
               </div>
+              <?php endif; ?>
 
             </div>
 
@@ -739,7 +672,6 @@ $licenseOk = !empty($licenseStatus['licensed']);
   </section>
 </div>
 
-<?php endif; ?>
 
 <script>
 // Preview اللوجو لما المستخدم يختار صورة

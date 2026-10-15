@@ -3,6 +3,7 @@
 // يفترض أن include('../includes/connect.php') يعرّف $conn (mysqli)
 
 include('../includes/connect.php');
+require_once __DIR__ . '/../classes/Roles.php';
 
 // تأكد من أن id رقم صحيح
 if (!isset($_GET['id'])) {
@@ -11,13 +12,21 @@ if (!isset($_GET['id'])) {
 }
 $id = (int) $_GET['id'];
 
-// التقاط القيم المرسلة
-$uname = $_POST['uname'] ?? '';
-$usertype = $_POST['usertype'] ?? '';
-$userrole = $_POST['userrole'] ?? '';
-$password = $_POST['password'] ?? '';
+$canEditUser = Can::check('users.edit');
+$canEditPassword = Can::check('users.change_password');
+
+// التقاط القيم المرسلة (اللي معهوش users.edit يقدر يغيّر كلمة المرور بس)
+$uname = $canEditUser ? ($_POST['uname'] ?? '') : '';
+$usertype = $canEditUser && Can::isSuperAdmin() ? ($_POST['usertype'] ?? '') : '';
+$userrole = $canEditUser ? ($_POST['userrole'] ?? '') : '';
+$password = $canEditPassword ? ($_POST['password'] ?? '') : '';
 $confirm_password = $_POST['confirm_password'] ?? '';
 $is_waiter = isset($_POST['is_waiter']) ? 1 : 0;
+
+if ($userrole !== '' && $id === Can::userId() && (int) $userrole !== Can::roleId()) {
+    echo "<script>alert('مش مسموح تغيّر الدور بتاعك'); history.back();</script>";
+    exit();
+}
 
 // التحقق من تطابق كلمات المرور (لو أدخلت)
 if ($password !== '' && $password !== $confirm_password) {
@@ -46,15 +55,17 @@ if ($usertype !== '') {
 
 // userrole
 if ($userrole !== '') {
-    // حماية المستخدم الأول: التأكد التام من أن الدور المسند له يحتوي على صلاحية إدارة المستخدمين
-    if ($id === 1) {
-        $chkRole = $conn->query("SELECT show_users FROM usr_pwrs WHERE id = " . (int)$userrole . " LIMIT 1");
-        $chkData = $chkRole ? $chkRole->fetch_assoc() : null;
-        if (!$chkData || (int)($chkData['show_users'] ?? 0) !== 1) {
-            echo "<script>alert('لا يمكن إسناد دور بدون صلاحية إدارة المستخدمين للمستخدم الرئيسي للنظام.'); history.back();</script>";
-            exit();
-        }
+    $cur = $conn->prepare('SELECT userrole FROM users WHERE id = ? LIMIT 1');
+    $cur->bind_param('i', $id);
+    $cur->execute();
+    $currentRole = (int) ($cur->get_result()->fetch_row()[0] ?? 0);
+    $cur->close();
+    if ((int) $userrole !== $currentRole && ($err = Roles::assignError($conn, (int) $userrole)) !== null) {
+        echo '<script>alert(' . json_encode($err, JSON_UNESCAPED_UNICODE) . '); history.back();</script>';
+        exit();
     }
+}
+if ($userrole !== '') {
     $fields[] = "userrole = ?";
     $types .= "s";
     $values[] = $userrole;

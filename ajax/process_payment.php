@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/rbac_guard.php';
 $table_id = isset($_POST['table_id']) ? intval($_POST['table_id']) : 0;
 $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
 

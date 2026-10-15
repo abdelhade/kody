@@ -26,6 +26,37 @@ class InvoiceProcessor {
         'PURCHASE_DISC' => 6      // خصم مشتريات
     ];
 
+    // كيان الصلاحية لكل نوع فاتورة (sales.add, purchases.edit ...)
+    const TYPE_PERMISSION = [
+        3  => 'sales',
+        4  => 'purchases',
+        9  => 'pos',
+        10 => 'purchase_returns',
+        11 => 'sales_returns',
+        12 => 'purchase_orders',
+        13 => 'sales_orders',
+        14 => 'quotations',
+    ];
+
+    /**
+     * الصلاحية المطلوبة لفعل (view/add/edit/delete) على نوع فاتورة.
+     * الكاشير: الإضافة pos.use، والعرض الجلسات المقفولة، والتعديل/الحذف صلاحيات المبيعات.
+     */
+    public static function permissionFor(int $type, string $action): string {
+        $entity = self::TYPE_PERMISSION[$type] ?? null;
+        if ($entity === null) {
+            return 'unknown_invoice_type.' . $type;
+        }
+        if ($entity === 'pos') {
+            return match ($action) {
+                'add'    => 'pos.use',
+                'view'   => 'pos.closed_sessions',
+                default  => 'sales.' . $action,
+            };
+        }
+        return $entity . '.' . $action;
+    }
+
     public static function isCashPartyAccount($account) {
         return !empty($account['cash_only']);
     }

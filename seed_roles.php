@@ -61,31 +61,23 @@ require_once __DIR__ . '/includes/navbar.php';
 require_once __DIR__ . '/includes/sidebar.php';
 require_once __DIR__ . '/includes/RolesSeeder.php';
 
-$canShowUsers = isset($role) && is_array($role) && ((int)($role['show_users'] ?? 0) === 1);
 $presets = RolesSeeder::getPresets();
 $existing = RolesSeeder::getExistingRoles($conn);
 ?>
 
 <div class="content-wrapper k-page-wrapper">
-  <?php if (!$canShowUsers): ?>
-    <div class="alert alert-danger text-center p-4 m-4">
-      <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-      <h4>صلاحية غير كافية</h4>
-      <p class="mb-0">ليس لديك صلاحية لإدارة الأدوار والصلاحيات في النظام.</p>
-    </div>
-  <?php else: ?>
     <?= kody_page_header(
         title: 'أداة زراعة الأدوار الافتراضية (Roles Seeder)',
         icon: 'fa-seedling',
         breadcrumbs: [
             'الرئيسية' => 'dashboard.php',
-            'الأدوار' => 'myroles.php',
+            'الأدوار' => 'roles.php',
             'زراعة الأدوار' => ''
         ],
         actions: [
             [
                 'label' => 'العودة للأدوار',
-                'url'   => 'myroles.php',
+                'url'   => 'roles.php',
                 'class' => 'k-btn-secondary',
                 'icon'  => 'fa-arrow-right'
             ]
@@ -172,7 +164,6 @@ $existing = RolesSeeder::getExistingRoles($conn);
         </div>
       </div>
     </div>
-  <?php endif; ?>
 </div>
 
 <script>
@@ -225,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var html = '<div class="alert alert-success p-4 rounded shadow-sm">';
                 html += '<h5 class="font-weight-bold mb-2"><i class="fas fa-check-circle ml-2"></i> اكتملت عملية التوليد بنجاح!</h5>';
                 html += '<p class="mb-3">' + data.message + '</p>';
-                html += '<div class="d-flex"><a href="myroles.php" class="btn btn-success btn-sm"><i class="fas fa-list ml-1"></i> الانتقال لقائمة الأدوار والصلاحيات</a></div>';
+                html += '<div class="d-flex"><a href="roles.php" class="btn btn-success btn-sm"><i class="fas fa-list ml-1"></i> الانتقال لقائمة الأدوار والصلاحيات</a></div>';
                 html += '</div>';
 
                 resultAlert.innerHTML = html;
@@ -239,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         confirmButtonText: 'عرض الأدوار'
                     }).then(function(result) {
                         if (result.isConfirmed) {
-                            window.location.href = 'myroles.php';
+                            window.location.href = 'roles.php';
                         }
                     });
                 }

@@ -1,6 +1,5 @@
-
-
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 
 class ZKTFingerprintMachine {
     private $socket;

@@ -10,13 +10,14 @@ if ($id <= 0) {
     exit;
 }
 
-// التحقق من صلاحيات التعديل (المستخدم الأول يمتلك الصلاحية دائماً ولا يمكن منعه)
-$isRootAdmin = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
-$canEditUsers = $isRootAdmin || !isset($role) || !is_array($role) || !isset($role['edit_users']) || ((int)$role['edit_users'] === 1);
-$canEditPassword = $isRootAdmin || !isset($role) || !is_array($role) || !isset($role['edit_user_passwords']) || ((int)$role['edit_user_passwords'] === 1);
+require_once __DIR__ . '/classes/Roles.php';
+
+$canEditUsers = Can::any('users.edit', 'users.change_password');
+$canEditPassword = Can::check('users.change_password');
+$canEditRole = Can::check('users.edit') && $id !== Can::userId();
 
 // جلب بيانات المستخدم
-$stmt = $conn->prepare("SELECT u.*, r.rollname FROM users u LEFT JOIN usr_pwrs r ON u.userrole = r.id WHERE u.id = ? LIMIT 1");
+$stmt = $conn->prepare("SELECT u.*, r.name AS rollname FROM users u LEFT JOIN roles r ON u.userrole = r.id WHERE u.id = ? LIMIT 1");
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -402,25 +403,18 @@ $avatarUrl = ($isFound && !empty($row['img'])) ? 'uploads/' . htmlspecialchars($
                     <label class="k-label required" for="userrole">دور المستخدم والصلاحية</label>
                     <div class="input-icon-wrap">
                       <i class="fas fa-shield-alt input-icon"></i>
-                      <select name="userrole" id="userrole" class="k-select" required>
-                        <?php
-                        $sqlrol = "SELECT id, rollname, show_users FROM usr_pwrs ORDER BY id ASC";
-                        $resrol = $conn->query($sqlrol);
-                        if ($resrol) {
-                            while ($rowrol = $resrol->fetch_assoc()) {
-                                // للمستخدم الأول: منع إسناد أي دور لا يمتلك صلاحية المستخدمين
-                                if ($id === 1 && (int)($rowrol['show_users'] ?? 0) !== 1 && (int)$rowrol['id'] !== 1) {
-                                    continue;
-                                }
-                                $selected = ((int)$rowrol['id'] === (int)$row['userrole']) ? 'selected' : '';
-                                echo '<option value="' . (int)$rowrol['id'] . '" ' . $selected . '>' . htmlspecialchars($rowrol['rollname'], ENT_QUOTES, 'UTF-8') . '</option>';
-                            }
-                        }
-                        ?>
+                      <select name="userrole" id="userrole" class="k-select" required <?= $canEditRole ? '' : 'disabled' ?>>
+                        <?php foreach (Roles::options($conn) as $opt):
+                            $isCurrent = $opt['id'] === (int) $row['userrole'];
+                            if (!$isCurrent && Roles::assignError($conn, $opt['id']) !== null) {
+                                continue;
+                            } ?>
+                          <option value="<?= $opt['id'] ?>" <?= $isCurrent ? 'selected' : '' ?>><?= htmlspecialchars($opt['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
                       </select>
                     </div>
-                    <?php if ($id === 1): ?>
-                      <small class="text-primary mt-1 d-block font-weight-bold"><i class="fas fa-shield-alt ml-1"></i> المستخدم الأول محمي دائماً ولا يمكن إسناد دور له بدون صلاحية إدارة المستخدمين.</small>
+                    <?php if (!$canEditRole): ?>
+                      <small class="text-muted mt-1 d-block"><i class="fas fa-lock ml-1"></i> مش مسموح تغيّر الدور هنا<?= $id === Can::userId() ? ' (ده حسابك)' : '' ?>.</small>
                     <?php else: ?>
                       <small class="text-muted mt-1 d-block">يحدد هذا الخيار شاشات النظام والصلاحيات المسموحة لهذا المستخدم.</small>
                     <?php endif; ?>

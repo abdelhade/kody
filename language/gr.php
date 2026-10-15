@@ -22,7 +22,6 @@ $lang_main_back = "Zurück zum Hauptmenü";
 $lang_warningmsg3 = "Benutzer nicht berechtigt";
 $lang_warningmsg4 = "Bitte konsultieren Sie den Systemadministrator";
 $lang_warningmsg5 = "Möchten Sie diese Aufgabe löschen?";
-$sittingpass = "hadi@1234";
 
 // KOPFZEILE
 $lang_title = "HORS TECH";

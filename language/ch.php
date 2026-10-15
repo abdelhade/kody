@@ -21,7 +21,6 @@ $lang_main_back = "返回主菜单";
 $lang_warningmsg3 = "用户不允许";
 $lang_warningmsg4 = "请咨询系统管理员";
 $lang_warningmsg5 = "您要删除此任务吗？";
-$sittingpass = "hadi@1234";
 
 // 页眉
 $lang_title = "HORS TECH";

@@ -1,6 +1,6 @@
 <div class="dashboard-widgets">
     <div class="row g-4">
-        <?php if(($role['sid_accounts'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('accounting')){ ?>
         <!-- آخر حسابات تم إنشاءها -->
         <div class="col-xl-4 col-lg-6">
             <div class="modern-card card-accounts">
@@ -80,7 +80,7 @@
         </div>
         <?php } ?>
 
-        <?php if(($role['sid_accounts'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('accounting')){ ?>
         <!-- محلل العمل اليومي -->
         <div class="col-xl-4 col-lg-6">
             <div class="modern-card card-operations">
@@ -151,7 +151,7 @@
         </div>
         <?php } ?>
 
-        <?php if(($role['sid_stock'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('inventory')){ ?>
         <!-- آخر أصناف تم إنشاءها -->
         <div class="col-xl-4 col-lg-6">
             <div class="modern-card card-items">
@@ -382,7 +382,7 @@
             </div>
         </div>
 
-        <?php if(($role['sid_rents'] ?? 0) == 1){ ?>
+        <?php if(Can::anyIn('rents')){ ?>
         <!-- الأقساط المستحقة -->
         <div class="col-xl-8 col-lg-12">
             <div class="modern-card card-installments">

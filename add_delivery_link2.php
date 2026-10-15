@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 $content = file_get_contents('includes/sidebar.php');
 
 // Find the line with employees.php and add delivery link after it

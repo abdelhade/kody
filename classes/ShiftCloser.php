@@ -38,7 +38,7 @@ class ShiftCloser
     /**
      * الكاشير يشوف المتوقع قبل الجرد؟ (لو الجرد الأعمى مقفول أو عنده صلاحية)
      */
-    public static function canSeeExpected(?array $settings, ?array $role): bool
+    public static function canSeeExpected(?array $settings): bool
     {
         if (empty($settings['pos_blind_close'])) {
             return true;
@@ -46,7 +46,7 @@ class ShiftCloser
         if ((int) ($_SESSION['userid'] ?? 0) === 1 || (int) ($_SESSION['usty'] ?? 0) === 2) {
             return true;
         }
-        return !empty($role['view_shift_expected']);
+        return Can::check('pos.view_shift_expected');
     }
 
     // ─── Preview ────────────────────────────────────────────────

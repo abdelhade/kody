@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/rbac_guard.php';
 $sql = "SELECT * FROM acc_head";
 $result = $conn->query($sql);
 

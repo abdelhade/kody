@@ -6,6 +6,7 @@ if ($id <= 0) {
     header('Location: ../accounts.php');
     exit;
 }
+Can::authorizeAccountId($conn, $id, 'delete');
 
 function redirectAccountError(string $message): void
 {

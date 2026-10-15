@@ -1,6 +1,5 @@
 <?php
 // ملف اللغة العربية
-$sittingpass = "hadi@1234";
 $lang_title = "نظام الإدارة";
 $lang_dashboard = "الرئيسية";
 $lang_users = "المستخدمين";

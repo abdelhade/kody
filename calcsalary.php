@@ -18,7 +18,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
 <div class="content-wrapper calcsalary-page">
   <section class="content-header no-print">
     <div class="container-fluid">
-    <?php if ($role['show_attandance'] == 1) { ?>
+    <?php if (Can::check('attendance.view')) { ?>
       <div class="row mb-2 align-items-center">
         <div class="col-sm-6">
           <h1><?= $lang_attendance_processings_list ?? 'قائمة معالجات الحضور' ?></h1>
@@ -39,7 +39,7 @@ $hasFilter = $filterEmp > 0 || $filterDept > 0 || $filterShift > 0 || $filterFro
 
   <section class="content">
     <div class="container-fluid" id="calcsalary-print-area">
-    <?php if ($role['show_attandance'] == 1) { ?>
+    <?php if (Can::check('attendance.view')) { ?>
 
       <div class="card no-print mb-3">
         <div class="card-header">

@@ -23,7 +23,6 @@ $lang_main_back = "Ana Menüye Dön";
 $lang_warningmsg3 = "Kullanıcı izin verilmedi ";
 $lang_warningmsg4 = "Lütfen sistem yöneticisine danışın";
 $lang_warningmsg5 = "Bu görevi silmek istiyor musunuz? ";
-$sittingpass = "hadi@1234";
 
 // BAŞLIK
 $lang_title = "HORS TECH";

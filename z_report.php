@@ -11,7 +11,7 @@ if (!isset($_SESSION['userid'])) {
 $user_id = (int) $_SESSION['userid'];
 $closer = new ShiftCloser($conn);
 $p = $closer->preview($user_id);
-$showExpected = ShiftCloser::canSeeExpected($rowstg ?? [], $role ?? []);
+$showExpected = ShiftCloser::canSeeExpected($rowstg ?? []);
 
 $error = $_SESSION['error_message'] ?? '';
 unset($_SESSION['error_message']);

@@ -8,7 +8,7 @@
     <section class="content-header">
         <div class="container-fluid">
 
-         <?php if ($role['add_attandance'] == 1) { ?>
+         <?php if (Can::check('allowances.add')) { ?>
 
             <form action="do/doadd_allowance.php" method="post">
             <div class="card card-info">

@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once __DIR__ . '/../includes/rbac_guard.php';
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 include('../includes/config.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -1,7 +1,8 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
-<?php $id = $_GET['id'];
+<?php $id = (int) ($_GET['id'] ?? 0);
+Can::authorizeAccountId($conn, $id, 'edit');
 $rowacc = $conn->query("SELECT * FROM acc_head where id = $id")->fetch_assoc();
 ?>
 <div class="content-wrapper">

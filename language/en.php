@@ -21,7 +21,6 @@ $lang_main_back = "Back to Main Menu";
 $lang_warningmsg3 = "User not allowed ";
 $lang_warningmsg4 = "Please consult the system administrator";
 $lang_warningmsg5 = "Do you want to delete this task? ";
-$sittingpass = "hadi@1234";
 
 // HEADER
 $lang_title = "HORS TECH";

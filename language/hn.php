@@ -21,7 +21,6 @@ $lang_main_back = "मुख्य मेनू पर वापस जाएं
 $lang_warningmsg3 = "उपयोगकर्ता को अनुमति नहीं है";
 $lang_warningmsg4 = "कृपया प्रणाली प्रशासक से संपर्क करें";
 $lang_warningmsg5 = "क्या आप इस कार्य को हटाना चाहते हैं?";
-$sittingpass = "hadi@1234";
 
 // हेडर
 $lang_title = "HORS TECH";

@@ -21,7 +21,6 @@ $lang_main_back = "مین مینو میں واپس";
 $lang_warningmsg3 = "صارف کی اجازت نہیں ہے ";
 $lang_warningmsg4 = "برائے مہربانی نظام کے منتظم سے رجوع کریں";
 $lang_warningmsg5 = "کیا آپ اس کام کو حذف کرنا چاہتے ہیں؟ ";
-$sittingpass = "hadi@1234";
 
 // ہیڈر
 $lang_title = "ہورس ٹیک";

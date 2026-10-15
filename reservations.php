@@ -7,7 +7,7 @@
 
 
  <?php
-                if ($role['show_ended_reservation']  == 0 && isset($_GET['c'])){
+                if (!Can::check('reservations.view_ended') && isset($_GET['c'])){
                             echo  $userErrorMassage; 
                         }else{   
                             ?>
@@ -107,7 +107,7 @@
             </div>
 
             <div class="card-footer">
-                <?php if ($role['show_total_reservation']) {?>
+                <?php if (Can::check('reservations.view_total')) {?>
                 <div class="bg-slate-800 text-light col-md-1 text-md" id="total" >
 
                 </div>

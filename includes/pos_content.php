@@ -63,14 +63,8 @@ body {
                             <!-- نوع الطلب -->
                             <?php
                             // التحقق من صلاحية طلبات الدليفري
-                            $pos_role = $role ?? [];
-                            if (isset($_SESSION['pos_user_id']) && !empty($_SESSION['pos_user_id'])) {
-                                $q_role = $conn->query("SELECT p.* FROM users u LEFT JOIN usr_pwrs p ON u.userrole = p.id WHERE u.id = " . intval($_SESSION['pos_user_id']));
-                                if ($q_role && $r_role = $q_role->fetch_assoc()) {
-                                    $pos_role = $r_role;
-                                }
-                            }
-                            $can_pos_delivery = (isset($pos_role['allow_pos_delivery']) ? ($pos_role['allow_pos_delivery'] == 1) : true) && (isset($pos_role['show_delivery']) ? ($pos_role['show_delivery'] == 1) : true);
+                            $posUserId = !empty($_SESSION['pos_user_id']) ? (int) $_SESSION['pos_user_id'] : Can::userId();
+                            $can_pos_delivery = Can::userCan($conn, $posUserId, 'pos.delivery') && Can::userCan($conn, $posUserId, 'delivery.view');
 
                             // يُحسب في pos_barcode.php قبل الـ navbar — هذا احتياط لو ضُمِّن الملف من مكان آخر
                             if (!isset($default_table_pref)) {

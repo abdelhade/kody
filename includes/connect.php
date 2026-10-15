@@ -105,117 +105,12 @@ $rowstg = $resstg->fetch_assoc();
 $restwn = $conn->query("SELECT * from towns ");
 
 
-// user powers
-$role = [];
-$user_role_id = isset($_SESSION['usrole']) ? (int)$_SESSION['usrole'] : 0;
-
-if ($user_role_id <= 0 && !empty($_SESSION['userid'])) {
-    $uid = (int)$_SESSION['userid'];
-    $uRes = $conn->query("SELECT userrole FROM users WHERE id = $uid LIMIT 1");
-    if ($uRes && ($uRow = $uRes->fetch_assoc())) {
-        $user_role_id = (int)($uRow['userrole'] ?? 0);
-        if ($user_role_id > 0) {
-            $_SESSION['usrole'] = $user_role_id;
-        }
-    }
+// الصلاحيات: Can بيحمّل صلاحيات دور المستخدم في الـ session، وبعدين حماية الصفحة من includes/rbac_routes.php
+require_once __DIR__ . '/../classes/Can.php';
+if ($selected !== null) {
+    Can::boot($conn, $dbname);
 }
-
-if ($user_role_id > 0) {
-    $resrole = $conn->query("SELECT * FROM usr_pwrs WHERE id = $user_role_id LIMIT 1");
-    if ($resrole && ($fetchedRole = $resrole->fetch_assoc())) {
-        $role = $fetchedRole;
-    }
-}
-
-// Fallback: if role not found (e.g. database switched, deleted role), try current user's role from users table
-if (empty($role) && !empty($_SESSION['userid'])) {
-    $uid = (int)$_SESSION['userid'];
-    $uRes = $conn->query("SELECT userrole FROM users WHERE id = $uid LIMIT 1");
-    if ($uRes && ($uRow = $uRes->fetch_assoc())) {
-        $dbRoleId = (int)($uRow['userrole'] ?? 0);
-        if ($dbRoleId > 0 && $dbRoleId !== $user_role_id) {
-            $resrole = $conn->query("SELECT * FROM usr_pwrs WHERE id = $dbRoleId LIMIT 1");
-            if ($resrole && ($fetchedRole = $resrole->fetch_assoc())) {
-                $role = $fetchedRole;
-                $_SESSION['usrole'] = $dbRoleId;
-            }
-        }
-    }
-}
-
-// Fallback: if still empty and user is admin, fallback to admin role in usr_pwrs
-if (empty($role) && (!empty($_SESSION['login']) || !empty($_SESSION['userid']))) {
-    $loginName = $_SESSION['login'] ?? '';
-    $usty = (int)($_SESSION['usty'] ?? 0);
-    if ($usty === 2 || strtolower((string)$loginName) === 'admin') {
-        $resrole = $conn->query("SELECT * FROM usr_pwrs WHERE rollname = 'admin' OR id = 1 LIMIT 1");
-        if ($resrole && ($fetchedRole = $resrole->fetch_assoc())) {
-            $role = $fetchedRole;
-            $_SESSION['usrole'] = (int)$role['id'];
-        }
-    }
-}
-
-if (!is_array($role)) {
-    $role = [];
-}
-
-// المستخدم الأول (المسؤول الرئيسي #1) يمتلك دائماً كافة صلاحيات إدارة المستخدمين ولا يمكن منعه منها بأي شكل
-if ((isset($_SESSION['userid']) && (int)$_SESSION['userid'] === 1) || (isset($_SESSION['usty']) && (int)$_SESSION['usty'] === 2)) {
-    $role['show_users'] = 1;
-    $role['add_users'] = 1;
-    $role['edit_users'] = 1;
-    $role['delete_users'] = 1;
-    $role['edit_user_passwords'] = 1;
-    $role['is_fav_users'] = 1;
-}
-
-
-$colVisits = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'sid_visits'");
-if ($colVisits && $colVisits->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN sid_visits INT DEFAULT 1');
-}
-
-$colMainHr = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'show_main_hr'");
-if ($colMainHr && $colMainHr->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN show_main_hr TINYINT(1) NOT NULL DEFAULT 1');
-}
-
-$colDelivery = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'show_delivery'");
-if ($colDelivery && $colDelivery->num_rows === 0) {
-    $conn->query("ALTER TABLE usr_pwrs
-        ADD COLUMN is_fav_delivery INT(11) DEFAULT 0 AFTER delete_depits,
-        ADD COLUMN show_delivery INT(11) DEFAULT 1 AFTER is_fav_delivery,
-        ADD COLUMN add_delivery INT(11) DEFAULT 1 AFTER show_delivery,
-        ADD COLUMN edit_delivery INT(11) DEFAULT 1 AFTER add_delivery,
-        ADD COLUMN delete_delivery INT(11) DEFAULT 1 AFTER edit_delivery");
-}
-
-$colSidCards = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'sid_cards'");
-if ($colSidCards && $colSidCards->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN sid_cards INT(11) NOT NULL DEFAULT 1 AFTER sid_rents');
-}
-
-$colAccPriceList = $conn->query("SHOW COLUMNS FROM acc_head LIKE 'price_list'");
-if ($colAccPriceList && $colAccPriceList->num_rows === 0) {
-    $conn->query('ALTER TABLE acc_head ADD COLUMN price_list INT NOT NULL DEFAULT 1');
-}
-
-$colEditUserPasswords = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'edit_user_passwords'");
-if ($colEditUserPasswords && $colEditUserPasswords->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN edit_user_passwords INT(11) NOT NULL DEFAULT 0 AFTER sid_cards');
-}
-
-$colPreventNegativeStock = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'prevent_negative_stock'");
-if ($colPreventNegativeStock && $colPreventNegativeStock->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN prevent_negative_stock TINYINT(1) NOT NULL DEFAULT 0');
-}
-
-$colAllowPosDelivery = $conn->query("SHOW COLUMNS FROM usr_pwrs LIKE 'allow_pos_delivery'");
-if ($colAllowPosDelivery && $colAllowPosDelivery->num_rows === 0) {
-    $conn->query('ALTER TABLE usr_pwrs ADD COLUMN allow_pos_delivery INT(11) NOT NULL DEFAULT 1');
-}
-
+Can::guardRoute();
 
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 

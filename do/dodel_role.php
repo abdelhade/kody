@@ -1,40 +1,32 @@
 <?php
 require_once __DIR__ . '/../includes/connect.php';
+require_once __DIR__ . '/../classes/Roles.php';
 
-$id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
-if ($id < 1) {
-    header('Location: ../myroles.php');
+$back = static function (string $query): never {
+    header('Location: ../roles.php?' . $query);
     exit;
-}
+};
 
-// Cannot delete admin role ID 1
+$id = (int) ($_REQUEST['id'] ?? 0);
+if ($id < 1 || !Roles::find($conn, $id)) {
+    $back('error=' . urlencode('الدور غير موجود'));
+}
 if ($id === 1) {
-    header('Location: ../myroles.php?error=' . urlencode('لا يمكن حذف الدور الإداري الرئيسي'));
-    exit;
+    $back('error=' . urlencode('لا يمكن حذف الدور الإداري الرئيسي'));
+}
+if ($id === Can::roleId()) {
+    $back('error=' . urlencode('لا يمكن حذف الدور بتاعك'));
+}
+if (Roles::usersCount($conn, $id) > 0) {
+    $back('error=' . urlencode('لا يمكن حذف دور مرتبط بمستخدمين، انقلهم لدور تاني الأول'));
 }
 
-$stmt = $conn->prepare("SELECT COUNT(*) AS c FROM users WHERE userrole = ? AND COALESCE(isdeleted, 0) != 1");
-$stmt->bind_param("i", $id);
+// role_has_permissions بيتمسح معاه (FK ON DELETE CASCADE)
+$stmt = $conn->prepare('DELETE FROM `roles` WHERE `id` = ?');
+$stmt->bind_param('i', $id);
 $stmt->execute();
-$res = $stmt->get_result();
-$users_count = (int)($res->fetch_assoc()['c'] ?? 0);
 $stmt->close();
 
-if ($users_count > 0) {
-    header('Location: ../myroles.php?w=del');
-    exit;
-}
+Roles::log($conn, 'delete role: ' . $id . ' by user ' . Can::userId());
 
-$del = $conn->prepare("DELETE FROM usr_pwrs WHERE id = ?");
-$del->bind_param("i", $id);
-$del->execute();
-$del->close();
-
-$stmtLog = $conn->prepare("INSERT INTO `process` (`type`) VALUES (?)");
-$proc = 'delete role: ' . $id;
-$stmtLog->bind_param("s", $proc);
-$stmtLog->execute();
-$stmtLog->close();
-
-header('Location: ../myroles.php?msg=deleted');
-exit;
+$back('msg=deleted');

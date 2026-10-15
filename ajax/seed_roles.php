@@ -17,20 +17,9 @@ if (!isset($_SESSION['userid'])) {
 require_once __DIR__ . '/../includes/connect.php';
 require_once __DIR__ . '/../includes/RolesSeeder.php';
 
-// التحقق من صلاحية إدارة المستخدمين أو الأدوار
-$userId = (int)$_SESSION['userid'];
-$userRes = $conn->query("SELECT userrole FROM users WHERE id = $userId LIMIT 1");
-$userRoleRow = $userRes ? $userRes->fetch_assoc() : null;
-$roleId = $userRoleRow ? (int)$userRoleRow['userrole'] : 0;
-
-$pwrRes = $conn->query("SELECT show_users, edit_users FROM usr_pwrs WHERE id = $roleId LIMIT 1");
-$pwrRow = $pwrRes ? $pwrRes->fetch_assoc() : null;
-$canManage = ($roleId === 1) || ($pwrRow && ((int)($pwrRow['show_users'] ?? 0) === 1 || (int)($pwrRow['edit_users'] ?? 0) === 1));
-
-if (!$canManage) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'ليس لديك صلاحية لإدارة أو زراعة الأدوار'], JSON_UNESCAPED_UNICODE);
-    exit;
+$overwriteRequested = !empty($_POST['overwrite']) && (int) $_POST['overwrite'] === 1;
+if ($overwriteRequested) {
+    Can::authorize('roles.edit');
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? 'presets';

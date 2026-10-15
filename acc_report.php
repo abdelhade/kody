@@ -77,7 +77,7 @@ if (isset($_GET)) {
         }
 }}
 
-if (isset($_GET['acc']) && $_GET['acc'] == 'delivery' && (($role['show_delivery'] ?? 1) == 0)) {
+if (isset($_GET['acc']) && $_GET['acc'] == 'delivery' && !Can::check('delivery.view')) {
 ?>
 <div class="content-wrapper">
   <div class="container p-5">

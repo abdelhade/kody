@@ -51,6 +51,9 @@ function invoice_fail($message) {
 
 // استخراج وتنظيف البيانات المدخلة
 $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 0;
+if ($pro_tybe > 0) {
+    Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'add'));
+}
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
 $pro_serial = isset($_POST['pro_serial']) ? htmlspecialchars(trim($_POST['pro_serial']), ENT_QUOTES, 'UTF-8') : '';
 $price_list = isset($_POST['price_list']) ? max(1, intval($_POST['price_list'])) : 1;
@@ -95,14 +98,8 @@ error_log('=========================');
 $order_type = isset($_POST['age']) ? intval($_POST['age']) : 1; // Default to takeaway (1)
 
 if ($order_type == 3) {
-    $inv_role = $role ?? [];
-    if (isset($_SESSION['pos_user_id']) && !empty($_SESSION['pos_user_id'])) {
-        $q_role = $conn->query("SELECT p.* FROM users u LEFT JOIN usr_pwrs p ON u.userrole = p.id WHERE u.id = " . intval($_SESSION['pos_user_id']));
-        if ($q_role && $r_role = $q_role->fetch_assoc()) {
-            $inv_role = $r_role;
-        }
-    }
-    $can_pos_delivery = (isset($inv_role['allow_pos_delivery']) ? ($inv_role['allow_pos_delivery'] == 1) : true) && (isset($inv_role['show_delivery']) ? ($inv_role['show_delivery'] == 1) : true);
+    $posUserId = !empty($_SESSION['pos_user_id']) ? (int) $_SESSION['pos_user_id'] : Can::userId();
+    $can_pos_delivery = Can::userCan($conn, $posUserId, 'pos.delivery') && Can::userCan($conn, $posUserId, 'delivery.view');
     if (!$can_pos_delivery) {
         $order_type = 1;
     }
@@ -265,7 +262,7 @@ if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_fil
     invoice_fail('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
-$prevent_negative_stock = isset($role['prevent_negative_stock']) && $role['prevent_negative_stock'] == 1;
+$prevent_negative_stock = !Can::check('stock.sell_negative');
 $lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock);
 if ($lineErrors) {
     invoice_fail(implode(' — ', $lineErrors));

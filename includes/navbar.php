@@ -17,7 +17,7 @@
           </a>
           <?php 
           $isRootAdminNav = ((int)($_SESSION['userid'] ?? 0) === 1) || ((int)($userid ?? 0) === 1);
-          if ($isRootAdminNav || (($role['show_users'] ?? 0) == 1)) { 
+          if ($isRootAdminNav || Can::check('users.view')) { 
           ?>
           <a class="dropdown-item" href="users.php">
             <i class="fas fa-users ml-2 text-primary"></i>المستخدمين

@@ -38,20 +38,7 @@
         <div class="container-fluid">
 
 <?php 
-if (($parent == '122' && $role['add_clients'] == 1) ||
-($parent == '211' && $role['add_suppliers'] == 1) ||
-($parent == '121' && $role['add_funds'] == 1) ||
-($parent == '124' && $role['add_banks'] == 1) ||
-($parent == '44' && $role['add_expenses'] == 1) ||
-($parent == '32' && $role['add_revenuses'] == 1) ||
-($parent == '212' && $role['add_credits'] == 1) ||
-($parent == '125' && $role['add_depits'] == 1) ||
-($parent == '221' && $role['add_partners'] == 1) ||
-($parent == '11' && $role['add_assets'] == 1) ||
-($parent == '213' && $role['add_employees'] == 1) ||
-($parent == '112' && $role['add_rentables'] == 1) ||
-($parent == '123' && $role['add_stock'] == 1) ||
-($parent == '126' && $role['add_delivery'] == 1)) {
+if (Can::check(Can::accountPermission((string) $parent, 'add'))) {
 ?>
 
 

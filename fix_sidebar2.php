@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/rbac_guard.php';
 $content = file_get_contents('includes/sidebar.php');
 $lines = explode("\n", $content);
 $newLines = [];
