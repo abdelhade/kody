@@ -23,21 +23,24 @@ if ($rowfat == null) {
 
 $tybe = (int)($rowfat['pro_tybe'] ?? 0);
 $pos_type = $rowstg['pos_type'] ?? 'barcode';
+$pos_back = ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php';
 $type_map = [
-    3 => '../sales.php?q=buy',
-    4 => '../sales.php?q=sale',
+    3 => '../sales.php?q=sale',
+    4 => '../sales.php?q=purchase',
+    9 => $pos_back,
     10 => '../sales.php?q=resale',
     11 => '../sales.php?q=rebuy',
     12 => '../sales.php?q=po',
     13 => '../sales.php?q=so',
-    6 => ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php'
+    14 => '../sales.php?q=offer',
+    6 => $pos_back,
 ];
 $default_back = $type_map[$tybe] ?? '../sales.php';
 
 if (!empty($_SESSION['pos_back_page'])) {
     $back_page = $_SESSION['pos_back_page'];
     unset($_SESSION['pos_back_page']);
-    if ($tybe !== 6 && strpos($back_page, 'pos_') !== false) {
+    if (!in_array($tybe, [6, 9], true) && strpos($back_page, 'pos_') !== false) {
         $back_page = $default_back;
     }
 } else {
