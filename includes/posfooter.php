@@ -375,7 +375,7 @@
     });
 </script>
 
-<script src="assets/js/kody-ui.js"></script>
+<script src="assets/js/kody-ui.js?v=<?= (int) @filemtime(__DIR__ . '/../assets/js/kody-ui.js') ?>"></script>
 <script src="assets/js/kody-excel.js"></script>
 
 </body>

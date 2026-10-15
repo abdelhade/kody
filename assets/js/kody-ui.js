@@ -67,7 +67,7 @@ window.KodyUI = (function ($) {
         cancelButton: 'k-btn k-btn-secondary'
       }
     }).then(function (result) {
-      if (result.isConfirmed) {
+      if (result.isConfirmed || result.value) {
         if (typeof opts.onConfirm === 'function') {
           opts.onConfirm();
         } else if (opts.url) {

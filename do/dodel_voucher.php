@@ -8,7 +8,7 @@ if ($id <= 0) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT pro_tybe FROM ot_head WHERE id = ? AND isdeleted = 0 LIMIT 1');
+$stmt = $conn->prepare('SELECT pro_tybe FROM ot_head WHERE id = ? LIMIT 1');
 $stmt->bind_param('i', $id);
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
@@ -26,8 +26,16 @@ if ($pro_tybe !== 1 && $pro_tybe !== 2 && $pro_tybe !== 16) {
 }
 Can::authorize($pro_tybe === 1 ? 'receipts.delete' : 'payments.delete');
 
-InvoiceProcessor::softDelete($conn, $id);
-
 $redirectParam = ($pro_tybe === 1) ? 't=recive' : (($pro_tybe === 16) ? 't=transfer' : 't=payment');
+
+$linked = InvoiceProcessor::linkedInvoiceOfVoucher($conn, $id);
+if ($linked) {
+    $msg = 'لا يمكن حذف السند لأنه مرتبط بالفاتورة رقم ' . $linked['pro_id'] . '، احذف أو عدّل الفاتورة نفسها';
+    header('Location: ../vouchers.php?' . $redirectParam . '&error=' . urlencode($msg));
+    exit;
+}
+
+InvoiceProcessor::hardDelete($conn, $id);
+
 header('Location: ../vouchers.php?' . $redirectParam . '&msg=deleted');
 exit;

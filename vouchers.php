@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 require_once __DIR__ . '/includes/sidebar.php';
+require_once __DIR__ . '/classes/InvoiceProcessor.php';
 
 // Filter parameters (GET or POST)
 $filterType = isset($_REQUEST['t']) ? trim((string)$_REQUEST['t']) : (isset($_REQUEST['tybe']) ? trim((string)$_REQUEST['tybe']) : '');
@@ -36,11 +37,15 @@ if ($endDate !== '') {
 }
 
 $whereSql = implode(" AND ", $where);
+$invoiceTypesSql = implode(',', array_map('intval', InvoiceProcessor::INVOICE_TYPES));
 $sql = "SELECT h.id, h.pro_date, h.pro_tybe, h.pro_value, h.pro_id, h.info,
-               acc1.aname AS acc1_name, acc2.aname AS acc2_name
+               acc1.aname AS acc1_name, acc2.aname AS acc2_name,
+               inv.pro_id AS linked_invoice_no
         FROM ot_head h
         LEFT JOIN acc_head acc1 ON h.acc1 = acc1.id
         LEFT JOIN acc_head acc2 ON h.acc2 = acc2.id
+        LEFT JOIN ot_head inv ON h.op2 > 0 AND inv.id = h.op2 AND inv.id <> h.id
+             AND inv.isdeleted = 0 AND inv.pro_tybe IN ($invoiceTypesSql)
         WHERE $whereSql
         ORDER BY h.id DESC 
         LIMIT 300";
@@ -253,7 +258,9 @@ $filterTabs = [
                     <?php if (Can::canVisit('add_voucher.php?edit=' . $vid . '&t=' . $typeKey)) { ?>
                     <?= kody_action_btn('edit', 'add_voucher.php?edit=' . $vid . '&t=' . $typeKey, ['title' => 'تعديل ' . ($proType === 16 ? 'التحويل' : 'السند')]) ?>
                     <?php } ?>
-                    <?php if (Can::check($proType === 1 ? 'receipts.delete' : 'payments.delete')) { ?>
+                    <?php if ($row['linked_invoice_no'] !== null) { ?>
+                    <span class="k-btn-action text-muted" title="مرتبط بالفاتورة رقم <?= htmlspecialchars((string) $row['linked_invoice_no'], ENT_QUOTES, 'UTF-8') ?> ولا يمكن حذفه"><i class="fas fa-lock"></i></span>
+                    <?php } elseif (Can::check($proType === 1 ? 'receipts.delete' : 'payments.delete')) { ?>
                     <?= kody_action_btn('delete', 'do/dodel_voucher.php?del=' . $vid, [
                         'title' => 'حذف ' . ($proType === 16 ? 'التحويل' : 'السند'),
                         'item_name' => ($proType === 16 ? 'تحويل نقدية رقم ' : 'سند رقم ') . $proId

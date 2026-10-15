@@ -342,6 +342,35 @@ class InvoiceProcessor {
     }
 
     /**
+     * الفاتورة القائمة اللي السند (ot_head.op2) مربوط بيها، أو null لو السند مستقل.
+     * @return array{id:int,pro_tybe:int,pro_id:mixed}|null
+     */
+    public static function linkedInvoiceOfVoucher(mysqli $conn, int $voucherId): ?array
+    {
+        $types = array_values(self::INVOICE_TYPES);
+        $ph = implode(',', array_fill(0, count($types), '?'));
+        $stmt = $conn->prepare(
+            "SELECT p.id, p.pro_tybe, p.pro_id
+             FROM ot_head v
+             JOIN ot_head p ON p.id = v.op2 AND p.id <> v.id
+             WHERE v.id = ? AND v.op2 > 0 AND p.isdeleted = 0 AND p.pro_tybe IN ($ph)
+             LIMIT 1"
+        );
+        if (!$stmt) {
+            throw new Exception('فشل تحضير فحص ربط السند: ' . $conn->error);
+        }
+        $params = array_merge([$voucherId], $types);
+        $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$row) {
+            return null;
+        }
+        return ['id' => (int) $row['id'], 'pro_tybe' => (int) $row['pro_tybe'], 'pro_id' => $row['pro_id']];
+    }
+
+    /**
      * حذف نهائي للفاتورة: القيود وتفاصيلها، البنود، والسندات المرتبطة، ثم إعادة الأرصدة والكميات.
      */
     public static function hardDelete(mysqli $conn, int $id, bool $manageTransaction = true): void
