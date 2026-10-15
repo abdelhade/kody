@@ -162,18 +162,6 @@ if ($col_extra_check && $col_extra_check->num_rows === 0) {
     }
 }
 
-// إضافة عمود allow_all_accounts إذا لم يكن موجوداً
-$col_all_acc = $conn->query("SHOW COLUMNS FROM settings LIKE 'allow_all_accounts'");
-if ($col_all_acc && $col_all_acc->num_rows === 0) {
-    try {
-        $conn->query("ALTER TABLE `settings` ADD COLUMN `allow_all_accounts` TINYINT(1) NOT NULL DEFAULT 0");
-    } catch (mysqli_sql_exception $e) {
-        if (stripos($e->getMessage(), 'Duplicate column') === false) {
-            die('Error adding allow_all_accounts column: ' . $e->getMessage());
-        }
-    }
-}
-
 // استخدام prepared statement لتحديث الإعدادات
 $sql = "UPDATE settings 
 SET company_name = ?, 

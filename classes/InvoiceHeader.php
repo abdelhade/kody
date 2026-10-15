@@ -25,16 +25,7 @@ class InvoiceHeader extends InvoiceElementBase
     private function isAllowAllAccounts()
     {
         global $rowstg;
-        if (isset($rowstg['allow_all_accounts'])) {
-            return !empty($rowstg['allow_all_accounts']);
-        }
-        if ($this->conn) {
-            $res = $this->conn->query("SELECT allow_all_accounts FROM settings WHERE 1 LIMIT 1");
-            if ($res && ($row = $res->fetch_assoc())) {
-                return !empty($row['allow_all_accounts']);
-            }
-        }
-        return false;
+        return !empty($rowstg['allow_all_accounts']);
     }
 
     /**
