@@ -55,6 +55,46 @@ if (!empty($params)) {
 }
 
 $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
+
+// عدد السندات لكل نوع (بنفس فلتر التاريخ) لعرضه على تابات الفلتر
+$countWhere = ["isdeleted = 0", "pro_tybe IN (1, 2, 16)"];
+$countParams = [];
+$countTypes = "";
+if ($startDate !== '') {
+    $countWhere[] = "pro_date >= ?";
+    $countParams[] = $startDate;
+    $countTypes .= "s";
+}
+if ($endDate !== '') {
+    $countWhere[] = "pro_date <= ?";
+    $countParams[] = $endDate;
+    $countTypes .= "s";
+}
+$countStmt = $conn->prepare("SELECT pro_tybe, COUNT(*) AS cnt FROM ot_head WHERE " . implode(" AND ", $countWhere) . " GROUP BY pro_tybe");
+if (!empty($countParams)) {
+    $countStmt->bind_param($countTypes, ...$countParams);
+}
+$countStmt->execute();
+$typeCounts = [1 => 0, 2 => 0, 16 => 0];
+$countRes = $countStmt->get_result();
+while ($c = $countRes->fetch_assoc()) {
+    $typeCounts[(int)$c['pro_tybe']] = (int)$c['cnt'];
+}
+$countStmt->close();
+
+$activeTab = match (true) {
+    $filterType === 'recive' || $filterType === '1' => 'recive',
+    $filterType === 'payment' || $filterType === '2' => 'payment',
+    $filterType === 'transfer' || $filterType === '16' => 'transfer',
+    default => '',
+};
+$dateQuery = array_filter(['strt' => $startDate, 'end' => $endDate], fn ($v) => $v !== '');
+$filterTabs = [
+    ''         => ['label' => 'الكل',          'icon' => 'fa-list',         'class' => 'k-btn-secondary', 'count' => array_sum($typeCounts)],
+    'recive'   => ['label' => 'سندات القبض',   'icon' => 'fa-arrow-down',   'class' => 'k-btn-success',   'count' => $typeCounts[1]],
+    'payment'  => ['label' => 'سندات الدفع',   'icon' => 'fa-arrow-up',     'class' => 'k-btn-danger',    'count' => $typeCounts[2]],
+    'transfer' => ['label' => 'تحويلات نقدية', 'icon' => 'fa-exchange-alt', 'class' => 'k-btn-info',      'count' => $typeCounts[16]],
+];
 ?>
 
 <div class="content-wrapper k-page-wrapper">
@@ -90,15 +130,23 @@ $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
   ) ?>
 
   <div class="k-card">
+    <div class="d-flex flex-wrap p-3 border-bottom" style="gap: .5rem;">
+      <?php foreach ($filterTabs as $tabKey => $tab):
+          $tabUrl = 'vouchers.php' . (($q = http_build_query(array_filter(['t' => $tabKey] + $dateQuery, fn ($v) => $v !== ''))) !== '' ? '?' . $q : '');
+          $isActive = $activeTab === $tabKey;
+      ?>
+        <a href="<?= htmlspecialchars($tabUrl) ?>" class="k-btn k-btn-sm <?= $isActive ? $tab['class'] . ' text-white' : 'k-btn-outline' ?>">
+          <i class="fas <?= $tab['icon'] ?>"></i> <?= $tab['label'] ?>
+          <span class="k-badge <?= $isActive ? 'bg-white text-dark' : 'k-badge-secondary' ?> mr-1"><?= $tab['count'] ?></span>
+        </a>
+      <?php endforeach; ?>
+    </div>
     <div class="k-toolbar">
       <div class="k-toolbar-start">
         <form method="GET" action="vouchers.php" class="d-flex align-items-center flex-wrap gap-2 m-0">
-          <select name="t" class="k-select form-control-sm" style="width: auto;" onchange="this.form.submit()">
-            <option value="" <?= ($filterType === '' || $filterType === 'all') ? 'selected' : '' ?>>كل العمليات (قبض وصرف وتحويل)</option>
-            <option value="recive" <?= ($filterType === 'recive' || $filterType === '1') ? 'selected' : '' ?>>سندات قبض فقط (وارد)</option>
-            <option value="payment" <?= ($filterType === 'payment' || $filterType === '2') ? 'selected' : '' ?>>سندات صرف فقط (صادر)</option>
-            <option value="transfer" <?= ($filterType === 'transfer' || $filterType === '16') ? 'selected' : '' ?>>تحويلات نقدية فقط (بين الصناديق)</option>
-          </select>
+          <?php if ($activeTab !== ''): ?>
+            <input type="hidden" name="t" value="<?= $activeTab ?>">
+          <?php endif; ?>
 
           <input type="date" name="strt" value="<?= htmlspecialchars($startDate) ?>" class="k-input form-control-sm" style="width: 145px;" title="من تاريخ">
           <input type="date" name="end" value="<?= htmlspecialchars($endDate) ?>" class="k-input form-control-sm" style="width: 145px;" title="إلى تاريخ">

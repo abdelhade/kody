@@ -197,7 +197,7 @@
         var msg = empty ? 'فيه خزائن ماتكتبش ليها مبلغ وهتتحسب صفر. متأكد من التقفيل؟' : 'متأكد من تقفيل الشيفت؟';
         if (typeof Swal !== 'undefined') {
             Swal.fire({ icon: 'question', title: msg, showCancelButton: true, confirmButtonText: 'تقفيل', cancelButtonText: 'رجوع' })
-                .then(function (res) { if (res.isConfirmed) go(); });
+                .then(function (res) { if (res && (res.isConfirmed || res.value)) go(); });
         } else if (confirm(msg)) {
             go();
         }
