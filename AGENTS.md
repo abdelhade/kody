@@ -25,6 +25,7 @@ ALTER TABLE `acc_head`
 - أي قاعدة بيزنس تتطبّق في السيرفر (`do/`) حتى لو موجودة في الواجهة؛ الواجهة للراحة بس.
 - منطق الفواتير المشترك مكانه `classes/InvoiceProcessor.php`؛ أنواع الفواتير من `InvoiceProcessor::INVOICE_TYPES` مش أرقام سحرية جديدة.
 - خصائص الحساب (زي `cash_only`, `price_list`, `is_fund`) تتقري من `acc_head`، مش تتخمّن من الاسم أو الكود.
+- افتراضيات المستخدم (`users.def_store/def_fund/def_client/def_supplier/def_emp/def_price_list`) من `classes/UserDefaults.php` بس: أي قائمة مخزن/خزنة/عميل/مورد/موظف/أسعار في مستند جديد تستخدم `UserDefaults::pick()`، وأي حفظ مستند جديد يعمل `UserDefaults::enforceInvoice()` (أو `enforce()`). اللي معندوش `defaults.change` مقفول على افتراضيه.
 
 ## الصلاحيات (RBAC على طريقة Spatie)
 - الجداول: `roles` و `permissions` و `role_has_permissions`. `usr_pwrs` و `users.usertype` ملغيين، متستخدمهمش. مفيش super admin ولا bypass.

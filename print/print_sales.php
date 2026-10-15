@@ -7,286 +7,124 @@ if ($id_early > 0 && isset($_COOKIE['invoice_print_cashier']) && $_COOKIE['invoi
 include('includes/header.php');
 require_once __DIR__ . '/../includes/receipt_design.php';
 $design = kody_receipt_design_load($rowstg ?? []);
-?>
-<?php
-if (!isset($_GET['id'])) {
-    echo "لا يوجد فاتورة بهذا الرقم";die;
-}else
-$id=$_GET['id'];
-$rowfat = $conn->query("SELECT * FROM `ot_head` where id = $id")->fetch_assoc();
-if ($rowfat == null) {
-    echo "لا يوجد فاتورة بهذا الرقم";die;
-}else{
-    $tybe = (int)($rowfat['pro_tybe'] ?? 0);
-    $pos_type = $rowstg['pos_type'] ?? 'barcode';
-    $type_map = [
-        3 => '../sales.php?q=buy',
-        4 => '../sales.php?q=sale',
-        10 => '../sales.php?q=resale',
-        11 => '../sales.php?q=rebuy',
-        12 => '../sales.php?q=po',
-        13 => '../sales.php?q=so',
-        6 => ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php'
-    ];
-    $default_back = $type_map[$tybe] ?? '../sales.php';
 
-    if (!empty($_SESSION['pos_back_page'])) {
-        $back_page = $_SESSION['pos_back_page'];
-        unset($_SESSION['pos_back_page']);
-        if ($tybe !== 6 && strpos($back_page, 'pos_') !== false) {
-            $back_page = $default_back;
-        }
-    } else {
+if (!isset($_GET['id'])) {
+    echo 'لا يوجد فاتورة بهذا الرقم';
+    include('includes/footer.php');
+    exit;
+}
+$id = intval($_GET['id']);
+$rowfat = $conn->query("SELECT * FROM `ot_head` WHERE id = $id")->fetch_assoc();
+if ($rowfat == null) {
+    echo 'لا يوجد فاتورة بهذا الرقم';
+    include('includes/footer.php');
+    exit;
+}
+
+$tybe = (int)($rowfat['pro_tybe'] ?? 0);
+$pos_type = $rowstg['pos_type'] ?? 'barcode';
+$type_map = [
+    3 => '../sales.php?q=buy',
+    4 => '../sales.php?q=sale',
+    10 => '../sales.php?q=resale',
+    11 => '../sales.php?q=rebuy',
+    12 => '../sales.php?q=po',
+    13 => '../sales.php?q=so',
+    6 => ($pos_type === 'clothes') ? '../pos_clothes.php' : '../pos_barcode.php'
+];
+$default_back = $type_map[$tybe] ?? '../sales.php';
+
+if (!empty($_SESSION['pos_back_page'])) {
+    $back_page = $_SESSION['pos_back_page'];
+    unset($_SESSION['pos_back_page']);
+    if ($tybe !== 6 && strpos($back_page, 'pos_') !== false) {
         $back_page = $default_back;
     }
-?>
-
-<style>
-@media print {
-  body { font-size: 11px !important; margin: 0; padding: 10px; }
-  .invoice-header { font-size: 18px !important; }
-  .invoice-title { font-size: 14px !important; }
-  table { font-size: 10px !important; }
-  th, td { padding: 4px !important; }
-  .no-print { display: none !important; }
-  .card { box-shadow: none !important; border: none !important; }
-}
-
-body { 
-    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-    background-color: #f5f5f5;
-    padding: 20px;
-}
-
-.card {
-    max-width: 900px;
-    margin: 0 auto;
-    background: white;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.card-body {
-    padding: 30px;
-}
-
-.invoice-header {
-    font-size: 22px;
-    font-weight: bold;
-    color: #1a2f5a;
-    padding: 15px !important;
-    background: linear-gradient(135deg, #1a2f5a 0%, #2d4a7c 100%) !important;
-    color: white !important;
-    border-radius: 5px;
-}
-
-.company-info {
-    background-color: #f8f9fa;
-    padding: 12px !important;
-    border-radius: 5px;
-    color: #666;
-    font-size: 12px;
-}
-
-.invoice-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #1a2f5a;
-    padding: 10px !important;
-    background-color: #e8f0fe !important;
-}
-
-.info-row {
-    background-color: #fafafa;
-    padding: 10px !important;
-}
-
-table.table-bordered {
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-table.table-bordered th {
-    background-color: #1a2f5a;
-    color: white;
-    font-weight: 600;
-    text-align: center;
-    padding: 10px 5px !important;
-    border-color: #2d4a7c;
-}
-
-table.table-bordered td {
-    padding: 8px 5px !important;
-    vertical-align: middle;
-    border-color: #dee2e6;
-}
-
-table.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #f8f9fa;
-}
-
-table.table-striped tbody tr:hover {
-    background-color: #e9ecef;
-}
-
-.summary-table {
-    background-color: #fff;
-    border: 2px solid #1a2f5a;
-}
-
-.summary-table th {
-    background-color: #f8f9fa;
-    color: #333;
-    font-weight: 600;
-    width: 40%;
-    text-align: right;
-    padding: 8px 12px !important;
-}
-
-.summary-table td {
-    text-align: left;
-    padding: 8px 12px !important;
-    font-weight: 500;
-}
-
-.summary-table tr.total-row {
-    background-color: #1a2f5a !important;
-    color: white !important;
-}
-
-.summary-table tr.total-row th,
-.summary-table tr.total-row td {
-    color: white !important;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.payment-policy {
-    background-color: #fff9e6;
-    border: 1px solid #ffd700;
-    border-radius: 5px;
-    padding: 15px;
-    font-size: 11px;
-    line-height: 1.6;
-}
-
-.payment-policy strong {
-    color: #1a2f5a;
-    display: block;
-    margin-bottom: 5px;
-}
-
-#printButton {
-    background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    font-size: 14px;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    margin-top: 20px;
-}
-
-#printButton:hover {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
-    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-    transform: translateY(-2px);
-}
-
-#printButton i {
-    margin-left: 8px;
-}
-
-.text-right {
-    text-align: right;
-}
-
-.text-center {
-    text-align: center;
-}
-</style>
-
-<div class="card" id="printed">
-<div class="card-body">
-
-<!-- Header -->
-<?php
-$_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
-$logo_path = '../assets/logo/' . $_logo_file;
-if (!file_exists($logo_path)) {
-    $logo_path = '../assets/logo/logo.jpg';
-}
-$show_logo = !empty($design['header']['show_logo']) && file_exists($logo_path);
-?>
-<table class="table table-bordered" style="margin-bottom: 15px;">
-<tr>
-<td class="text-center invoice-header" style="vertical-align: middle;">
-<?php if ($show_logo): ?>
-    <img src="<?= htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') ?>" alt="" style="max-height: 50px; width: auto; vertical-align: middle; margin-left: 12px; display: inline-block;">
-<?php endif; ?>
-<span style="vertical-align: middle;"><?= htmlspecialchars($rowstg['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
-</td>
-</tr>
-<tr>
-<td class="text-center company-info">
-<?= htmlspecialchars($rowstg['company_add'] ?? '', ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars($rowstg['company_tel'] ?? '', ENT_QUOTES, 'UTF-8') ?>
-<?php if (!empty($rowstg['company_email'])): ?> | <?= htmlspecialchars($rowstg['company_email'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
-<?php if (!empty($design['header']['tax_no']) && !empty($design['header']['show_tax_no'])): ?> | الرقم الضريبي: <?= htmlspecialchars($design['header']['tax_no'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
-</td>
-</tr>
-</table>
-
-<!-- Invoice Info -->
-<table class="table table-bordered" style="margin-bottom: 15px;">
-<tr>
-<td class="invoice-title" style="width: 50%;">
-<?php 
-if($tybe == 4){
-    echo "فاتورة مشتريات";
-} elseif($tybe == 3 || $tybe == 9){
-    echo "فاتورة مبيعات";
-} elseif($tybe == 12){
-    echo "أمر شراء";
-} elseif($tybe == 13){
-    echo "أمر بيع";
-} elseif($tybe == 14){
-    echo "عرض سعر";
 } else {
-    echo "فاتورة";
+    $back_page = $default_back;
 }
-?>
-</td>
-<td class="text-right invoice-title" style="width: 50%;">
-التاريخ: <?= $rowfat['pro_date'] ?>
-</td>
-</tr>
-<tr>
-<td class="info-row">
-<?php
-if($tybe == 4){
-    $accid = $rowfat['acc2'];
-    $label = "المورد";
-} elseif($tybe == 10){
-    $accid = $rowfat['acc1'];
-    $label = "المورد";
-} else {
-    $accid = $rowfat['acc2'];
-    $label = "العميل";
-}
-$rowacc1= $conn->query("SELECT aname from acc_head where id = $accid")->fetch_assoc();
-echo "<strong>" . $label . ":</strong> " . htmlspecialchars($rowacc1['aname'] ?? '', ENT_QUOTES, 'UTF-8');
 
-// اسم الدليفري من ot_head
+$font_family = $design['font_family'] ?? 'Cairo';
+$font_size = (int)($design['font_size'] ?? 14);
+$font_size_sm = max(9, $font_size - 2);
+$items_font_size = (int)($design['items']['font_size'] ?? $font_size);
+$line_spacing = (float)($design['line_spacing'] ?? 1.25);
+$margin_top = (float)($design['margin_top'] ?? 8);
+$margin_bottom = (float)($design['margin_bottom'] ?? 8);
+$margin_right = (float)($design['margin_right'] ?? 8);
+$margin_left = (float)($design['margin_left'] ?? 8);
+$show_borders = !empty($design['show_borders']);
+$company_name_size = $font_size + 4;
+if (!empty($design['header']['company_name_size']) && (int)$design['header']['company_name_size'] !== 16) {
+    $company_name_size = (int)$design['header']['company_name_size'];
+}
+
+$tblBorder = '1px solid #000';
+$table_border_style = $design['items']['border_style'] ?? 'solid';
+if ($table_border_style === 'dashed') {
+    $tblBorder = '1px dashed #000';
+} elseif ($table_border_style === 'minimal') {
+    $tblBorder = '1px solid #cbd5e1';
+} elseif ($table_border_style === 'none') {
+    $tblBorder = 'none';
+}
+$sheetBorder = $show_borders ? '1px solid #000' : 'none';
+$footerAlign = $design['footer']['align'] ?? 'center';
+if (!in_array($footerAlign, ['center', 'right', 'left'], true)) {
+    $footerAlign = 'center';
+}
+$headerAlign = $design['header']['align'] ?? 'center';
+if (!in_array($headerAlign, ['center', 'right', 'left'], true)) {
+    $headerAlign = 'center';
+}
+
+if ($tybe == 4) {
+    $doc_title = 'فاتورة مشتريات';
+} elseif ($tybe == 3 || $tybe == 9) {
+    $doc_title = 'فاتورة مبيعات';
+} elseif ($tybe == 10) {
+    $doc_title = 'مردود مشتريات';
+} elseif ($tybe == 11) {
+    $doc_title = 'مردود مبيعات';
+} elseif ($tybe == 12) {
+    $doc_title = 'أمر شراء';
+} elseif ($tybe == 13) {
+    $doc_title = 'أمر بيع';
+} elseif ($tybe == 14) {
+    $doc_title = 'عرض سعر';
+} else {
+    $doc_title = 'فاتورة';
+}
+
+if ($tybe == 4 || $tybe == 10) {
+    $accid = (int)$rowfat['acc1'];
+    if ($tybe == 4) {
+        $accid = (int)$rowfat['acc2'];
+    }
+    $partyLabel = 'المورد';
+} else {
+    $accid = (int)$rowfat['acc2'];
+    $partyLabel = 'العميل';
+}
+$rowacc1 = $accid > 0
+    ? $conn->query("SELECT aname, phone, address FROM acc_head WHERE id = $accid")->fetch_assoc()
+    : null;
+
+$customer_name = $rowacc1['aname'] ?? '';
+$customer_phone = $rowacc1['phone'] ?? '';
+$customer_address = $rowacc1['address'] ?? '';
+
+$employee_name = '';
+$empid = (int)($rowfat['emp_id'] ?? 0);
+if ($empid > 0) {
+    $rowemp = $conn->query("SELECT aname FROM acc_head WHERE id = $empid")->fetch_assoc();
+    $employee_name = trim((string)($rowemp['aname'] ?? ''));
+}
+
 $driver_name = '';
 $dpid = (int)($rowfat['delivery_person_id'] ?? 0);
 if ($dpid <= 0) {
     $emp2id = (int)($rowfat['emp2_id'] ?? 0);
-    $empid = (int)($rowfat['emp_id'] ?? 0);
     if ($emp2id > 0 && $emp2id !== $empid) {
         $dpid = $emp2id;
     }
@@ -297,194 +135,463 @@ if ($dpid > 0) {
         $driver_name = trim((string)$rowdrv['aname']);
     }
 }
-if ($driver_name === '' && !empty($rowfat['info'])) {
-    if (preg_match('/مندوب التوصيل:\s*(.+?)(?:\s+-\s+|$)/u', (string)$rowfat['info'], $dr)) {
+
+$info_text = (string)($rowfat['info'] ?? '');
+$is_delivery = (strpos($info_text, 'دليفري') !== false) || (($rowfat['order_type'] ?? '') === 'delivery');
+$is_table = (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false);
+if ($is_delivery) {
+    if (preg_match('/العميل:\s*(.+?)(?:\s+-\s+الهاتف:|$)/u', $info_text, $nm) && isset($nm[1])) {
+        $customer_name = trim($nm[1]);
+    }
+    if (preg_match('/الهاتف:\s*(.+?)(?:\s+-\s+العنوان:|$)/u', $info_text, $ph) && isset($ph[1])) {
+        $customer_phone = trim($ph[1]);
+    }
+    if (preg_match('/العنوان:\s*(.+?)(?:\s+-\s+مندوب التوصيل:|\s+-\s+دفع|$)/u', $info_text, $ad) && isset($ad[1])) {
+        $customer_address = trim($ad[1]);
+    }
+    if ($driver_name === '' && preg_match('/مندوب التوصيل:\s*(.+?)(?:\s+-\s+|$)/u', $info_text, $dr) && isset($dr[1])) {
         $driver_name = trim($dr[1]);
     }
+} elseif ($driver_name === '' && preg_match('/مندوب التوصيل:\s*(.+?)(?:\s+-\s+|$)/u', $info_text, $dr) && isset($dr[1])) {
+    $driver_name = trim($dr[1]);
 }
-if ($driver_name !== '') {
-    echo '<br><strong>الدليفري:</strong> ' . htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8');
+
+$_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : 'logo.jpg';
+$logo_path = '../assets/logo/' . $_logo_file;
+if (!file_exists($logo_path)) {
+    $logo_path = '../assets/logo/logo.jpg';
 }
+$show_logo = !empty($design['header']['show_logo']) && file_exists($logo_path);
+$logo_width = (int)($design['header']['logo_width'] ?? 120);
+$logo_align = $design['header']['logo_align'] ?? 'right';
+if (!in_array($logo_align, ['center', 'right', 'left'], true)) {
+    $logo_align = 'right';
+}
+
+$col_idx  = !empty($design['items']['show_index']);
+$col_code = !empty($design['items']['show_code']);
+$col_name = !empty($design['items']['show_name']);
+$col_qty  = !empty($design['items']['show_qty']);
+$col_unit = !empty($design['items']['show_unit']);
+$col_price = !empty($design['items']['show_price']);
+$col_disc = !empty($design['items']['show_disc']);
+$col_tot  = !empty($design['items']['show_total']);
+$show_disc_subline = !empty($design['items']['show_item_disc_subline']);
+$has_item_cols = $col_idx || $col_code || $col_name || $col_qty || $col_unit || $col_price || $col_disc || $col_tot;
+$col_weights = [];
+if ($col_idx) { $col_weights['idx'] = 6; }
+if ($col_code) { $col_weights['code'] = 16; }
+if ($col_name) { $col_weights['name'] = 28; }
+if ($col_qty) { $col_weights['qty'] = 10; }
+if ($col_unit) { $col_weights['unit'] = 10; }
+if ($col_price) { $col_weights['price'] = 11; }
+if ($col_disc) { $col_weights['disc'] = 10; }
+if ($col_tot) { $col_weights['tot'] = 13; }
+$col_weight_sum = array_sum($col_weights) ?: 1;
+$col_w = [];
+foreach ($col_weights as $ck => $cw) {
+    $col_w[$ck] = round($cw / $col_weight_sum * 100, 2);
+}
+$discSum = $conn->query("SELECT COALESCE(SUM(discount), 0) AS d FROM fat_details WHERE (fatid = $id OR pro_id = $id) AND isdeleted = 0")->fetch_assoc();
+$total_item_disc = (float)($discSum['d'] ?? 0);
+
+$numStyle = $design['meta']['invoice_num_style'] ?? 'badge';
+$is_doc_order = in_array($tybe, [12, 13, 14], true);
 ?>
-</td>
-<td class="text-right info-row">
-<strong>رقم:</strong> #<?=$rowfat['pro_id']?> | <strong>SN:</strong> <?= $rowfat['pro_serial']?>
-</td>
-</tr>
-</table>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
+<style>
+body {
+    font-family: <?= htmlspecialchars($font_family, ENT_QUOTES, 'UTF-8') ?>, Cairo, Arial, Tahoma, sans-serif;
+    background: #f5f5f5;
+    padding: 20px;
+    direction: rtl;
+    color: #0f172a;
+    font-size: <?= $font_size ?>px;
+    line-height: <?= $line_spacing ?>;
+}
+.sheet {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    color: #0f172a;
+    padding: <?= $margin_top ?>mm <?= $margin_left ?>mm <?= $margin_bottom ?>mm <?= $margin_right ?>mm;
+    border: <?= $sheetBorder ?>;
+    box-shadow: 0 0 20px rgba(0,0,0,0.08);
+}
+.top-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+}
+.brand { flex: 1; text-align: right; }
+.brand .logo { text-align: <?= htmlspecialchars($logo_align, ENT_QUOTES, 'UTF-8') ?>; margin-bottom: 6px; }
+.brand .logo img { width: <?= $logo_width ?>px; height: auto; display: inline-block; }
+.company-name { font-weight: 700; font-size: <?= $company_name_size ?>px; margin: 2px 0; }
+.company-sub { font-size: <?= $font_size_sm ?>px; color: #334155; }
+.header-text { font-size: <?= $font_size_sm ?>px; margin-top: 6px; white-space: pre-wrap; font-weight: 400; text-align: <?= htmlspecialchars($headerAlign, ENT_QUOTES, 'UTF-8') ?>; }
+.meta-box {
+    flex: 0 0 270px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: right;
+}
+.doc-title {
+    font-weight: 700;
+    font-size: <?= $font_size ?>px;
+    color: #1e293b;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+.inv-num { display: inline-block; font-weight: 700; margin: 4px 0; }
+.inv-num.badge { border: 1px solid #000; padding: 2px 10px; font-size: <?= $font_size ?>px; }
+.inv-num.large { font-size: <?= $font_size + 6 ?>px; }
+.inv-num.plain { font-size: <?= $font_size ?>px; }
+.meta-line { font-size: <?= $font_size_sm ?>px; color: #333; margin: 2px 0; }
+.order-banner { border: 1px dashed #000; padding: 4px 6px; font-weight: 700; font-size: <?= $font_size_sm ?>px; margin: 6px 0; text-align: center; }
+.cust {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 12px 0 16px;
+}
+.cust-title { font-weight: 700; margin-bottom: 4px; color: #1e293b; }
+.cust-fields { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.items {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: <?= $items_font_size ?>px;
+    margin: 6px 0 14px;
+}
+.items th, .items td {
+    padding: 8px 6px;
+    border: <?= $tblBorder ?>;
+    text-align: center;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.items th { background: #f1f5f9; color: #0f172a; font-weight: 700; }
+.items td.name { text-align: right; }
+.disc-sub { font-size: 10px; color: #555; font-weight: 400; }
+.totals {
+    width: 320px;
+    margin-right: auto;
+    margin-left: 0;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+}
+.totals td { padding: 6px 12px; }
+.totals td.val { text-align: left; }
+.totals tr.net td {
+    background: #e2e8f0;
+    border-top: 2px solid #334155;
+    font-weight: 700;
+    font-size: <?= !empty($design['totals']['highlight_net']) ? ($font_size + 4) : $font_size ?>px;
+}
+.foot-block {
+    text-align: <?= htmlspecialchars($footerAlign, ENT_QUOTES, 'UTF-8') ?>;
+    margin-top: 16px;
+    border-top: 1px dashed #000;
+    padding-top: 8px;
+}
+.foot-text { font-weight: 700; font-size: <?= $font_size_sm ?>px; margin-bottom: 4px; }
+.foot-notes { font-size: <?= max(8, $font_size_sm - 2) ?>px; color: #444; white-space: pre-wrap; font-weight: 400; }
+.actions { max-width: 900px; margin: 16px auto 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.actions button, .actions a.back {
+    background: #1e293b;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.actions a.back { background: #6c757d; }
+.actions label { display: inline-flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; font-weight: 700; }
+@page { size: A4; margin: 0; }
+@media print {
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+    .sheet { max-width: none; box-shadow: none; margin: 0; }
+    .no-print { display: none !important; }
+}
+</style>
 
-<!-- Items Table -->
-<table class="table table-bordered table-striped" style="margin-bottom: 15px;">
-<thead>
-<tr>
-<th style="width: 5%;">#</th>
-<th style="width: 12%;">كود</th>
-<th style="width: 25%;">الصنف</th>
-<th style="width: 8%;">الكمية</th>
-<th style="width: 8%;">الوحدة</th>
-<th style="width: 10%;">السعر</th>
-<th style="width: 8%;">خصم %</th>
-<th style="width: 10%;">خصم</th>
-<th style="width: 14%;">القيمة</th>
-</tr>
-</thead>
-<tbody>
-    <?php 
-    $x =0;
-    $total_qty = 0;
-    $total_item_disc = 0;
-    $total_items_val = 0;
-    $resdet = $conn->query("SELECT * FROM fat_details where (fatid = $id OR pro_id = $id) AND isdeleted = 0 order by id desc");
-    while ($rowdet =$resdet->fetch_assoc()) {
-        $x++;
-        $itmid= $rowdet['item_id']; 
-        $rowitm = $conn->query("SELECT * FROM myitems where id = $itmid ")->fetch_assoc();
-        if ($tybe == 4 || $tybe == 10){
-            $qty = $rowdet['qty_in'] / $rowdet['u_val'];
-        } elseif($tybe == 3 || $tybe == 9 || $tybe == 11){
-            $qty = $rowdet['qty_out'] / $rowdet['u_val'];
-        } elseif(in_array((int) $tybe, [12, 13, 14], true)){
-            $qty = (float) ($rowdet['doc_qty'] ?? 0) / $rowdet['u_val'];
-        } else {
-            $qty = 0;
-        } 
-        $total_qty += $qty;
-        
-        $item_disc = (float)($rowdet['discount'] ?? 0);
-        $total_item_disc += $item_disc;
-        $total_items_val += (float)$rowdet['det_value'];
+<div class="sheet" id="printed">
+    <div class="top-head">
+        <div class="brand">
+            <?php if ($show_logo): ?>
+            <div class="logo"><img src="<?= htmlspecialchars($logo_path, ENT_QUOTES, 'UTF-8') ?>" alt=""></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['show_company_name']) && !empty($rowstg['company_name'])): ?>
+            <div class="company-name"><?= htmlspecialchars($rowstg['company_name'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['show_company_tel']) && !empty($rowstg['company_tel'])): ?>
+            <div class="company-sub"><?= htmlspecialchars($rowstg['company_tel'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['show_company_add']) && !empty($rowstg['company_add'])): ?>
+            <div class="company-sub"><?= htmlspecialchars($rowstg['company_add'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['show_tax_no']) && !empty($design['header']['tax_no'])): ?>
+            <div class="company-sub">الرقم الضريبي: <?= htmlspecialchars($design['header']['tax_no'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['show_cr_no']) && !empty($design['header']['cr_no'])): ?>
+            <div class="company-sub">السجل التجاري: <?= htmlspecialchars($design['header']['cr_no'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['header']['header_text'])): ?>
+            <div class="header-text"><?= nl2br(htmlspecialchars($design['header']['header_text'], ENT_QUOTES, 'UTF-8')) ?></div>
+            <?php endif; ?>
+        </div>
+        <div class="meta-box">
+            <div class="doc-title"><?= htmlspecialchars($doc_title, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php if (!empty($design['meta']['show_invoice_num'])): ?>
+            <div class="inv-num <?= htmlspecialchars($numStyle, ENT_QUOTES, 'UTF-8') ?>">#<?= htmlspecialchars((string)$rowfat['pro_id'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php
+            $serial = trim((string)($rowfat['pro_serial'] ?? ''));
+            if ($serial !== '' && $serial !== (string)$rowfat['pro_id']):
+            ?>
+            <div class="meta-line">SN: <?= htmlspecialchars($serial, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php endif; ?>
+            <?php if (!empty($design['meta']['show_datetime'])): ?>
+            <div class="meta-line">التاريخ: <?= htmlspecialchars((string)$rowfat['pro_date'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php if (!empty($rowfat['crtime'])): ?>
+            <div class="meta-line"><?= htmlspecialchars((string)$rowfat['crtime'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php
+            $due = trim((string)($rowfat['accural_date'] ?? ''));
+            if ($due !== '' && $due !== '0000-00-00'):
+            ?>
+            <div class="meta-line">الاستحقاق: <?= htmlspecialchars($due, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php endif; ?>
+            <?php if (!empty($design['meta']['show_cashier']) && $employee_name !== ''): ?>
+            <div class="meta-line">الكاشير: <?= htmlspecialchars($employee_name, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php
+            $showOrderMeta = !empty($design['meta']['show_order_type']);
+            $showDriverMeta = !empty($design['meta']['show_driver']);
+            if ($is_delivery && ($showOrderMeta || $showDriverMeta)):
+                $banner = $showOrderMeta ? 'دليفري' : '';
+                if ($driver_name !== '' && $showDriverMeta) {
+                    $banner = trim($banner . ($banner !== '' ? ' — ' : '') . $driver_name);
+                }
+                if ($banner !== ''):
+            ?>
+            <div class="order-banner"><?= htmlspecialchars($banner, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php elseif ($showOrderMeta && $is_table): ?>
+            <div class="order-banner"><?= htmlspecialchars($info_text, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if (!empty($design['meta']['show_invoice_barcode'])): ?>
+            <div style="margin-top:6px;"><svg id="invoiceBarcodeSvg" style="display:block; max-width:100%;"></svg></div>
+            <?php endif; ?>
+        </div>
+    </div>
 
-        $disc_pct = isset($rowdet['disc_pct']) ? $rowdet['disc_pct'] : 0;
-        if ($disc_pct == 0 && $item_disc > 0) {
-            $pct_base = $qty * ($rowdet['price'] * $rowdet['u_val']);
-            $disc_pct = ($pct_base > 0) ? round(($item_disc / $pct_base) * 100, 2) : 0;
-        }
+    <?php
+    $show_client_block = !empty($design['customer']['show']);
+    $show_cust_name = !empty($design['customer']['show_name']);
+    $show_cust_phone = !empty($design['customer']['show_phone']);
+    $show_cust_add = !empty($design['customer']['show_address']);
+    $show_driver_line = $showDriverMeta && $driver_name !== '' && !($is_delivery && $showDriverMeta);
+    $cust_has_any = ($show_client_block && (
+        ($show_cust_name && $customer_name !== '')
+        || ($show_cust_phone && $customer_phone !== '')
+        || ($show_cust_add && $customer_address !== '')
+    )) || $show_driver_line;
+    if ($cust_has_any):
     ?>
-<tr>
-<td class="text-center"><?= $x ?></td>
-<td><?= $rowitm['barcode']  ?></td>
-<td><?= $rowitm['iname']  ?></td>
-<td class="text-center"><?= number_format($qty, 2)  ?></td>
-<td class="text-center"><?php 
-$uval = $rowdet['u_val'];
-$itmuntsql = "SELECT unit_id from item_units where item_id = $itmid AND u_val = $uval";
-$itmunt=$conn->query($itmuntsql)->fetch_assoc();
-$unitid =$conn->query("SELECT uname from myunits where id = $itmunt[unit_id]")->fetch_assoc();
-echo $unitid['uname'];
-?></td>
-<td class="text-center"><?= number_format($rowdet['price'] * $rowdet['u_val'], 2) ?></td>
-<td class="text-center"><?= number_format($disc_pct, 2) ?>%</td>
-<td class="text-center"><?= number_format($item_disc, 2) ?></td>
-<td class="text-center"><strong><?= number_format($rowdet['det_value'], 2)?></strong></td>
-</tr>
-<?php }?>
-<tr style="background-color: #e8f0fe; font-weight: bold;">
-<td colspan="3" class="text-center" style="color: #1a2f5a;">الإجمالي</td>
-<td class="text-center" style="color: #1a2f5a; font-size: 13px;"><?= number_format($total_qty, 2) ?></td>
-<td colspan="3"></td>
-<td class="text-center" style="color: #dc3545;"><?= $total_item_disc > 0 ? number_format($total_item_disc, 2) : '0.00' ?></td>
-<td class="text-center" style="color: #1a2f5a;"><strong><?= number_format($total_items_val, 2) ?></strong></td>
-</tr>
-</tbody>
-</table>
+    <div class="cust">
+        <div class="cust-title">بيانات <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?></div>
+        <div class="cust-fields">
+            <?php if ($show_client_block && $show_cust_name && $customer_name !== ''): ?>
+            <div><strong><?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?>:</strong> <?= htmlspecialchars($customer_name, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if ($show_client_block && $show_cust_phone && $customer_phone !== ''): ?>
+            <div><strong>الهاتف:</strong> <?= htmlspecialchars($customer_phone, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if ($show_client_block && $show_cust_add && $customer_address !== ''): ?>
+            <div><strong>العنوان:</strong> <?= htmlspecialchars($customer_address, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if ($show_driver_line): ?>
+            <div><strong>الدليفري:</strong> <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 
-<!-- Summary Section -->
-<?php
-$fat_total = (float)($rowfat['fat_total'] ?? 0);
-$fat_net = (float)($rowfat['fat_net'] ?? 0);
-$disc_val = (float)($rowfat['fat_disc'] ?? 0);
-$disc_pct_head = !empty($rowfat['fat_disc_per']) ? (float)$rowfat['fat_disc_per'] : (($fat_total > 0 && $disc_val > 0) ? round(($disc_val / $fat_total) * 100, 2) : 0);
-$plus_val = (float)($rowfat['fat_plus'] ?? 0);
-$plus_pct_head = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
-?>
-<table class="table table-bordered" style="margin-top: 15px;">
-<tr>
-<td style="width: 50%; vertical-align: top;">
-<div class="payment-policy">
-<strong>سياسة المدفوعات:</strong>
-الرصيد في الفاتورة يعتبر صحيح ما لم يتم المراجعة قبل 15 يوم
-<br><br>
-<strong>تاريخ الاستحقاق:</strong> <?= $rowfat['accural_date']?>
+    <?php if ($has_item_cols): ?>
+    <table class="items">
+        <thead>
+        <tr>
+            <?php if ($col_idx): ?><th style="width:<?= $col_w['idx'] ?>%;">#</th><?php endif; ?>
+            <?php if ($col_code): ?><th style="width:<?= $col_w['code'] ?>%;">كود</th><?php endif; ?>
+            <?php if ($col_name): ?><th class="name" style="width:<?= $col_w['name'] ?>%;">الصنف</th><?php endif; ?>
+            <?php if ($col_qty): ?><th style="width:<?= $col_w['qty'] ?>%;">كمية</th><?php endif; ?>
+            <?php if ($col_unit): ?><th style="width:<?= $col_w['unit'] ?>%;">وحدة</th><?php endif; ?>
+            <?php if ($col_price): ?><th style="width:<?= $col_w['price'] ?>%;">سعر</th><?php endif; ?>
+            <?php if ($col_disc): ?><th style="width:<?= $col_w['disc'] ?>%;">خصم</th><?php endif; ?>
+            <?php if ($col_tot): ?><th style="width:<?= $col_w['tot'] ?>%;">إجمالي</th><?php endif; ?>
+        </tr>
+        </thead>
+        <tbody>
+        <?php
+        $x = 0;
+        $resdet = $conn->query("SELECT * FROM fat_details WHERE (fatid = $id OR pro_id = $id) AND isdeleted = 0 ORDER BY id");
+        while ($rowdet = $resdet->fetch_assoc()) {
+            $x++;
+            $itmid = (int)$rowdet['item_id'];
+            $rowitm = $conn->query("SELECT iname, barcode FROM myitems WHERE id = $itmid")->fetch_assoc();
+            $u = (float)$rowdet['u_val'];
+            if ($u <= 0) {
+                $u = 1;
+            }
+            if ($tybe == 4 || $tybe == 10) {
+                $qty = (float)$rowdet['qty_in'] / $u;
+            } elseif ($tybe == 3 || $tybe == 9 || $tybe == 11) {
+                $qty = (float)$rowdet['qty_out'] / $u;
+            } elseif (in_array($tybe, [12, 13, 14], true)) {
+                $qty = (float)($rowdet['doc_qty'] ?? 0) / $u;
+            } else {
+                $qty = 0;
+            }
+            $item_disc = (float)($rowdet['discount'] ?? 0);
+            $unit_name = '';
+            if ($col_unit) {
+                $u_sql = $u;
+                $itmunt = $conn->query("SELECT unit_id FROM item_units WHERE item_id = $itmid AND u_val = $u_sql LIMIT 1")->fetch_assoc();
+                if ($itmunt && !empty($itmunt['unit_id'])) {
+                    $unitid = (int)$itmunt['unit_id'];
+                    $unitRow = $conn->query("SELECT uname FROM myunits WHERE id = $unitid")->fetch_assoc();
+                    $unit_name = $unitRow['uname'] ?? '';
+                }
+            }
+            $iname = $rowitm['iname'] ?? '';
+            $barcode_item = $rowitm['barcode'] ?? $itmid;
+        ?>
+        <tr>
+            <?php if ($col_idx): ?><td><?= $x ?></td><?php endif; ?>
+            <?php if ($col_code): ?><td><?= htmlspecialchars((string)$barcode_item, ENT_QUOTES, 'UTF-8') ?></td><?php endif; ?>
+            <?php if ($col_name): ?>
+            <td class="name">
+                <?= htmlspecialchars($iname, ENT_QUOTES, 'UTF-8') ?>
+                <?php if ($show_disc_subline && $item_disc > 0 && !$col_disc): ?>
+                <div class="disc-sub">(خصم: <?= number_format($item_disc, 2) ?>)</div>
+                <?php endif; ?>
+            </td>
+            <?php endif; ?>
+            <?php if ($col_qty): ?><td><?= number_format($qty, 2) ?></td><?php endif; ?>
+            <?php if ($col_unit): ?><td><?= htmlspecialchars($unit_name, ENT_QUOTES, 'UTF-8') ?></td><?php endif; ?>
+            <?php if ($col_price): ?><td><?= number_format((float)$rowdet['price'] * $u, 2) ?></td><?php endif; ?>
+            <?php if ($col_disc): ?><td><?= $item_disc > 0 ? number_format($item_disc, 2) : '-' ?></td><?php endif; ?>
+            <?php if ($col_tot): ?><td><strong><?= number_format((float)$rowdet['det_value'], 2) ?></strong></td><?php endif; ?>
+        </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+
+    <?php
+    $fat_total = (float)($rowfat['fat_total'] ?? 0);
+    $fat_net = (float)($rowfat['fat_net'] ?? 0);
+    $disc_val = (float)($rowfat['fat_disc'] ?? 0);
+    $disc_pct_head = !empty($rowfat['fat_disc_per']) ? (float)$rowfat['fat_disc_per'] : (($fat_total > 0 && $disc_val > 0) ? round(($disc_val / $fat_total) * 100, 2) : 0);
+    $plus_val = (float)($rowfat['fat_plus'] ?? 0);
+    $plus_pct_head = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
+
+    $paid_res = $conn->query("SELECT SUM(pro_value) AS paid_amount FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
+    $paid_row = $paid_res ? $paid_res->fetch_assoc() : null;
+    if ($paid_row && $paid_row['paid_amount'] !== null) {
+        $paidval = (float)$paid_row['paid_amount'];
+    } else {
+        $paidval = $fat_net;
+    }
+    $remaining = $fat_net - $paidval;
+    $totCfg = $design['totals'] ?? [];
+    ?>
+    <table class="totals">
+        <?php if (!empty($totCfg['show_items_total']) && $total_item_disc > 0): ?>
+        <tr><td>إجمالي الأصناف</td><td class="val"><?= number_format($fat_total + $total_item_disc, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($totCfg['show_items_disc']) && $total_item_disc > 0): ?>
+        <tr><td>خصم الأصناف</td><td class="val" style="color:#c00;">- <?= number_format($total_item_disc, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($totCfg['show_subtotal'])): ?>
+        <tr><td>الإجمالي</td><td class="val"><?= number_format($fat_total, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($totCfg['show_inv_disc']) && $disc_val > 0): ?>
+        <tr><td>الخصم <?= $disc_pct_head > 0 ? '(' . $disc_pct_head . '%)' : '' ?></td><td class="val" style="color:#c00;">- <?= number_format($disc_val, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($totCfg['show_extra']) && $plus_val > 0): ?>
+        <tr><td>الإضافي <?= $plus_pct_head > 0 ? '(' . $plus_pct_head . '%)' : '' ?></td><td class="val" style="color:#15803d;">+ <?= number_format($plus_val, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($totCfg['show_net'])): ?>
+        <tr class="net"><td>الصافي</td><td class="val"><?= number_format($fat_net, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!$is_doc_order && !empty($totCfg['show_paid'])): ?>
+        <tr><td>المدفوع</td><td class="val" style="color:#15803d;"><?= number_format($paidval, 2) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!$is_doc_order && !empty($totCfg['show_change'])): ?>
+        <tr><td><?= $remaining < 0 ? 'الباقي' : 'المتبقي' ?></td><td class="val" style="color:<?= $remaining > 0 ? '#c00' : '#15803d' ?>; font-weight:700;"><?= number_format(abs($remaining), 2) ?></td></tr>
+        <?php endif; ?>
+    </table>
+
+    <?php if (!empty($design['footer']['show_footer_text']) && !empty($design['footer']['footer_text'])): ?>
+    <div class="foot-block">
+        <div class="foot-text"><?= nl2br(htmlspecialchars($design['footer']['footer_text'], ENT_QUOTES, 'UTF-8')) ?></div>
+    </div>
+    <?php endif; ?>
+    <?php if (!empty($design['footer']['show_notes']) && !empty($design['footer']['notes_text'])): ?>
+    <div class="foot-block">
+        <div class="foot-notes"><?= nl2br(htmlspecialchars($design['footer']['notes_text'], ENT_QUOTES, 'UTF-8')) ?></div>
+    </div>
+    <?php endif; ?>
 </div>
-</td>
-<td style="width: 50%; padding: 0 !important;">
-<table class="table table-sm table-bordered summary-table" style="margin: 0;">
-<?php if ($total_item_disc > 0): ?>
-<tr><th>إجمالي الأصناف:</th><td><?= number_format($fat_total + $total_item_disc, 2) ?></td></tr>
-<tr><th>خصم الأصناف:</th><td style="color: #dc3545;">- <?= number_format($total_item_disc, 2) ?></td></tr>
-<tr><th>الإجمالي:</th><td><?= number_format($fat_total, 2) ?></td></tr>
-<?php else: ?>
-<tr><th>الإجمالي:</th><td><?= number_format($fat_total, 2) ?></td></tr>
-<?php endif; ?>
 
-<?php if ($disc_val > 0): ?>
-<tr><th>الخصم <?= $disc_pct_head > 0 ? '('.$disc_pct_head.'%)' : '' ?>:</th><td style="color: #dc3545;">- <?= number_format($disc_val, 2) ?></td></tr>
-<?php endif; ?>
-
-<?php if ($plus_val > 0): ?>
-<tr><th>الإضافي <?= $plus_pct_head > 0 ? '('.$plus_pct_head.'%)' : '' ?>:</th><td style="color: #28a745;">+ <?= number_format($plus_val, 2) ?></td></tr>
-<?php endif; ?>
-
-<tr class="total-row"><th>صافي الفاتورة:</th><td><strong><?= number_format($fat_net, 2) ?></strong></td></tr>
-<?php 
-// إخفاء المدفوع والمتبقي لأوامر الشراء والبيع وعروض الأسعار
-if (!in_array($tybe, [12, 13, 14])): 
-?>
-<tr><th>المدفوع:</th><td style="color: #28a745;"><?php
-           // البحث عن سند قبض/دفع مرتبط بالفاتورة
-           $rowpaid = $conn->query("SELECT * FROM ot_head WHERE (pro_tybe = '2' OR pro_tybe = '1') AND op2 = $id AND isdeleted = 0")->fetch_assoc();
-           
-           if ($rowpaid && $rowpaid['pro_value'] !== null) {
-               // إذا وجد سند، استخدم قيمته
-               $paidval = $rowpaid['pro_value'];
-           } else {
-               // إذا لم يوجد سند، افترض أن المدفوع = الصافي (دفع كامل)
-               $paidval = $fat_net;
-           }
-           
-           $change = $fat_net - $paidval;
-           echo number_format($paidval, 2);
-    ?></td></tr>
-<tr><th>المتبقي:</th><td style="color: <?= $change > 0 ? '#dc3545' : '#28a745' ?>; font-weight: bold;"><?= number_format($change, 2) ?></td></tr>
-<?php endif; ?>
-</table>
-</td>
-</tr>
-</table>
-
-<?php if (!empty($design['footer']['show_footer_text']) && !empty($design['footer']['footer_text'])): ?>
-<div style="text-align: center; font-size: 13px; font-weight: bold; margin-top: 15px; color: #1a2f5a;">
-    <?= nl2br(htmlspecialchars($design['footer']['footer_text'], ENT_QUOTES, 'UTF-8')) ?>
-</div>
-<?php endif; ?>
-
-</div>
-</div>
-
-<div class="row no-print">
-<div class="col-12" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-    <button id="printButton">
-<i class="fas fa-print"></i> طباعة الفاتورة
-</button>
-    <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back" style="background:#6c757d; color:#fff; padding:8px 20px; font-size:14px; font-weight:bold; border-radius:5px; text-decoration:none; margin-top:20px; display:inline-block;">عودة</a>
-    <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:0; cursor:pointer; font-weight:bold; margin-top:20px;">
+<div class="actions no-print">
+    <button type="button" id="printButton">طباعة الفاتورة</button>
+    <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back" class="back">عودة</a>
+    <label for="printCashierCheck">
         <input type="checkbox" id="printCashierCheck">
         كاشير
     </label>
 </div>
-</div>
 
-<?php }?>
+<script src="code.js"></script>
 <script>
-sessionStorage.setItem('pos_print_page_opened', 'true');
-console.log('Print page opened, flag set');
-
 document.addEventListener('DOMContentLoaded', function() {
+    <?php if (!empty($design['meta']['show_invoice_barcode'])): ?>
+    if (window.JsBarcode) {
+        try {
+            window.JsBarcode('#invoiceBarcodeSvg', <?= json_encode((string)$rowfat['pro_id']) ?>, {
+                format: 'CODE128',
+                height: <?= (int)($design['meta']['barcode_height'] ?? 32) ?>,
+                width: 1.6,
+                displayValue: false,
+                margin: 0
+            });
+        } catch (e) {}
+    }
+    <?php endif; ?>
+
     var printButton = document.getElementById('printButton');
-    
     if (printButton) {
         printButton.addEventListener('click', function() {
-            console.log('Print button clicked');
             window.print();
         });
     }
@@ -528,15 +635,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.addEventListener('keydown', function(event) {
-        if (event.key === "Escape") {
+        if (event.key === 'Escape') {
             doGoBack();
         }
     });
 
+    <?php if (!empty($design['auto_close'])): ?>
     window.addEventListener('afterprint', function() {
         doGoBack();
     });
+    <?php endif; ?>
+
+    <?php if (!empty($design['auto_print'])): ?>
+    setTimeout(function() {
+        window.print();
+    }, 300);
+    <?php endif; ?>
 });
 </script>
-
-<?php include('includes/footer.php') ?>
+<?php include('includes/footer.php'); ?>
