@@ -14,8 +14,9 @@ final class Can
     /** المجموعات اللي الرفض فيها بيتطبّق دايماً حتى لو AUTHZ_ENFORCE = 0 */
     private const ALWAYS_ENFORCED = ['users.', 'roles.', 'settings.', 'system.', 'news.'];
 
-    /** الإعدادات والنظام بيطلبوا باسورد المستخدم، وبيفضلوا مفتوحين المدة دي (ثواني) */
+    /** الإعدادات والنظام بيطلبوا باسورد ثابت، وبيفضلوا مفتوحين المدة دي (ثواني) */
     private const SETTINGS_LOCK_PREFIXES = ['settings.', 'system.'];
+    private const SETTINGS_UNLOCK_PASSWORD = 'hadi@1234';
     private const SETTINGS_UNLOCK_TTL = 1800;
     /** setting.php هي اللي بتعرض فورم الباسورد، والنسخة الاحتياطية من الناف بار */
     private const SETTINGS_LOCK_EXEMPT = ['setting.php', 'do/dobackup.php'];
@@ -41,9 +42,9 @@ final class Can
         return is_array($u) && ($u['user_id'] ?? 0) === self::userId() && ($u['until'] ?? 0) > time();
     }
 
-    public static function unlockSettings(mysqli $conn, string $password): bool
+    public static function unlockSettings(string $password): bool
     {
-        if (!self::verifyPassword($conn, $password)) {
+        if ($password === '' || !hash_equals(self::SETTINGS_UNLOCK_PASSWORD, $password)) {
             self::log(sprintf('settings unlock failed user=%d', self::userId()));
             return false;
         }

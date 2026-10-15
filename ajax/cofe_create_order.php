@@ -98,6 +98,12 @@ if ($fund_id == 0) {
     if ($r && $r->num_rows > 0) $fund_id = intval($r->fetch_assoc()['id']);
 }
 
+// افتراضيات المستخدم أولى من افتراضيات الكاشير العامة
+$store_id = UserDefaults::get($conn, 'store') ?: $store_id;
+$emp_id   = UserDefaults::get($conn, 'emp') ?: $emp_id;
+$acc2_id  = UserDefaults::get($conn, 'client') ?: $acc2_id;
+$fund_id  = UserDefaults::get($conn, 'fund') ?: $fund_id;
+
 if ($store_id == 0 || $emp_id == 0 || $acc2_id == 0 || $fund_id == 0) {
     http_response_code(500);
     echo json_encode([

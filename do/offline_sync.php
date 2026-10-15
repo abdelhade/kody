@@ -55,6 +55,7 @@ function syncOfflineOrders($orders) {
             
             // محاكاة معالجة بيانات النموذج
             parse_str($order['data'], $formData);
+            UserDefaults::enforceInvoice($conn, $formData, (int) ($formData['pro_tybe'] ?? 9));
             
             // إدراج رأس الطلب
             $sql = "INSERT INTO ot_head (pro_tybe, pro_date, fat_net, info, emp_id, acc1, acc_fund, store_id, accural_date) 

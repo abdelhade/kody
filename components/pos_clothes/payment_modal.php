@@ -131,6 +131,10 @@
                 $selected = 'false';
             }
             $first_fund = false;
+            if (UserDefaults::hides($conn, 'fund', $rowfund['id'])) continue;
+            if (UserDefaults::get($conn, 'fund') > 0) {
+                $selected = UserDefaults::selected($conn, 'fund', $rowfund['id']) !== '' ? 'true' : 'false';
+            }
             echo "{ id: {$rowfund['id']}, name: '" . addslashes($rowfund['aname']) . "', selected: {$selected} },";
         }
         ?>

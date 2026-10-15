@@ -107,6 +107,7 @@ $restwn = $conn->query("SELECT * from towns ");
 
 // الصلاحيات: Can بيحمّل صلاحيات دور المستخدم في الـ session، وبعدين حماية الصفحة من includes/rbac_routes.php
 require_once __DIR__ . '/../classes/Can.php';
+require_once __DIR__ . '/../classes/UserDefaults.php';
 if ($selected !== null) {
     Can::boot($conn, $dbname);
 }
@@ -143,7 +144,7 @@ if (!function_exists('getUserDefault')) {
      * @return mixed
      */
     function getUserDefault($optionName, $conn) {
-        $allowed = ['def_fund', 'def_store', 'def_client', 'def_prod', 'def_emp'];
+        $allowed = ['def_fund', 'def_store', 'def_client', 'def_prod', 'def_emp', 'def_supplier', 'def_price_list'];
         if (in_array($optionName, $allowed) && isset($_SESSION['userid'])) {
             $uid = (int) $_SESSION['userid'];
             $res = $conn->query("SELECT $optionName FROM users WHERE id = $uid");

@@ -592,6 +592,14 @@ class InvoiceFooter extends InvoiceElementBase
             if ($this->isEditMode && $this->data && $this->data['fund_id'] == $fund['id']) {
                 $selected = 'selected';
             }
+            if (!$this->isEditMode && $this->conn) {
+                if (UserDefaults::hides($this->conn, 'fund', $fund['id'])) {
+                    continue;
+                }
+                if (UserDefaults::get($this->conn, 'fund') > 0) {
+                    $selected = trim(UserDefaults::selected($this->conn, 'fund', $fund['id']));
+                }
+            }
             echo "<option value='{$fund['id']}' {$selected}>{$this->sanitizeInput($fund['aname'])}</option>";
         }
     }

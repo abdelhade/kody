@@ -162,6 +162,5 @@ body .wrapper .main-sidebar .nav-sidebar .nav-link:focus {
 }
 
 .main-sidebar .nav-link .right {
-    margin-left: 0.5rem !important;
-    flex-shrink: 0 !important;
+    display: none !important;
 }

@@ -199,6 +199,7 @@ body {
                                         <?php foreach ($posPriceLists as $pl) {
                                             $plId = (int) $pl['id'];
                                             $plSelected = ($plId === $posPriceListId) ? 'selected' : '';
+                                            if (($plSelected = UserDefaults::pick($conn, 'price_list', $plId, $plSelected, !isset($_GET['edit']))) === null) continue;
                                             echo '<option value="' . $plId . '" ' . $plSelected . '>' . htmlspecialchars($pl['pname']) . '</option>';
                                         } ?>
                                     </select>
@@ -222,6 +223,7 @@ body {
                                                 $selected = "selected";
                                             }
                                             $first = false;
+                                            if (($selected = UserDefaults::pick($conn, 'store', $rowstore['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                         ?>
                                         <option <?= $selected ?> value="<?= $rowstore['id'] ?>">
                                             <?= $rowstore['aname'] ?></option>
@@ -246,6 +248,7 @@ body {
                                                 $selected = "selected";
                                             }
                                             $first_emp = false;
+                                            if (($selected = UserDefaults::pick($conn, 'emp', $rowemp['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                         ?>
                                         <option <?= $selected ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?>
                                         </option>
@@ -273,6 +276,7 @@ body {
                                                 $selected = "selected";
                                             }
                                             $first_client = false;
+                                            if (($selected = UserDefaults::pick($conn, 'client', $rowclient['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                             $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                                             $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
                                         ?>
@@ -303,6 +307,7 @@ body {
                                                 $selected = "selected";
                                             }
                                             $first_fund = false;
+                                            if (($selected = UserDefaults::pick($conn, 'fund', $rowfund['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                         ?>
                                         <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?>
                                         </option>

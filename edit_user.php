@@ -451,6 +451,14 @@ $avatarUrl = ($isFound && !empty($row['img'])) ? 'uploads/' . htmlspecialchars($
                 </div>
               </div>
 
+              <?php if (Can::check('users.edit')): ?>
+              <div class="form-section-header mt-4">
+                <i class="fas fa-sliders-h text-primary"></i>
+                <h4>الافتراضيات</h4>
+              </div>
+              <div class="mb-4"><?php UserDefaults::renderUserFields($conn, $row); ?></div>
+              <?php endif; ?>
+
               <!-- القسم الثالث: الأمان وكلمة المرور -->
               <div class="form-section-header mt-4">
                 <i class="fas fa-key text-warning"></i>

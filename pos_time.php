@@ -93,21 +93,23 @@
             if (!class_exists('InvoiceProcessor')) {
                 require_once __DIR__ . '/classes/InvoiceProcessor.php';
             }
-            InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-control form-control-sm');
+            InvoiceProcessor::echoPriceListSelect($conn, UserDefaults::get($conn, 'price_list') ?: 1, 'form-control form-control-sm');
             ?>
             <select name="store_id" class="" id="">
                 <?php
                 $resstore = $conn->query("SELECT * FROM `acc_head` WHERE is_stock =1 AND isdeleted = 0;");
-                while ($rowstore = $resstore->fetch_assoc()) { ?>
-                <option <?php if($rowstg['def_pos_store'] == $rowstore['id']){echo "selected";} ?> value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
+                while ($rowstore = $resstore->fetch_assoc()) {
+                    if (($sel = UserDefaults::pick($conn, 'store', $rowstore['id'], $rowstg['def_pos_store'] == $rowstore['id'] ? 'selected' : '')) === null) continue; ?>
+                <option <?= $sel ?> value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
                 <?php } ?>
             </select>
 
             <select name="emp_id" class="" id="">
                 <?php
                 $resemp = $conn->query("SELECT * FROM `acc_head` WHERE parent_id = 35 AND is_basic = 0 AND isdeleted = 0;");
-                while ($rowemp = $resemp->fetch_assoc()) { ?>
-                <option <?php if($rowstg['def_pos_employee'] == $rowemp['id']){echo "selected";} ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
+                while ($rowemp = $resemp->fetch_assoc()) {
+                    if (($sel = UserDefaults::pick($conn, 'emp', $rowemp['id'], $rowstg['def_pos_employee'] == $rowemp['id'] ? 'selected' : '')) === null) continue; ?>
+                <option <?= $sel ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
                 <?php } ?>
             </select>
 
@@ -118,16 +120,18 @@
                 while ($rowclient = $resclient->fetch_assoc()) { 
                     $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                     $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
+                    if (($sel = UserDefaults::pick($conn, 'client', $rowclient['id'], $rowstg['def_pos_client'] == $rowclient['id'] ? 'selected' : '')) === null) continue;
                 ?>
-                <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo "selected";} ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?></option>
+                <option <?= $sel ?> value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?></option>
                 <?php } ?>
             </select>
 
             <select name="fund_id" class="" id="">
                 <?php
                 $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
-                while ($rowfund = $resfund->fetch_assoc()) { ?>
-                <option <?php if($rowstg['def_pos_fund'] == $rowfund['id']){echo "selected";} ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
+                while ($rowfund = $resfund->fetch_assoc()) {
+                    if (($sel = UserDefaults::pick($conn, 'fund', $rowfund['id'], $rowstg['def_pos_fund'] == $rowfund['id'] ? 'selected' : '')) === null) continue; ?>
+                <option <?= $sel ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
                 <?php } ?>
             </select>
             <br>

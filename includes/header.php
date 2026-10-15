@@ -68,9 +68,15 @@ $uiFontFamily = $uiFontPresets[$uiFontKey];
 $sidebarState = isset($_COOKIE['sidebar_state']) ? (string) $_COOKIE['sidebar_state'] : 'collapsed';
 $sidebarCollapsed = ($sidebarState !== 'open');
 
-$assetVer = is_file(__DIR__ . '/../dist/css/custom.css')
-    ? (string) filemtime(__DIR__ . '/../dist/css/custom.css')
-    : '1';
+$assetVer = '1';
+foreach ([
+    __DIR__ . '/../dist/css/custom.css',
+    __DIR__ . '/../assets/styles/sidebar-fixes.css',
+] as $assetFile) {
+    if (is_file($assetFile)) {
+        $assetVer = (string) max((int) $assetVer, filemtime($assetFile));
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">

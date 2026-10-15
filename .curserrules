@@ -11,3 +11,6 @@
 be bragmatic 
 احنا شغالين production
 الرد بالعربي و يبدأ ب فهمت يا  هندسه 
+
+اي feature جديده لازم تمشي على طريقة الصلاحيات (Spatie / Can) المكتوبه في AGENTS.md قسم "الصلاحيات":
+صلاحيه في migration + المسار في includes/rbac_routes.php + كل زرار جوه الصفحه يتلف ب Can::check من السيرفر

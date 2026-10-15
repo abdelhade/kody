@@ -17,6 +17,7 @@ $usid = $_SESSION['userid'];
 
 // استخراج البيانات
 $pro_tybe = 9; // نوع POS
+UserDefaults::enforceInvoice($conn, $_POST, $pro_tybe);
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
 $pro_date = isset($_POST['pro_date']) && !empty($_POST['pro_date']) ? $_POST['pro_date'] : date('Y-m-d');
 $accural_date = isset($_POST['accural_date']) && !empty($_POST['accural_date']) ? $_POST['accural_date'] : date('Y-m-d');

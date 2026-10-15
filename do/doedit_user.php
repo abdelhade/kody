@@ -143,6 +143,9 @@ call_user_func_array([$stmt, 'bind_param'], $params);
 // تنفيذ
 if ($stmt->execute()) {
     $stmt->close();
+    if ($canEditUser) {
+        UserDefaults::save($conn, $id, $_POST);
+    }
     header('Location: ../users.php');
     exit();
 } else {

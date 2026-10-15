@@ -492,11 +492,32 @@ class InvoiceHeader extends InvoiceElementBase
         }
     }
 
+    /**
+     * افتراضي المستخدم في الفاتورة الجديدة: [يتشال من القائمة؟, selected]
+     */
+    private function userDefaultOption(string $key, $id, string $fallback = ''): array
+    {
+        if ($this->isEditMode || !$this->conn) {
+            return [false, $fallback];
+        }
+        if (UserDefaults::hides($this->conn, $key, $id)) {
+            return [true, ''];
+        }
+        if (UserDefaults::get($this->conn, $key) > 0) {
+            return [false, trim(UserDefaults::selected($this->conn, $key, $id))];
+        }
+        return [false, $fallback];
+    }
+
     private function renderSingleAccountOption($account)
     {
         $selected = '';
         if ($this->isEditMode && $this->data && $this->getPartyAccountId() == $account['id']) {
             $selected = 'selected';
+        }
+        [$hide, $selected] = $this->userDefaultOption(UserDefaults::partyKey((int) $this->invoiceType), $account['id'], $selected);
+        if ($hide) {
+            return;
         }
         $isSup = (strpos((string)$account['code'], '211') === 0);
         $priceAttr = '';
@@ -520,6 +541,10 @@ class InvoiceHeader extends InvoiceElementBase
             if ($this->isEditMode && $this->data && $this->data['store_id'] == $store['id']) {
                 $selected = 'selected';
             }
+            [$hide, $selected] = $this->userDefaultOption('store', $store['id'], $selected);
+            if ($hide) {
+                continue;
+            }
             echo "<option value='{$store['id']}' {$selected}>{$this->sanitizeInput($store['aname'])}</option>";
         }
     }
@@ -533,6 +558,10 @@ class InvoiceHeader extends InvoiceElementBase
             $selected = $this->getDefaultSelected('def_emp', $employee['id']);
             if ($this->isEditMode && $this->data && $this->data['emp_id'] == $employee['id']) {
                 $selected = 'selected';
+            }
+            [$hide, $selected] = $this->userDefaultOption('emp', $employee['id'], $selected);
+            if ($hide) {
+                continue;
             }
             echo "<option value='{$employee['id']}' {$selected}>{$this->sanitizeInput($employee['aname'])}</option>";
         }
@@ -558,12 +587,19 @@ class InvoiceHeader extends InvoiceElementBase
                 ['id' => 3, 'pname' => 'السوق'],
             ];
         }
+        $userList = UserDefaults::hasPriceList((int) $this->invoiceType);
         foreach ($lists as $list) {
             $id = (int) $list['id'];
             if ($maxId > 0 && $id > $maxId) {
                 continue;
             }
             $selected = ($id === $selectedId) ? 'selected' : '';
+            if ($userList) {
+                [$hide, $selected] = $this->userDefaultOption('price_list', $id, $selected);
+                if ($hide) {
+                    continue;
+                }
+            }
             $label = $this->sanitizeInput($list['pname']);
             if ($numbered) {
                 $label = "سعر البيع {$id} - {$label}";

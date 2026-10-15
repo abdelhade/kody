@@ -54,6 +54,7 @@ $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 0;
 if ($pro_tybe > 0) {
     Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'add'));
 }
+UserDefaults::enforceInvoice($conn, $_POST, $pro_tybe);
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
 $pro_serial = isset($_POST['pro_serial']) ? htmlspecialchars(trim($_POST['pro_serial']), ENT_QUOTES, 'UTF-8') : '';
 $price_list = isset($_POST['price_list']) ? max(1, intval($_POST['price_list'])) : 1;

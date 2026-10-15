@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $user = isset($_SESSION['userid']) ? (int)$_SESSION['userid'] : 1;
+UserDefaults::enforce($conn, $_POST, ['fund_account' => 'fund']);
 $vdate = !empty($_POST['vdate']) ? trim((string)$_POST['vdate']) : date('Y-m-d');
 $tybe = isset($_POST['tybe']) ? (int)$_POST['tybe'] : 1;
 $val = isset($_POST['val']) ? (float)$_POST['val'] : 0.0;

@@ -176,6 +176,7 @@ if (!isset($action_url)) {
                                         if($rowstg['def_pos_store'] == $rowstore['id']){ $selected = "selected"; } 
                                         elseif ($first && empty($rowstg['def_pos_store'])) { $selected = "selected"; }
                                         $first = false;
+                                        if (($selected = UserDefaults::pick($conn, 'store', $rowstore['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                     ?>
                                     <option <?= $selected ?> value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
                                     <?php } ?>
@@ -194,6 +195,7 @@ if (!isset($action_url)) {
                                         elseif(isset($_GET['edit']) && $rowed['emp_id'] == $rowemp['id']){ $selected = "selected"; } 
                                         elseif ($first_emp && empty($rowstg['def_pos_employee']) && !isset($_GET['edit'])) { $selected = "selected"; }
                                         $first_emp = false;
+                                        if (($selected = UserDefaults::pick($conn, 'emp', $rowemp['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                     ?>
                                     <option <?= $selected ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
                                     <?php } ?>
@@ -214,6 +216,7 @@ if (!isset($action_url)) {
                                         elseif(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){ $selected = "selected"; } 
                                         elseif ($first_client && empty($rowstg['def_pos_client']) && !isset($_GET['edit'])) { $selected = "selected"; }
                                         $first_client = false;
+                                        if (($selected = UserDefaults::pick($conn, 'client', $rowclient['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                         $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                                         $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
                                     ?>
@@ -235,6 +238,7 @@ if (!isset($action_url)) {
                                         elseif((isset($_GET['edit'])) && $rowed['acc_fund'] == $rowfund['id']){ $selected = "selected"; } 
                                         elseif ($first_fund && empty($rowstg['def_pos_fund']) && !isset($_GET['edit'])) { $selected = "selected"; }
                                         $first_fund = false;
+                                        if (($selected = UserDefaults::pick($conn, 'fund', $rowfund['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                     ?>
                                     <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
                                     <?php } ?>

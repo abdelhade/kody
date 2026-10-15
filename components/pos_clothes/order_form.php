@@ -11,6 +11,7 @@ if (!empty($rowstg['def_pos_store'])) {
         $default_store_id = $rowstore['id'];
     }
 }
+$default_store_id = UserDefaults::get($conn, 'store') ?: $default_store_id;
 ?>
 
 <form action="do/doadd_invoice_clothes.php" method="post" id="posForm">
@@ -41,7 +42,7 @@ if (!empty($rowstg['def_pos_store'])) {
                 if (!class_exists('InvoiceProcessor')) {
                     require_once __DIR__ . '/../../classes/InvoiceProcessor.php';
                 }
-                InvoiceProcessor::echoPriceListSelect($conn, 1, 'form-select form-select-sm', 'font-size: 0.75rem;');
+                InvoiceProcessor::echoPriceListSelect($conn, UserDefaults::get($conn, 'price_list') ?: 1, 'form-select form-select-sm', 'font-size: 0.75rem;');
                 ?>
             </div>
 
@@ -88,6 +89,7 @@ if (!empty($rowstg['def_pos_store'])) {
                                 $selected = "selected";
                             }
                             $first_emp = false;
+                            if (($selected = UserDefaults::pick($conn, 'emp', $rowemp['id'], $selected, !isset($_GET['edit']))) === null) continue;
                         ?>
                         <option <?= $selected ?> value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
                         <?php } ?>
@@ -113,6 +115,7 @@ if (!empty($rowstg['def_pos_store'])) {
                                 $selected = "selected";
                             }
                             $first_client = false;
+                            if (($selected = UserDefaults::pick($conn, 'client', $rowclient['id'], $selected, !isset($_GET['edit']))) === null) continue;
                             $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                             $phone = htmlspecialchars($rowclient['phone'] ?? '');
                             $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');

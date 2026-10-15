@@ -30,6 +30,7 @@ include('../includes/connect.php');
 
 // استخراج البيانات الأساسية
 $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 9; // POS type
+UserDefaults::enforceInvoice($conn, $_POST, $pro_tybe);
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
 $pro_date = isset($_POST['pro_date']) ? $_POST['pro_date'] : date('Y-m-d');
 $acc2_id = isset($_POST['acc2_id']) ? intval($_POST['acc2_id']) : 0;

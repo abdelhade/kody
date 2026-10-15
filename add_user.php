@@ -12,7 +12,7 @@
 
 <div class="col">
 
-  <div class="card card-primary col-lg-3">
+  <div class="card card-primary col-lg-6">
     <div class="card-header">
       <h3 class="card-title"> <?= $lang_add_new_user ?></h3>
     </div>
@@ -56,6 +56,8 @@
             الويترز يمكنهم تسجيل الدخول بالباركود في صفحة POS الخاصة بهم
           </small>
         </div>
+        <h5 class="mt-3">الافتراضيات</h5>
+        <?php UserDefaults::renderUserFields($conn); ?>
           <br>
           <label for="img" class="btn btn-outline-secondary btn-lg"><?= $lang_image_upload ?></label>
           <input hidden type="file" name="img" id="img">

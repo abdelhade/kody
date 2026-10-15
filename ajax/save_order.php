@@ -13,6 +13,7 @@ try {
         throw new Exception('بيانات غير صحيحة');
     }
     
+    UserDefaults::enforceInvoice($conn, $data, 9);
     $tableId = intval($data['table_id']);
     $tableName = $data['table_name'];
     $orderId = isset($data['order_id']) && $data['order_id'] ? intval($data['order_id']) : 0;

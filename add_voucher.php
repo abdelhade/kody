@@ -222,6 +222,7 @@ if ($is_edit && $rowedit) {
                       $resfunds = $conn->query("SELECT a.*, COALESCE((SELECT SUM(debit) - SUM(credit) FROM journal_entries WHERE account_id = a.id AND isdeleted = 0), 0) AS real_balance FROM acc_head a WHERE a.is_basic = 0 AND a.is_fund = 1 ORDER BY a.aname ASC");
                       if ($resfunds):
                           while ($rowf = $resfunds->fetch_assoc()):
+                              if (!$is_edit && UserDefaults::hides($conn, 'fund', $rowf['id'])) continue;
                               $selectedF = '';
                               if ($is_edit && $rowedit) {
                                   if ((int)$rowf['id'] === (int)$rowedit['acc2']) $selectedF = 'selected';
@@ -363,6 +364,7 @@ if ($is_edit && $rowedit) {
                       $resfunds = $conn->query("SELECT a.*, COALESCE((SELECT SUM(debit) - SUM(credit) FROM journal_entries WHERE account_id = a.id AND isdeleted = 0), 0) AS real_balance FROM acc_head a WHERE a.is_basic = 0 AND a.is_fund = 1 ORDER BY a.aname ASC");
                       if ($resfunds):
                           while ($rowf = $resfunds->fetch_assoc()):
+                              if (!$is_edit && UserDefaults::hides($conn, 'fund', $rowf['id'])) continue;
                               $selectedF = '';
                               if ($is_edit && $rowedit) {
                                   if ($pro_tybe === 2 && (int)$rowf['id'] === (int)$rowedit['acc2']) $selectedF = 'selected';

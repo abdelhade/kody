@@ -63,8 +63,9 @@
                 <select name="store_id" class="form-select form-select-sm" title="المخزن">
                     <?php
                     $resstore = $conn->query("SELECT * FROM `acc_head` WHERE is_stock =1 AND isdeleted = 0;");
-                    while ($rowstore = $resstore->fetch_assoc()) { ?>
-                        <option <?php if($rowstg['def_pos_store'] == $rowstore['id']){echo "selected";} ?> 
+                    while ($rowstore = $resstore->fetch_assoc()) {
+                        if (($sel = UserDefaults::pick($conn, 'store', $rowstore['id'], $rowstg['def_pos_store'] == $rowstore['id'] ? 'selected' : '', !isset($_GET['edit']))) === null) continue; ?>
+                        <option <?= $sel ?> 
                                 value="<?= $rowstore['id'] ?>"><?= $rowstore['aname'] ?></option>
                     <?php } ?>
                 </select>
@@ -75,8 +76,9 @@
                 <select name="emp_id" class="form-select form-select-sm" title="الموظف">
                     <?php
                     $resemp = $conn->query("SELECT * FROM `acc_head` WHERE parent_id = 35 AND is_basic = 0 AND isdeleted = 0;");
-                    while ($rowemp = $resemp->fetch_assoc()) { ?>
-                        <option <?php if($rowstg['def_pos_employee'] == $rowemp['id']){echo " selected ";} ?> 
+                    while ($rowemp = $resemp->fetch_assoc()) {
+                        if (($sel = UserDefaults::pick($conn, 'emp', $rowemp['id'], $rowstg['def_pos_employee'] == $rowemp['id'] ? 'selected' : '', !isset($_GET['edit']))) === null) continue; ?>
+                        <option <?= $sel ?> 
                                 <?php if(isset($_GET['edit']) && $rowed['emp_id'] == $rowemp['id']){echo " selected ";} ?>  
                                 value="<?= $rowemp['id'] ?>"><?= $rowemp['aname'] ?></option>
                     <?php } ?>
@@ -93,8 +95,9 @@
                     while ($rowclient = $resclient->fetch_assoc()) { 
                         $isSup = (!empty($rowstg['allow_all_accounts']) && strpos((string)$rowclient['code'], '211') === 0);
                         $displayName = htmlspecialchars($rowclient['aname']) . ($isSup ? ' (مورد)' : '');
+                        if (($sel = UserDefaults::pick($conn, 'client', $rowclient['id'], $rowstg['def_pos_client'] == $rowclient['id'] ? 'selected' : '', !isset($_GET['edit']))) === null) continue;
                     ?>
-                        <option <?php if($rowstg['def_pos_client'] == $rowclient['id']){echo " selected ";} ?>
+                        <option <?= $sel ?>
                                 <?php if(isset($_GET['edit']) && $rowed['acc1'] == $rowclient['id']){echo " selected ";} ?>
                                 value="<?= $rowclient['id'] ?>" data-price-list="<?= max(1, (int) ($rowclient['price_list'] ?? 1)) ?>"><?= $displayName ?></option>
                     <?php } ?>
@@ -107,8 +110,9 @@
                     <?php
                     if(isset($_GET['edit'])){$rowed = $conn->query("SELECT * FROM ot_head where id = $id")->fetch_assoc();};
                     $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund =1 AND is_basic = 0 AND isdeleted = 0;");
-                    while ($rowfund = $resfund->fetch_assoc()) { ?>
-                        <option <?php if($rowstg['def_pos_fund'] == $rowfund['id']){echo " selected ";} ?>
+                    while ($rowfund = $resfund->fetch_assoc()) {
+                        if (($sel = UserDefaults::pick($conn, 'fund', $rowfund['id'], $rowstg['def_pos_fund'] == $rowfund['id'] ? 'selected' : '', !isset($_GET['edit']))) === null) continue; ?>
+                        <option <?= $sel ?>
                                 <?php if((isset($_GET['edit'])) && $rowed['acc_fund'] == $rowfund['id']){echo " selected ";} ?>
                                 value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
                     <?php } ?>

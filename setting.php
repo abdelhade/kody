@@ -12,7 +12,7 @@ $licenseOk = !empty($licenseStatus['licensed']);
 <?php include('includes/sidebar.php'); ?>
 
 <?php
-// الإعدادات بباسورد المستخدم نفسه، وبتفضل مفتوحة نص ساعة
+// الإعدادات بباسورد ثابت، وبتفضل مفتوحة نص ساعة
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(24));
 }
@@ -20,7 +20,7 @@ $unlockError = '';
 if (isset($_POST['settings_unlock_password'])) {
     if (!hash_equals((string) $_SESSION['csrf_token'], (string) ($_POST['csrf_token'] ?? ''))) {
         $unlockError = 'انتهت صلاحية الصفحة، حاول تاني';
-    } elseif (Can::unlockSettings($conn, (string) $_POST['settings_unlock_password'])) {
+    } elseif (Can::unlockSettings((string) $_POST['settings_unlock_password'])) {
         echo '<script>location.replace("setting.php");</script>';
         exit;
     } else {
@@ -35,7 +35,7 @@ if (!Can::settingsUnlocked()):
       <div class="card shadow-sm">
         <div class="card-body">
           <h5 class="mb-3"><i class="fas fa-lock text-primary ml-2"></i> الإعدادات محمية</h5>
-          <p class="text-muted small">اكتب كلمة المرور بتاعتك عشان تفتح الإعدادات (هتفضل مفتوحة نص ساعة).</p>
+          <p class="text-muted small">اكتب كلمة مرور الإعدادات عشان تفتحها (هتفضل مفتوحة نص ساعة).</p>
           <?php if ($unlockError !== ''): ?>
             <div class="alert alert-danger py-2"><?= htmlspecialchars($unlockError, ENT_QUOTES, 'UTF-8') ?></div>
           <?php endif; ?>

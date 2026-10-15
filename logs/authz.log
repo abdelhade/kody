@@ -24,3 +24,6 @@
 [2026-10-15 12:54:46] unmapped page _as_user.php
 [2026-10-15 12:54:47] deny user=1 role=1 need=[employee_kpis.add] script=/kody/add_empkbi.php query=
 [2026-10-15 12:56:00] unmapped page _as_user.php
+[2026-10-15 14:43:45] settings unlock failed user=1
+[2026-10-15 14:43:52] settings unlock failed user=1
+[2026-10-15 14:44:36] settings unlock failed user=1

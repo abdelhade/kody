@@ -37,7 +37,9 @@ if (!empty($_FILES['img']['name']) && ($_FILES['img']['size'] ?? 0) > 100) {
 $stmt = $conn->prepare('INSERT INTO users (uname, password, userrole, img, is_waiter) VALUES (?, ?, ?, ?, ?)');
 $stmt->bind_param('ssisi', $uname, $hashpass, $userrole, $img, $isWaiter);
 $stmt->execute();
+$newUserId = (int) $stmt->insert_id;
 $stmt->close();
+UserDefaults::save($conn, $newUserId, $_POST);
 
 Roles::log($conn, 'add user ' . $uname . ' role ' . $userrole);
 
