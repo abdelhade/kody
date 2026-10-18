@@ -109,13 +109,63 @@ if ($tybe == 4 || $tybe == 10) {
     $accid = (int)$rowfat['acc2'];
     $partyLabel = 'العميل';
 }
-$rowacc1 = $accid > 0
-    ? $conn->query("SELECT aname, phone, address FROM acc_head WHERE id = $accid")->fetch_assoc()
-    : null;
+$rowacc1 = null;
+if ($accid > 0) {
+    $accStmt = $conn->prepare('SELECT aname, phone, address, code FROM acc_head WHERE id = ? LIMIT 1');
+    if ($accStmt) {
+        $accStmt->bind_param('i', $accid);
+        $accStmt->execute();
+        $rowacc1 = $accStmt->get_result()->fetch_assoc() ?: null;
+        $accStmt->close();
+    }
+}
 
 $customer_name = $rowacc1['aname'] ?? '';
 $customer_phone = $rowacc1['phone'] ?? '';
 $customer_address = $rowacc1['address'] ?? '';
+
+// رصيد الطرف قبل وبعد الفاتورة (من قيود اليومية)
+$party_bal_before = null;
+$party_bal_after = null;
+$show_party_balance = !empty($design['customer']['show_balance'])
+    && $accid > 0
+    && in_array($tybe, [3, 4, 9, 10, 11], true)
+    && empty($rowfat['isdeleted']);
+if ($show_party_balance) {
+    $isSupplierAcc = (strpos((string)($rowacc1['code'] ?? ''), '211') === 0);
+    $balSign = $isSupplierAcc ? -1 : 1;
+
+    $balAfter = 0.0;
+    $stmtAfter = $conn->prepare(
+        'SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) AS bal
+         FROM journal_entries
+         WHERE account_id = ? AND isdeleted = 0'
+    );
+    if ($stmtAfter) {
+        $stmtAfter->bind_param('i', $accid);
+        $stmtAfter->execute();
+        $balAfter = (float)(($stmtAfter->get_result()->fetch_assoc()['bal'] ?? 0));
+        $stmtAfter->close();
+    }
+
+    $balBefore = $balAfter;
+    $stmtBefore = $conn->prepare(
+        'SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) AS bal
+         FROM journal_entries
+         WHERE account_id = ? AND isdeleted = 0
+           AND NOT (COALESCE(op2, 0) = ?
+                OR journal_id IN (SELECT id FROM journal_heads WHERE op_id = ? OR op2 = ?))'
+    );
+    if ($stmtBefore) {
+        $stmtBefore->bind_param('iiii', $accid, $id, $id, $id);
+        $stmtBefore->execute();
+        $balBefore = (float)(($stmtBefore->get_result()->fetch_assoc()['bal'] ?? 0));
+        $stmtBefore->close();
+    }
+
+    $party_bal_before = round($balBefore * $balSign, 2);
+    $party_bal_after = round($balAfter * $balSign, 2);
+}
 
 $employee_name = '';
 $empid = (int)($rowfat['emp_id'] ?? 0);
@@ -412,12 +462,24 @@ body {
     $show_cust_phone = !empty($design['customer']['show_phone']);
     $show_cust_add = !empty($design['customer']['show_address']);
     $show_driver_line = $showDriverMeta && $driver_name !== '' && !($is_delivery && $showDriverMeta);
+    $show_bal_lines = $show_party_balance && $party_bal_before !== null && $party_bal_after !== null;
     $cust_has_any = ($show_client_block && (
         ($show_cust_name && $customer_name !== '')
         || ($show_cust_phone && $customer_phone !== '')
         || ($show_cust_add && $customer_address !== '')
-    )) || $show_driver_line;
+    )) || $show_driver_line || $show_bal_lines;
     if ($cust_has_any):
+        $fmtPartyBal = static function ($v) {
+            $v = (float)$v;
+            $abs = number_format(abs($v), 2);
+            if ($v > 0.00001) {
+                return $abs . ' مدين';
+            }
+            if ($v < -0.00001) {
+                return $abs . ' دائن';
+            }
+            return '0.00';
+        };
     ?>
     <div class="cust">
         <div class="cust-title">بيانات <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?></div>
@@ -433,6 +495,10 @@ body {
             <?php endif; ?>
             <?php if ($show_driver_line): ?>
             <div><strong>الدليفري:</strong> <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <?php if ($show_bal_lines): ?>
+            <div><strong>الحساب السابق:</strong> <?= htmlspecialchars($fmtPartyBal($party_bal_before), ENT_QUOTES, 'UTF-8') ?></div>
+            <div><strong>الحساب بعد الفاتورة:</strong> <?= htmlspecialchars($fmtPartyBal($party_bal_after), ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
         </div>
     </div>

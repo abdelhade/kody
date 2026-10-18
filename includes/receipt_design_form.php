@@ -13,7 +13,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 ?>
 
 <style>
-/* تحسين مظهر وتأثيرات الأكورديون دون تعارض مع Bootstrap */
+/* أقسام التخصيص — فتح/قفل يدوي بدون Bootstrap .collapse (بيتعارض مع AdminLTE) */
 #receiptDesignAccordion .card {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
@@ -39,6 +39,12 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 }
 #receiptDesignAccordion .card-header.rd-acc-header.collapsed .rd-acc-chevron {
   transform: rotate(0deg);
+}
+#receiptDesignAccordion .rd-panel {
+  display: none;
+}
+#receiptDesignAccordion .rd-panel.is-open {
+  display: block;
 }
 
 /* تنسيق المعاينة الحية لـ A4 ورول الكاشير */
@@ -147,11 +153,12 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
           </div>
         </div>
 
-        <div class="accordion" id="receiptDesignAccordion">
+        <!-- أقسام مستقلة (مش Bootstrap accordion) لتفادي conflict مع كروت AdminLTE -->
+        <div id="receiptDesignAccordion" class="rd-sections">
 
           <!-- 1. مقاس الورقة وسلوك الطباعة -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header" id="headingPaper" style="cursor: pointer;" data-toggle="collapse" data-target="#collapsePaper" aria-expanded="true">
+            <div class="card-header bg-white py-3 rd-acc-header" id="rdHeadingPaper" style="cursor: pointer;" role="button" aria-expanded="true" aria-controls="rdPanelPaper">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-ruler-combined text-primary ml-2"></i> 1. مقاس الورقة، الخطوط وسلوك الطباعة
@@ -159,7 +166,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapsePaper" class="collapse show">
+            <div id="rdPanelPaper" class="rd-panel is-open" aria-labelledby="rdHeadingPaper">
               <div class="card-body">
                 <div class="row">
                   <div class="col-md-6">
@@ -275,7 +282,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 
           <!-- 2. الترويسة والشعار وبيانات الشركة -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="headingHeader" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseHeader" aria-expanded="false">
+            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="rdHeadingCompany" style="cursor: pointer;" role="button" aria-expanded="false" aria-controls="rdPanelCompany">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-building text-info ml-2"></i> 2. الشعار، اسم الشركة وبيانات الترويسة
@@ -283,7 +290,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapseHeader" class="collapse">
+            <div id="rdPanelCompany" class="rd-panel" aria-labelledby="rdHeadingCompany">
               <div class="card-body">
                 <div class="row">
                   <div class="col-md-6">
@@ -353,7 +360,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 
           <!-- 3. بيانات الفاتورة والعميل -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="headingMeta" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseMeta" aria-expanded="false">
+            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="rdHeadingMeta" style="cursor: pointer;" role="button" aria-expanded="false" aria-controls="rdPanelMeta">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-file-invoice text-success ml-2"></i> 3. بيانات الفاتورة، الباركود والعميل
@@ -361,7 +368,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapseMeta" class="collapse">
+            <div id="rdPanelMeta" class="rd-panel" aria-labelledby="rdHeadingMeta">
               <div class="card-body">
                 <div class="row">
                   <div class="col-md-6">
@@ -444,6 +451,12 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                       <label class="custom-control-label" for="rd_show_customer_address">عنوان العميل</label>
                     </div>
                   </div>
+                  <div class="col-md-6">
+                    <div class="custom-control custom-switch mb-2">
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_customer_balance" name="rd_show_customer_balance" value="1" <?= !empty($rd['customer']['show_balance']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label" for="rd_show_customer_balance">رصيد الحساب قبل / بعد الفاتورة</label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -451,7 +464,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 
           <!-- 4. جدول الأصناف وتخصيص الأعمدة -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="headingItems" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseItems" aria-expanded="false">
+            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="rdHeadingItems" style="cursor: pointer;" role="button" aria-expanded="false" aria-controls="rdPanelItems">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-th-list text-warning ml-2"></i> 4. جدول الأصناف وتخصيص الأعمدة
@@ -459,7 +472,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapseItems" class="collapse">
+            <div id="rdPanelItems" class="rd-panel" aria-labelledby="rdHeadingItems">
               <div class="card-body">
                 <p class="small text-muted mb-3">اختر الأعمدة التي تظهر في جدول الأصناف في الفاتورة المطبوعة:</p>
                 <div class="row">
@@ -538,7 +551,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 
           <!-- 5. الإجماليات والمبالغ -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="headingTotals" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseTotals" aria-expanded="false">
+            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="rdHeadingTotals" style="cursor: pointer;" role="button" aria-expanded="false" aria-controls="rdPanelTotals">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-calculator text-danger ml-2"></i> 5. الإجماليات، الخصومات والمدفوع
@@ -546,7 +559,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapseTotals" class="collapse">
+            <div id="rdPanelTotals" class="rd-panel" aria-labelledby="rdHeadingTotals">
               <div class="card-body">
                 <div class="row">
                   <div class="col-6 col-md-4">
@@ -610,7 +623,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
 
           <!-- 6. التذييل والملاحظات -->
           <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="headingFooter" style="cursor: pointer;" data-toggle="collapse" data-target="#collapseFooter" aria-expanded="false">
+            <div class="card-header bg-white py-3 rd-acc-header collapsed" id="rdHeadingFooter" style="cursor: pointer;" role="button" aria-expanded="false" aria-controls="rdPanelFooter">
               <div class="d-flex justify-content-between align-items-center">
                 <span class="font-weight-bold text-dark">
                   <i class="fas fa-comment-dots text-purple ml-2"></i> 6. التذييل والشروط والأحكام
@@ -618,7 +631,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                 <i class="fas fa-chevron-down text-muted rd-acc-chevron"></i>
               </div>
             </div>
-            <div id="collapseFooter" class="collapse">
+            <div id="rdPanelFooter" class="rd-panel" aria-labelledby="rdHeadingFooter">
               <div class="card-body">
                 <div class="row">
                   <div class="col-12">
@@ -640,7 +653,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
             </div>
           </div>
 
-        </div> <!-- /accordion -->
+        </div> <!-- /rd-sections -->
       </div>
 
       <!-- عمود المعاينة الحية الفورية (Live Sticky Preview) -->
@@ -721,6 +734,8 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                         <div id="prevCustName"><strong>العميل:</strong> محمد إبراهيم</div>
                         <div id="prevCustPhone"><strong>الهاتف:</strong> 01122334455</div>
                         <div id="prevCustAddress"><strong>العنوان:</strong> مدينة نصر - الحي السابع</div>
+                        <div id="prevCustBalBefore"><strong>الحساب السابق:</strong> 150.00 مدين</div>
+                        <div id="prevCustBalAfter"><strong>الحساب بعد الفاتورة:</strong> 275.00 مدين</div>
                       </div>
                     </div>
 
@@ -1180,9 +1195,14 @@ document.addEventListener('DOMContentLoaded', function () {
       var cName = document.getElementById('prevCustName');
       var cPhone = document.getElementById('prevCustPhone');
       var cAdd = document.getElementById('prevCustAddress');
+      var cBalBefore = document.getElementById('prevCustBalBefore');
+      var cBalAfter = document.getElementById('prevCustBalAfter');
       if (cName) cName.style.display = isChecked('rd_show_customer_name') ? 'block' : 'none';
       if (cPhone) cPhone.style.display = isChecked('rd_show_customer_phone') ? 'block' : 'none';
       if (cAdd) cAdd.style.display = isChecked('rd_show_customer_address') ? 'block' : 'none';
+      var showBal = isChecked('rd_show_customer_balance');
+      if (cBalBefore) cBalBefore.style.display = showBal ? 'block' : 'none';
+      if (cBalAfter) cBalAfter.style.display = showBal ? 'block' : 'none';
     }
 
     // بناء جدول الأصناف ديناميكياً
@@ -1399,27 +1419,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // إدارة الأكورديون ومزامنة الأسهم دون أي تعارض
+  // فتح/قفل الأقسام يدوياً — بدون Bootstrap Collapse (كان بيفتح ويقفل فوراً)
   if (window.jQuery) {
-    // فتح جميع الأقسام
+    var $rdSections = $('#receiptDesignAccordion');
+
+    function rdSetPanelOpen($header, $panel, open) {
+      $panel.toggleClass('is-open', open);
+      $header.toggleClass('collapsed', !open).attr('aria-expanded', open ? 'true' : 'false');
+    }
+
+    $rdSections.on('click', '.rd-acc-header', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $header = $(this);
+      var $panel = $header.next('.rd-panel');
+      if (!$panel.length) return;
+      rdSetPanelOpen($header, $panel, !$panel.hasClass('is-open'));
+    });
+
     $('#rdBtnExpandAll').on('click', function (e) {
       e.preventDefault();
-      $('#receiptDesignAccordion .collapse').collapse('show');
+      $rdSections.children('.card').each(function () {
+        rdSetPanelOpen($(this).children('.rd-acc-header'), $(this).children('.rd-panel'), true);
+      });
     });
 
-    // طي جميع الأقسام
     $('#rdBtnCollapseAll').on('click', function (e) {
       e.preventDefault();
-      $('#receiptDesignAccordion .collapse').collapse('hide');
-    });
-
-    // مزامنة حالة السهم عند الفتح والطي مع أحداث Bootstrap
-    $('#receiptDesignAccordion').on('show.bs.collapse', function (e) {
-      $(e.target).prev('.card-header').removeClass('collapsed').attr('aria-expanded', 'true');
-    });
-
-    $('#receiptDesignAccordion').on('hide.bs.collapse', function (e) {
-      $(e.target).prev('.card-header').addClass('collapsed').attr('aria-expanded', 'false');
+      $rdSections.children('.card').each(function () {
+        rdSetPanelOpen($(this).children('.rd-acc-header'), $(this).children('.rd-panel'), false);
+      });
     });
   }
 
@@ -1525,6 +1554,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setChecked('rd_show_customer_name', true);
         setChecked('rd_show_customer_phone', true);
         setChecked('rd_show_customer_address', true);
+        setChecked('rd_show_customer_balance', true);
         setChecked('rd_show_col_index', true);
         setChecked('rd_show_col_code', true);
         setChecked('rd_show_col_name', true);
@@ -1578,6 +1608,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setChecked('rd_show_order_type', false);
         setChecked('rd_show_driver', false);
         setChecked('rd_show_customer', false);
+        setChecked('rd_show_customer_balance', false);
         setChecked('rd_show_col_index', false);
         setChecked('rd_show_col_code', false);
         setChecked('rd_show_col_name', true);
