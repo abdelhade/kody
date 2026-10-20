@@ -142,7 +142,7 @@
                     </div>
                 </div>
                 <div class="card-footer">
-                    <a href="operations_summary.php" class="view-all-btn">
+                    <a href="operations_summary.php?q=all" class="view-all-btn">
                         <span>عرض جميع العمليات</span>
                         <i class="fas fa-arrow-left"></i>
                     </a>

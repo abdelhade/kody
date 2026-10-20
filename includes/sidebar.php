@@ -1236,6 +1236,13 @@
               </li>
 
               <li class="nav-item">
+                <a href="operations_summary.php?q=all" class="nav-link">
+                  <i class="nav-icon fas fa-list-alt"></i>
+                  <p>كل العمليات</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
                 <a href="journals_without_operations.php" class="nav-link">
                   <i class="nav-icon fas fa-unlink"></i>
                   <p>القيود بدون عمليات</p>

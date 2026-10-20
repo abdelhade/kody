@@ -194,7 +194,8 @@ return [
         'sales_order'   => ['sales_orders.view', 'reports.sales'],
         'price_offer'   => ['quotations.view', 'reports.sales'],
         'purchase'      => ['purchases.view', 'reports.purchases'],
-    ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases'])],
+        'all'           => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
+    ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting'])],
 
     // ===== نقاط البيع =====
     'pos_clothes.php'          => 'pos.use',

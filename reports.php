@@ -45,6 +45,7 @@ $reportGroups = [
         'icon' => 'fa-balance-scale',
         'perm' => 'sid_accounts',
         'items' => [
+            ['href' => 'operations_summary.php?q=all', 'icon' => 'fa-list-alt', 'title' => 'كل العمليات'],
             ['href' => 'summary.php', 'icon' => 'fa-file-alt', 'title' => $lang_account_statement ?? 'كشف حساب'],
             ['href' => 'balance_sheet.php', 'icon' => 'fa-balance-scale', 'title' => $lang_balance_sheet ?? 'تقرير الميزانية'],
             ['href' => 'profit_loss.php', 'icon' => 'fa-chart-line', 'title' => $lang_profit_loss ?? 'الأرباح والخسائر'],

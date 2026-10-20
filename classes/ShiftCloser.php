@@ -279,12 +279,29 @@ class ShiftCloser
             'expenses' => 0.0, 'receipts' => 0.0, 'movements' => [], 'opened_at' => null,
         ];
 
+        // المدفوع من سندات القبض/الدفع المرتبطة (op2) — المصدر الحقيقي؛
+        // paid_amount fallback لو مفيش سندات (بيانات قديمة أو مسار ناقص).
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, COUNT(*) AS cnt,
                     COALESCE(SUM(oh.fat_total), 0) AS gross,
                     COALESCE(SUM(oh.fat_disc), 0) AS disc,
                     COALESCE(SUM(oh.fat_net), 0) AS net,
-                    COALESCE(SUM(LEAST(GREATEST(COALESCE(oh.paid_amount, 0), 0), GREATEST(COALESCE(oh.fat_net, 0), 0))), 0) AS collected
+                    COALESCE(SUM(
+                        LEAST(
+                            GREATEST(
+                                COALESCE(
+                                    (SELECT SUM(v.pro_value)
+                                     FROM ot_head v
+                                     WHERE v.op2 = oh.id AND v.id <> oh.id
+                                       AND v.pro_tybe IN (1, 2) AND v.isdeleted = 0),
+                                    oh.paid_amount,
+                                    0
+                                ),
+                                0
+                            ),
+                            GREATEST(COALESCE(oh.fat_net, 0), 0)
+                        )
+                    ), 0) AS collected
              FROM ot_head oh
              WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)
              GROUP BY oh.pro_tybe"

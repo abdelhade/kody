@@ -11,15 +11,10 @@ $enddate = isset($_GET['enddate']) ? $conn->real_escape_string($_GET['enddate'])
 $search = isset($_GET['search']) ? $_GET['search'] : null;
 $filter_delivery = isset($_GET['delivery_person']) ? intval($_GET['delivery_person']) : 0;
 $filter_order_type = isset($_GET['order_type']) ? trim($_GET['order_type']) : '';
+$filter_pro_tybe = isset($_GET['pro_tybe']) ? intval($_GET['pro_tybe']) : 0;
 $allowed_order_types = ['takeaway', 'table', 'delivery', 'dine_in'];
 if (!in_array($filter_order_type, $allowed_order_types, true)) {
     $filter_order_type = '';
-}
-
-// تأكد من عمود الطيار على ot_head
-$col_dp = @$conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
-if ($col_dp && $col_dp->num_rows == 0) {
-    @$conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
 }
 
 // التحقق من صيغة التاريخ
@@ -64,6 +59,9 @@ if ($filter_order_type !== '') {
     } elseif ($filter_order_type === 'dine_in') {
         $extraFilter .= " AND ot.order_type = 'dine_in'";
     }
+}
+if ($filter_pro_tybe > 0 && ($q === 'all' || $q === '')) {
+    $extraFilter .= " AND ot.pro_tybe = $filter_pro_tybe";
 }
 
 // Sorting
@@ -144,7 +142,8 @@ switch ($q) {
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
-        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        // 3 مبيعات، 9 كاشير، 11 مردود مبيعات (مش 10 = مردود مشتريات)
+        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 11) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     case "sales_order":
@@ -157,11 +156,14 @@ switch ($q) {
         $where_clause = "ot.pro_tybe = 14 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
+    case "all":
     default:
-        $report_name = "التقرير الشامل";
+        $q = 'all';
+        $report_name = "كل العمليات";
         $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
 }
+$is_all_operations_report = ($q === 'all');
 $is_sales_order_report = in_array($q, ['sales_order', 'price_offer'], true);
 $order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
 $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
@@ -182,7 +184,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header">
-                    <h3> - محلل العمل اليومي <?= $report_name ?></h3>
+                    <h3><?= $is_all_operations_report ? 'تقرير كل العمليات' : ('محلل العمل اليومي - ' . $report_name) ?></h3>
                     
                     <?php if (isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -218,6 +220,23 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                 <label>إلى</label>
                                 <input class="form-control" type="date" value="<?= $enddate_display ?>" name="enddate">
                             </div>
+                            <?php if ($is_all_operations_report) { ?>
+                            <div class="col-md-2 col-sm-6 col-12 mb-2">
+                                <label>نوع العملية</label>
+                                <select class="form-control" name="pro_tybe">
+                                    <option value="">الكل</option>
+                                    <?php
+                                    $res_types = $conn->query("SELECT id, pname FROM pro_tybes ORDER BY id");
+                                    if ($res_types) {
+                                        while ($pt = $res_types->fetch_assoc()) {
+                                            $sel = ($filter_pro_tybe === (int)$pt['id']) ? 'selected' : '';
+                                            echo '<option value="' . (int)$pt['id'] . '" ' . $sel . '>' . htmlspecialchars($pt['pname']) . '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <?php } ?>
                             <div class="col-md-2 col-sm-6 col-12 mb-2">
                                 <label>نوع الأوردر</label>
                                 <select class="form-control" name="order_type">
@@ -331,7 +350,13 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                     $emp_display = !empty($rowop['emp_name']) ? $rowop['emp_name'] : ($rowop['emp_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['emp_id']))->fetch_assoc()['aname'] ?? '') : '');
                                     $driver_display = !empty($rowop['driver_name']) ? $rowop['driver_name'] : '';
                                     $user_display = !empty($rowop['user_name']) ? $rowop['user_name'] : (!empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '');
-                                    $payment_sort_val = $is_sales_order ? 0 : ($paid_amount < $rowop['fat_net'] ? 1 : 2);
+                                    $invoice_id = intval($rowop['id']);
+                                    $paid_amount = 0;
+                                    if (!$is_sales_order) {
+                                        $paid_query = $conn->query("SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = $invoice_id AND isdeleted != 1");
+                                        $paid_amount = ($paid_query && $row_paid = $paid_query->fetch_assoc()) ? (float)($row_paid['paid'] ?? 0) : 0;
+                                    }
+                                    $payment_sort_val = $is_sales_order ? 0 : ($paid_amount < (float)$rowop['fat_net'] ? 1 : 2);
                                     ?>
                                     <tr class="<?= $is_return ? 'table-danger' : '' ?>">
                                         <td data-sort="<?= $x ?>"><?= $x ?></td>
@@ -351,16 +376,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                             </a>
                                         </td>
                                         <td data-sort="<?= $payment_sort_val ?>">
-                                            <?php 
-                                            $invoice_id = intval($rowop['id']);
-                                            $paid_amount = 0;
-                                            if (!$is_sales_order) {
-                                                $paid_query = $conn->query("SELECT SUM(pro_value) as paid FROM ot_head WHERE op2 = $invoice_id AND isdeleted != 1");
-                                                $paid_amount = ($paid_query && $row_paid = $paid_query->fetch_assoc()) ? ($row_paid['paid'] ?? 0) : 0;
-                                            }
-                                            
-                                            if ($is_sales_order):
-                                            ?>
+                                            <?php if ($is_sales_order): ?>
                                                 <span class="text-muted">—</span>
                                             <?php elseif ($paid_amount < $rowop['fat_net']): ?>
                                                 <span class="badge badge-warning">أجل</span>
