@@ -66,6 +66,35 @@ if ($filter_order_type !== '') {
     }
 }
 
+// Sorting
+$sort = isset($_GET['sort']) ? trim($_GET['sort']) : '';
+$dir = isset($_GET['dir']) && strtolower($_GET['dir']) === 'asc' ? 'asc' : 'desc';
+$dir_sql = strtoupper($dir);
+
+$sort_map = [
+    'id' => 'ot.id',
+    'date' => 'ot.crtime',
+    'pro_date' => 'ot.pro_date',
+    'type' => 'pt.pname',
+    'payment' => 'ot.fat_net',
+    'value' => 'ot.pro_value',
+    'pro_value' => 'ot.pro_value',
+    'net' => 'ot.fat_net',
+    'fat_net' => 'ot.fat_net',
+    'profit' => 'ot.profit',
+    'acc1' => 'acc1.aname',
+    'acc2' => 'acc2.aname',
+    'store' => 'st.aname',
+    'emp' => 'emp.aname',
+    'driver' => 'drv.aname',
+    'user' => 'u.uname',
+];
+
+$order_by = "ot.id DESC";
+if (!empty($sort) && isset($sort_map[$sort])) {
+    $order_by = $sort_map[$sort] . " " . $dir_sql . ", ot.id " . $dir_sql;
+}
+
 // Pagination
 $limit = 9999;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -75,10 +104,23 @@ $offset = ($page - 1) * $limit;
 $join_clause = "FROM ot_head ot
     LEFT JOIN acc_head acc1 ON acc1.id = ot.acc1
     LEFT JOIN acc_head acc2 ON acc2.id = ot.acc2
+    LEFT JOIN acc_head st ON st.id = ot.store_id
+    LEFT JOIN acc_head emp ON emp.id = ot.emp_id
+    LEFT JOIN users u ON u.id = ot.user
+    LEFT JOIN pro_tybes pt ON pt.id = ot.pro_tybe
     LEFT JOIN acc_head drv ON drv.id = COALESCE(
         NULLIF(ot.delivery_person_id, 0),
         IF(ot.emp2_id IS NOT NULL AND ot.emp2_id <> 0 AND ot.emp2_id <> ot.emp_id AND (ot.order_type = 'delivery' OR ot.info LIKE '%دليفري%' OR ot.info LIKE '%مندوب التوصيل%'), ot.emp2_id, NULL)
     )";
+
+$select_fields = "ot.*, 
+    drv.aname AS driver_name, 
+    acc1.aname AS acc1_name, 
+    acc2.aname AS acc2_name, 
+    st.aname AS store_name, 
+    emp.aname AS emp_name, 
+    u.uname AS user_name, 
+    pt.pname AS pro_type_name";
 
 // Replace date filter to use ot. alias
 $dateFilter = "";
@@ -97,28 +139,28 @@ switch ($q) {
     case "sale_legacy": // للتوافقية
         $report_name = "مشتريات";
         $where_clause = "ot.pro_tybe = 4 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
         $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 10) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     case "sales_order":
         $report_name = "أوامر البيع";
         $where_clause = "ot.pro_tybe = 13 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     case "price_offer":
         $report_name = "عروض الأسعار";
         $where_clause = "ot.pro_tybe = 14 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     default:
         $report_name = "التقرير الشامل";
         $where_clause = "ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
-        $resop = $conn->query("SELECT ot.*, drv.aname AS driver_name $join_clause WHERE $where_clause ORDER BY ot.id DESC LIMIT $limit OFFSET $offset");
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
 }
 $is_sales_order_report = in_array($q, ['sales_order', 'price_offer'], true);
 $order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
@@ -165,6 +207,8 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                         $enddate_display = $enddate ?: date("Y-m-d");
                         ?>
                         <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
+                        <input type="hidden" name="sort" id="sortInput" value="<?= htmlspecialchars($sort) ?>">
+                        <input type="hidden" name="dir" id="dirInput" value="<?= htmlspecialchars(strtolower($dir)) ?>">
                         <div class="row">
                             <div class="col-md-2 col-sm-6 col-12 mb-2">
                                 <label>من</label>
@@ -227,24 +271,24 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover table-bordered table-sm" id="" data-page-length="10">
+                        <table class="table table-hover table-bordered table-sm" id="operationsTable" data-page-length="10">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>الوقت و التاريخ</th>
-                                    <th>اسم العملية</th>
-                                    <th>طريقة الدفع</th>
-                                    <th>قيمة العملية</th>
-                                    <th>صافي العملية</th>
-                                    <th>المدفوع</th>
-                                    <th>الحساب</th>
-                                    <th>الحساب المقابل</th>
-                                    <th>المخزن</th>
-                                    <th>الموظف</th>
-                                    <th>الطيار</th>
-                                    <th>الربح</th>
-                                    <th>المستخدم</th>
-                                    <th>معرف</th>
+                                    <th class="sortable text-nowrap" data-col="0" data-type="number" data-sort-key="num" title="انقر للترتيب"># <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="1" data-type="date" data-sort-key="date" title="انقر للترتيب">الوقت و التاريخ <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="2" data-type="text" data-sort-key="type" title="انقر للترتيب">اسم العملية <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="3" data-type="text" data-sort-key="payment" title="انقر للترتيب">طريقة الدفع <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="4" data-type="number" data-sort-key="pro_value" title="انقر للترتيب">قيمة العملية <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="5" data-type="number" data-sort-key="fat_net" title="انقر للترتيب">صافي العملية <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="6" data-type="number" data-sort-key="paid" title="انقر للترتيب">المدفوع <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="7" data-type="text" data-sort-key="acc1" title="انقر للترتيب">الحساب <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="8" data-type="text" data-sort-key="acc2" title="انقر للترتيب">الحساب المقابل <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="9" data-type="text" data-sort-key="store" title="انقر للترتيب">المخزن <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="10" data-type="text" data-sort-key="emp" title="انقر للترتيب">الموظف <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="11" data-type="text" data-sort-key="driver" title="انقر للترتيب">الطيار <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="12" data-type="number" data-sort-key="profit" title="انقر للترتيب">الربح <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="13" data-type="text" data-sort-key="user" title="انقر للترتيب">المستخدم <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
+                                    <th class="sortable text-nowrap" data-col="14" data-type="number" data-sort-key="id" title="انقر للترتيب">معرف <i class="fa fa-sort text-muted sort-icon ms-1"></i></th>
                                 </tr>
                                 <tr id="filterRow" style="display: none;">
                                     <td></td>
@@ -279,10 +323,20 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                     $is_return = ($tybe == 10);
                                     $is_sales_order = in_array((int) $tybe, [13, 14], true);
                                     ?>
+                                    <?php
+                                    $pro_type_display = !empty($rowop['pro_type_name']) ? $rowop['pro_type_name'] : ($conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?? '');
+                                    $acc1_display = !empty($rowop['acc1_name']) ? $rowop['acc1_name'] : (!empty($rowop['acc1']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc1']))->fetch_assoc()['aname'] ?? '') : '');
+                                    $acc2_display = !empty($rowop['acc2_name']) ? $rowop['acc2_name'] : (!empty($rowop['acc2']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc2']))->fetch_assoc()['aname'] ?? '') : '');
+                                    $store_display = !empty($rowop['store_name']) ? $rowop['store_name'] : ($rowop['store_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['store_id']))->fetch_assoc()['aname'] ?? '') : '');
+                                    $emp_display = !empty($rowop['emp_name']) ? $rowop['emp_name'] : ($rowop['emp_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['emp_id']))->fetch_assoc()['aname'] ?? '') : '');
+                                    $driver_display = !empty($rowop['driver_name']) ? $rowop['driver_name'] : '';
+                                    $user_display = !empty($rowop['user_name']) ? $rowop['user_name'] : (!empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '');
+                                    $payment_sort_val = $is_sales_order ? 0 : ($paid_amount < $rowop['fat_net'] ? 1 : 2);
+                                    ?>
                                     <tr class="<?= $is_return ? 'table-danger' : '' ?>">
-                                        <td><?= $x ?></td>
-                                        <td><?= $rowop['crtime'] ?></td>
-                                        <td>
+                                        <td data-sort="<?= $x ?>"><?= $x ?></td>
+                                        <td data-sort="<?= htmlspecialchars($rowop['crtime'] ?: ($rowop['pro_date'] ?? '')) ?>"><?= $rowop['crtime'] ?></td>
+                                        <td data-sort="<?= htmlspecialchars($pro_type_display) ?>">
                                             <?php
                                             $use_a4 = in_array((int) $tybe, [2, 3, 4, 13, 14], true);
                                             $a4_href = 'print/print_sales.php?id=' . (int) $proid;
@@ -293,10 +347,10 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                                href="<?= $print_href ?>"
                                                <?= $use_a4 ? 'data-a4="' . $a4_href . '" data-cashier="' . $cashier_href . '"' : '' ?>
                                                target="_blank">
-                                                <?= $conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?>
+                                                <?= htmlspecialchars($pro_type_display) ?>
                                             </a>
                                         </td>
-                                        <td>
+                                        <td data-sort="<?= $payment_sort_val ?>">
                                             <?php 
                                             $invoice_id = intval($rowop['id']);
                                             $paid_amount = 0;
@@ -314,11 +368,11 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                                 <span class="badge badge-success">نقدي</span>
                                             <?php endif; ?>
                                         </td>
-                                         <td class="value <?= $is_return ? 'ret-value' : 'sale-value' ?>"><?= $rowop['pro_value'] ?></td>
-                                        <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>">
+                                         <td class="value <?= $is_return ? 'ret-value' : 'sale-value' ?>" data-sort="<?= (float)$rowop['pro_value'] ?>"><?= $rowop['pro_value'] ?></td>
+                                        <td class="fatnet <?php if($rowop['pro_value'] != $rowop['fat_net']){echo "bg-yellow-300";} ?>" data-sort="<?= (float)$rowop['fat_net'] ?>">
                                             <?= $rowop['fat_net'] ?>
                                         </td>
-                                        <td class="paid-amount">
+                                        <td class="paid-amount" data-sort="<?= (float)$paid_amount ?>" data-paid="<?= (float)$paid_amount ?>" data-remaining="<?= (float)max(0, $rowop['fat_net'] - $paid_amount) ?>">
                                             <?php if ($is_sales_order): ?>
                                                 <span class="text-muted">—</span>
                                             <?php else: ?>
@@ -331,14 +385,14 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                             <?php endif; ?>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?= !empty($rowop['acc1']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc1']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
-                                        <td><?= !empty($rowop['acc2']) ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['acc2']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
-                                        <td><?= $rowop['store_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['store_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
-                                        <td><?= $rowop['emp_id'] > 0 ? ($conn->query("SELECT aname FROM acc_head WHERE id = " . intval($rowop['emp_id']))->fetch_assoc()['aname'] ?? '') : '' ?></td>
-                                        <td><?= !empty($rowop['driver_name']) ? htmlspecialchars($rowop['driver_name']) : '' ?></td>
-                                         <td class="prft"><?= $rowop['profit'] ?></td>
-                                        <td><?= !empty($rowop['user']) ? ($conn->query("SELECT uname FROM users WHERE id = " . intval($rowop['user']))->fetch_assoc()['uname'] ?? '') : '' ?></td>
-                                        <td>
+                                        <td data-sort="<?= htmlspecialchars($acc1_display) ?>"><?= htmlspecialchars($acc1_display) ?></td>
+                                        <td data-sort="<?= htmlspecialchars($acc2_display) ?>"><?= htmlspecialchars($acc2_display) ?></td>
+                                        <td data-sort="<?= htmlspecialchars($store_display) ?>"><?= htmlspecialchars($store_display) ?></td>
+                                        <td data-sort="<?= htmlspecialchars($emp_display) ?>"><?= htmlspecialchars($emp_display) ?></td>
+                                        <td data-sort="<?= htmlspecialchars($driver_display) ?>"><?= htmlspecialchars($driver_display) ?></td>
+                                         <td class="prft" data-sort="<?= (float)$rowop['profit'] ?>"><?= $rowop['profit'] ?></td>
+                                        <td data-sort="<?= htmlspecialchars($user_display) ?>"><?= htmlspecialchars($user_display) ?></td>
+                                        <td data-sort="<?= (int)$rowop['id'] ?>">
                                             <?= $rowop['id'] ?>
                                             <?php if ($canInvOperations) { ?>
                                             <a href="inv_operations.php?h=<?= md5($proid) ?>&q=<?= $proid ?>&t=<?= md5($tybe) ?>">
@@ -482,6 +536,14 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                 <strong id="net_sales_val" style="font-size:1.15rem;">0.00</strong>
                                 <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="net_after_returns">0.00</span></small>
                             </div>
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#007bff; min-width:130px;">
+                                <small class="d-block">إجمالي المدفوع (المحصل)</small>
+                                <strong id="total_paid_val" style="font-size:1.15rem;">0.00</strong>
+                            </div>
+                            <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#fd7e14; min-width:130px;">
+                                <small class="d-block">إجمالي الآجل (المتبقي)</small>
+                                <strong id="total_remaining_val" style="font-size:1.15rem;">0.00</strong>
+                            </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#00796b; min-width:130px;">
                                 <small class="d-block">الأرباح</small>
                                 <strong id="total_profit_val" style="font-size:1.15rem;">0.00</strong>
@@ -508,6 +570,8 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                             if (!empty($search)) $filter_params .= "&search=" . urlencode($search);
                             if ($filter_delivery > 0) $filter_params .= "&delivery_person=" . $filter_delivery;
                             if ($filter_order_type !== '') $filter_params .= "&order_type=" . urlencode($filter_order_type);
+                            if (!empty($sort)) $filter_params .= "&sort=" . urlencode($sort);
+                            if (!empty($dir)) $filter_params .= "&dir=" . urlencode(strtolower($dir));
                             
                             // زر السابق
                             if ($page > 1): ?>
@@ -637,6 +701,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
             let fatnet_sales = 0;
             let fatnet_returns = 0;
             let paid = 0;
+            let remaining = 0;
             let profit = 0;
             
             visibleRows.forEach(row => {
@@ -647,7 +712,8 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                 
                 const val = valEl ? parseFloat(valEl.textContent.trim()) || 0 : 0;
                 const net = netEl ? parseFloat(netEl.textContent.trim()) || 0 : 0;
-                const pd = paidEl ? parseFloat(paidEl.textContent.trim()) || 0 : 0;
+                const pd = paidEl ? (parseFloat(paidEl.getAttribute("data-paid") ?? paidEl.getAttribute("data-sort")) || 0) : 0;
+                const rem = paidEl ? (parseFloat(paidEl.getAttribute("data-remaining")) || 0) : 0;
                 const prft = prftEl ? parseFloat(prftEl.textContent.trim()) || 0 : 0;
                 
                 if (valEl) {
@@ -659,11 +725,12 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                         sales += val;
                         fatnet_sales += net;
                         profit += prft;
+                        paid += pd;
+                        remaining += rem;
                     }
                 }
                 
                 fatnet += net;
-                paid += pd;
             });
             
             const net = sales - returns;
@@ -679,6 +746,8 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
             setVal("total_returns_val", returns);
             setVal("net_after_returns", net_after_returns);
             setVal("net_sales_val", net);
+            setVal("total_paid_val", paid);
+            setVal("total_remaining_val", remaining);
             setVal("total_profit_val", profit);
 
             setVal("so_total_val", sales);
@@ -746,6 +815,128 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                 if (el) el.classList.add('active', 'btn-secondary');
             }
         })();
+
+        // Sorting initialization
+        (function initTableSorting() {
+            const table = document.getElementById("operationsTable") || document.querySelector(".table-responsive table");
+            if (!table) return;
+
+            const thead = table.querySelector("thead");
+            const tbody = table.querySelector("tbody");
+            if (!thead || !tbody) return;
+
+            const headers = thead.querySelectorAll("tr:first-child th.sortable");
+
+            function updateIcons(activeTh, direction) {
+                headers.forEach(h => {
+                    h.removeAttribute("data-sort-dir");
+                    h.classList.remove("sorted-asc", "sorted-desc");
+                    const icon = h.querySelector(".sort-icon");
+                    if (icon) {
+                        icon.className = "fa fa-sort text-muted sort-icon ms-1";
+                    }
+                });
+                if (activeTh) {
+                    activeTh.setAttribute("data-sort-dir", direction);
+                    activeTh.classList.add(direction === "asc" ? "sorted-asc" : "sorted-desc");
+                    const icon = activeTh.querySelector(".sort-icon");
+                    if (icon) {
+                        icon.className = direction === "asc" 
+                            ? "fa fa-sort-up text-primary sort-icon ms-1" 
+                            : "fa fa-sort-down text-primary sort-icon ms-1";
+                    }
+                }
+            }
+
+            function sortRows(colIdx, type, direction) {
+                const rows = Array.from(tbody.querySelectorAll("tr"));
+                if (rows.length === 0) return;
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[colIdx];
+                    const cellB = rowB.cells[colIdx];
+                    if (!cellA || !cellB) return 0;
+
+                    let valA = cellA.getAttribute("data-sort");
+                    if (valA === null || valA === undefined) valA = cellA.textContent.trim();
+                    let valB = cellB.getAttribute("data-sort");
+                    if (valB === null || valB === undefined) valB = cellB.textContent.trim();
+
+                    let cmp = 0;
+                    if (type === "number") {
+                        const nA = parseFloat(valA) || 0;
+                        const nB = parseFloat(valB) || 0;
+                        cmp = nA - nB;
+                    } else if (type === "date") {
+                        const tA = Date.parse((valA + "").replace(" ", "T")) || 0;
+                        const tB = Date.parse((valB + "").replace(" ", "T")) || 0;
+                        cmp = tA - tB;
+                    } else {
+                        cmp = (valA + "").localeCompare(valB + "", "ar", { numeric: true, sensitivity: "base" });
+                    }
+
+                    if (cmp === 0) {
+                        const idA = parseInt(rowA.cells[14]?.getAttribute("data-sort") || 0, 10);
+                        const idB = parseInt(rowB.cells[14]?.getAttribute("data-sort") || 0, 10);
+                        cmp = idA - idB;
+                    }
+
+                    return direction === "asc" ? cmp : -cmp;
+                });
+
+                const frag = document.createDocumentFragment();
+                rows.forEach((r, i) => {
+                    if (colIdx !== 0 && r.cells[0]) {
+                        r.cells[0].textContent = (i + 1);
+                    }
+                    frag.appendChild(r);
+                });
+                tbody.appendChild(frag);
+            }
+
+            headers.forEach(th => {
+                th.addEventListener("click", function(e) {
+                    if (e.target.closest("button, a, input, select")) return;
+
+                    const colIdx = parseInt(this.getAttribute("data-col"), 10);
+                    const type = this.getAttribute("data-type") || "text";
+                    const sortKey = this.getAttribute("data-sort-key") || "";
+                    const currentDir = this.getAttribute("data-sort-dir") || "none";
+                    const newDir = (currentDir === "asc") ? "desc" : "asc";
+
+                    updateIcons(this, newDir);
+                    sortRows(colIdx, type, newDir);
+
+                    // Update URL and form inputs without full page reload
+                    const url = new URL(window.location.href);
+                    if (sortKey) {
+                        url.searchParams.set("sort", sortKey);
+                    }
+                    url.searchParams.set("dir", newDir);
+                    window.history.replaceState({}, "", url.toString());
+
+                    const sortInput = document.getElementById("sortInput");
+                    const dirInput = document.getElementById("dirInput");
+                    if (sortInput && sortKey) sortInput.value = sortKey;
+                    if (dirInput) dirInput.value = newDir;
+                });
+            });
+
+            // Initial highlight if URL had sort
+            const currentSort = <?= json_encode($sort) ?>;
+            const currentDir = <?= json_encode(strtolower($dir)) ?> || "desc";
+            if (currentSort) {
+                const matchingTh = Array.from(headers).find(h => h.getAttribute("data-sort-key") === currentSort);
+                if (matchingTh) {
+                    updateIcons(matchingTh, currentDir);
+                }
+            } else {
+                const idTh = Array.from(headers).find(h => h.getAttribute("data-sort-key") === "id");
+                if (idTh) {
+                    updateIcons(idTh, "desc");
+                }
+            }
+        })();
     });
 </script>
 <script>
@@ -784,6 +975,25 @@ function printBrutal() {
 </script>
 
 <style>
+th.sortable {
+    cursor: pointer !important;
+    user-select: none !important;
+    position: relative;
+    transition: background-color .15s ease-in-out, color .15s ease-in-out;
+}
+th.sortable:hover {
+    background-color: rgba(0, 123, 255, 0.08) !important;
+}
+th.sortable.sorted-asc,
+th.sortable.sorted-desc {
+    background-color: rgba(0, 123, 255, 0.15) !important;
+    color: #0056b3 !important;
+}
+th.sortable .sort-icon {
+    font-size: 0.85em;
+    margin-right: 4px;
+    vertical-align: middle;
+}
 .summary-card {
     border: 2px solid var(--c);
     border-radius: 8px;
@@ -969,6 +1179,14 @@ function printBrutal() {
             <div style="font-size: 24px; font-weight: 900;" id="brutal_net">0.00</div>
         </div>
         <div class="brutal-summary-box">
+            <div style="font-size: 12px;">المدفوع (المحصل)</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_paid">0.00</div>
+        </div>
+        <div class="brutal-summary-box">
+            <div style="font-size: 12px;">الآجل (المتبقي)</div>
+            <div style="font-size: 24px; font-weight: 900;" id="brutal_remaining">0.00</div>
+        </div>
+        <div class="brutal-summary-box">
             <div style="font-size: 12px;">الأرباح</div>
             <div style="font-size: 24px; font-weight: 900;" id="brutal_profit">0.00</div>
         </div>
@@ -988,6 +1206,8 @@ $(document).ready(function() {
         copyVal('brutal_sales', 'total_sales_val', '0.00');
         copyVal('brutal_returns', 'total_returns_val', '0.00');
         copyVal('brutal_net', 'net_sales_val', '0.00');
+        copyVal('brutal_paid', 'total_paid_val', '0.00');
+        copyVal('brutal_remaining', 'total_remaining_val', '0.00');
         copyVal('brutal_profit', 'total_profit_val', '0.00');
         copyVal('brutal_so_count', 'so_count_val', '0');
         copyVal('brutal_so_total', 'so_total_val', '0.00');

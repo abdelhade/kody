@@ -122,6 +122,12 @@ function applyTabStyle(tabVal) {
         el.style.borderColor = style.orderItemBorder;
     });
 
+    // تغيير لون بادج العدد الإجمالي
+    const totalQtyBadge = document.getElementById('totalQty');
+    if (totalQtyBadge) {
+        totalQtyBadge.style.backgroundColor = style.netColor;
+    }
+
     // 7. حفظ الستايل الحالي ليُطبَّق على الأصناف الجديدة لاحقاً
     window._currentTabStyle = style;
 }
@@ -501,6 +507,8 @@ function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0, source) {
             price2: source ? parseFloat(source.price2) || 0 : 0,
             price3: source ? parseFloat(source.price3) || 0 : 0,
             quantity: 1,
+            discount: 0,
+            discountPercent: 0,
             balance: parseFloat(itemBalance) || 0
         });
     }
@@ -522,10 +530,12 @@ function addItemToOrder(itemId, itemName, itemPrice, itemBalance = 0, source) {
 function updateOrderDisplay() {
     const itemData = document.getElementById('itemData');
     const itemCount = document.getElementById('itemCount');
+    const totalQty = document.getElementById('totalQty');
     
     if (selectedItems.length === 0) {
         itemData.innerHTML = '<p class="text-muted text-center" style="font-size: 0.8rem;">لا توجد أصناف</p>';
-        itemCount.textContent = '0';
+        if (itemCount) itemCount.textContent = '0';
+        if (totalQty) totalQty.textContent = '0';
         updateTotals();
         return;
     }
@@ -533,37 +543,77 @@ function updateOrderDisplay() {
     const currentStyle = window._currentTabStyle || TAB_STYLES['1'];
 
     let html = '';
+    let totalQuantity = 0;
     selectedItems.forEach((item, index) => {
-        const subtotal = item.quantity * item.price;
+        const itemPrice = parseFloat(item.price) || 0;
+        const itemQty = parseFloat(item.quantity) || 1;
+        const itemDisc = parseFloat(item.discount) || 0;
+        const effectivePrice = Math.max(0, itemPrice - itemDisc);
+        const subtotal = itemQty * effectivePrice;
+        totalQuantity += itemQty;
+
+        const hasDiscount = itemDisc > 0;
+        const totalDiscount = itemDisc * itemQty;
+
         html += `
-            <div class="order-item p-2 mb-2" style="border-color: ${currentStyle.orderItemBorder};">
+            <div class="order-item p-2 mb-2" 
+                 data-index="${index}"
+                 style="border-color: ${currentStyle.orderItemBorder}; cursor: pointer;" 
+                 ondblclick="openItemDiscountModal(${index})" 
+                 title="اضغط مرتين لإضافة أو تعديل خصم على الصنف">
                 <div class="flex-grow-1">
-                    <div class="fw-bold text-dark" style="font-size: 1.8rem;">${item.name}</div>
-                    <div class="d-flex align-items-center gap-2 mt-2">
-                        <div class="fw-bold" style="font-size: 1.5rem; color: var(--primary-navy);">
-                            ${item.price.toFixed(2)} <span class="text-muted mx-1">×</span> <span style="font-size: 1.5rem; color: var(--primary-violet);">${item.quantity}</span>
+                    <div class="fw-bold text-dark" style="font-size: 1.4rem;">${item.name}</div>
+                    <div class="d-flex align-items-center flex-wrap gap-2 mt-2">
+                        <div class="d-flex align-items-center gap-1" ondblclick="event.stopPropagation();">
+                            <span class="text-muted fw-bold" style="font-size: 1rem;">السعر:</span>
+                            <input type="number" 
+                                   step="any" 
+                                   min="0"
+                                   class="form-control form-control-sm text-center fw-bold item-price-input" 
+                                   data-index="${index}" 
+                                   value="${itemPrice}" 
+                                   onclick="event.stopPropagation(); this.select();" 
+                                   ondblclick="event.stopPropagation();" 
+                                   title="تعديل السعر للبيع" 
+                                   style="width: 95px; font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); padding: 2px 4px; display: inline-block;">
                         </div>
-                        <span class="badge bg-light text-dark border ms-2" style="font-size: 1.5rem; padding: 0.35rem 0.6rem;">الرصيد: ${item.balance}</span>
+                        <span class="text-muted mx-1" style="font-size: 1.3rem;">×</span>
+                        <span style="font-size: 1.4rem; color: var(--primary-violet); font-weight: 800;">${itemQty}</span>
+                        <span class="badge bg-light text-dark border ms-2" style="font-size: 1.1rem; padding: 0.25rem 0.5rem;">الرصيد: ${item.balance}</span>
                     </div>
+                    ${hasDiscount ? `
+                        <div class="mt-2 d-flex align-items-center gap-1" ondblclick="event.stopPropagation();">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle item-discount-tag" 
+                                  onclick="event.stopPropagation(); openItemDiscountModal(${index})" 
+                                  title="اضغط لتعديل الخصم"
+                                  style="font-size: 0.95rem; padding: 3px 8px;">
+                                <i class="fas fa-tag me-1"></i>خصم: ${totalDiscount.toFixed(2)} ج.م (${itemDisc.toFixed(2)} للقطعة)
+                            </span>
+                            <button type="button" class="btn btn-sm text-danger p-0 ms-1" onclick="event.stopPropagation(); removeItemDiscount(${index});" title="إلغاء الخصم" style="line-height: 1;">
+                                <i class="fas fa-times-circle" style="font-size: 1.1rem;"></i>
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="text-end d-flex flex-column align-items-end justify-content-between h-100">
-                    <div class="fw-bold mb-2" style="color: var(--primary-violet); font-size: 1.4rem;">${subtotal.toFixed(2)}</div>
-                    <div class="btn-group btn-group-sm mt-1">
-                        <button type="button" class="btn btn-outline-secondary" onclick="decreaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
+                <div class="text-end d-flex flex-column align-items-end justify-content-between h-100 ms-2">
+                    <div class="fw-bold mb-1 item-subtotal-display" style="color: var(--primary-violet); font-size: 1.4rem;">${subtotal.toFixed(2)}</div>
+                    ${hasDiscount ? `<small class="text-muted text-decoration-line-through mb-1" style="font-size: 0.9rem;">${(itemPrice * itemQty).toFixed(2)}</small>` : ''}
+                    <div class="btn-group btn-group-sm mt-1" ondblclick="event.stopPropagation();">
+                        <button type="button" class="btn btn-outline-secondary" onclick="event.stopPropagation(); decreaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="increaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="event.stopPropagation(); increaseQuantity(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger" onclick="removeItem(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
+                        <button type="button" class="btn btn-outline-danger" onclick="event.stopPropagation(); removeItem(${index})" style="padding: 0.35rem 0.8rem; font-size: 1.1rem;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
                 <input type="hidden" name="itmname[]" value="${item.id}">
-                <input type="hidden" name="itmqty[]" value="${item.quantity}">
-                <input type="hidden" name="itmprice[]" value="${item.price}">
-                <input type="hidden" name="itmdisc[]" value="0">
+                <input type="hidden" name="itmqty[]" value="${itemQty}">
+                <input type="hidden" name="itmprice[]" value="${itemPrice}">
+                <input type="hidden" name="itmdisc[]" value="${itemDisc.toFixed(2)}">
                 <input type="hidden" name="u_val[]" value="1">
                 <input type="hidden" name="itmval[]" value="${subtotal.toFixed(2)}">
             </div>
@@ -571,49 +621,275 @@ function updateOrderDisplay() {
     });
     
     itemData.innerHTML = html;
-    itemCount.textContent = selectedItems.length;
+    if (itemCount) itemCount.textContent = selectedItems.length;
+    if (totalQty) totalQty.textContent = totalQuantity;
     updateTotals();
 }
 
 function increaseQuantity(index) {
-    selectedItems[index].quantity += 1;
-    updateOrderDisplay();
+    if (selectedItems[index]) {
+        selectedItems[index].quantity += 1;
+        updateOrderDisplay();
+    }
 }
 
 function decreaseQuantity(index) {
-    if (selectedItems[index].quantity > 1) {
+    if (selectedItems[index] && selectedItems[index].quantity > 1) {
         selectedItems[index].quantity -= 1;
         updateOrderDisplay();
     }
 }
 
 function removeItem(index) {
-    selectedItems.splice(index, 1);
-    updateOrderDisplay();
+    if (selectedItems[index]) {
+        selectedItems.splice(index, 1);
+        updateOrderDisplay();
+    }
 }
+
+function removeItemDiscount(index) {
+    if (selectedItems[index]) {
+        selectedItems[index].discount = 0;
+        selectedItems[index].discountPercent = 0;
+        updateOrderDisplay();
+    }
+}
+
+// نافذة خصم الصنف عند الضغط مرتين
+function openItemDiscountModal(index) {
+    const item = selectedItems[index];
+    if (!item) return;
+
+    const currentPrice = parseFloat(item.price) || 0;
+    const currentQty = parseFloat(item.quantity) || 1;
+    const currentDisc = parseFloat(item.discount) || 0;
+    const currentDiscPct = currentPrice > 0 ? ((currentDisc / currentPrice) * 100).toFixed(2) : '0';
+    const currentTotalDisc = (currentDisc * currentQty).toFixed(2);
+
+    Swal.fire({
+        title: `<div style="font-size: 1.3rem; font-weight: bold; color: var(--primary-navy);"><i class="fas fa-tag me-2 text-danger"></i>خصم على الصنف</div><div style="font-size: 1.1rem; color: var(--primary-violet); margin-top: 6px;">${item.name}</div>`,
+        html: `
+            <div class="text-start" style="font-size: 0.95rem; direction: rtl;">
+                <div class="mb-3 p-2 bg-light rounded text-center border">
+                    <span class="mx-2">السعر: <b class="text-primary">${currentPrice.toFixed(2)} ج.م</b></span> | 
+                    <span class="mx-2">الكمية: <b class="text-success">${currentQty}</b></span> | 
+                    <span class="mx-2">الإجمالي: <b>${(currentPrice * currentQty).toFixed(2)} ج.م</b></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-1"><i class="fas fa-money-bill me-1 text-success"></i>قيمة الخصم للقطعة (ج.م):</label>
+                    <input type="number" 
+                           id="swal_item_disc_val" 
+                           class="form-control form-control-lg text-center fw-bold" 
+                           data-price="${currentPrice}" 
+                           data-qty="${currentQty}" 
+                           step="any" min="0" max="${currentPrice}" 
+                           value="${currentDisc > 0 ? currentDisc : ''}" 
+                           placeholder="0.00">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-1"><i class="fas fa-percent me-1 text-primary"></i>أو نسبة الخصم (%):</label>
+                    <input type="number" 
+                           id="swal_item_disc_pct" 
+                           class="form-control form-control-lg text-center fw-bold" 
+                           data-price="${currentPrice}" 
+                           data-qty="${currentQty}" 
+                           step="any" min="0" max="100" 
+                           value="${currentDisc > 0 ? currentDiscPct : ''}" 
+                           placeholder="0 %">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold mb-1"><i class="fas fa-calculator me-1 text-warning"></i>إجمالي خصم الصنف للكمية كاملة (ج.م):</label>
+                    <input type="number" 
+                           id="swal_item_disc_total" 
+                           class="form-control form-control-lg text-center fw-bold" 
+                           data-price="${currentPrice}" 
+                           data-qty="${currentQty}" 
+                           step="any" min="0" max="${(currentPrice * currentQty).toFixed(2)}" 
+                           value="${currentDisc > 0 ? currentTotalDisc : ''}" 
+                           placeholder="0.00">
+                </div>
+                <div class="text-center p-2 rounded border mb-2" style="background: #eef2ff; color: #4338ca; font-size: 1.1rem;">
+                    صافي الصنف بعد الخصم: <b id="swal_item_net_preview" style="font-size: 1.3rem;">${(currentQty * Math.max(0, currentPrice - currentDisc)).toFixed(2)}</b> ج.م
+                </div>
+                ${currentDisc > 0 ? `
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" id="swal_clear_disc_btn">
+                            <i class="fas fa-trash me-1"></i>إلغاء الخصم عن هذا الصنف
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-check me-1"></i>تطبيق الخصم',
+        cancelButtonText: 'إلغاء',
+        confirmButtonColor: '#635BFF',
+        cancelButtonColor: '#6c757d',
+        focusConfirm: false,
+        onOpen: function() {
+            var input = document.getElementById('swal_item_disc_val');
+            if (input) {
+                setTimeout(function() {
+                    input.focus();
+                    input.select();
+                }, 50);
+            }
+        },
+        preConfirm: function() {
+            var valInput = document.getElementById('swal_item_disc_val');
+            var pctInput = document.getElementById('swal_item_disc_pct');
+            var val = parseFloat(valInput ? valInput.value : 0) || 0;
+            var pct = parseFloat(pctInput ? pctInput.value : 0) || 0;
+            if (val < 0 || val > currentPrice) {
+                Swal.showValidationMessage('قيمة الخصم للقطعة يجب أن تكون بين 0 و ' + currentPrice);
+                return false;
+            }
+            return { discount: val, discountPercent: pct };
+        }
+    }).then(function(result) {
+        if (result && result.value) {
+            item.discount = result.value.discount;
+            item.discountPercent = result.value.discountPercent;
+            updateOrderDisplay();
+        }
+    });
+}
+
+// مزامنة الخصم في نافذة خصم الصنف على keyup و input (عبر event delegation)
+$(document).on('keyup input', '#swal_item_disc_pct', function() {
+    const price = parseFloat($(this).data('price')) || 0;
+    const qty = parseFloat($(this).data('qty')) || 1;
+    let raw = $(this).val();
+    let pct = parseFloat(raw) || 0;
+    if (pct < 0) { pct = 0; $(this).val(0); }
+    if (pct > 100) { pct = 100; $(this).val(100); }
+
+    const unitDisc = (price * pct) / 100;
+    const totalDisc = unitDisc * qty;
+
+    $('#swal_item_disc_val').val(raw !== '' && unitDisc > 0 ? parseFloat(unitDisc.toFixed(2)) : (raw === '' ? '' : 0));
+    $('#swal_item_disc_total').val(raw !== '' && totalDisc > 0 ? parseFloat(totalDisc.toFixed(2)) : (raw === '' ? '' : 0));
+
+    const net = qty * Math.max(0, price - unitDisc);
+    $('#swal_item_net_preview').text(net.toFixed(2));
+});
+
+$(document).on('keyup input', '#swal_item_disc_val', function() {
+    const price = parseFloat($(this).data('price')) || 0;
+    const qty = parseFloat($(this).data('qty')) || 1;
+    let raw = $(this).val();
+    let unitDisc = parseFloat(raw) || 0;
+    if (unitDisc < 0) { unitDisc = 0; $(this).val(0); }
+    if (unitDisc > price && price > 0) { unitDisc = price; $(this).val(price); }
+
+    const pct = price > 0 ? (unitDisc / price) * 100 : 0;
+    const totalDisc = unitDisc * qty;
+
+    $('#swal_item_disc_pct').val(raw !== '' && pct > 0 ? parseFloat(pct.toFixed(2)) : (raw === '' ? '' : 0));
+    $('#swal_item_disc_total').val(raw !== '' && totalDisc > 0 ? parseFloat(totalDisc.toFixed(2)) : (raw === '' ? '' : 0));
+
+    const net = qty * Math.max(0, price - unitDisc);
+    $('#swal_item_net_preview').text(net.toFixed(2));
+});
+
+$(document).on('keyup input', '#swal_item_disc_total', function() {
+    const price = parseFloat($(this).data('price')) || 0;
+    const qty = parseFloat($(this).data('qty')) || 1;
+    let raw = $(this).val();
+    let totalDisc = parseFloat(raw) || 0;
+    const maxTotal = price * qty;
+    if (totalDisc < 0) { totalDisc = 0; $(this).val(0); }
+    if (totalDisc > maxTotal && maxTotal > 0) { totalDisc = maxTotal; $(this).val(maxTotal); }
+
+    const unitDisc = qty > 0 ? (totalDisc / qty) : 0;
+    const pct = price > 0 ? (unitDisc / price) * 100 : 0;
+
+    $('#swal_item_disc_val').val(raw !== '' && unitDisc > 0 ? parseFloat(unitDisc.toFixed(2)) : (raw === '' ? '' : 0));
+    $('#swal_item_disc_pct').val(raw !== '' && pct > 0 ? parseFloat(pct.toFixed(2)) : (raw === '' ? '' : 0));
+
+    const net = Math.max(0, maxTotal - totalDisc);
+    $('#swal_item_net_preview').text(net.toFixed(2));
+});
+
+$(document).on('click', '#swal_clear_disc_btn', function() {
+    $('#swal_item_disc_val').val(0);
+    $('#swal_item_disc_pct').val(0);
+    $('#swal_item_disc_total').val(0);
+    if (typeof Swal !== 'undefined' && Swal.clickConfirm) {
+        Swal.clickConfirm();
+    }
+});
+
+// تعديل سعر البيع مباشرة من سطر الصنف في الطلب
+$(document).on('input change', '.item-price-input', function(e) {
+    const index = parseInt($(this).data('index'));
+    if (isNaN(index) || !selectedItems[index]) return;
+    
+    let newPrice = parseFloat($(this).val());
+    if (isNaN(newPrice) || newPrice < 0) newPrice = 0;
+    
+    selectedItems[index].price = newPrice;
+    
+    // إذا كان الخصم أكبر من السعر الجديد، نقيد الخصم
+    if (selectedItems[index].discount > newPrice) {
+        selectedItems[index].discount = newPrice;
+    }
+    
+    const item = selectedItems[index];
+    const itemQty = parseFloat(item.quantity) || 1;
+    const itemDisc = parseFloat(item.discount) || 0;
+    const effectivePrice = Math.max(0, newPrice - itemDisc);
+    const subtotal = itemQty * effectivePrice;
+    
+    const $row = $(this).closest('.order-item');
+    $row.find('.item-subtotal-display').text(subtotal.toFixed(2));
+    $row.find('input[name="itmprice[]"]').val(newPrice);
+    $row.find('input[name="itmval[]"]').val(subtotal.toFixed(2));
+    
+    updateTotals();
+});
 
 function clearItems() {
     selectedItems = [];
     document.getElementById('itemData').innerHTML = '<p class="text-muted text-center" style="font-size: 0.8rem;">لا توجد أصناف</p>';
-    document.getElementById('itemCount').textContent = '0';
+    const itemCount = document.getElementById('itemCount');
+    const totalQty = document.getElementById('totalQty');
+    if (itemCount) itemCount.textContent = '0';
+    if (totalQty) totalQty.textContent = '0';
     updateTotals();
 }
 
 function updateTotals() {
     let total = 0;
+    let totalQty = 0;
     selectedItems.forEach(item => {
-        total += item.quantity * item.price;
+        const itemPrice = parseFloat(item.price) || 0;
+        const itemQty = parseFloat(item.quantity) || 0;
+        const itemDisc = parseFloat(item.discount) || 0;
+        const effectivePrice = Math.max(0, itemPrice - itemDisc);
+        total += itemQty * effectivePrice;
+        totalQty += itemQty;
     });
     
     const discount = parseFloat(document.getElementById('modal_discount')?.value || 0);
-    const net = total - discount;
+    const net = Math.max(0, total - discount);
     
-    document.getElementById('total_display').textContent = total.toFixed(2) + ' ج.م';
-    document.getElementById('net_display').textContent = net.toFixed(2) + ' ج.م';
-    document.getElementById('total_display_btn').textContent = net.toFixed(2) + ' ج.م';
+    const totalDisplay = document.getElementById('total_display');
+    const netDisplay = document.getElementById('net_display');
+    const totalDisplayBtn = document.getElementById('total_display_btn');
+    if (totalDisplay) totalDisplay.textContent = total.toFixed(2) + ' ج.م';
+    if (netDisplay) netDisplay.textContent = net.toFixed(2) + ' ج.م';
+    if (totalDisplayBtn) totalDisplayBtn.textContent = net.toFixed(2) + ' ج.م';
     
-    document.getElementById('total').value = total.toFixed(2);
-    document.getElementById('net_val').value = net.toFixed(2);
+    const totalInput = document.getElementById('total');
+    const netInput = document.getElementById('net_val');
+    if (totalInput) totalInput.value = total.toFixed(2);
+    if (netInput) netInput.value = net.toFixed(2);
+    
+    const itemCountEl = document.getElementById('itemCount');
+    const totalQtyEl = document.getElementById('totalQty');
+    if (itemCountEl) itemCountEl.textContent = selectedItems.length;
+    if (totalQtyEl) totalQtyEl.textContent = totalQty;
     
     if (document.getElementById('modal_total')) {
         document.getElementById('modal_total').textContent = total.toFixed(2) + ' ج.م';
@@ -646,20 +922,56 @@ function updateChange() {
     }
 }
 
-function updateDiscount() {
-    const total = parseFloat(document.getElementById('total').value) || 0;
-    const discountPercent = parseFloat(document.getElementById('modal_discperc').value) || 0;
-    const discountValue = parseFloat(document.getElementById('modal_discount').value) || 0;
+function updateDiscountFromPercent() {
+    const total = parseFloat(document.getElementById('total')?.value) || 0;
+    const discPercEl = document.getElementById('modal_discperc');
+    const discValEl = document.getElementById('modal_discount');
+    const discHidden = document.getElementById('discount');
     
-    let finalDiscount = discountValue;
-    
-    if (discountPercent > 0) {
-        finalDiscount = (total * discountPercent) / 100;
-        document.getElementById('modal_discount').value = finalDiscount.toFixed(2);
+    const pct = parseFloat(discPercEl?.value) || 0;
+    let val = 0;
+    if (total > 0 && pct > 0) {
+        val = (total * pct) / 100;
+        if (val > total) val = total;
     }
     
-    document.getElementById('discount').value = finalDiscount.toFixed(2);
+    if (discValEl) {
+        discValEl.value = pct > 0 ? parseFloat(val.toFixed(2)) : '';
+    }
+    if (discHidden) {
+        discHidden.value = val.toFixed(2);
+    }
+    
     updateTotals();
+}
+
+function updateDiscountFromValue() {
+    const total = parseFloat(document.getElementById('total')?.value) || 0;
+    const discPercEl = document.getElementById('modal_discperc');
+    const discValEl = document.getElementById('modal_discount');
+    const discHidden = document.getElementById('discount');
+    
+    let val = parseFloat(discValEl?.value) || 0;
+    if (val < 0) val = 0;
+    if (val > total && total > 0) val = total;
+    
+    let pct = 0;
+    if (total > 0 && val > 0) {
+        pct = (val / total) * 100;
+    }
+    
+    if (discPercEl) {
+        discPercEl.value = val > 0 ? parseFloat(pct.toFixed(2)) : '';
+    }
+    if (discHidden) {
+        discHidden.value = val.toFixed(2);
+    }
+    
+    updateTotals();
+}
+
+function updateDiscount() {
+    updateDiscountFromPercent();
 }
 
 function submitPOS(action) {
@@ -867,10 +1179,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // مودال الدفع
-    document.getElementById('modal_discperc')?.addEventListener('input', updateDiscount);
-    document.getElementById('modal_discount')?.addEventListener('input', updateDiscount);
-    document.getElementById('modal_paid')?.addEventListener('input', updateChange);
+    // مودال الدفع - مزامنة الخصم (نسبة وقيمة) على keyup و input
+    $(document).off('keyup.posDisc input.posDisc', '#modal_discperc').on('keyup.posDisc input.posDisc', '#modal_discperc', function() {
+        updateDiscountFromPercent();
+    });
+    $(document).off('keyup.posDisc input.posDisc', '#modal_discount').on('keyup.posDisc input.posDisc', '#modal_discount', function() {
+        updateDiscountFromValue();
+    });
+    $(document).off('keyup.posPaid input.posPaid', '#modal_paid').on('keyup.posPaid input.posPaid', '#modal_paid', function() {
+        updateChange();
+    });
     
     $('#paymentModal').on('show.bs.modal', function() {
         updateTotals();
@@ -985,5 +1303,47 @@ document.addEventListener('change', function(e) {
     if (typeof updateOrderDisplay === 'function') updateOrderDisplay();
     if (window._clothesLastItems && typeof displayItems === 'function') {
         displayItems(window._clothesLastItems);
+    }
+});
+
+// معالجات تغيير سعر البيع للصنف
+$(document).on('input', '.item-price-input', function(e) {
+    const idx = parseInt($(this).data('index'), 10);
+    const val = parseFloat($(this).val());
+    if (!isNaN(val) && val >= 0 && selectedItems[idx]) {
+        selectedItems[idx].price = val;
+        
+        const item = selectedItems[idx];
+        const disc = parseFloat(item.discount) || 0;
+        const effectivePrice = Math.max(0, item.price - disc);
+        const subtotal = item.quantity * effectivePrice;
+        
+        const $row = $(this).closest('.order-item');
+        $row.find('.item-subtotal-display').text(subtotal.toFixed(2));
+        $row.find('input[name="itmval[]"]').val(subtotal.toFixed(2));
+        $row.find('input[name="itmprice[]"]').val(item.price);
+        
+        updateTotals();
+    }
+});
+
+$(document).on('change', '.item-price-input', function(e) {
+    const idx = parseInt($(this).data('index'), 10);
+    const val = parseFloat($(this).val());
+    if (isNaN(val) || val < 0) {
+        if (selectedItems[idx]) {
+            $(this).val(selectedItems[idx].price);
+        }
+    } else if (selectedItems[idx]) {
+        selectedItems[idx].price = val;
+        updateOrderDisplay();
+    }
+});
+
+$(document).on('keypress', '.item-price-input', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        $(this).blur();
+        document.getElementById('barcodeSearch')?.focus();
     }
 });

@@ -102,13 +102,44 @@ body {
     align-items: center;
     gap: 0.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .order-item:hover {
     transform: translateX(-4px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     border-color: rgba(99, 91, 255, 0.2);
+}
+
+.order-item input {
+    user-select: auto;
+    -webkit-user-select: auto;
+}
+
+.item-price-input {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: all 0.2s ease-in-out;
+}
+
+.item-price-input:focus {
+    border-color: var(--primary-violet) !important;
+    background-color: #f8faff;
+    box-shadow: 0 0 0 0.2rem rgba(99, 91, 255, 0.2);
+    outline: none;
+}
+
+.item-discount-tag {
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.item-discount-tag:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
 }
 
 .order-footer {

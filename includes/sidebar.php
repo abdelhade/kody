@@ -143,12 +143,14 @@
                 </a>
               </li>
 
+              <?php if (($rowstg['showrent'] ?? 0) == 1) { ?>
               <li class="nav-item">
                 <a href="acc_report.php?acc=rentable" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                   <p><?= $lang_rentable_assets ?></p>
                 </a>
               </li>
+              <?php } ?>
 
               <li class="nav-item">
                 <a href="mytowns.php?acc=rentable" class="nav-link">
@@ -595,6 +597,7 @@
 
 
         
+        <?php if (($rowstg['showhr'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
 
@@ -678,9 +681,11 @@
 
               </ul>
             </li>
+        <?php } ?>
         
 
-                    <li class="nav-item has-treeview">
+        <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
+            <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-bolt text-warning"></i>
                 <p>
@@ -709,9 +714,11 @@
                 </li>
               </ul>
             </li>
+        <?php } ?>
         
 
-                    <li class="nav-item has-treeview">
+        <?php if (($rowstg['showrent'] ?? 0) == 1) { ?>
+            <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-money-bill-wave"></i>
                 <p>
@@ -764,6 +771,7 @@
 
               </ul>
             </li>
+        <?php } ?>
 
 
 
@@ -777,7 +785,8 @@
 
 
         <!-- clinck -->
-                    <li class="nav-item has-treeview">
+        <?php if (($rowstg['showclinc'] ?? 0) == 1) { ?>
+            <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
                 <p>
@@ -820,14 +829,14 @@
               </ul>
 
             </li>
+        <?php } ?>
         
         <li class="divider"></li>
 
 
 
         <!-------------------------------الحضور---------------------------------------->
-        
-
+        <?php if (($rowstg['showatt'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fas fa-calendar"></i>
@@ -897,6 +906,7 @@
                   </ul>
                 </li>
 
+                <?php if (($rowstg['showpayroll'] ?? 0) == 1) { ?>
                 <li class="nav-item has-treeview">
                   <a href="#" class="nav-link nav-link-basic">
                     <i class="nav-icon fas fa-coins"></i>
@@ -920,7 +930,10 @@
                     </li>
                   </ul>
                 </li>
+                <?php } ?>
               </ul>
+            </li>
+        <?php } ?>
         
 
 

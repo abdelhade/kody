@@ -131,7 +131,14 @@ $default_store_id = UserDefaults::get($conn, 'store') ?: $default_store_id;
         </div>
 
         <div class="order-items-list">
-            <h6 class="fw-bold mb-2" style="font-size: 0.85rem;">الأصناف <span class="badge bg-secondary" id="itemCount">0</span></h6>
+            <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                <span class="fw-bold text-muted" style="font-size: 0.85rem;">
+                    <i class="fas fa-boxes me-1 text-secondary"></i>عدد الأصناف: <span class="badge" id="itemCount" style="background-color: #64748b !important; color: #fff !important; font-size: 0.85rem;">0</span>
+                </span>
+                <span class="fw-bold text-muted" style="font-size: 0.85rem;">
+                    <i class="fas fa-layer-group me-1" style="color: var(--primary-violet);"></i>العدد الإجمالي: <span class="badge" id="totalQty" style="background-color: var(--primary-violet) !important; color: #fff !important; font-size: 0.85rem;">0</span>
+                </span>
+            </div>
             <div id="itemData">
                 <p class="text-muted text-center" style="font-size: 0.8rem;">لا توجد أصناف</p>
             </div>
