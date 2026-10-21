@@ -19,12 +19,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' || isset($_GET['search_filter'])) {
 // Retrieve the commission percentage from settings
 $emp_commission_pct = floatval($rowstg['emp_commission'] ?? 0);
 
-// Query to get sales and returns by employee in one go
+// Query to get sales, discounts, and returns by employee in one go
 // Returns: 11 = مردود مبيعات, 10 + info مردود مبيعات = مرتجع POS الملابس
 $sql = "SELECT
             h.emp_id,
             a.aname AS emp_name,
             COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) AS total_sales,
+            COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.fat_disc ELSE 0 END), 0) AS sales_discount,
+            COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 THEN h.fat_disc
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.fat_disc
+                ELSE 0 END), 0) AS return_discount,
             COALESCE(SUM(CASE
                 WHEN h.pro_tybe = 11 THEN h.pro_value
                 WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
@@ -39,10 +44,13 @@ $sql = "SELECT
           AND h.pro_date BETWEEN ? AND ?
           AND h.emp_id > 0
         GROUP BY h.emp_id, a.aname
-        ORDER BY (COALESCE(SUM(CASE WHEN h.pro_tybe IN (3,9) THEN h.pro_value ELSE 0 END), 0) - COALESCE(SUM(CASE
-                WHEN h.pro_tybe = 11 THEN h.pro_value
-                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN h.pro_value
-                ELSE 0 END), 0)) DESC";
+        ORDER BY (
+            COALESCE(SUM(CASE
+                WHEN h.pro_tybe IN (3,9) THEN (h.pro_value - COALESCE(h.fat_disc, 0))
+                WHEN h.pro_tybe = 11 THEN -(h.pro_value - COALESCE(h.fat_disc, 0))
+                WHEN h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%' THEN -(h.pro_value - COALESCE(h.fat_disc, 0))
+                ELSE 0 END), 0)
+        ) DESC";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ss", $from, $to);
@@ -50,25 +58,39 @@ $stmt->execute();
 $res = $stmt->get_result();
 
 $data = [];
-$grand_total_sales   = 0;
-$grand_total_returns = 0;
-$grand_total_net     = 0;
+$grand_total_sales      = 0;
+$grand_sales_discount   = 0;
+$grand_return_discount  = 0;
+$grand_total_discount   = 0;
+$grand_total_returns    = 0;
+$grand_total_net        = 0;
 $grand_total_commission = 0;
 
 while ($row = $res->fetch_assoc()) {
-    $total_sales   = floatval($row['total_sales']);
-    $total_returns = floatval($row['total_returns']);
-    $net_sales     = $total_sales - $total_returns;
-    $commission_val = ($net_sales * $emp_commission_pct) / 100;
+    $total_sales     = floatval($row['total_sales']);
+    $sales_discount  = floatval($row['sales_discount']);
+    $return_discount = floatval($row['return_discount']);
+    $total_discount  = $sales_discount - $return_discount;
+    $total_returns   = floatval($row['total_returns']);
+    $net_sales       = $total_sales - $total_discount - $total_returns;
+    $commission_val  = ($net_sales * $emp_commission_pct) / 100;
 
-    $row['net_sales']      = $net_sales;
-    $row['commission_pct'] = $emp_commission_pct;
-    $row['commission_val'] = $commission_val;
+    $row['total_sales']     = $total_sales;
+    $row['sales_discount']  = $sales_discount;
+    $row['return_discount'] = $return_discount;
+    $row['total_discount']  = $total_discount;
+    $row['total_returns']   = $total_returns;
+    $row['net_sales']       = $net_sales;
+    $row['commission_pct']  = $emp_commission_pct;
+    $row['commission_val']  = $commission_val;
 
     $data[] = $row;
-    $grand_total_sales   += $total_sales;
-    $grand_total_returns += $total_returns;
-    $grand_total_net     += $net_sales;
+    $grand_total_sales      += $total_sales;
+    $grand_sales_discount   += $sales_discount;
+    $grand_return_discount  += $return_discount;
+    $grand_total_discount   += $total_discount;
+    $grand_total_returns    += $total_returns;
+    $grand_total_net        += $net_sales;
     $grand_total_commission += $commission_val;
 }
 $stmt->close();
@@ -129,25 +151,32 @@ $stmt->close();
 
             <!-- Summary Statistics Cards -->
             <div class="row mb-4">
-                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-info p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي المبيعات</h6>
                         <h4><?= number_format($grand_total_sales, 2) ?> ج.م</h4>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
+                    <div class="small-box bg-warning p-3 text-center text-dark shadow-sm" style="border-radius: 10px;"
+                         <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
+                        <h6>إجمالي الخصم</h6>
+                        <h4><?= number_format($grand_total_discount, 2) ?> ج.م</h4>
+                    </div>
+                </div>
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-danger p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي المردودات</h6>
                         <h4><?= number_format($grand_total_returns, 2) ?> ج.م</h4>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                <div class="col-lg col-md-6 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-primary p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>صافي المبيعات</h6>
                         <h4><?= number_format($grand_total_net, 2) ?> ج.م</h4>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6 col-12 mb-2">
+                <div class="col-lg col-md-6 col-sm-12 col-12 mb-2">
                     <div class="small-box bg-success p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي العمولات</h6>
                         <h4><?= number_format($grand_total_commission, 2) ?> ج.م</h4>
@@ -165,6 +194,7 @@ $stmt->close();
                                     <th style="width: 50px;">م</th>
                                     <th>الموظف</th>
                                     <th>إجمالي المبيعات</th>
+                                    <th class="text-warning">إجمالي الخصم</th>
                                     <th class="text-danger">مردود المبيعات</th>
                                     <th class="text-primary">صافي المبيعات</th>
                                     <th>العمولة (%)</th>
@@ -178,6 +208,19 @@ $stmt->close();
                                             <td><?= $x ?></td>
                                             <td class="text-right font-weight-bold"><?= htmlspecialchars($row['emp_name']) ?></td>
                                             <td class="font-weight-bold text-info"><?= number_format($row['total_sales'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold" style="color: #d97706;">
+                                                <?php if ($row['total_discount'] > 0): ?>
+                                                    <span <?php if ($row['return_discount'] > 0): ?>title="خصم مبيعات: <?= number_format($row['sales_discount'], 2) ?> − خصم مردود: <?= number_format($row['return_discount'], 2) ?>"<?php endif; ?>>
+                                                        − <?= number_format($row['total_discount'], 2) ?> ج.م
+                                                    </span>
+                                                <?php elseif ($row['total_discount'] < 0): ?>
+                                                    <span <?php if ($row['return_discount'] > 0): ?>title="خصم مبيعات: <?= number_format($row['sales_discount'], 2) ?> − خصم مردود: <?= number_format($row['return_discount'], 2) ?>"<?php endif; ?>>
+                                                        + <?= number_format(abs($row['total_discount']), 2) ?> ج.م
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">—</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td class="font-weight-bold text-danger">
                                                 <?php if ($row['total_returns'] > 0): ?>
                                                     <span>− <?= number_format($row['total_returns'], 2) ?> ج.م</span>
@@ -192,7 +235,7 @@ $stmt->close();
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted p-4">
+                                        <td colspan="8" class="text-center text-muted p-4">
                                             <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                                             لا توجد بيانات مبيعات للموظفين خلال هذه الفترة.
                                         </td>
@@ -204,7 +247,20 @@ $stmt->close();
                                     <tr>
                                         <td colspan="2" class="text-right">الإجمالي الكلي:</td>
                                         <td class="text-info"><?= number_format($grand_total_sales, 2) ?> ج.م</td>
-                                        <td class="text-danger">− <?= number_format($grand_total_returns, 2) ?> ج.م</td>
+                                        <td style="color: #d97706;">
+                                            <?php if ($grand_total_discount > 0): ?>
+                                                <span <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
+                                                    − <?= number_format($grand_total_discount, 2) ?> ج.م
+                                                </span>
+                                            <?php elseif ($grand_total_discount < 0): ?>
+                                                <span <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
+                                                    + <?= number_format(abs($grand_total_discount), 2) ?> ج.م
+                                                </span>
+                                            <?php else: ?>
+                                                —
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-danger"><?= $grand_total_returns > 0 ? '− ' . number_format($grand_total_returns, 2) . ' ج.م' : '—' ?></td>
                                         <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_net, 2) ?> ج.م</td>
                                         <td>-</td>
                                         <td class="text-success" style="font-size: 1.1rem;"><?= number_format($grand_total_commission, 2) ?> ج.م</td>

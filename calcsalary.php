@@ -3,6 +3,7 @@ include('includes/header.php');
 include('includes/navbar.php');
 include('includes/sidebar.php');
 require_once('includes/payroll_calcs_helper.php');
+require_once('includes/salary_rates.php');
 ?>
 
 <?php
@@ -231,6 +232,12 @@ $canDelete = Can::check('attendance.delete');
                     $sumAdvance += $advance;
                     $sumNet += $netPay;
                     $sumProd += $prodVal;
+                    $shiftHours = ((int) $rowdoc['workdays'] > 0)
+                        ? ((float) $rowdoc['exphours'] / (int) $rowdoc['workdays'])
+                        : 8.0;
+                    $dayRate = employee_daily_rate($rowemp, $startdate);
+                    $hourRate = employee_hourly_rate($rowemp, $shiftHours > 0 ? $shiftHours : 1, $startdate);
+                    $salaryPeriodLabel = employee_salary_period_label($rowemp);
                 ?>
                   <tr>
                     <td class="no-print"><?= $x ?></td>
@@ -241,10 +248,10 @@ $canDelete = Can::check('attendance.delete');
                     </td>
                     <td><?= $rowdoc['fromdate'] ?></td>
                     <td><?= $rowdoc['todate'] ?></td>
-                    <td><?= number_format((float)$rowemp['salary'], 2) ?></td>
+                    <td><?= number_format((float)$rowemp['salary'], 2) ?> <small class="text-muted">(<?= htmlspecialchars($salaryPeriodLabel) ?>)</small></td>
                     <td><?= (int)$rowdoc['workdays'] ?> / <?= (int)$rowdoc['alldays'] ?></td>
-                    <td class="no-print"><?= $rowdoc['workdays'] > 0 ? number_format($rowemp['salary'] / $rowdoc['workdays'], 2) : '0.00' ?></td>
-                    <td class="no-print"><?= $rowdoc['exphours'] > 0 ? number_format($rowemp['salary'] / $rowdoc['exphours'], 2) : '0.00' ?></td>
+                    <td class="no-print"><?= number_format($dayRate, 2) ?></td>
+                    <td class="no-print"><?= number_format($hourRate, 2) ?></td>
                     <td><?= $rowdoc['exphours'] ?></td>
                     <td><?= $rowdoc['accualhours'] ?>h</td>
                     <td class="no-print"><?= number_format((float)($rowsh['diffrence'] ?? 0), 2) ?> / <?= number_format((float)($rowsh1['diffrence'] ?? 0), 2) ?></td>
