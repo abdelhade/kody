@@ -339,7 +339,11 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                     $x++;
                                     $proid = $rowop['id'];
                                     $tybe = $rowop['pro_tybe'];
-                                    $is_return = ($tybe == 10);
+                                    // 10 مردود مشتريات، 11 مردود مبيعات — غير كده بيتضافوا بالغلط على إجمالي المبيعات
+                                    $is_return = in_array((int) $tybe, [
+                                        InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'],
+                                        InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'],
+                                    ], true);
                                     $is_sales_order = in_array((int) $tybe, [13, 14], true);
                                     ?>
                                     <?php

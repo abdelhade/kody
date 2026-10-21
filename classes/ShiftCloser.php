@@ -281,6 +281,7 @@ class ShiftCloser
 
         // المدفوع من سندات القبض/الدفع المرتبطة (op2) — المصدر الحقيقي؛
         // paid_amount fallback لو مفيش سندات (بيانات قديمة أو مسار ناقص).
+        // 3/9 مبيعات، 11 مردود مبيعات، 10+«مردود مبيعات» = مرتجع POS ملابس
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, COUNT(*) AS cnt,
                     COALESCE(SUM(oh.fat_total), 0) AS gross,
@@ -303,15 +304,21 @@ class ShiftCloser
                         )
                     ), 0) AS collected
              FROM ot_head oh
-             WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)
+             WHERE $cond AND oh.isdeleted = 0
+               AND (
+                    oh.pro_tybe IN (?, ?, ?)
+                    OR (oh.pro_tybe = ? AND oh.info LIKE '%مردود مبيعات%')
+               )
              GROUP BY oh.pro_tybe"
         );
-        $p = array_merge($params, [$t['SALES'], $t['POS'], $t['SALES_RETURN']]);
-        $stmt->bind_param($types . 'iii', ...$p);
+        $p = array_merge($params, [$t['SALES'], $t['POS'], $t['SALES_RETURN'], $t['PURCHASE_RETURN']]);
+        $stmt->bind_param($types . 'iiii', ...$p);
         $stmt->execute();
         $res = $stmt->get_result();
         while ($row = $res->fetch_assoc()) {
-            if ((int) $row['pro_tybe'] === $t['SALES_RETURN']) {
+            $tybe = (int) $row['pro_tybe'];
+            $isReturn = ($tybe === $t['SALES_RETURN'] || $tybe === $t['PURCHASE_RETURN']);
+            if ($isReturn) {
                 $out['returns_count'] += (int) $row['cnt'];
                 $out['returns_total'] += (float) $row['net'];
             } else {

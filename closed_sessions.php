@@ -96,7 +96,7 @@ endif;
                         <span class="badge badge-light px-2 py-1" style="font-size: 0.85rem;"><i class="far fa-clock text-secondary me-1"></i><?= $rowcl['endtime'] ?></span>
                     </td>
                     <td>
-                        <span class="badge badge-success px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);"><?= number_format($rowcl['total_sales'], 2) ?> ج.م</span>
+                        <span class="badge badge-success px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);"><?= number_format((float) $rowcl['total_sales'] - (float) ($rowcl['total_returns'] ?? 0), 2) ?> ج.م</span>
                     </td>
                     <td>
                         <?php if ($rowcl['expenses'] > 0): ?>

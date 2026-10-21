@@ -20,40 +20,48 @@ $cashier_name = $user_data['uname'] ?? 'الكاشير';
 $settings_query = $conn->query("SELECT * FROM settings WHERE id = 1");
 $settings = $settings_query->fetch_assoc();
 
-// جلب إجمالي مبيعات اليوم للمستخدم المسجل فقط
+// 3/9 مبيعات، 11 مردود، 10+مردود مبيعات = مرتجع ملابس — المردود يتخصم مش يتضاف
+$is_return_sql = "(pro_tybe = 11 OR (pro_tybe = 10 AND info LIKE '%مردود مبيعات%'))";
+$sales_scope = "(pro_tybe IN (3, 9, 11) OR (pro_tybe = 10 AND info LIKE '%مردود مبيعات%'))";
+
 $sales_query = $conn->query("SELECT 
-    COUNT(*) as total_invoices,
-    COALESCE(SUM(fat_total), 0) as total_sales,
-    COALESCE(SUM(fat_disc), 0) as total_discounts,
-    COALESCE(SUM(fat_plus), 0) as total_plus,
-    COALESCE(SUM(fat_net), 0) as net_sales,
+    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN 1 ELSE 0 END), 0) as total_invoices,
+    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_total ELSE 0 END), 0) as total_sales,
+    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_disc ELSE 0 END), 0) as total_discounts,
+    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_plus ELSE 0 END), 0) as total_plus,
+    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_net ELSE 0 END), 0) as sales_net,
+    COALESCE(SUM(CASE WHEN $is_return_sql THEN fat_net ELSE 0 END), 0) as returns_total,
     MIN(crtime) as first_sale_time,
     MAX(crtime) as last_sale_time,
-    SUM(CASE WHEN info LIKE '%نوع الطلب: طاولة%' THEN 1 ELSE 0 END) as table_count,
-    SUM(CASE WHEN info LIKE '%نوع الطلب: دليفري%' THEN 1 ELSE 0 END) as delivery_count,
-    SUM(CASE WHEN info LIKE '%نوع الطلب: تيك أواي%' THEN 1 ELSE 0 END) as takeaway_count
+    SUM(CASE WHEN pro_tybe IN (3, 9) AND info LIKE '%نوع الطلب: طاولة%' THEN 1 ELSE 0 END) as table_count,
+    SUM(CASE WHEN pro_tybe IN (3, 9) AND info LIKE '%نوع الطلب: دليفري%' THEN 1 ELSE 0 END) as delivery_count,
+    SUM(CASE WHEN pro_tybe IN (3, 9) AND info LIKE '%نوع الطلب: تيك أواي%' THEN 1 ELSE 0 END) as takeaway_count
     FROM ot_head 
     WHERE DATE(pro_date) = '$today'
     AND user = '$user_id'
-    AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11)
+    AND $sales_scope
     AND isdeleted = 0");
 $sales_data = $sales_query->fetch_assoc();
+$sales_data['net_sales'] = (float) $sales_data['sales_net'] - (float) $sales_data['returns_total'];
 
-// جلب تفاصيل أصناف اليوم للمستخدم المسجل فقط
 $items_query = $conn->query("SELECT 
     mi.iname,
     SUM(fd.qty_out - fd.qty_in) as total_qty,
     fd.price,
-    SUM(fd.det_value) as total_value
+    SUM(CASE
+        WHEN oh.pro_tybe IN (3, 9) THEN fd.det_value
+        WHEN oh.pro_tybe = 11 OR (oh.pro_tybe = 10 AND oh.info LIKE '%مردود مبيعات%') THEN -fd.det_value
+        ELSE 0 END) as total_value
     FROM ot_head oh
     JOIN fat_details fd ON oh.id = fd.pro_id
     JOIN myitems mi ON fd.item_id = mi.id
     WHERE DATE(oh.pro_date) = '$today'
     AND oh.user = '$user_id'
-    AND (oh.pro_tybe = 9 OR oh.pro_tybe = 3 OR oh.pro_tybe = 10 OR oh.pro_tybe = 11)
+    AND (oh.pro_tybe IN (3, 9, 11) OR (oh.pro_tybe = 10 AND oh.info LIKE '%مردود مبيعات%'))
     AND oh.isdeleted = 0
     AND fd.isdeleted = 0
     GROUP BY fd.item_id, fd.price
+    HAVING ABS(total_qty) > 0.0001
     ORDER BY total_value DESC");
 
 // حساب أوقات الشيفت
@@ -207,6 +215,12 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
             <tr>
                 <td><strong>الإضافي:</strong></td>
                 <td class="text-end" style="color: #28a745;">+ <?= number_format($sales_data['total_plus'], 2) ?> ج.م</td>
+            </tr>
+            <?php endif; ?>
+            <?php if ((float) $sales_data['returns_total'] > 0): ?>
+            <tr>
+                <td><strong>المردودات:</strong></td>
+                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['returns_total'], 2) ?> ج.م</td>
             </tr>
             <?php endif; ?>
             <tr class="table-success">

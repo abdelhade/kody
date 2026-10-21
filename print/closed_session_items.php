@@ -47,8 +47,11 @@ $items_query = "
     SELECT 
         COALESCE(c.gname, 'بدون مجموعة') as category_name,
         i.iname as item_name,
-        SUM(d.qty_out) as total_qty,
-        SUM(d.det_value) as total_value
+        SUM(d.qty_out - d.qty_in) as total_qty,
+        SUM(CASE
+            WHEN h.pro_tybe IN (3, 9) THEN d.det_value
+            WHEN h.pro_tybe = 11 OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%') THEN -d.det_value
+            ELSE 0 END) as total_value
     FROM fat_details d
     JOIN ot_head h ON d.fatid = h.id
     JOIN myitems i ON d.item_id = i.id
@@ -59,9 +62,9 @@ $items_query = "
       AND h.user = ?
       AND d.isdeleted = 0
       AND h.isdeleted = 0
-      AND (h.pro_tybe = 9 OR h.pro_tybe = 3 OR h.pro_tybe = 10 OR h.pro_tybe = 11)
+      AND (h.pro_tybe IN (3, 9, 11) OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%'))
     GROUP BY c.gname, i.iname
-    HAVING total_qty > 0
+    HAVING ABS(total_qty) > 0.0001
     ORDER BY c.gname ASC, total_qty DESC
 ";
 
@@ -70,12 +73,16 @@ $total_qty_all = 0;
 $total_value_all = 0;
 
 if ((int) ($shift['user_id'] ?? 0) > 0) {
+    // صافي الكمية/القيمة: مبيعات ناقص مردود
     $items_query = "
         SELECT 
             COALESCE(c.gname, 'بدون مجموعة') as category_name,
             i.iname as item_name,
-            SUM(d.qty_out) as total_qty,
-            SUM(d.det_value) as total_value
+            SUM(d.qty_out - d.qty_in) as total_qty,
+            SUM(CASE
+                WHEN h.pro_tybe IN (3, 9) THEN d.det_value
+                WHEN h.pro_tybe = 11 OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%') THEN -d.det_value
+                ELSE 0 END) as total_value
         FROM fat_details d
         JOIN ot_head h ON d.fatid = h.id
         JOIN myitems i ON d.item_id = i.id
@@ -83,9 +90,9 @@ if ((int) ($shift['user_id'] ?? 0) > 0) {
         WHERE h.shift_id = ?
           AND d.isdeleted = 0
           AND h.isdeleted = 0
-          AND h.pro_tybe IN (3, 9)
+          AND (h.pro_tybe IN (3, 9, 11) OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%'))
         GROUP BY c.gname, i.iname
-        HAVING total_qty > 0
+        HAVING ABS(total_qty) > 0.0001
         ORDER BY c.gname ASC, total_qty DESC
     ";
 }

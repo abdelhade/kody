@@ -70,26 +70,34 @@ class ShiftReport {
     
     /**
      * Get basic shift totals (Sales, Invoices count)
+     * المردود (11 أو مرتجع ملابس 10) يتخصم من الصافي مش يتضاف على المبيعات
      */
     public function getTotals() {
-        // استخدام التاريخ الحالي بدون شرط الوقت لحساب جميع فواتير اليوم
         $currentDate = date('Y-m-d');
         $query = "SELECT
-                    COUNT(*) as total_orders,
-                    COALESCE(SUM(fat_total), 0) as total_gross,
-                    COALESCE(SUM(fat_disc), 0) as total_discount,
-                    COALESCE(SUM(fat_net), 0) as total_net
+                    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN 1 ELSE 0 END), 0) as total_orders,
+                    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_total ELSE 0 END), 0) as total_gross,
+                    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_disc ELSE 0 END), 0) as total_discount,
+                    COALESCE(SUM(CASE WHEN pro_tybe IN (3, 9) THEN fat_net ELSE 0 END), 0) as sales_net,
+                    COALESCE(SUM(CASE
+                        WHEN pro_tybe = 11 OR (pro_tybe = 10 AND info LIKE '%مردود مبيعات%')
+                        THEN fat_net ELSE 0 END), 0) as returns_total
                   FROM ot_head
                   WHERE DATE(pro_date) = ?
                   AND user = ?
-                  AND (pro_tybe = 9 OR pro_tybe = 3 OR pro_tybe = 10 OR pro_tybe = 11)
+                  AND (pro_tybe IN (3, 9, 11) OR (pro_tybe = 10 AND info LIKE '%مردود مبيعات%'))
                   AND isdeleted = 0";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("si", $currentDate, $this->userId);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->fetch_assoc();
+        $row = $result->fetch_assoc() ?: [
+            'total_orders' => 0, 'total_gross' => 0, 'total_discount' => 0,
+            'sales_net' => 0, 'returns_total' => 0,
+        ];
+        $row['total_net'] = (float) $row['sales_net'] - (float) $row['returns_total'];
+        return $row;
     }
     
     /**
@@ -128,7 +136,7 @@ class ShiftReport {
                   FROM ot_head 
                   WHERE DATE(pro_date) = ? 
                   AND user = ? 
-                  AND pro_tybe = 11
+                  AND (pro_tybe = 11 OR (pro_tybe = 10 AND info LIKE '%مردود مبيعات%'))
                   AND isdeleted = 0" . $timeCond;
                   
         $stmt = $this->conn->prepare($query);
@@ -166,17 +174,21 @@ class ShiftReport {
          $query = "SELECT 
                     mi.iname,
                     mi.barcode,
-                    SUM(fd.qty_out) as qty,
-                    SUM(fd.det_value) as value
+                    SUM(fd.qty_out - fd.qty_in) as qty,
+                    SUM(CASE
+                        WHEN oh.pro_tybe IN (3, 9) THEN fd.det_value
+                        WHEN oh.pro_tybe = 11 OR (oh.pro_tybe = 10 AND oh.info LIKE '%مردود مبيعات%') THEN -fd.det_value
+                        ELSE 0 END) as value
                    FROM fat_details fd
                    JOIN ot_head oh ON fd.fatid = oh.id
                    JOIN myitems mi ON fd.item_id = mi.id
                    WHERE DATE(oh.pro_date) = ?
                    AND oh.user = ?
-                   AND (oh.pro_tybe = 9 OR oh.pro_tybe = 3 OR oh.pro_tybe = 10 OR oh.pro_tybe = 11)
+                   AND (oh.pro_tybe IN (3, 9, 11) OR (oh.pro_tybe = 10 AND oh.info LIKE '%مردود مبيعات%'))
                    AND oh.isdeleted = 0
                    AND fd.isdeleted = 0" . $timeCond . "
                    GROUP BY fd.item_id
+                   HAVING ABS(qty) > 0.0001
                    ORDER BY value DESC";
                    
         $stmt = $this->conn->prepare($query);
