@@ -143,6 +143,12 @@ if ($is_edit && $rowedit) {
 
       <form action="<?= $is_edit ? ('do/doedit_voucher.php?id=' . $edit_id) : 'do/doadd_voucher.php' ?>" method="POST" id="voucherForm">
         <input type="hidden" name="tybe" value="<?= $pro_tybe ?>">
+        <?php if (!$is_edit): 
+            $formToken = bin2hex(random_bytes(16));
+            $_SESSION['voucher_form_token'] = $formToken;
+        ?>
+          <input type="hidden" name="form_token" value="<?= $formToken ?>">
+        <?php endif; ?>
         <?php if (isset($_GET['ins'])): ?>
           <input type="hidden" name="ins_id" value="<?= htmlspecialchars($_GET['ins']) ?>">
         <?php endif; ?>
@@ -439,11 +445,23 @@ if ($is_edit && $rowedit) {
             </div>
           </div>
 
-          <div class="k-card-header bg-light d-flex justify-content-end gap-2 p-3">
-            <a href="vouchers.php<?= $pro_tybe === 1 ? '?t=recive' : ($pro_tybe === 16 ? '?t=transfer' : '?t=payment') ?>" class="k-btn k-btn-secondary ml-2">إلغاء</a>
-            <button type="submit" class="k-btn k-btn-primary" id="btnSubmitVoucher">
-              <i class="fas fa-save ml-1"></i> <?= $pro_tybe === 16 ? 'حفظ التحويل (F12)' : 'حفظ السند (F12)' ?>
-            </button>
+          <div class="k-card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2 p-3">
+            <div>
+              <?php if ($is_edit && $edit_id > 0 && Can::check($pro_tybe === 1 ? 'receipts.delete' : 'payments.delete')): ?>
+                <button type="button" class="k-btn k-btn-danger" id="btnDeleteCurrentVoucher" 
+                        data-id="<?= $edit_id ?>" 
+                        data-name="<?= ($pro_tybe === 16 ? 'تحويل نقدية رقم ' : ($pro_tybe === 1 ? 'سند قبض رقم ' : 'سند صرف رقم ')) . $pr_id ?>" 
+                        data-type="<?= $pro_tybe ?>">
+                  <i class="fas fa-trash-alt ml-1"></i> <?= $pro_tybe === 16 ? 'حذف التحويل' : 'حذف السند' ?>
+                </button>
+              <?php endif; ?>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="vouchers.php<?= $pro_tybe === 1 ? '?t=recive' : ($pro_tybe === 16 ? '?t=transfer' : '?t=payment') ?>" class="k-btn k-btn-secondary ml-2">إلغاء</a>
+              <button type="submit" class="k-btn k-btn-primary" id="btnSubmitVoucher">
+                <i class="fas fa-save ml-1"></i> <?= $pro_tybe === 16 ? 'حفظ التحويل (F12)' : 'حفظ السند (F12)' ?>
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -712,19 +730,143 @@ $(document).ready(function() {
     $("#fundAccountSelect").trigger("change");
   }
 
+  var isSubmitting = false;
+
   $("#voucherForm").on("submit", function(e) {
     if (proType === 16 && !checkDuplicateFunds()) {
       e.preventDefault();
-      alert("لا يمكن التحويل من وإلى نفس الصندوق!");
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          type: "warning",
+          icon: "warning",
+          title: "تنبيه",
+          text: "لا يمكن التحويل من وإلى نفس الصندوق!"
+        });
+      } else {
+        alert("لا يمكن التحويل من وإلى نفس الصندوق!");
+      }
       return false;
     }
+
+    var valAmount = parseFloat($("#voucherAmountInput").val()) || 0;
+    if (valAmount <= 0) {
+      e.preventDefault();
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          type: "warning",
+          icon: "warning",
+          title: "تنبيه",
+          text: "يرجى كتابة مبلغ صحيح أكبر من الصفر للسند!"
+        });
+      } else {
+        alert("يرجى كتابة مبلغ صحيح أكبر من الصفر للسند!");
+      }
+      return false;
+    }
+
+    // منع الإرسال المتكرر (Prevent Double Submit)
+    if (isSubmitting) {
+      e.preventDefault();
+      return false;
+    }
+
+    isSubmitting = true;
+    var $submitBtn = $("#btnSubmitVoucher");
+    $submitBtn.prop("disabled", true).addClass("disabled");
+    $submitBtn.html('<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحفظ...');
+  });
+
+  // حذف السند الحالي بواسطة SweetAlert
+  var isDeletingVoucher = false;
+  $("#btnDeleteCurrentVoucher").on("click", function(e) {
+    e.preventDefault();
+    if (isDeletingVoucher) return false;
+
+    var $btn = $(this);
+    if ($btn.hasClass("disabled") || $btn.prop("disabled")) return false;
+
+    var vid = $btn.data("id");
+    var vName = $btn.data("name") || ("سند رقم " + vid);
+    var vType = parseInt($btn.data("type"), 10);
+    var typeTitle = (vType === 16) ? "التحويل" : (vType === 1 ? "سند القبض" : "سند الصرف");
+    var backUrl = "vouchers.php" + (vType === 1 ? "?t=recive" : (vType === 16 ? "?t=transfer" : "?t=payment"));
+
+    if (typeof Swal === "undefined") {
+      if (confirm("هل أنت متأكد من حذف " + vName + "؟")) {
+        window.location.href = "do/dodel_voucher.php?del=" + vid;
+      }
+      return;
+    }
+
+    Swal.fire({
+      title: "تأكيد حذف " + typeTitle,
+      html: "هل أنت متأكد من رغبتك في حذف <strong>" + vName + "</strong>؟<br><small class=\"text-danger mt-2 d-inline-block\"><i class=\"fas fa-exclamation-triangle ml-1\"></i>سيتم إلغاء أثر هذا السند المالي وحذف كافة قيوده المحاسبية نهائياً.</small>",
+      type: "warning",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "<i class=\"fas fa-trash-alt ml-1\"></i> نعم، احذف",
+      cancelButtonText: "إلغاء",
+      reverseButtons: true,
+      focusCancel: true,
+      showLoaderOnConfirm: true,
+      preConfirm: function() {
+        if (isDeletingVoucher) return false;
+        isDeletingVoucher = true;
+        $btn.prop("disabled", true).addClass("disabled");
+
+        return $.ajax({
+          url: "do/dodel_voucher.php",
+          type: "POST",
+          data: { del: vid, ajax: 1 },
+          dataType: "json"
+        }).then(function(res) {
+          if (!res || !res.success) {
+            isDeletingVoucher = false;
+            $btn.prop("disabled", false).removeClass("disabled");
+            throw new Error(res && res.error ? res.error : "تعذر حذف السند");
+          }
+          return res;
+        }).catch(function(err) {
+          isDeletingVoucher = false;
+          $btn.prop("disabled", false).removeClass("disabled");
+          var msg = (err.responseJSON && err.responseJSON.error) 
+                    ? err.responseJSON.error 
+                    : (err.message || "حدث خطأ أثناء الاتصال بالخادم");
+          Swal.showValidationMessage(msg);
+        });
+      },
+      allowOutsideClick: function() { return !Swal.isLoading(); }
+    }).then(function(result) {
+      if (result.value || result.isConfirmed) {
+        Swal.fire({
+          type: "success",
+          icon: "success",
+          title: "تم الحذف بنجاح",
+          text: "تم حذف " + vName + " بنجاح، جاري تحويلك...",
+          timer: 1600,
+          showConfirmButton: false
+        }).then(function() {
+          window.location.href = backUrl;
+        });
+        setTimeout(function() {
+          window.location.href = backUrl;
+        }, 1600);
+      } else {
+        isDeletingVoucher = false;
+        $btn.prop("disabled", false).removeClass("disabled");
+      }
+    });
   });
 
   // اختصار F12 للحفظ
   $(document).keydown(function(e) {
     if (e.key === "F12") {
       e.preventDefault();
-      $("#voucherForm").submit();
+      if (!isSubmitting) {
+        $("#voucherForm").submit();
+      }
     }
   });
 });

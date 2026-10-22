@@ -5,9 +5,20 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $user = isset($_SESSION['userid']) ? (int)$_SESSION['userid'] : 1;
+
+// منع تكرار الإرسال على مستوى السيرفر عبر توكن النموذج
+$tybe = isset($_POST['tybe']) ? (int)$_POST['tybe'] : 1;
+if (!empty($_POST['form_token'])) {
+    if (empty($_SESSION['voucher_form_token']) || $_POST['form_token'] !== $_SESSION['voucher_form_token']) {
+        $redirectT = ($tybe === 1) ? 'recive' : (($tybe === 16) ? 'transfer' : 'payment');
+        header('Location: ../vouchers.php?t=' . $redirectT . '&msg=saved');
+        exit;
+    }
+    unset($_SESSION['voucher_form_token']);
+}
+
 UserDefaults::enforce($conn, $_POST, ['fund_account' => 'fund']);
 $vdate = !empty($_POST['vdate']) ? trim((string)$_POST['vdate']) : date('Y-m-d');
-$tybe = isset($_POST['tybe']) ? (int)$_POST['tybe'] : 1;
 $val = isset($_POST['val']) ? (float)$_POST['val'] : 0.0;
 $account = isset($_POST['account']) ? (int)$_POST['account'] : 0;
 $fund_account = isset($_POST['fund_account']) ? (int)$_POST['fund_account'] : 0;

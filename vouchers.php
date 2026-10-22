@@ -261,10 +261,15 @@ $filterTabs = [
                     <?php if ($row['linked_invoice_no'] !== null) { ?>
                     <span class="k-btn-action text-muted" title="مرتبط بالفاتورة رقم <?= htmlspecialchars((string) $row['linked_invoice_no'], ENT_QUOTES, 'UTF-8') ?> ولا يمكن حذفه"><i class="fas fa-lock"></i></span>
                     <?php } elseif (Can::check($proType === 1 ? 'receipts.delete' : 'payments.delete')) { ?>
-                    <?= kody_action_btn('delete', 'do/dodel_voucher.php?del=' . $vid, [
-                        'title' => 'حذف ' . ($proType === 16 ? 'التحويل' : 'السند'),
-                        'item_name' => ($proType === 16 ? 'تحويل نقدية رقم ' : 'سند رقم ') . $proId
-                    ]) ?>
+                    <button type="button" 
+                            class="k-btn-action k-btn-action-del btn-delete-voucher" 
+                            data-id="<?= $vid ?>" 
+                            data-number="<?= $proId ?>" 
+                            data-type="<?= $proType ?>" 
+                            data-name="<?= ($proType === 16 ? 'تحويل نقدية رقم ' : ($proType === 1 ? 'سند قبض رقم ' : 'سند صرف رقم ')) . $proId ?>" 
+                            title="حذف <?= ($proType === 16 ? 'التحويل' : 'السند') ?>">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
                     <?php } ?>
                   </div>
                 </td>
@@ -276,5 +281,96 @@ $filterTabs = [
     <?php endif; ?>
   </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var isDeletingVoucher = false;
+
+  $(document).on("click", ".btn-delete-voucher", function(e) {
+    e.preventDefault();
+    if (isDeletingVoucher) return false;
+
+    var $btn = $(this);
+    if ($btn.hasClass("disabled") || $btn.prop("disabled")) return false;
+
+    var vid = $btn.data("id");
+    var vName = $btn.data("name") || ("سند رقم " + vid);
+    var vType = parseInt($btn.data("type"), 10);
+    var typeTitle = (vType === 16) ? "التحويل" : (vType === 1 ? "سند القبض" : "سند الصرف");
+    var $tr = $btn.closest("tr");
+
+    if (typeof Swal === "undefined") {
+      if (confirm("هل أنت متأكد من حذف " + vName + "؟")) {
+        window.location.href = "do/dodel_voucher.php?del=" + vid;
+      }
+      return;
+    }
+
+    Swal.fire({
+      title: "تأكيد حذف " + typeTitle,
+      html: "هل أنت متأكد من رغبتك في حذف <strong>" + vName + "</strong>؟<br><small class=\"text-danger mt-2 d-inline-block\"><i class=\"fas fa-exclamation-triangle ml-1\"></i>سيتم إلغاء أثر هذا السند المالي وحذف كافة قيوده المحاسبية نهائياً.</small>",
+      type: "warning",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "<i class=\"fas fa-trash-alt ml-1\"></i> نعم، احذف",
+      cancelButtonText: "إلغاء",
+      reverseButtons: true,
+      focusCancel: true,
+      showLoaderOnConfirm: true,
+      preConfirm: function() {
+        if (isDeletingVoucher) return false;
+        isDeletingVoucher = true;
+        $btn.prop("disabled", true).addClass("disabled");
+
+        return $.ajax({
+          url: "do/dodel_voucher.php",
+          type: "POST",
+          data: { del: vid, ajax: 1 },
+          dataType: "json"
+        }).then(function(res) {
+          if (!res || !res.success) {
+            isDeletingVoucher = false;
+            $btn.prop("disabled", false).removeClass("disabled");
+            throw new Error(res && res.error ? res.error : "تعذر حذف السند");
+          }
+          return res;
+        }).catch(function(err) {
+          isDeletingVoucher = false;
+          $btn.prop("disabled", false).removeClass("disabled");
+          var msg = (err.responseJSON && err.responseJSON.error) 
+                    ? err.responseJSON.error 
+                    : (err.message || "حدث خطأ أثناء الاتصال بالخادم");
+          Swal.showValidationMessage(msg);
+        });
+      },
+      allowOutsideClick: function() { return !Swal.isLoading(); }
+    }).then(function(result) {
+      if (result.value || result.isConfirmed) {
+        Swal.fire({
+          type: "success",
+          icon: "success",
+          title: "تم الحذف بنجاح",
+          text: "تم حذف " + vName + " بنجاح وتحديث الحسابات المرتبطة.",
+          timer: 1600,
+          showConfirmButton: false
+        });
+
+        $tr.css("background-color", "#fee2e2").fadeOut(400, function() {
+          $(this).remove();
+          var remaining = $("#vouchersTable tbody tr").length;
+          if (remaining === 0) {
+            location.reload();
+          }
+        });
+      } else {
+        isDeletingVoucher = false;
+        $btn.prop("disabled", false).removeClass("disabled");
+      }
+    });
+  });
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -142,8 +142,8 @@ switch ($q) {
     case "sale":
     case "buy_legacy": // للتوافقية
         $report_name = "مبيعات وكاشير ومردودات";
-        // 3 مبيعات، 9 كاشير، 11 مردود مبيعات (مش 10 = مردود مشتريات)
-        $where_clause = "(ot.pro_tybe = 3 OR ot.pro_tybe = 9 OR ot.pro_tybe = 11) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        // 3 مبيعات، 9 كاشير، 11 مردود مبيعات، 10+مردود مبيعات = مرتجع POS ملابس
+        $where_clause = "(ot.pro_tybe IN (3, 9, 11) OR (ot.pro_tybe = 10 AND ot.info LIKE '%مردود مبيعات%')) AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
     case "sales_order":
@@ -167,6 +167,50 @@ $is_all_operations_report = ($q === 'all');
 $is_sales_order_report = in_array($q, ['sales_order', 'price_offer'], true);
 $order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
 $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
+
+// إجماليات التقرير من السيرفر (مبيعات منفصلة عن المردود — مش جمع الاتنين)
+$summary_sales = 0.0;
+$summary_sales_net = 0.0;
+$summary_returns = 0.0;
+$summary_returns_net = 0.0;
+$summary_profit = 0.0;
+$summary_paid = 0.0;
+$summary_remaining = 0.0;
+// المردود: 11 مردود مبيعات + 10 مردود مشتريات/مرتجع ملابس — مش بيتضاف على المبيعات
+$is_return_sql = "(ot.pro_tybe IN (10, 11))";
+$is_sale_sql = "(ot.pro_tybe IN (3, 9))";
+if (!$is_sales_order_report && $q !== 'purchase' && $q !== 'sale_legacy' && !empty($where_clause)) {
+    $sum_sql = "SELECT
+        COALESCE(SUM(CASE WHEN $is_sale_sql THEN ot.pro_value ELSE 0 END), 0) AS sales_total,
+        COALESCE(SUM(CASE WHEN $is_sale_sql THEN ot.fat_net ELSE 0 END), 0) AS sales_net,
+        COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.pro_value ELSE 0 END), 0) AS returns_total,
+        COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.fat_net ELSE 0 END), 0) AS returns_net,
+        COALESCE(SUM(CASE WHEN $is_sale_sql THEN ot.profit ELSE 0 END), 0)
+          - COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.profit ELSE 0 END), 0) AS profit_net,
+        COALESCE(SUM(CASE WHEN $is_sale_sql THEN (
+            LEAST(
+                GREATEST(COALESCE((
+                    SELECT SUM(v.pro_value) FROM ot_head v
+                    WHERE v.op2 = ot.id AND v.id <> ot.id AND v.isdeleted != 1
+                ), 0), 0),
+                GREATEST(COALESCE(ot.fat_net, 0), 0)
+            )
+        ) ELSE 0 END), 0) AS paid_total
+        $join_clause
+        WHERE $where_clause";
+    $sum_res = $conn->query($sum_sql);
+    if ($sum_res && ($sum_row = $sum_res->fetch_assoc())) {
+        $summary_sales = (float) $sum_row['sales_total'];
+        $summary_sales_net = (float) $sum_row['sales_net'];
+        $summary_returns = (float) $sum_row['returns_total'];
+        $summary_returns_net = (float) $sum_row['returns_net'];
+        $summary_profit = (float) $sum_row['profit_net'];
+        $summary_paid = (float) $sum_row['paid_total'];
+        $summary_remaining = max(0, $summary_sales_net - $summary_paid);
+    }
+}
+$summary_net = $summary_sales - $summary_returns;
+$summary_net_after = $summary_sales_net - $summary_returns_net;
 ?>
 
 
@@ -339,7 +383,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                     $x++;
                                     $proid = $rowop['id'];
                                     $tybe = $rowop['pro_tybe'];
-                                    // 10 مردود مشتريات، 11 مردود مبيعات — غير كده بيتضافوا بالغلط على إجمالي المبيعات
+                                    // 10/11 مردود — يتخصموا من الصافي ومش يدخلوا في إجمالي المبيعات
                                     $is_return = in_array((int) $tybe, [
                                         InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'],
                                         InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'],
@@ -362,7 +406,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                                     }
                                     $payment_sort_val = $is_sales_order ? 0 : ($paid_amount < (float)$rowop['fat_net'] ? 1 : 2);
                                     ?>
-                                    <tr class="<?= $is_return ? 'table-danger' : '' ?>">
+                                    <tr class="<?= $is_return ? 'table-danger' : '' ?>" data-doc-kind="<?= $is_return ? 'return' : ($is_sales_order ? 'order' : 'sale') ?>">
                                         <td data-sort="<?= $x ?>"><?= $x ?></td>
                                         <td data-sort="<?= htmlspecialchars($rowop['crtime'] ?: ($rowop['pro_date'] ?? '')) ?>"><?= $rowop['crtime'] ?></td>
                                         <td data-sort="<?= htmlspecialchars($pro_type_display) ?>">
@@ -541,32 +585,42 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                             </div>
                         </div>
                         <?php elseif($q !== 'purchase' && $q !== 'sale_legacy'): ?>
-                        <div class="d-flex flex-wrap mt-3 summary-cards" style="gap: 8px;">
+                        <div class="d-flex flex-wrap mt-3 summary-cards" style="gap: 8px;"
+                             data-server-summary="1"
+                             data-sales="<?= number_format($summary_sales, 2, '.', '') ?>"
+                             data-sales-net="<?= number_format($summary_sales_net, 2, '.', '') ?>"
+                             data-returns="<?= number_format($summary_returns, 2, '.', '') ?>"
+                             data-returns-net="<?= number_format($summary_returns_net, 2, '.', '') ?>"
+                             data-net="<?= number_format($summary_net, 2, '.', '') ?>"
+                             data-net-after="<?= number_format($summary_net_after, 2, '.', '') ?>"
+                             data-paid="<?= number_format($summary_paid, 2, '.', '') ?>"
+                             data-remaining="<?= number_format($summary_remaining, 2, '.', '') ?>"
+                             data-profit="<?= number_format($summary_profit, 2, '.', '') ?>">
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#17a2b8; min-width:130px;">
                                 <small class="d-block">إجمالي المبيعات</small>
-                                <strong id="total_sales_val" style="font-size:1.15rem;">0.00</strong>
-                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="fatnet_sales">0.00</span></small>
+                                <strong id="total_sales_val" style="font-size:1.15rem;"><?= number_format($summary_sales, 2, '.', '') ?></strong>
+                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="fatnet_sales"><?= number_format($summary_sales_net, 2, '.', '') ?></span></small>
                             </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#dc3545; min-width:130px;">
                                 <small class="d-block">إجمالي المردودات</small>
-                                <strong id="total_returns_val" style="font-size:1.15rem;">0.00</strong>
+                                <strong id="total_returns_val" style="font-size:1.15rem;"><?= number_format($summary_returns, 2, '.', '') ?></strong>
                             </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#28a745; min-width:130px;">
                                 <small class="d-block">الصافي (مبيعات - مردود)</small>
-                                <strong id="net_sales_val" style="font-size:1.15rem;">0.00</strong>
-                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="net_after_returns">0.00</span></small>
+                                <strong id="net_sales_val" style="font-size:1.15rem;"><?= number_format($summary_net, 2, '.', '') ?></strong>
+                                <small class="d-block text-muted" style="font-size:.7rem;">بعد الخصم: <span id="net_after_returns"><?= number_format($summary_net_after, 2, '.', '') ?></span></small>
                             </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#007bff; min-width:130px;">
                                 <small class="d-block">إجمالي المدفوع (المحصل)</small>
-                                <strong id="total_paid_val" style="font-size:1.15rem;">0.00</strong>
+                                <strong id="total_paid_val" style="font-size:1.15rem;"><?= number_format($summary_paid, 2, '.', '') ?></strong>
                             </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#fd7e14; min-width:130px;">
                                 <small class="d-block">إجمالي الآجل (المتبقي)</small>
-                                <strong id="total_remaining_val" style="font-size:1.15rem;">0.00</strong>
+                                <strong id="total_remaining_val" style="font-size:1.15rem;"><?= number_format($summary_remaining, 2, '.', '') ?></strong>
                             </div>
                             <div class="flex-fill text-center py-2 px-3 summary-card" style="--c:#00796b; min-width:130px;">
                                 <small class="d-block">الأرباح</small>
-                                <strong id="total_profit_val" style="font-size:1.15rem;">0.00</strong>
+                                <strong id="total_profit_val" style="font-size:1.15rem;"><?= number_format($summary_profit, 2, '.', '') ?></strong>
                             </div>
                         </div>
                         <?php endif; ?>
@@ -690,7 +744,7 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
         });
 
         function filterTable() {
-            const rows = document.querySelectorAll("table tbody tr");
+            const rows = document.querySelectorAll("#operationsTable tbody tr");
             rows.forEach(row => {
                 let showRow = true;
                 inputs.forEach(input => {
@@ -709,15 +763,45 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                 row.style.display = showRow ? "" : "none";
             });
             
-            recalculateTotals();
+            recalculateTotals(true);
         }
 
-        function recalculateTotals() {
-            const visibleRows = Array.from(document.querySelectorAll("table tbody tr")).filter(tr => tr.style.display !== "none");
+        function applyServerSummary() {
+            const box = document.querySelector(".summary-cards[data-server-summary]");
+            if (!box) return false;
+            const setVal = (id, v) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = v;
+            };
+            setVal("total_sales_val", box.dataset.sales || "0.00");
+            setVal("fatnet_sales", box.dataset.salesNet || "0.00");
+            setVal("total_returns_val", box.dataset.returns || "0.00");
+            setVal("net_after_returns", box.dataset.netAfter || "0.00");
+            setVal("net_sales_val", box.dataset.net || "0.00");
+            setVal("total_paid_val", box.dataset.paid || "0.00");
+            setVal("total_remaining_val", box.dataset.remaining || "0.00");
+            setVal("total_profit_val", box.dataset.profit || "0.00");
+            return true;
+        }
+
+        function recalculateTotals(fromFilter) {
+            // بدون فلتر أعمدة: استخدم إجمالي السيرفر (مبيعات منفصلة عن المردود)
+            const hasColumnFilter = Array.from(inputs).some(i => i.value.trim() !== "");
+            if (!fromFilter || !hasColumnFilter) {
+                if (applyServerSummary()) {
+                    const soCountEl = document.getElementById("so_count_val");
+                    if (soCountEl) {
+                        soCountEl.textContent = document.querySelectorAll("#operationsTable tbody tr").length;
+                    }
+                    return;
+                }
+            }
+
+            const visibleRows = Array.from(document.querySelectorAll("#operationsTable tbody tr"))
+                .filter(tr => tr.style.display !== "none");
             
             let sales = 0;
             let returns = 0;
-            let fatnet = 0;
             let fatnet_sales = 0;
             let fatnet_returns = 0;
             let paid = 0;
@@ -725,10 +809,11 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
             let profit = 0;
             
             visibleRows.forEach(row => {
-                const valEl = row.querySelector(".value");
-                const netEl = row.querySelector(".fatnet");
-                const paidEl = row.querySelector(".paid-amount");
-                const prftEl = row.querySelector(".prft");
+                const kind = row.getAttribute("data-doc-kind") || "";
+                const valEl = row.querySelector(":scope > td.value");
+                const netEl = row.querySelector(":scope > td.fatnet");
+                const paidEl = row.querySelector(":scope > td.paid-amount");
+                const prftEl = row.querySelector(":scope > td.prft");
                 
                 const val = valEl ? parseFloat(valEl.textContent.trim()) || 0 : 0;
                 const net = netEl ? parseFloat(netEl.textContent.trim()) || 0 : 0;
@@ -736,21 +821,20 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
                 const rem = paidEl ? (parseFloat(paidEl.getAttribute("data-remaining")) || 0) : 0;
                 const prft = prftEl ? parseFloat(prftEl.textContent.trim()) || 0 : 0;
                 
-                if (valEl) {
-                    if (valEl.classList.contains("ret-value")) {
-                        returns += val;
-                        fatnet_returns += net;
-                        profit -= prft;
-                    } else if (valEl.classList.contains("sale-value")) {
-                        sales += val;
-                        fatnet_sales += net;
-                        profit += prft;
-                        paid += pd;
-                        remaining += rem;
-                    }
+                const isReturn = kind === "return" || (valEl && valEl.classList.contains("ret-value"));
+                const isSale = kind === "sale" || (valEl && valEl.classList.contains("sale-value") && !isReturn);
+
+                if (isReturn) {
+                    returns += val;
+                    fatnet_returns += net;
+                    profit -= prft;
+                } else if (isSale) {
+                    sales += val;
+                    fatnet_sales += net;
+                    profit += prft;
+                    paid += pd;
+                    remaining += rem;
                 }
-                
-                fatnet += net;
             });
             
             const net = sales - returns;
@@ -776,8 +860,8 @@ $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأس�
             if (soCountEl) soCountEl.textContent = visibleRows.length;
         }
 
-        // Initial calculation
-        recalculateTotals();
+        // إجماليات السيرفر أولاً (مبيعات ≠ مبيعات+مردود)
+        recalculateTotals(false);
 
         // Quick date filters
         const strtInput = document.querySelector('input[name="strtdate"]');

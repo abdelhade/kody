@@ -13,6 +13,10 @@ window.KodyUI = (function ($) {
     showConfirmButton: false,
     timer: 3500,
     timerProgressBar: true,
+    onOpen: function (toast) {
+      toast.addEventListener('mouseenter', Swal.stopTimer);
+      toast.addEventListener('mouseleave', Swal.resumeTimer);
+    },
     didOpen: function (toast) {
       toast.addEventListener('mouseenter', Swal.stopTimer);
       toast.addEventListener('mouseleave', Swal.resumeTimer);
@@ -22,6 +26,7 @@ window.KodyUI = (function ($) {
   function toast(type, message) {
     if (Toast) {
       Toast.fire({
+        type: type || 'success',
         icon: type || 'success',
         title: message
       });
@@ -35,6 +40,7 @@ window.KodyUI = (function ($) {
       title: 'هل أنت متأكد؟',
       text: 'لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.',
       icon: 'warning',
+      type: 'warning',
       confirmButtonText: 'نعم، استمرار',
       cancelButtonText: 'إلغاء',
       confirmButtonColor: '#ef4444',
@@ -43,6 +49,7 @@ window.KodyUI = (function ($) {
     };
 
     var opts = $.extend({}, defaults, options);
+    var alertType = opts.type || opts.icon || 'warning';
 
     if (typeof Swal === 'undefined') {
       if (window.confirm(opts.title + '\n' + opts.text)) {
@@ -54,7 +61,8 @@ window.KodyUI = (function ($) {
     Swal.fire({
       title: opts.title,
       text: opts.text,
-      icon: opts.icon,
+      type: alertType,
+      icon: alertType,
       showCancelButton: true,
       confirmButtonColor: opts.confirmButtonColor,
       cancelButtonColor: opts.cancelButtonColor,
