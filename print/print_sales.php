@@ -335,24 +335,52 @@ body {
 .items th { background: #f1f5f9; color: #0f172a; font-weight: 700; }
 .items td.name { text-align: right; }
 .disc-sub { font-size: 10px; color: #555; font-weight: 400; }
-.totals {
-    width: 320px;
-    margin-right: auto;
-    margin-left: 0;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    border-radius: 8px;
-    border-collapse: separate;
-    border-spacing: 0;
-    overflow: hidden;
+.invoice-footer-tables {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin: 14px 0;
+    page-break-inside: avoid;
 }
-.totals td { padding: 6px 12px; }
-.totals td.val { text-align: left; }
-.totals tr.net td {
-    background: #e2e8f0;
-    border-top: 2px solid #334155;
+.inv-summary-table {
+    border-collapse: collapse;
+    border: 1px solid #000;
+    background: #fff;
+}
+.inv-summary-table.totals-side {
+    width: 360px;
+}
+.inv-summary-table.balance-side {
+    width: 340px;
+}
+.inv-summary-table td {
+    border: 1px solid #000;
+    padding: 6px 12px;
+    font-size: <?= $font_size ?>px;
+    color: #000;
+    vertical-align: middle;
+}
+.inv-summary-table td.label-col {
+    text-align: right;
+    font-weight: 600;
+}
+.inv-summary-table td.val-col {
+    text-align: center;
+    font-weight: 600;
+    font-family: Arial, Tahoma, sans-serif;
+    font-size: <?= $font_size ?>px;
+    white-space: nowrap;
+}
+.inv-summary-table tr.highlight-row td {
     font-weight: 700;
-    font-size: <?= !empty($design['totals']['highlight_net']) ? ($font_size + 4) : $font_size ?>px;
+    border: 2px solid #000;
+}
+.inv-summary-table tr.highlight-row td.label-col {
+    font-weight: 700;
+}
+.inv-summary-table tr.highlight-row td.val-col {
+    font-weight: 700;
 }
 .foot-block {
     text-align: <?= htmlspecialchars($footerAlign, ENT_QUOTES, 'UTF-8') ?>;
@@ -462,24 +490,13 @@ body {
     $show_cust_phone = !empty($design['customer']['show_phone']);
     $show_cust_add = !empty($design['customer']['show_address']);
     $show_driver_line = $showDriverMeta && $driver_name !== '' && !($is_delivery && $showDriverMeta);
-    $show_bal_lines = $show_party_balance && $party_bal_before !== null && $party_bal_after !== null;
+    $show_bal_lines = false; // يتم عرض الرصيد في جدول الفوتر المزدوج أسفل الفاتورة
     $cust_has_any = ($show_client_block && (
         ($show_cust_name && $customer_name !== '')
         || ($show_cust_phone && $customer_phone !== '')
         || ($show_cust_add && $customer_address !== '')
-    )) || $show_driver_line || $show_bal_lines;
+    )) || $show_driver_line;
     if ($cust_has_any):
-        $fmtPartyBal = static function ($v) {
-            $v = (float)$v;
-            $abs = number_format(abs($v), 2);
-            if ($v > 0.00001) {
-                return $abs . ' مدين';
-            }
-            if ($v < -0.00001) {
-                return $abs . ' دائن';
-            }
-            return '0.00';
-        };
     ?>
     <div class="cust">
         <div class="cust-title">بيانات <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?></div>
@@ -495,10 +512,6 @@ body {
             <?php endif; ?>
             <?php if ($show_driver_line): ?>
             <div><strong>الدليفري:</strong> <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
-            <?php endif; ?>
-            <?php if ($show_bal_lines): ?>
-            <div><strong>الحساب السابق:</strong> <?= htmlspecialchars($fmtPartyBal($party_bal_before), ENT_QUOTES, 'UTF-8') ?></div>
-            <div><strong>الحساب بعد الفاتورة:</strong> <?= htmlspecialchars($fmtPartyBal($party_bal_after), ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
         </div>
     </div>
@@ -592,33 +605,84 @@ body {
     }
     $remaining = $fat_net - $paidval;
     $totCfg = $design['totals'] ?? [];
+    $fmtMoney = static function ($v) {
+        $v = (float)$v;
+        if (abs($v - round($v)) < 0.0001) {
+            return number_format($v, 0);
+        }
+        return number_format($v, 2);
+    };
+
+    $fmtBal = static function ($v) use ($fmtMoney) {
+        if ($v === null) {
+            return '0';
+        }
+        $v = (float)$v;
+        $absFormatted = $fmtMoney(abs($v));
+        if ($v < -0.00001) {
+            return $absFormatted . '-';
+        }
+        return $absFormatted;
+    };
+
+    $total_before_disc = $fat_total + ($total_item_disc ?? 0);
+    if ($disc_val > 0 && empty($total_item_disc) && abs($fat_total - ($fat_net + $disc_val)) < 0.01) {
+        $total_before_disc = $fat_total + $disc_val;
+    }
     ?>
-    <table class="totals">
-        <?php if (!empty($totCfg['show_items_total']) && $total_item_disc > 0): ?>
-        <tr><td>إجمالي الأصناف</td><td class="val"><?= number_format($fat_total + $total_item_disc, 2) ?></td></tr>
+    <div class="invoice-footer-tables">
+        <!-- جدول ملخص الفاتورة (اليمين) -->
+        <table class="inv-summary-table totals-side">
+            <tr>
+                <td class="label-col">إجمالي الفاتورة قبل الخصم:</td>
+                <td class="val-col"><?= htmlspecialchars($fmtMoney($total_before_disc), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php if ($disc_val > 0): ?>
+            <tr>
+                <td class="label-col">الخصم <?= $disc_pct_head > 0 ? '(' . $disc_pct_head . '%)' : '' ?></td>
+                <td class="val-col" style="color:#c00;">- <?= htmlspecialchars($fmtMoney($disc_val), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php if ($plus_val > 0): ?>
+            <tr>
+                <td class="label-col">الإضافي <?= $plus_pct_head > 0 ? '(' . $plus_pct_head . '%)' : '' ?></td>
+                <td class="val-col" style="color:#15803d;">+ <?= htmlspecialchars($fmtMoney($plus_val), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php endif; ?>
+            <tr class="highlight-row">
+                <td class="label-col">صافي قيمة الفاتورة بعد الخصم</td>
+                <td class="val-col"><?= htmlspecialchars($fmtMoney($fat_net), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php if (!$is_doc_order): ?>
+            <tr>
+                <td class="label-col">مدفوع من الفاتورة</td>
+                <td class="val-col"><?= htmlspecialchars($fmtMoney($paidval), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php if (abs($remaining) > 0.001): ?>
+            <tr>
+                <td class="label-col"><?= $remaining < 0 ? 'الباقي للعميل' : 'المتبقي من الفاتورة' ?></td>
+                <td class="val-col" style="color:<?= $remaining > 0 ? '#c00' : '#15803d' ?>;"><?= htmlspecialchars($fmtMoney(abs($remaining)), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php endif; ?>
+            <?php endif; ?>
+        </table>
+
+        <!-- جدول حساب العميل / المورد (اليسار) -->
+        <?php if ($show_party_balance && $party_bal_before !== null && $party_bal_after !== null): ?>
+        <table class="inv-summary-table balance-side">
+            <tr>
+                <td class="label-col">رصيد <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?> السابق</td>
+                <td class="val-col"><?= htmlspecialchars($fmtBal($party_bal_before), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <tr class="highlight-row">
+                <td class="label-col">إجمالي رصيد <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?> بعد الفاتورة</td>
+                <td class="val-col"><?= htmlspecialchars($fmtBal($party_bal_after), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+        </table>
+        <?php else: ?>
+        <div></div>
         <?php endif; ?>
-        <?php if (!empty($totCfg['show_items_disc']) && $total_item_disc > 0): ?>
-        <tr><td>خصم الأصناف</td><td class="val" style="color:#c00;">- <?= number_format($total_item_disc, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!empty($totCfg['show_subtotal'])): ?>
-        <tr><td>الإجمالي</td><td class="val"><?= number_format($fat_total, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!empty($totCfg['show_inv_disc']) && $disc_val > 0): ?>
-        <tr><td>الخصم <?= $disc_pct_head > 0 ? '(' . $disc_pct_head . '%)' : '' ?></td><td class="val" style="color:#c00;">- <?= number_format($disc_val, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!empty($totCfg['show_extra']) && $plus_val > 0): ?>
-        <tr><td>الإضافي <?= $plus_pct_head > 0 ? '(' . $plus_pct_head . '%)' : '' ?></td><td class="val" style="color:#15803d;">+ <?= number_format($plus_val, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!empty($totCfg['show_net'])): ?>
-        <tr class="net"><td>الصافي</td><td class="val"><?= number_format($fat_net, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!$is_doc_order && !empty($totCfg['show_paid'])): ?>
-        <tr><td>المدفوع</td><td class="val" style="color:#15803d;"><?= number_format($paidval, 2) ?></td></tr>
-        <?php endif; ?>
-        <?php if (!$is_doc_order && !empty($totCfg['show_change'])): ?>
-        <tr><td><?= $remaining < 0 ? 'الباقي' : 'المتبقي' ?></td><td class="val" style="color:<?= $remaining > 0 ? '#c00' : '#15803d' ?>; font-weight:700;"><?= number_format(abs($remaining), 2) ?></td></tr>
-        <?php endif; ?>
-    </table>
+    </div>
 
     <?php if (!empty($design['footer']['show_footer_text']) && !empty($design['footer']['footer_text'])): ?>
     <div class="foot-block">
