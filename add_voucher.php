@@ -773,7 +773,7 @@ $(document).ready(function() {
     isSubmitting = true;
     var $submitBtn = $("#btnSubmitVoucher");
     $submitBtn.prop("disabled", true).addClass("disabled");
-    $submitBtn.html('<i class="fas fa-spinner fa-spin ml-1"></i> جاري الحفظ...');
+    $submitBtn.html("<i class=\"fas fa-spinner fa-spin ml-1\"></i> جاري الحفظ...");
   });
 
   // حذف السند الحالي بواسطة SweetAlert
