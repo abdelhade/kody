@@ -3,7 +3,29 @@
 <?php include('includes/sidebar.php') ?>
 
 <?php
-// جلب جميع الأصناف النشطة مع وحدتها الافتراضية
+require_once __DIR__ . '/classes/UserDefaults.php';
+
+$storesRes = $conn->query("SELECT id, aname FROM acc_head WHERE is_stock = 1 AND isdeleted = 0 ORDER BY aname");
+$stores = $storesRes ? $storesRes->fetch_all(MYSQLI_ASSOC) : [];
+
+$defaultStore = (int) UserDefaults::get($conn, 'store');
+if ($defaultStore <= 0 && !empty($stores)) {
+    $defaultStore = (int) $stores[0]['id'];
+}
+$filterStoreId = isset($_GET['store_id']) ? (int) $_GET['store_id'] : $defaultStore;
+if ($filterStoreId <= 0 && $defaultStore > 0) {
+    $filterStoreId = $defaultStore;
+}
+
+$storeName = '';
+foreach ($stores as $s) {
+    if ((int) $s['id'] === $filterStoreId) {
+        $storeName = $s['aname'];
+        break;
+    }
+}
+
+// جلب جميع الأصناف النشطة مع رصيد المخزن المختار
 $sql = "SELECT m.*, 
                (SELECT u.uname FROM myunits u 
                 INNER JOIN item_units iu ON iu.unit_id = u.id 
@@ -18,7 +40,7 @@ $sql = "SELECT m.*,
         LEFT JOIN (
             SELECT item_id, SUM(qty_in) - SUM(qty_out) AS qty
             FROM fat_details
-            WHERE isdeleted = 0
+            WHERE isdeleted = 0" . ($filterStoreId > 0 ? " AND det_store = " . (int) $filterStoreId : "") . "
             GROUP BY item_id
         ) st ON st.item_id = m.id
         WHERE m.isdeleted = 0 
@@ -509,6 +531,30 @@ $total = count($items);
     <p>مقارنة الكمية الفعلية في المستودع مع الكمية المسجلة في النظام · تسوية الفروقات فوراً</p>
 </div>
 
+<!-- فلتر المخزن -->
+<div class="audit-card card no-print mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row align-items-end" id="auditStoreFilter">
+            <div class="col-md-4">
+                <label class="font-weight-bold mb-1"><i class="fas fa-warehouse ml-1"></i> المخزن</label>
+                <select name="store_id" id="auditStoreId" class="form-control" onchange="this.form.submit()">
+                    <?php foreach ($stores as $s): ?>
+                        <option value="<?= (int) $s['id'] ?>" <?= $filterStoreId === (int) $s['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($s['aname']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <div class="text-muted mt-2 mt-md-0">
+                    الجرد والتسوية على مخزن:
+                    <strong class="text-dark"><?= htmlspecialchars($storeName !== '' ? $storeName : '—') ?></strong>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Stats Row -->
 <div class="row mb-4" id="statsRow">
     <div class="col-6 col-md-3 mb-3">
@@ -787,7 +833,10 @@ function settleRow(id, originalSysQty) {
     fetch('ajax/save_inventory_audit.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ items: [{ id: id, qty: actual }] })
+        body: JSON.stringify({
+            store_id: parseInt(document.getElementById('auditStoreId').value, 10) || 0,
+            items: [{ id: id, qty: actual }]
+        })
     })
     .then(r => r.json())
     .then(function(res) {
@@ -837,7 +886,10 @@ document.getElementById('btnSaveAll').addEventListener('click', function() {
     fetch('ajax/save_inventory_audit.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ items: items })
+        body: JSON.stringify({
+            store_id: parseInt(document.getElementById('auditStoreId').value, 10) || 0,
+            items: items
+        })
     })
     .then(r => r.json())
     .then(function(res) {

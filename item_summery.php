@@ -34,16 +34,32 @@
                 </div>
 
                 <div class="card-body">
+                    <?php
+                    $filterStoreId = isset($_GET['store_id']) ? (int) $_GET['store_id'] : 0;
+                    $storesRes = $conn->query("SELECT id, aname FROM acc_head WHERE is_stock = 1 AND isdeleted = 0 ORDER BY aname");
+                    $storesList = $storesRes ? $storesRes->fetch_all(MYSQLI_ASSOC) : [];
+                    ?>
                     <!-- ✅ نموذج الفلاتر -->
                     <form method="GET" class="row mb-4">
                         <input type="hidden" name="id" value="<?= $itmid ?>">
                         <div class="col-md-3">
+                            <label>المخزن:</label>
+                            <select name="store_id" class="form-control">
+                                <option value="0">كل المخازن</option>
+                                <?php foreach ($storesList as $st): ?>
+                                    <option value="<?= (int) $st['id'] ?>" <?= $filterStoreId === (int) $st['id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($st['aname']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label>من تاريخ:</label>
-                            <input type="date" name="from" class="form-control" value="<?= $_GET['from'] ?? '' ?>">
+                            <input type="date" name="from" class="form-control" value="<?= htmlspecialchars($_GET['from'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                         </div>
                         <div class="col-md-3">
                             <label>إلى تاريخ:</label>
-                            <input type="date" name="to" class="form-control" value="<?= $_GET['to'] ?? '' ?>">
+                            <input type="date" name="to" class="form-control" value="<?= htmlspecialchars($_GET['to'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                         </div>
                         
                         <div class="col-md-3">
@@ -76,13 +92,16 @@
                                 if (isset($_GET['id'])) {
                                     $where = "item_id = $itmid AND isdeleted = 0";
 
+                                    if ($filterStoreId > 0) {
+                                        $where .= " AND det_store = " . (int) $filterStoreId;
+                                    }
                                     if (!empty($_GET['from'])) {
-                                        $from = $_GET['from'];
-                                        $where .= " AND crtime >= '$from 00:00:00'";
+                                        $from = preg_replace('/[^0-9\-]/', '', (string) $_GET['from']);
+                                        $where .= " AND crtime >= '" . $conn->real_escape_string($from) . " 00:00:00'";
                                     }
                                     if (!empty($_GET['to'])) {
-                                        $to = $_GET['to'];
-                                        $where .= " AND crtime <= '$to 23:59:59'";
+                                        $to = preg_replace('/[^0-9\-]/', '', (string) $_GET['to']);
+                                        $where .= " AND crtime <= '" . $conn->real_escape_string($to) . " 23:59:59'";
                                     }
                                     
                                     // Pagination
@@ -184,8 +203,9 @@
                             
                             // بناء query string للفلاتر
                             $filter_params = "id=$itmid";
-                            if (!empty($_GET['from'])) $filter_params .= "&from=" . $_GET['from'];
-                            if (!empty($_GET['to'])) $filter_params .= "&to=" . $_GET['to'];
+                            if ($filterStoreId > 0) $filter_params .= "&store_id=" . $filterStoreId;
+                            if (!empty($_GET['from'])) $filter_params .= "&from=" . urlencode((string) $_GET['from']);
+                            if (!empty($_GET['to'])) $filter_params .= "&to=" . urlencode((string) $_GET['to']);
                             
                             // زر السابق
                             if ($page > 1): ?>

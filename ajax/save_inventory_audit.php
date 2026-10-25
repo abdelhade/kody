@@ -95,7 +95,23 @@ $auditSession = 'AUD-' . date('Ymd-His') . '-' . substr(md5(uniqid(mt_rand(), tr
 // Get user info
 $userId   = isset($_SESSION['userid']) ? intval($_SESSION['userid']) : 0;
 $userName = isset($_SESSION['login'])  ? $_SESSION['login'] : 'غير معروف';
-$storeId  = (int) (getUserDefault('def_store', $conn) ?: 1);
+$storeId  = isset($data['store_id']) ? (int) $data['store_id'] : 0;
+if ($storeId <= 0) {
+    $storeId = (int) (getUserDefault('def_store', $conn) ?: 0);
+}
+if ($storeId <= 0) {
+    echo json_encode(['success' => false, 'message' => 'يجب اختيار المخزن']);
+    exit;
+}
+$stmtStoreOk = $conn->prepare('SELECT id FROM acc_head WHERE id = ? AND is_stock = 1 AND isdeleted = 0 LIMIT 1');
+$stmtStoreOk->bind_param('i', $storeId);
+$stmtStoreOk->execute();
+if (!$stmtStoreOk->get_result()->fetch_assoc()) {
+    $stmtStoreOk->close();
+    echo json_encode(['success' => false, 'message' => 'المخزن غير صالح']);
+    exit;
+}
+$stmtStoreOk->close();
 
 $conn->begin_transaction();
 $errors = [];
@@ -107,7 +123,7 @@ try {
     $stmtLedger = $conn->prepare("
         SELECT COALESCE(SUM(qty_in), 0) - COALESCE(SUM(qty_out), 0) AS qty
         FROM fat_details
-        WHERE item_id = ? AND isdeleted = 0
+        WHERE item_id = ? AND det_store = ? AND isdeleted = 0
     ");
     $stmtMove = $conn->prepare("
         INSERT INTO fat_details
@@ -152,8 +168,8 @@ try {
             continue;
         }
 
-        // 2. System qty comes from the movement ledger, not the cached itmqty
-        $stmtLedger->bind_param('i', $id);
+        // 2. رصيد المخزن المختار من دفتر الحركة
+        $stmtLedger->bind_param('ii', $id, $storeId);
         $stmtLedger->execute();
         $qtyBefore = round((float) $stmtLedger->get_result()->fetch_assoc()['qty'], 3);
 

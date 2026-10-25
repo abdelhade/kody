@@ -329,3 +329,10 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-10-15 13:55:05] mysqli_sql_exception: Unknown column 'm.unit' in 'where clause' in D:\xampp\htdocs\kody\myunits.php:6
 [2026-10-15 13:56:09] mysqli_sql_exception: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '' at line 1 in D:\xampp\htdocs\kody\includes\headermop.php:8
 [2026-10-15 13:56:20] mysqli_sql_exception: Unknown column 'm.unit' in 'where clause' in D:\xampp\htdocs\kody\myunits.php:6
+[2026-10-25 14:22:21] mysqli_sql_exception: Unknown column 'migration' in 'field list' in D:\xampp\htdocs\kody\check_st_tmp.php:16
+[2026-10-25 14:22:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-25 14:22:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-25 14:22:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-25 14:22:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-25 14:22:37] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-10-25 14:22:39] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
