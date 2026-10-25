@@ -87,7 +87,8 @@ if (!empty($return_url)) {
     $redirects = [
         InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=purchase',
         InvoiceProcessor::INVOICE_TYPES['SALES'] => '../operations_summary.php?q=sale',
-        InvoiceProcessor::INVOICE_TYPES['POS'] => $pos_page
+        InvoiceProcessor::INVOICE_TYPES['POS'] => $pos_page,
+        InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER'] => '../operations_summary.php?q=store_transfer',
     ];
 
     $redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?q=' . urlencode($q);

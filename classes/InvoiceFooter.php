@@ -457,8 +457,9 @@ class InvoiceFooter extends InvoiceElementBase
      */
     private function renderPayment()
     {
-        // إخفاء جزء الدفع لأوامر الشراء (12) وأوامر البيع (13) وعروض الأسعار (14)
-        $hidePayment = in_array($this->invoiceType, [12, 13, 14]);
+        // إخفاء جزء الدفع لأوامر الشراء/البيع وعروض الأسعار والتحويل المخزني
+        require_once __DIR__ . '/InvoiceProcessor.php';
+        $hidePayment = InvoiceProcessor::isNonCashDocument((int) $this->invoiceType);
         
         ?>
         <div class="card-header-bar">

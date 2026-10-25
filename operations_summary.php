@@ -156,6 +156,11 @@ switch ($q) {
         $where_clause = "ot.pro_tybe = 14 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
+    case "store_transfer":
+        $report_name = "تحويلات مخزنية";
+        $where_clause = "ot.pro_tybe = 18 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
+        break;
     case "all":
     default:
         $q = 'all';
@@ -164,7 +169,7 @@ switch ($q) {
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
 }
 $is_all_operations_report = ($q === 'all');
-$is_sales_order_report = in_array($q, ['sales_order', 'price_offer'], true);
+$is_sales_order_report = in_array($q, ['sales_order', 'price_offer', 'store_transfer'], true);
 $order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
 $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
 
@@ -388,7 +393,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                         InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'],
                                         InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'],
                                     ], true);
-                                    $is_sales_order = in_array((int) $tybe, [13, 14], true);
+                                    $is_sales_order = in_array((int) $tybe, [13, 14, 18], true);
                                     ?>
                                     <?php
                                     $pro_type_display = !empty($rowop['pro_type_name']) ? $rowop['pro_type_name'] : ($conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?? '');
@@ -411,7 +416,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                         <td data-sort="<?= htmlspecialchars($rowop['crtime'] ?: ($rowop['pro_date'] ?? '')) ?>"><?= $rowop['crtime'] ?></td>
                                         <td data-sort="<?= htmlspecialchars($pro_type_display) ?>">
                                             <?php
-                                            $use_a4 = in_array((int) $tybe, [2, 3, 4, 13, 14], true);
+                                            $use_a4 = in_array((int) $tybe, [2, 3, 4, 13, 14, 18], true);
                                             $a4_href = 'print/print_sales.php?id=' . (int) $proid;
                                             $cashier_href = 'print/receipt.php?id=' . (int) $proid . '&src=invoice';
                                             $print_href = $use_a4 ? $a4_href : ('print/receipt.php?id=' . (int) $proid);
@@ -465,7 +470,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                             <?php } ?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4, 13, 14]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، أمر بيع، عرض سعر (الكاشير tybe=9 ليس له صفحة تعديل) ?>
+                                            <?php if(in_array($tybe, [3, 4, 10, 11, 13, 14, 18]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>

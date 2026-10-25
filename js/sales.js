@@ -200,13 +200,14 @@ $(document).ready(function() {
             window.applyUnitItemInfo(data, unit, $row);
 
             const purchase = (typeof window.isPurchaseInvoice === 'function') && window.isPurchaseInvoice();
+            const costPrice = (typeof window.usesCostPrice === 'function') && window.usesCostPrice();
             const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
             const unitListPrice = (typeof window.invoicePriceFor === 'function')
                 ? window.invoicePriceFor(unit, listId, true)
                 : (parseFloat(unit.uprice1) || 0);
-            let newPrice = purchase ? (parseFloat(unit.ucost) || 0) : unitListPrice;
+            let newPrice = costPrice ? (parseFloat(unit.ucost) || 0) : unitListPrice;
             if (!(newPrice > 0)) {
-                const base = purchase
+                const base = costPrice
                     ? (parseFloat(data.cost_price) || parseFloat(data.last_price) || 0)
                     : (parseFloat(data.price1) || 0);
                 newPrice = base * (parseFloat(unit.unit_value) || 1);
@@ -393,11 +394,13 @@ function fetchItemInfo(itemId, row) {
         dataType: 'json',
         cache: true, // تفعيل الكاش
         success: function(data) {
-            const purchase = (typeof window.isPurchaseInvoice === 'function')
-                ? window.isPurchaseInvoice()
-                : getParameterByName('q') === 'purchase';
+            const costPrice = (typeof window.usesCostPrice === 'function')
+                ? window.usesCostPrice()
+                : (typeof window.isPurchaseInvoice === 'function'
+                    ? window.isPurchaseInvoice()
+                    : (getParameterByName('q') === 'purchase' || getParameterByName('q') === 'store_transfer'));
             const listId = (typeof window.currentInvoicePriceList === 'function') ? window.currentInvoicePriceList() : 1;
-            const price = purchase
+            const price = costPrice
                 ? (parseFloat(data.cost_price) || parseFloat(data.last_price) || 0)
                 : ((typeof window.invoicePriceFor === 'function') ? window.invoicePriceFor(data, listId, false) : (parseFloat(data.price1) || 0));
             // تحديث الحقول دفعة واحدة
@@ -647,6 +650,7 @@ function unitFromOption($opt) {
 
 function applyUnitToRow(row, unit) {
     const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    const costPrice = typeof window.usesCostPrice === 'function' && window.usesCostPrice();
     const listId = typeof window.currentInvoicePriceList === 'function' ? window.currentInvoicePriceList() : 1;
     const listPrice = typeof window.invoicePriceFor === 'function'
         ? window.invoicePriceFor(unit, listId, true)
@@ -666,7 +670,7 @@ function applyUnitToRow(row, unit) {
         updateTotal();
     }
 
-    if (!purchase && typeof window.isSalesReturn === 'function' && window.isSalesReturn() && typeof window.fetchLastSaleBases === 'function') {
+    if (!costPrice && typeof window.isSalesReturn === 'function' && window.isSalesReturn() && typeof window.fetchLastSaleBases === 'function') {
         const itemId = row.find('input[name="itmname[]"]').val();
         window.fetchLastSaleBases([itemId], function(map) {
             const base = parseFloat(map[itemId]) || 0;
@@ -675,7 +679,7 @@ function applyUnitToRow(row, unit) {
         return;
     }
 
-    writePrice(purchase ? (parseFloat(unit.ucost) || 0) : listPrice);
+    writePrice(costPrice ? (parseFloat(unit.ucost) || 0) : listPrice);
 }
 
 // فاتورة المشتريات: عمود "س. بيع" يعرض سعر البيع المختار أعلى الفاتورة (1/2/3)
@@ -912,8 +916,9 @@ function calcProfitPct(row) {
         }
 
 function rowSalePrice($row) {
-    const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
-    if (purchase) {
+    const costBased = (typeof window.usesCostPrice === 'function' && window.usesCostPrice())
+        || (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice());
+    if (costBased) {
         return null;
     }
     const price = parseFloat($row.find('.itmprice').val());
@@ -922,7 +927,8 @@ function rowSalePrice($row) {
 
 function paintInvoiceLineWarnings() {
     const lines = [];
-    const purchase = typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice();
+    const costBased = (typeof window.usesCostPrice === 'function' && window.usesCostPrice())
+        || (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice());
 
     $('#itmrow tr').each(function() {
         const $row = $(this);
@@ -935,7 +941,7 @@ function paintInvoiceLineWarnings() {
             .toggleClass('invoice-warn-qty', negativeQty)
             .attr('title', negativeQty ? 'الكمية سالبة' : '');
 
-        if (!purchase) {
+        if (!costBased) {
             const sale = rowSalePrice($row);
             const $saleInput = $row.find('.itmprice');
             const zeroSale = sale !== null && sale === 0;

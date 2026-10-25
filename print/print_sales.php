@@ -534,7 +534,12 @@ body {
         <tbody>
         <?php
         $x = 0;
-        $resdet = $conn->query("SELECT * FROM fat_details WHERE (fatid = $id OR pro_id = $id) AND isdeleted = 0 ORDER BY id");
+        $detWhere = "(fatid = $id OR pro_id = $id) AND isdeleted = 0";
+        if ((int) $tybe === 18) {
+            // التحويل المخزني: سطران لكل صنف — نطبع سطر الخروج فقط
+            $detWhere .= ' AND qty_out > 0';
+        }
+        $resdet = $conn->query("SELECT * FROM fat_details WHERE $detWhere ORDER BY id");
         while ($rowdet = $resdet->fetch_assoc()) {
             $x++;
             $itmid = (int)$rowdet['item_id'];
@@ -545,7 +550,7 @@ body {
             }
             if ($tybe == 4 || $tybe == 10) {
                 $qty = (float)$rowdet['qty_in'] / $u;
-            } elseif ($tybe == 3 || $tybe == 9 || $tybe == 11) {
+            } elseif ($tybe == 3 || $tybe == 9 || $tybe == 11 || $tybe == 18) {
                 $qty = (float)$rowdet['qty_out'] / $u;
             } elseif (in_array($tybe, [12, 13, 14], true)) {
                 $qty = (float)($rowdet['doc_qty'] ?? 0) / $u;

@@ -17,19 +17,20 @@ if (!defined('INVOICE_TYPES')) {
         'purchase' => 4, 'sale' => 3, 'purchase_return' => 10, 'sale_return' => 11,
         // توافق مع الروابط القديمة
         'sale_legacy' => 4, 'buy_legacy' => 3, 'resale' => 10, 'rebuy' => 11,
-        'po' => 12, 'so' => 13, 'offer' => 14
+        'po' => 12, 'so' => 13, 'offer' => 14, 'store_transfer' => 18
     ]);
     
     define('INVOICE_NAMES', [
         3 => 'فاتورة مبيعات', 4 => 'فاتورة مشتريات',
         10 => 'فاتورة مردود مشتريات', 11 => 'فاتورة مردود مبيعات',
-        12 => 'أمر شراء', 13 => 'أمر بيع', 14 => 'عرض سعر'
+        12 => 'أمر شراء', 13 => 'أمر بيع', 14 => 'عرض سعر',
+        18 => 'تحويل مخزني'
     ]);
     
     define('EDIT_NAMES', [
         4 => 'تعديل فاتورة المشتريات', 3 => 'تعديل فاتورة المبيعات',
         10 => 'تعديل فاتورة مردود المشتريات', 11 => 'تعديل فاتورة مردود المبيعات',
-        14 => 'تعديل عرض السعر'
+        14 => 'تعديل عرض السعر', 18 => 'تعديل تحويل مخزني'
     ]);
 }
 
@@ -85,7 +86,8 @@ if (!empty($pro_tybe)) {
 $bg_colors = [
     3 => 'bg-primary', 4 => 'bg-primary-light',
     10 => 'bg-danger', 11 => 'bg-danger',
-    12 => 'bg-danger', 13 => 'bg-danger', 14 => 'bg-danger'
+    12 => 'bg-danger', 13 => 'bg-danger', 14 => 'bg-danger',
+    18 => 'bg-primary-light'
 ];
 $background_class = $is_edit_mode ? 'bg-danger' : ($bg_colors[$pro_tybe] ?? 'bg-neutral-500');
 

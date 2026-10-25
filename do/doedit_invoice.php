@@ -106,14 +106,19 @@ $pro_tybe = intval($rowop['pro_tybe']);
 Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'edit'));
 
 $store_id = isset($_POST['store_id']) ? (int)$_POST['store_id'] : (int)$rowop['store_id'];
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
+    if ($store_id === $acc2_id) {
+        die('لا يمكن التحويل من وإلى نفس المخزن');
+    }
+}
 $prevent_negative_stock = !Can::check('stock.sell_negative');
-$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $id);
+$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $ot_id);
 if ($lineErrors) {
     die(implode(' — ', $lineErrors));
 }
 
-// تحديد المبلغ المدفوع - أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
-if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+// تحديد المبلغ المدفوع - أوامر/عروض/تحويل مخزني بلا مدفوعات
+if (InvoiceProcessor::isNonCashDocument($pro_tybe)) {
     $paid = 0;
 } else {
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
@@ -132,6 +137,34 @@ if (!$config) {
 
 // تحديد الحسابات المحاسبية
 $accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+
+// التحويل المخزني: الصافي = مجموع (كمية × متوسط التكلفة)
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
+    $transferTotal = 0.0;
+    $stmtCost = $conn->prepare('SELECT cost_price FROM myitems WHERE id = ? AND isdeleted = 0 LIMIT 1');
+    if ($stmtCost && isset($_POST['itmname']) && is_array($_POST['itmname'])) {
+        foreach ($_POST['itmname'] as $idx => $itemId) {
+            if ($itemId === '' || $itemId === null) {
+                continue;
+            }
+            $itemId = (int) $itemId;
+            $qty = (float) ($_POST['itmqty'][$idx] ?? 0);
+            $uVal = (float) ($_POST['u_val'][$idx] ?? 1);
+            if ($uVal <= 0) {
+                $uVal = 1;
+            }
+            $stmtCost->bind_param('i', $itemId);
+            $stmtCost->execute();
+            $costRow = $stmtCost->get_result()->fetch_assoc();
+            $transferTotal += $qty * $uVal * (float) ($costRow['cost_price'] ?? 0);
+        }
+        $stmtCost->close();
+    }
+    $headtotal = $transferTotal;
+    $headnet = $transferTotal;
+    $headdisc = 0;
+    $headplus = 0;
+}
 
 // تحقق من أن الصندوق محدد إذا كان هناك مبلغ مدفوع
 if ($paid > 0 && $fund_id == 0) {
@@ -166,8 +199,13 @@ try {
         'fund_id' => $fund_id,
     ]);
 
-    // تحديث القيود المحاسبية لجميع الفواتير الفعلية (ليس الأوامر أو العروض)
-    if(!in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    // تحديث القيود — أوامر/عروض بلا قيد؛ التحويل المخزني له قيد
+    $skipJournal = in_array($pro_tybe, [
+        InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'],
+        InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'],
+        InvoiceProcessor::INVOICE_TYPES['OFFER'],
+    ], true);
+    if (!$skipJournal) {
         InvoiceProcessor::updateMainJournal(
             $conn,
             (int) $ot_id,
@@ -180,22 +218,25 @@ try {
         );
     }
 
-    // معالجة المدفوعات — أوامر الشراء والبيع وعروض الأسعار بلا سند
-    InvoiceProcessor::syncSimplePayment(
-        $conn,
-        (int) $ot_id,
-        (int) $pro_tybe,
-        $config,
-        $accounts,
-        (string) $info,
-        (string) $pro_date,
-        (int) $emp_id,
-        (int) $usid,
-        (float) $paid
-    );
+    // معالجة المدفوعات — أوامر/عروض/تحويل مخزني بلا سند
+    if (!InvoiceProcessor::isNonCashDocument($pro_tybe)) {
+        InvoiceProcessor::syncSimplePayment(
+            $conn,
+            (int) $ot_id,
+            (int) $pro_tybe,
+            $config,
+            $accounts,
+            (string) $info,
+            (string) $pro_date,
+            (int) $emp_id,
+            (int) $usid,
+            (float) $paid
+        );
+    }
 
     // تحديث تفاصيل الفاتورة — soft delete ثم إعادة الإدراج
     $lines = InvoiceProcessor::linesFromPost($_POST);
+    $destStoreId = ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) ? (int) $acc2_id : 0;
     InvoiceProcessor::replaceDetails(
         $conn,
         (int) $ot_id,
@@ -203,7 +244,8 @@ try {
         (int) $store_id,
         $lines,
         true,
-        true
+        true,
+        $destStoreId
     );
     
     // تحديث إجمالي الأرباح للمبيعات

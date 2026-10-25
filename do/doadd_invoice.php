@@ -217,9 +217,11 @@ if ($col_dp && $col_dp->num_rows == 0) {
 }
 
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
-// أوامر الشراء والبيع وعروض الأسعار لا تحتاج مدفوعات
-if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+// أوامر الشراء/البيع وعروض الأسعار والتحويل المخزني لا تحتاج مدفوعات
+if (InvoiceProcessor::isNonCashDocument($pro_tybe)) {
     $paid = 0;
+    $paid_cash = 0;
+    $paid_bank = 0;
 } elseif($pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']){
     // If paid amount is sent (which is true for our new POS), use it. 
     // Otherwise calculate it (fallback for old behavior)
@@ -236,10 +238,11 @@ if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], Invoi
 error_log('Validation check - pro_tybe: ' . $pro_tybe . ', store_id: ' . $store_id . ', acc2_id: ' . $acc2_id . ', emp_id: ' . $emp_id);
 if ($pro_tybe == 0 || $store_id == 0 || $acc2_id == 0 || $emp_id == 0) {
     error_log('VALIDATION FAILED: Required data missing');
+    $isTransfer = ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']);
     $missing = [];
     if ($pro_tybe == 0) $missing[] = 'نوع الفاتورة';
-    if ($store_id == 0) $missing[] = 'المخزن';
-    if ($acc2_id == 0) $missing[] = 'العميل';
+    if ($store_id == 0) $missing[] = $isTransfer ? 'المخزن المصدر' : 'المخزن';
+    if ($acc2_id == 0) $missing[] = $isTransfer ? 'المخزن الهدف' : 'العميل';
     if ($emp_id == 0) $missing[] = 'الموظف';
     $err_msg = 'خطأ: بيانات مطلوبة مفقودة - ' . implode(', ', $missing);
     if ($ajax_save) {
@@ -248,6 +251,24 @@ if ($pro_tybe == 0 || $store_id == 0 || $acc2_id == 0 || $emp_id == 0) {
         exit;
     }
     invoice_fail($err_msg);
+}
+
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
+    if ($store_id === $acc2_id) {
+        invoice_fail('لا يمكن التحويل من وإلى نفس المخزن');
+    }
+    $stmtStores = $conn->prepare(
+        "SELECT COUNT(*) AS c FROM acc_head WHERE id IN (?, ?) AND is_stock = 1 AND isdeleted = 0"
+    );
+    if ($stmtStores) {
+        $stmtStores->bind_param('ii', $store_id, $acc2_id);
+        $stmtStores->execute();
+        $storeCount = (int) ($stmtStores->get_result()->fetch_assoc()['c'] ?? 0);
+        $stmtStores->close();
+        if ($storeCount < 2) {
+            invoice_fail('المخزن المصدر والهدف يجب أن يكونا مخازن صالحة');
+        }
+    }
 }
 
 // التحقق من وجود أصناف
@@ -291,6 +312,34 @@ if (!$config) {
 // تحديد الحسابات المحاسبية
 $accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
 error_log('Accounting accounts: ' . print_r($accounts, true));
+
+// التحويل المخزني: الصافي = مجموع (كمية × متوسط التكلفة)
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
+    $transferTotal = 0.0;
+    $stmtCost = $conn->prepare('SELECT cost_price FROM myitems WHERE id = ? AND isdeleted = 0 LIMIT 1');
+    if ($stmtCost && isset($_POST['itmname']) && is_array($_POST['itmname'])) {
+        foreach ($_POST['itmname'] as $idx => $itemId) {
+            if ($itemId === '' || $itemId === null) {
+                continue;
+            }
+            $itemId = (int) $itemId;
+            $qty = (float) ($_POST['itmqty'][$idx] ?? 0);
+            $uVal = (float) ($_POST['u_val'][$idx] ?? 1);
+            if ($uVal <= 0) {
+                $uVal = 1;
+            }
+            $stmtCost->bind_param('i', $itemId);
+            $stmtCost->execute();
+            $costRow = $stmtCost->get_result()->fetch_assoc();
+            $transferTotal += $qty * $uVal * (float) ($costRow['cost_price'] ?? 0);
+        }
+        $stmtCost->close();
+    }
+    $headtotal = $transferTotal;
+    $headnet = $transferTotal;
+    $headdisc = 0;
+    $headplus = 0;
+}
 
 
 
@@ -495,8 +544,13 @@ try {
     $stmt_ot->execute();
     $stmt_ot->close();
 
-    // إنشاء القيود المحاسبية (فقط للفواتير الفعلية، ليس للأوامر أو العروض أو الطلبات المعلّقة)
-    if (!$is_pending_table_order && !in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    // قيد محاسبي: الفواتير الفعلية + التحويل المخزني (أوامر/عروض بلا قيد)
+    $skipJournal = $is_pending_table_order || in_array($pro_tybe, [
+        InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'],
+        InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'],
+        InvoiceProcessor::INVOICE_TYPES['OFFER'],
+    ], true);
+    if (!$skipJournal) {
         InvoiceProcessor::createMainJournal(
             $conn,
             (int) $last_op,
@@ -510,8 +564,8 @@ try {
         );
     }
     
-    // معالجة المدفوعات إذا وجدت (فقط للفواتير الفعلية، ليس للأوامر أو العروض)
-    if (!$is_pending_table_order && !in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'], InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    // سندات دفع: مش للأوامر/العروض/التحويل المخزني
+    if (!$is_pending_table_order && !InvoiceProcessor::isNonCashDocument($pro_tybe)) {
         InvoiceProcessor::createSplitPaymentVouchers(
             $conn,
             (int) $last_op,
@@ -533,6 +587,7 @@ try {
     // معالجة تفاصيل الفواتير
     $lines = InvoiceProcessor::linesFromPost($_POST);
     if (!empty($lines)) {
+        $destStoreId = ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) ? (int) $acc2_id : 0;
         InvoiceProcessor::replaceDetails(
             $conn,
             (int) $last_op,
@@ -540,7 +595,8 @@ try {
             (int) $store_id,
             $lines,
             false,
-            false
+            false,
+            $destStoreId
         );
     }
     // تحديث إجمالي الأرباح للمبيعات
@@ -762,7 +818,8 @@ if ($submit == 'print') {
             InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../sales.php?q=purchase',  // مشتريات
             InvoiceProcessor::INVOICE_TYPES['SALES'] => '../sales.php?q=sale',      // مبيعات
             InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'] => '../sales.php?q=resale',  // مردود مشتريات
-            InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy'       // مردود مبيعات
+            InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy',       // مردود مبيعات
+            InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER'] => '../sales.php?q=store_transfer',
         ];
         $redirect = $redirects[$pro_tybe] ?? '../sales.php';
         $redirect .= (strpos($redirect, '?') !== false ? '&' : '?') . 'success=1';
@@ -778,7 +835,8 @@ if ($submit == 'print') {
         InvoiceProcessor::INVOICE_TYPES['SALES'] => '../sales.php?q=sale',
         InvoiceProcessor::INVOICE_TYPES['POS'] => (isset($_POST['from_mobile']) && $_POST['from_mobile'] == '1') ? '../pos_mobile.php' : '../pos_barcode.php',
         InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'] => '../sales.php?q=resale',
-        InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy'
+        InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'] => '../sales.php?q=rebuy',
+        InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER'] => '../sales.php?q=store_transfer',
     ];
     
     $redirect = $redirects[$pro_tybe] ?? '../sales.php';

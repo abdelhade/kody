@@ -22,6 +22,7 @@ $itemLookup = [
     'items.view', 'inventory.audit', 'pos.use',
     'sales.add', 'sales.edit', 'sales_returns.add', 'sales_orders.add', 'quotations.add',
     'purchases.add', 'purchases.edit', 'purchase_returns.add', 'purchase_orders.add',
+    'store_transfers.add', 'store_transfers.edit',
 ];
 
 // ملفات البحث عن الحسابات وأرصدتها
@@ -32,7 +33,8 @@ $accountLookup = [
 
 $invoiceView = [
     'sales.view', 'sales_returns.view', 'sales_orders.view', 'quotations.view',
-    'purchases.view', 'purchase_returns.view', 'purchase_orders.view', 'pos.use', 'pos.closed_sessions',
+    'purchases.view', 'purchase_returns.view', 'purchase_orders.view',
+    'store_transfers.view', 'pos.use', 'pos.closed_sessions',
 ];
 
 $allReports = [
@@ -184,17 +186,19 @@ return [
         'sale_return' => 'sales_returns.add', 'rebuy' => 'sales_returns.add',
         'purchase_return' => 'purchase_returns.add', 'resale' => 'purchase_returns.add',
         'po' => 'purchase_orders.add', 'so' => 'sales_orders.add', 'offer' => 'quotations.add',
+        'store_transfer' => 'store_transfers.add',
     ], 'default' => 'login'],
     'do/doadd_invoice.php'     => 'custom',
     'do/doedit_invoice.php'    => 'custom',
     'do/dodel_invoice.php'     => 'custom',
     'print/print_sales.php'    => $invoiceView,
     'operations_summary.php'   => ['param' => 'q', 'map' => [
-        'sale'          => ['sales.view', 'reports.sales'],
-        'sales_order'   => ['sales_orders.view', 'reports.sales'],
-        'price_offer'   => ['quotations.view', 'reports.sales'],
-        'purchase'      => ['purchases.view', 'reports.purchases'],
-        'all'           => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
+        'sale'            => ['sales.view', 'reports.sales'],
+        'sales_order'     => ['sales_orders.view', 'reports.sales'],
+        'price_offer'     => ['quotations.view', 'reports.sales'],
+        'purchase'        => ['purchases.view', 'reports.purchases'],
+        'store_transfer'  => 'store_transfers.view',
+        'all'             => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
     ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting'])],
 
     // ===== نقاط البيع =====

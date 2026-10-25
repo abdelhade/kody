@@ -187,8 +187,11 @@ final class UserDefaults
             'fund_id'  => 'fund',
             'payment_fund_id' => 'fund',
             'emp_id'   => 'emp',
-            'acc2_id'  => self::partyKey($proType),
         ];
+        // التحويل المخزني: acc2_id = مخزن هدف، مش عميل/مورد
+        if ($proType !== 18) {
+            $fields['acc2_id'] = self::partyKey($proType);
+        }
         if (self::hasPriceList($proType)) {
             $fields['price_list'] = 'price_list';
         }

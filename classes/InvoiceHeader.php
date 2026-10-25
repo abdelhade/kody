@@ -73,12 +73,31 @@ class InvoiceHeader extends InvoiceElementBase
      */
     public function render()
     {
+        require_once __DIR__ . '/InvoiceProcessor.php';
         $clientLabel = $this->getClientLabel();
         $addAccountLink = $this->getAddAccountLink();
+        $isStoreTransfer = ((int) $this->invoiceType === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']);
 
         ob_start();
         ?>
         <div class="row frst-row bg--200">
+            <?php if ($isStoreTransfer): ?>
+            <!-- من مخزن (مصدر) -->
+            <div class="col-md-2">
+                <label for="">من مخزن</label>
+                <select name="store_id" id="invoiceStore" class="select2 form-control form-control-sm">
+                    <?php $this->renderStoreOptions(); ?>
+                </select>
+            </div>
+            <!-- إلى مخزن (هدف) — يُحفظ في acc2_id ثم يُحوَّل إلى acc1 في القيد -->
+            <div class="col-md-2">
+                <label for="">إلى مخزن</label>
+                <select class="select2 form-control form-control-sm" name="acc2_id" id="mySelectEmp">
+                    <?php $this->renderDestStoreOptions(); ?>
+                </select>
+                <small id="storeTransferWarn" class="text-danger font-weight-bold d-none">لا يمكن التحويل لنفس المخزن</small>
+            </div>
+            <?php else: ?>
             <!-- العميل/المورد -->
             <div class="col-lg-2">
                 <div class="tool">
@@ -116,6 +135,7 @@ class InvoiceHeader extends InvoiceElementBase
                     <?php $this->renderStoreOptions(); ?>
                 </select>
             </div>
+            <?php endif; ?>
 
             <!-- الموظف -->
             <div class="col-md-1">
@@ -361,6 +381,25 @@ class InvoiceHeader extends InvoiceElementBase
             });
             loadPartyBalance();
 
+            // تحويل مخزني: منع نفس المخزن من/إلى
+            function checkStoreTransferSame() {
+                var $warn = $('#storeTransferWarn');
+                if (!$warn.length) return true;
+                var from = parseInt($('#invoiceStore').val(), 10) || 0;
+                var to = parseInt($('#mySelectEmp').val(), 10) || 0;
+                var same = from > 0 && to > 0 && from === to;
+                $warn.toggleClass('d-none', !same);
+                return !same;
+            }
+            $('#invoiceStore, #mySelectEmp').on('change', checkStoreTransferSame);
+            checkStoreTransferSame();
+            $('form').on('submit', function(e) {
+                if (!checkStoreTransferSame()) {
+                    e.preventDefault();
+                    alert('لا يمكن التحويل من وإلى نفس المخزن');
+                }
+            });
+
             saveAccountInline(null, 'saveSupplierInlineBtn', 'addSupplierInlineMsg', '#addSupplierInlineModal');
             saveAccountInline(null, 'saveClientInlineBtn',   'addClientInlineMsg',   '#addClientInlineModal');
 
@@ -379,15 +418,29 @@ class InvoiceHeader extends InvoiceElementBase
     public function validate()
     {
         $errors = [];
+        $isStoreTransfer = ((int) $this->invoiceType === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']);
 
-        // التحقق من وجود العميل/المورد
-        if (empty($_POST['acc2_id'])) {
-            $errors[] = 'يجب اختيار ' . ($this->getClientType() == 'supplier' ? 'المورد' : 'العميل');
-        }
+        if ($isStoreTransfer) {
+            if (empty($_POST['store_id'])) {
+                $errors[] = 'يجب اختيار المخزن المصدر';
+            }
+            if (empty($_POST['acc2_id'])) {
+                $errors[] = 'يجب اختيار المخزن الهدف';
+            }
+            if (!empty($_POST['store_id']) && !empty($_POST['acc2_id'])
+                && (int) $_POST['store_id'] === (int) $_POST['acc2_id']) {
+                $errors[] = 'لا يمكن التحويل من وإلى نفس المخزن';
+            }
+        } else {
+            // التحقق من وجود العميل/المورد
+            if (empty($_POST['acc2_id'])) {
+                $errors[] = 'يجب اختيار ' . ($this->getClientType() == 'supplier' ? 'المورد' : 'العميل');
+            }
 
-        // التحقق من وجود المخزن
-        if (empty($_POST['store_id'])) {
-            $errors[] = 'يجب اختيار المخزن';
+            // التحقق من وجود المخزن
+            if (empty($_POST['store_id'])) {
+                $errors[] = 'يجب اختيار المخزن';
+            }
         }
 
         // التحقق من التاريخ
@@ -418,14 +471,29 @@ class InvoiceHeader extends InvoiceElementBase
 
     /**
      * حساب الطرف في الفاتورة المحفوظة.
-     * مردود المشتريات يخزن المورد في acc1، وباقي الفواتير تخزن الطرف في acc2.
+     * مردود المشتريات يخزن المورد في acc1، والتحويل المخزني يخزن الهدف في acc1،
+     * وباقي الفواتير تخزن الطرف في acc2.
      */
     private function getPartyAccountId()
     {
-        if ((int)$this->invoiceType === 10) {
+        $type = (int) $this->invoiceType;
+        if ($type === 10 || $type === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
             return $this->data['acc1'] ?? null;
         }
         return $this->data['acc2'] ?? null;
+    }
+
+    /** خيارات المخزن الهدف للتحويل المخزني */
+    private function renderDestStoreOptions()
+    {
+        $partyId = $this->isEditMode ? $this->getPartyAccountId() : null;
+        foreach ($this->stores as $store) {
+            $selected = '';
+            if ($partyId !== null && (int) $partyId === (int) $store['id']) {
+                $selected = 'selected';
+            }
+            echo "<option value='{$store['id']}' {$selected}>{$this->sanitizeInput($store['aname'])}</option>";
+        }
     }
 
     /**

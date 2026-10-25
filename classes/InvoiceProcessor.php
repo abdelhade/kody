@@ -15,7 +15,8 @@ class InvoiceProcessor {
         'SALES_RETURN' => 11,     // مردود مبيعات
         'PURCHASE_ORDER' => 12,   // أمر شراء
         'SALES_ORDER' => 13,      // أمر بيع
-        'OFFER' => 14             // عرض سعر
+        'OFFER' => 14,            // عرض سعر
+        'STORE_TRANSFER' => 18,   // تحويل مخزني
     ];
 
     // تعريف أنواع العمليات المحاسبية
@@ -36,7 +37,19 @@ class InvoiceProcessor {
         12 => 'purchase_orders',
         13 => 'sales_orders',
         14 => 'quotations',
+        18 => 'store_transfers',
     ];
+
+    /** مستندات بلا سداد نقدي (أوامر / عرض سعر / تحويل مخزني) */
+    public static function isNonCashDocument(int $proTybe): bool
+    {
+        return in_array($proTybe, [
+            self::INVOICE_TYPES['PURCHASE_ORDER'],
+            self::INVOICE_TYPES['SALES_ORDER'],
+            self::INVOICE_TYPES['OFFER'],
+            self::INVOICE_TYPES['STORE_TRANSFER'],
+        ], true);
+    }
 
     /**
      * الصلاحية المطلوبة لفعل (view/add/edit/delete) على نوع فاتورة.
@@ -152,7 +165,14 @@ class InvoiceProcessor {
                 'disc_type' => self::ACCOUNTING_TYPES['SALES_DISC'],
                 'paid_type' => self::ACCOUNTING_TYPES['RECEIPT'],
                 'cost_account' => 91
-            ]
+            ],
+            self::INVOICE_TYPES['STORE_TRANSFER'] => [
+                'note' => 'تحويل مخزني',
+                'paid_note' => 'سند',
+                'disc_type' => self::ACCOUNTING_TYPES['PURCHASE_DISC'],
+                'paid_type' => self::ACCOUNTING_TYPES['PAYMENT'],
+                'cost_account' => 0
+            ],
         ];
         
         return isset($configs[$pro_tybe]) ? $configs[$pro_tybe] : null;
@@ -214,6 +234,17 @@ class InvoiceProcessor {
                     'acc6' => $fund_id
                 ];
                 
+            case self::INVOICE_TYPES['STORE_TRANSFER']:
+                // مدين: المخزن الهدف | دائن: المخزن المصدر
+                return [
+                    'acc1' => $acc2_id,
+                    'acc2' => $store_id,
+                    'acc3' => $acc2_id,
+                    'acc4' => $store_id,
+                    'acc5' => $fund_id,
+                    'acc6' => $acc2_id,
+                ];
+
             case self::INVOICE_TYPES['SALES_ORDER']:
             case self::INVOICE_TYPES['OFFER']:
                 return [
@@ -1778,6 +1809,7 @@ class InvoiceProcessor {
 
     /**
      * Soft-delete البنود ثم إعادة إدراجها من مصفوفة أسطر موحّدة.
+     * للتحويل المخزني: سطر خروج من المصدر + سطر دخول للهدف (destStoreId).
      *
      * @param list<array{item_id:int,qty:float,price:float,disc:float,disc_pct:float,sell_price?:float,u_val:float,crtime?:string}> $lines
      */
@@ -1788,7 +1820,8 @@ class InvoiceProcessor {
         int $storeId,
         array $lines,
         bool $softDeleteFirst = true,
-        bool $withCrtime = false
+        bool $withCrtime = false,
+        int $destStoreId = 0
     ): void {
         if ($softDeleteFirst) {
             self::softDeleteDetails($conn, $invoiceId);
@@ -1842,10 +1875,6 @@ class InvoiceProcessor {
                 $uVal = 1;
             }
 
-            [$qtyIn, $qtyOut] = self::resolveLineQty($proTybe, $qty, $uVal);
-            $docQty = $qty * $uVal;
-            $detValue = $qty * ($price - $disc);
-
             $stmtItem->bind_param('i', $itemId);
             $stmtItem->execute();
             $rowbl = $stmtItem->get_result()->fetch_assoc();
@@ -1865,6 +1894,17 @@ class InvoiceProcessor {
             $existingSell = (float) $rowbl['price' . $sellList];
             $costPrice = $oldPrice;
             $itmProfit = 0.0;
+
+            // التحويل المخزني: السعر = متوسط تكلفة الشراء (cost_price)
+            if ($proTybe === self::INVOICE_TYPES['STORE_TRANSFER']) {
+                $price = $oldPrice * $uVal;
+                $disc = 0.0;
+                $discPct = 0.0;
+            }
+
+            [$qtyIn, $qtyOut] = self::resolveLineQty($proTybe, $qty, $uVal);
+            $docQty = $qty * $uVal;
+            $detValue = $qty * ($price - $disc);
 
             $costUpdateTypes = $withCrtime
                 ? [self::INVOICE_TYPES['PURCHASE']]
@@ -1893,53 +1933,70 @@ class InvoiceProcessor {
                 $unitPrice = $price / $uVal;
                 $itmProfit = $qty * $uVal * ($unitPrice - $oldPrice);
                 $price = $unitPrice;
+            } elseif ($proTybe === self::INVOICE_TYPES['STORE_TRANSFER']) {
+                $price = $oldPrice;
             }
 
-            if ($withCrtime) {
-                $crtime = !empty($line['crtime']) ? (string) $line['crtime'] : date('Y-m-d H:i:s');
-                $stmtDetails->bind_param(
-                    'iiiiddddddiiiidds',
-                    $proTybe,
-                    $invoiceId,
-                    $itemId,
-                    $uVal,
-                    $qtyIn,
-                    $qtyOut,
-                    $docQty,
-                    $price,
-                    $disc,
-                    $discPct,
-                    $detValue,
-                    $invoiceId,
-                    $proTybe,
-                    $storeId,
-                    $costPrice,
-                    $itmProfit,
-                    $crtime
-                );
-            } else {
-                $stmtDetails->bind_param(
-                    'ssssssssssssssss',
-                    $proTybe,
-                    $invoiceId,
-                    $itemId,
-                    $uVal,
-                    $qtyIn,
-                    $qtyOut,
-                    $docQty,
-                    $price,
-                    $disc,
-                    $discPct,
-                    $detValue,
-                    $invoiceId,
-                    $proTybe,
-                    $storeId,
-                    $costPrice,
-                    $itmProfit
-                );
+            $lineStores = [[$storeId, $qtyIn, $qtyOut, $detValue]];
+            if ($proTybe === self::INVOICE_TYPES['STORE_TRANSFER']) {
+                if ($destStoreId <= 0) {
+                    throw new Exception('المخزن الهدف مطلوب للتحويل المخزني');
+                }
+                $baseQty = $qty * $uVal;
+                // القيمة على سطر الخروج فقط عشان التقارير/الطباعة ما تتضاعفش
+                $lineStores = [
+                    [$storeId, 0.0, $baseQty, $detValue],
+                    [$destStoreId, $baseQty, 0.0, 0.0],
+                ];
             }
-            if (!$stmtDetails->execute()) {
-                throw new Exception('فشل إدخال تفاصيل الصنف ' . $itemId);
+
+            foreach ($lineStores as [$lineStoreId, $lineQtyIn, $lineQtyOut, $lineDetValue]) {
+                if ($withCrtime) {
+                    $crtime = !empty($line['crtime']) ? (string) $line['crtime'] : date('Y-m-d H:i:s');
+                    $stmtDetails->bind_param(
+                        'iiiiddddddiiiidds',
+                        $proTybe,
+                        $invoiceId,
+                        $itemId,
+                        $uVal,
+                        $lineQtyIn,
+                        $lineQtyOut,
+                        $docQty,
+                        $price,
+                        $disc,
+                        $discPct,
+                        $lineDetValue,
+                        $invoiceId,
+                        $proTybe,
+                        $lineStoreId,
+                        $costPrice,
+                        $itmProfit,
+                        $crtime
+                    );
+                } else {
+                    $stmtDetails->bind_param(
+                        'ssssssssssssssss',
+                        $proTybe,
+                        $invoiceId,
+                        $itemId,
+                        $uVal,
+                        $lineQtyIn,
+                        $lineQtyOut,
+                        $docQty,
+                        $price,
+                        $disc,
+                        $discPct,
+                        $lineDetValue,
+                        $invoiceId,
+                        $proTybe,
+                        $lineStoreId,
+                        $costPrice,
+                        $itmProfit
+                    );
+                }
+                if (!$stmtDetails->execute()) {
+                    throw new Exception('فشل إدخال تفاصيل الصنف ' . $itemId);
+                }
             }
         }
 
@@ -1963,7 +2020,7 @@ class InvoiceProcessor {
         if ($proTybe === self::INVOICE_TYPES['PURCHASE_RETURN']) {
             return [0.0, $qty * $uVal];
         }
-        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS']], true)) {
+        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS'], self::INVOICE_TYPES['STORE_TRANSFER']], true)) {
             return [0.0, $qty * $uVal];
         }
         return [0.0, 0.0];
@@ -2011,6 +2068,12 @@ class InvoiceProcessor {
             self::INVOICE_TYPES['OFFER'],
         ], true);
 
+        $needsSourceStock = in_array($proTybe, [
+            self::INVOICE_TYPES['SALES'],
+            self::INVOICE_TYPES['POS'],
+            self::INVOICE_TYPES['STORE_TRANSFER'],
+        ], true);
+
         $rowNo = 0;
         foreach ($names as $index => $itemId) {
             if ($itemId === '' || $itemId === null) {
@@ -2018,6 +2081,11 @@ class InvoiceProcessor {
             }
             $rowNo++;
             $qty = (float) ($post['itmqty'][$index] ?? 0);
+            $uVal = (float) ($post['u_val'][$index] ?? 1);
+            if ($uVal <= 0) {
+                $uVal = 1;
+            }
+            $baseQty = $qty * $uVal;
             if ($qty < 0) {
                 $errors[] = 'سطر ' . $rowNo . ': الكمية سالبة';
             }
@@ -2029,7 +2097,7 @@ class InvoiceProcessor {
                 }
             }
 
-            if ($prevent_negative_stock && $conn && $store_id && $salePriceOnLine) {
+            if ($prevent_negative_stock && $conn && $store_id && $needsSourceStock) {
                 $available = self::getRealStockQuantity($conn, $itemId, $store_id);
                 if ($editing_invoice_id) {
                     $stmtOld = $conn->prepare("SELECT COALESCE(SUM(qty_out), 0) AS old_qty FROM fat_details WHERE item_id = ? AND det_store = ? AND fatid = ? AND isdeleted = 0");
@@ -2041,9 +2109,11 @@ class InvoiceProcessor {
                         $stmtOld->close();
                     }
                 }
-                
-                if ($available < $qty) {
-                    $errors[] = 'سطر ' . $rowNo . ': الكمية المباعة (' . $qty . ') أكبر من رصيد المخزن (' . $available . ')';
+
+                $needed = $proTybe === self::INVOICE_TYPES['STORE_TRANSFER'] ? $baseQty : $qty;
+                if ($available < $needed) {
+                    $label = $proTybe === self::INVOICE_TYPES['STORE_TRANSFER'] ? 'الكمية المحوّلة' : 'الكمية المباعة';
+                    $errors[] = 'سطر ' . $rowNo . ': ' . $label . ' (' . $needed . ') أكبر من رصيد المخزن المصدر (' . $available . ')';
                 }
             }
         }

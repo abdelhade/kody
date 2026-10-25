@@ -302,6 +302,20 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="sales.php?q=store_transfer" class="nav-link">
+                  <i class="nav-icon fas fa-exchange-alt"></i>
+                  <p>تحويل مخزني</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=store_transfer" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>سجل التحويلات المخزنية</p>
+                </a>
+              </li>
+
 
             </ul>
           </li>

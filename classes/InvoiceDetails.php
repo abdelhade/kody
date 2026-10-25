@@ -50,7 +50,14 @@ class InvoiceDetails extends InvoiceElementBase
                          JOIN myitems mi ON fd.item_id = mi.id 
                          WHERE fd.pro_id = ? AND fd.isdeleted = 0";
                 $result = $this->executeSecureQuery($query, [$invoiceId], 'i');
-                $this->existingDetails = $result->fetch_all(MYSQLI_ASSOC);
+                $rows = $result->fetch_all(MYSQLI_ASSOC);
+                // التحويل المخزني له سطرين لكل صنف؛ نعرض سطر الخروج من المصدر فقط
+                if ((int) $this->invoiceType === 18) {
+                    $rows = array_values(array_filter($rows, static function ($d) {
+                        return (float) ($d['qty_out'] ?? 0) > 0;
+                    }));
+                }
+                $this->existingDetails = $rows;
             }
         } catch (Exception $e) {
             error_log("Error loading existing details: " . $e->getMessage());
@@ -212,6 +219,12 @@ window.invoicePriceFor = function(source, listId, isUnit) {
 window.isPurchaseInvoice = function() {
     var t = parseInt($('input[name="pro_tybe"]').val(), 10);
     return t === 4 || t === 10 || t === 12;
+};
+
+/** سعر التكلفة (متوسط الشراء) — مشتريات/مردود مشتريات/أمر شراء/تحويل مخزني */
+window.usesCostPrice = function() {
+    var t = parseInt($('input[name="pro_tybe"]').val(), 10);
+    return t === 4 || t === 10 || t === 12 || t === 18;
 };
 
 window.isSalesReturn = function() {
