@@ -33,10 +33,14 @@ if ($isLazyAjax) {
 $search = isset($_GET['search']) ? trim((string)$_GET['search']) : '';
 $group1 = isset($_GET['group1']) ? (int)$_GET['group1'] : 0;
 $group2 = isset($_GET['group2']) ? (int)$_GET['group2'] : 0;
+$filterStoreId = isset($_GET['store_id']) ? (int) $_GET['store_id'] : 0;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 if ($page < 1) $page = 1;
 $limit = 200;
 $offset = ($page - 1) * $limit;
+
+$storesRes = $conn->query("SELECT id, aname FROM acc_head WHERE is_stock = 1 AND isdeleted = 0 ORDER BY aname");
+$storesList = $storesRes ? $storesRes->fetch_all(MYSQLI_ASSOC) : [];
 
 // Build search conditions dynamically for multi-keyword fuzzy matching
 $whereSql = "";
@@ -90,11 +94,30 @@ if (!$isLazyAjax) {
     $totalRows = (int) $stmtCount->get_result()->fetch_assoc()['total'];
     $stmtCount->close();
 
-    // 1.5 Get Totals (qty, cost value, sell value)
-    $sqlSum = "SELECT SUM(itmqty) as total_qty, SUM(itmqty * cost_price) as total_cost, SUM(itmqty * price1) as total_sell FROM myitems WHERE isdeleted = 0" . $whereSql;
-    $stmtSum = $conn->prepare($sqlSum);
-    if ($types !== "") {
-        $stmtSum->bind_param($types, ...$params);
+    // 1.5 إجماليات الكمية/القيمة — حسب المخزن لو متختار
+    if ($filterStoreId > 0) {
+        $sqlSum = "SELECT
+                COALESCE(SUM(COALESCE(st.qty, 0)), 0) AS total_qty,
+                COALESCE(SUM(COALESCE(st.qty, 0) * m.cost_price), 0) AS total_cost,
+                COALESCE(SUM(COALESCE(st.qty, 0) * m.price1), 0) AS total_sell
+            FROM myitems m
+            LEFT JOIN (
+                SELECT item_id, SUM(qty_in) - SUM(qty_out) AS qty
+                FROM fat_details
+                WHERE isdeleted = 0 AND det_store = ?
+                GROUP BY item_id
+            ) st ON st.item_id = m.id
+            WHERE m.isdeleted = 0" . $whereSql;
+        $stmtSum = $conn->prepare($sqlSum);
+        $sumParams = array_merge([$filterStoreId], $params);
+        $sumTypes = 'i' . $types;
+        $stmtSum->bind_param($sumTypes, ...$sumParams);
+    } else {
+        $sqlSum = "SELECT SUM(itmqty) as total_qty, SUM(itmqty * cost_price) as total_cost, SUM(itmqty * price1) as total_sell FROM myitems WHERE isdeleted = 0" . $whereSql;
+        $stmtSum = $conn->prepare($sqlSum);
+        if ($types !== "") {
+            $stmtSum->bind_param($types, ...$params);
+        }
     }
     $stmtSum->execute();
     $totalsRow = $stmtSum->get_result()->fetch_assoc();
@@ -122,11 +145,26 @@ $stmtData->close();
 
 // وحدات الدفعة كلها في استعلام واحد بدل استعلام لكل صنف
 $unitsByItem = [];
+$storeQtyByItem = [];
 if (!empty($itemRows)) {
     $itemIds = implode(',', array_map(static fn($r) => (int) $r['id'], $itemRows));
     $resunt = $conn->query("SELECT iu.*, u.uname FROM item_units iu LEFT JOIN myunits u ON u.id = iu.unit_id WHERE iu.item_id IN ($itemIds)");
     while ($r = $resunt->fetch_assoc()) {
         $unitsByItem[(int) $r['item_id']][] = $r;
+    }
+    if ($filterStoreId > 0) {
+        $resQty = $conn->query(
+            "SELECT item_id, COALESCE(SUM(qty_in) - SUM(qty_out), 0) AS qty
+             FROM fat_details
+             WHERE isdeleted = 0 AND det_store = " . (int) $filterStoreId . "
+               AND item_id IN ($itemIds)
+             GROUP BY item_id"
+        );
+        if ($resQty) {
+            while ($rq = $resQty->fetch_assoc()) {
+                $storeQtyByItem[(int) $rq['item_id']] = (float) $rq['qty'];
+            }
+        }
     }
 }
 $shownRows = $offset + count($itemRows);
@@ -183,10 +221,18 @@ if (!$isLazyAjax):
                     }
                     ?>
                 </div>
-                <div class="col-md-6">
-                    <input type="text" id="search" class="form-control frst mb-2" placeholder="بحث... (اضغط Enter للبحث الشامل)" value="<?= htmlspecialchars($search) ?>">
-                    <div class="d-flex gap-2">
-                        <select id="filter_group1" class="form-control form-control-sm">
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center flex-nowrap" style="gap:6px;">
+                        <input type="text" id="search" class="form-control form-control-sm frst" style="min-width:140px; flex:1.4;" placeholder="بحث..." value="<?= htmlspecialchars($search) ?>">
+                        <select id="filter_store" class="form-control form-control-sm" style="min-width:110px; flex:1;" title="المخزن">
+                            <option value="0">كل المخازن</option>
+                            <?php foreach ($storesList as $st): ?>
+                                <option value="<?= (int) $st['id'] ?>" <?= $filterStoreId === (int) $st['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($st['aname']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <select id="filter_group1" class="form-control form-control-sm" style="min-width:110px; flex:1;">
                             <option value="0">كل المجموعات</option>
                             <?php
                             $resg1 = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0");
@@ -196,7 +242,7 @@ if (!$isLazyAjax):
                             }
                             ?>
                         </select>
-                        <select id="filter_group2" class="form-control form-control-sm">
+                        <select id="filter_group2" class="form-control form-control-sm" style="min-width:110px; flex:1;">
                             <option value="0">كل التصنيفات</option>
                             <?php
                             $resg2 = $conn->query("SELECT * FROM item_group2 WHERE isdeleted = 0");
@@ -206,7 +252,7 @@ if (!$isLazyAjax):
                             }
                             ?>
                         </select>
-                        <button id="btn_filter_submit" class="btn btn-primary btn-sm">بحث</button>
+                        <button id="btn_filter_submit" class="btn btn-primary btn-sm flex-shrink-0">بحث</button>
                     </div>
                 </div>
                 <div class="col">
@@ -258,6 +304,13 @@ if (!$isLazyAjax):
                         $x++;
                             $itemid = (int) $rowitm['id'];
                             $unitRows = $unitsByItem[$itemid] ?? [];
+                            $displayQty = $filterStoreId > 0
+                                ? (float) ($storeQtyByItem[$itemid] ?? 0)
+                                : (float) ($rowitm['itmqty'] ?? 0);
+                            $qtyLink = 'item_summery.php?id=' . $itemid;
+                            if ($filterStoreId > 0) {
+                                $qtyLink .= '&store_id=' . $filterStoreId;
+                            }
                             $searchParts = [
                                 (string) $rowitm['id'],
                                 isset($rowitm['code']) ? (string) $rowitm['code'] : '',
@@ -279,8 +332,8 @@ if (!$isLazyAjax):
                                 <td><?= $rowitm['id'] ?></td>
                                 <td><?= isset($rowitm['barcode']) ? $rowitm['barcode'] : '' ?></td>
                                 <td><b><?= $rowitm['iname'] ?></b></td>
-                                <td class="qty" data-row-id="<?= $rowitm['id'] ?>" data-original-qty="<?= $rowitm['itmqty'] ?>">
-                                    <a class="btn btn-sm btn-light" id="item_qty_<?= $rowitm['id'] ?>" href="item_summery.php?id=<?= $rowitm['id'] ?>"><?= $rowitm['itmqty'] ?></a>
+                                <td class="qty" data-row-id="<?= $rowitm['id'] ?>" data-original-qty="<?= htmlspecialchars((string) $displayQty, ENT_QUOTES, 'UTF-8') ?>">
+                                    <a class="btn btn-sm btn-light" id="item_qty_<?= $rowitm['id'] ?>" href="<?= htmlspecialchars($qtyLink, ENT_QUOTES, 'UTF-8') ?>"><?= $displayQty ?></a>
                                 </td>
                                 <td class="unit">
                                 <select name="" id="item_unit_<?= $rowitm['id'] ?>" class="form-control form-control-sm" data-row-id="<?= $rowitm['id'] ?>">
@@ -430,14 +483,18 @@ $(document).ready(function() {
     }
     myitemsSyncCounter();
     
+    function myitemsFilterQuery(extra) {
+        var q = 'search=' + encodeURIComponent($.trim($('#search').val() || ''))
+            + '&group1=' + ($('#filter_group1').val() || 0)
+            + '&group2=' + ($('#filter_group2').val() || 0)
+            + '&store_id=' + ($('#filter_store').val() || 0);
+        return extra ? (extra + '&' + q) : q;
+    }
+
     function triggerSearch() {
         clearTimeout(searchTimer);
-        var val = $('#search').val();
-        var g1 = $('#filter_group1').val();
-        var g2 = $('#filter_group2').val();
-        
         searchTimer = setTimeout(function() {
-            var url = 'myitems.php?search=' + encodeURIComponent($.trim(val)) + '&group1=' + g1 + '&group2=' + g2;
+            var url = 'myitems.php?' + myitemsFilterQuery();
             $('#table-container').css('opacity', '0.5');
             $('#table-container').load(url + ' #table-container > *', function() {
                 $('#table-container').css('opacity', '1');
@@ -451,6 +508,10 @@ $(document).ready(function() {
     }
 
     $('#btn_filter_submit').on('click', triggerSearch);
+    // تغيير المخزن يعيد تحميل الصفحة عشان الإجماليات تتحدّث
+    $('#filter_store').on('change', function() {
+        window.location.href = 'myitems.php?' + myitemsFilterQuery();
+    });
 
     // منع الإرسال التلقائي للنموذج عند الضغط على Enter في مربع البحث وتفعيل البحث
     $('#search').on('keypress', function(e) {
@@ -468,10 +529,7 @@ $(document).ready(function() {
             isLoading = true;
             lazyPage++;
             
-            var val = $('#search').val();
-            var g1 = $('#filter_group1').val();
-            var g2 = $('#filter_group2').val();
-            var url = 'myitems.php?lazy_ajax=1&page=' + lazyPage + '&search=' + encodeURIComponent($.trim(val)) + '&group1=' + g1 + '&group2=' + g2;
+            var url = 'myitems.php?lazy_ajax=1&page=' + lazyPage + '&' + myitemsFilterQuery();
             
             $('#horsTable tbody').append('<tr id="loading-row"><td colspan="13" class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> جاري تحميل المزيد...</td></tr>');
             
@@ -542,10 +600,7 @@ $(document).ready(function() {
         var originalHtml = $btn.html();
         $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> جاري التصدير...');
 
-        var searchVal = $.trim($('#search').val());
-        var g1Val = $('#filter_group1').val() || 0;
-        var g2Val = $('#filter_group2').val() || 0;
-        var exportUrl = 'do/export_excel.php?type=items&search=' + encodeURIComponent(searchVal) + '&group1=' + g1Val + '&group2=' + g2Val;
+        var exportUrl = 'do/export_excel.php?type=items&' + myitemsFilterQuery();
 
         fetch(exportUrl, { credentials: 'same-origin' })
             .then(function(res) {
