@@ -3,7 +3,12 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
-$resunits = $conn->query("SELECT u.*, (SELECT COUNT(*) FROM myitems m WHERE m.unit = u.id) AS items_count FROM myunits u ORDER BY u.id ASC");
+$resunits = $conn->query("SELECT u.*, (
+  SELECT COUNT(DISTINCT iu.item_id)
+  FROM item_units iu
+  INNER JOIN myitems m ON m.id = iu.item_id AND m.isdeleted = 0
+  WHERE iu.unit_id = u.id AND COALESCE(iu.isdeleted, 0) = 0
+) AS items_count FROM myunits u ORDER BY u.id ASC");
 $unitCount = $resunits ? $resunits->num_rows : 0;
 $canAdd = Can::check('units.add');
 $canEdit = Can::check('units.edit');

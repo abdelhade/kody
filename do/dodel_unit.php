@@ -8,7 +8,10 @@ if ($id < 1) {
 }
 
 // Check if linked to items
-$chk = $conn->prepare("SELECT COUNT(*) as cnt FROM myitems WHERE unit = ?");
+$chk = $conn->prepare("SELECT COUNT(DISTINCT iu.item_id) as cnt
+  FROM item_units iu
+  INNER JOIN myitems m ON m.id = iu.item_id AND m.isdeleted = 0
+  WHERE iu.unit_id = ? AND COALESCE(iu.isdeleted, 0) = 0");
 $chk->bind_param("i", $id);
 $chk->execute();
 $res = $chk->get_result();
