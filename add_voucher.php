@@ -39,15 +39,16 @@ if ($typeParam === 'payment' || $typeParam === '2' || ($rowedit && (int)$rowedit
     $typeKey = 'recive';
 }
 
-// حساب رقم السند التالي
+// رقم السند المتوقع للعرض فقط — الرقم النهائي يتحسب على السيرفر وقت الحفظ
 $pr_id = 1;
 if ($is_edit && $rowedit) {
     $pr_id = $rowedit['pro_id'];
 } else {
-    $rowid = $conn->query("SELECT pro_id FROM ot_head WHERE pro_tybe = $pro_tybe ORDER BY id DESC LIMIT 1")->fetch_assoc();
-    if ($rowid && isset($rowid['pro_id'])) {
-        $pr_id = (int)$rowid['pro_id'] + 1;
-    }
+    $stmtNext = $conn->prepare('SELECT COALESCE(MAX(CAST(pro_id AS UNSIGNED)), 0) + 1 AS next_id FROM ot_head WHERE pro_tybe = ?');
+    $stmtNext->bind_param('i', $pro_tybe);
+    $stmtNext->execute();
+    $pr_id = (int)($stmtNext->get_result()->fetch_assoc()['next_id'] ?? 1);
+    $stmtNext->close();
 }
 ?>
 
@@ -732,7 +733,34 @@ $(document).ready(function() {
 
   var isSubmitting = false;
 
+  function markVoucherSubmitting() {
+    if (isSubmitting) return false;
+    isSubmitting = true;
+    var $submitBtn = $("#btnSubmitVoucher");
+    $submitBtn.addClass("disabled").css("pointer-events", "none");
+    $submitBtn.html("<i class=\"fas fa-spinner fa-spin ml-1\"></i> جاري الحفظ...");
+    // تعطيل الزر بعد ما يبدأ الإرسال عشان بعض المتصفحات تلغي الـ submit لو اتعطّل جوه الـ handler
+    setTimeout(function() {
+      $submitBtn.prop("disabled", true);
+    }, 0);
+    return true;
+  }
+
+  // صد الضغط المزدوج من أول mousedown/touch قبل ما يتبعت الفورم مرتين
+  $("#btnSubmitVoucher").on("mousedown touchstart", function(e) {
+    if (isSubmitting) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  });
+
   $("#voucherForm").on("submit", function(e) {
+    if (isSubmitting) {
+      e.preventDefault();
+      return false;
+    }
+
     if (proType === 16 && !checkDuplicateFunds()) {
       e.preventDefault();
       if (typeof Swal !== "undefined") {
@@ -764,16 +792,10 @@ $(document).ready(function() {
       return false;
     }
 
-    // منع الإرسال المتكرر (Prevent Double Submit)
-    if (isSubmitting) {
+    if (!markVoucherSubmitting()) {
       e.preventDefault();
       return false;
     }
-
-    isSubmitting = true;
-    var $submitBtn = $("#btnSubmitVoucher");
-    $submitBtn.prop("disabled", true).addClass("disabled");
-    $submitBtn.html("<i class=\"fas fa-spinner fa-spin ml-1\"></i> جاري الحفظ...");
   });
 
   // حذف السند الحالي بواسطة SweetAlert
