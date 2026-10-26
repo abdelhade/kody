@@ -593,10 +593,47 @@ while ($rowdet = $resdet->fetch_assoc()) {
 
 <!-- ملخص المبالغ والإجماليات -->
 <?php
-$paid_res = $conn->query("SELECT SUM(pro_value) as paid_amount FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
-$paid_row = $paid_res ? $paid_res->fetch_assoc() : null;
-$paid_amount = $paid_row && $paid_row['paid_amount'] ? floatval($paid_row['paid_amount']) : 0;
-$change_amount = $paid_amount - floatval($rowfat['fat_net']);
+// استخراج مبالغ السداد بدقة تامة
+$voucher_paid = 0.0;
+$paid_res = $conn->query("SELECT SUM(pro_value) as paid_val FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
+if ($paid_res) {
+    $paid_row = $paid_res->fetch_assoc();
+    if ($paid_row && $paid_row['paid_val'] !== null) {
+        $voucher_paid = floatval($paid_row['paid_val']);
+    }
+}
+
+$head_paid = isset($rowfat['paid_amount']) ? (float)$rowfat['paid_amount'] : 0.0;
+$pnotes = !empty($rowfat['payment_notes']) ? json_decode($rowfat['payment_notes'], true) : [];
+$notes_paid = 0.0;
+$notes_change = 0.0;
+if (is_array($pnotes)) {
+    $notes_paid = (float)($pnotes['paid_cash'] ?? 0) + (float)($pnotes['paid_bank'] ?? 0);
+    $notes_change = (float)($pnotes['change_amount'] ?? 0);
+}
+
+$pay_status = (string)($rowfat['payment_status'] ?? '');
+$is_non_cash_doc = in_array($tybe, [12, 13, 14, 18], true);
+
+if ($voucher_paid > 0) {
+    $paid_amount = $voucher_paid;
+} elseif ($head_paid > 0 || $notes_paid > 0) {
+    $paid_amount = max($head_paid, $notes_paid);
+} elseif ($pay_status === 'paid') {
+    $paid_amount = (float)$rowfat['fat_net'];
+} elseif ($pay_status === 'unpaid') {
+    $paid_amount = 0.0;
+} else {
+    $paid_amount = 0.0;
+}
+
+if ($paid_amount >= (float)$rowfat['fat_net']) {
+    $change_amount = max($notes_change, $paid_amount - (float)$rowfat['fat_net']);
+    $remaining_amount = 0.0;
+} else {
+    $change_amount = 0.0;
+    $remaining_amount = (float)$rowfat['fat_net'] - $paid_amount;
+}
 
 $fat_total = (float)($rowfat['fat_total'] ?? 0);
 $fat_net = (float)($rowfat['fat_net'] ?? 0);
@@ -650,17 +687,24 @@ $totCfg = $design['totals'] ?? [];
 </tr>
 <?php endif; ?>
 
-<?php if (!empty($totCfg['show_paid']) && $paid_amount > 0): ?>
+<?php if (!empty($totCfg['show_paid']) && !$is_non_cash_doc): ?>
 <tr>
     <td class="tot-label">المدفوع</td>
     <td class="tot-val paid"><?= number_format($paid_amount, 2) ?></td>
 </tr>
 <?php endif; ?>
 
-<?php if (!empty($totCfg['show_change']) && $paid_amount > 0): ?>
+<?php if (!empty($totCfg['show_change']) && !$is_non_cash_doc && $change_amount > 0.001): ?>
 <tr>
     <td class="tot-label">الباقي</td>
-    <td class="tot-val <?= $change_amount >= 0 ? 'change-pos' : 'change-neg' ?>"><?= number_format(abs($change_amount), 2) ?></td>
+    <td class="tot-val change-pos"><?= number_format($change_amount, 2) ?></td>
+</tr>
+<?php endif; ?>
+
+<?php if (!$is_non_cash_doc && $remaining_amount > 0.001): ?>
+<tr>
+    <td class="tot-label">المتبقي</td>
+    <td class="tot-val disc" style="color: #b91c1c; font-weight: bold;"><?= number_format($remaining_amount, 2) ?></td>
 </tr>
 <?php endif; ?>
 </table>
