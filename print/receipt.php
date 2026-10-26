@@ -753,12 +753,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    <?php if (!empty($design['auto_close'])): ?>
-    // إغلاق أو الرجوع تلقائياً بعد اكتمال أمر الطباعة
-    window.addEventListener('afterprint', function() {
-        doGoBack();
-    });
-    <?php endif; ?>
+    // ملاحظة: تم إلغاء ربط afterprint بـ doGoBack()
+    // حتى يظل المستخدم على نفس صفحة بون الكاشير عند الضغط على Cancel
 
     <?php if (!empty($design['auto_print'])): ?>
     // طباعة تلقائية بعد فتح الصفحة
