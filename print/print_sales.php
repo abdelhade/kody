@@ -280,18 +280,49 @@ $disc_pct_head = !empty($rowfat['fat_disc_per']) ? (float)$rowfat['fat_disc_per'
 $plus_val = (float)($rowfat['fat_plus'] ?? 0);
 $plus_pct_head = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
 
-$paid_res = $conn->query("SELECT SUM(pro_value) AS paid_amount FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
-$paid_row = $paid_res ? $paid_res->fetch_assoc() : null;
-if ($paid_row && $paid_row['paid_amount'] !== null) {
-    $paidval = (float)$paid_row['paid_amount'];
-} else {
-    if (isset($rowfat['paid_amount']) && (float)$rowfat['paid_amount'] > 0) {
-        $paidval = (float)$rowfat['paid_amount'];
-    } else {
-        $paidval = $fat_net;
+// استخراج مبالغ السداد بدقة تامة
+$voucher_paid = 0.0;
+$paid_res = $conn->query("SELECT SUM(pro_value) AS paid_val FROM ot_head WHERE (pro_tybe = 1 OR pro_tybe = 2) AND op2 = $id AND isdeleted = 0");
+if ($paid_res) {
+    $p_row = $paid_res->fetch_assoc();
+    if ($p_row && $p_row['paid_val'] !== null) {
+        $voucher_paid = (float)$p_row['paid_val'];
     }
 }
-$remaining = $fat_net - $paidval;
+
+$head_paid = isset($rowfat['paid_amount']) ? (float)$rowfat['paid_amount'] : 0.0;
+$pnotes = !empty($rowfat['payment_notes']) ? json_decode($rowfat['payment_notes'], true) : [];
+$notes_paid = 0.0;
+$notes_change = 0.0;
+if (is_array($pnotes)) {
+    $notes_paid = (float)($pnotes['paid_cash'] ?? 0) + (float)($pnotes['paid_bank'] ?? 0);
+    $notes_change = (float)($pnotes['change_amount'] ?? 0);
+}
+
+$pay_status = (string)($rowfat['payment_status'] ?? '');
+
+// تحديد المبلغ المدفوع بدقة
+if ($voucher_paid > 0) {
+    $paidval = $voucher_paid;
+} elseif ($head_paid > 0 || $notes_paid > 0) {
+    $paidval = max($head_paid, $notes_paid);
+} elseif ($pay_status === 'paid') {
+    $paidval = $fat_net;
+} elseif ($pay_status === 'unpaid') {
+    $paidval = 0.0;
+} else {
+    $paidval = 0.0;
+}
+
+// حساب المتبقي على العميل أو الباقي له
+if ($paidval >= $fat_net) {
+    $change_val = max($notes_change, $paidval - $fat_net);
+    $remaining_val = 0.0;
+} else {
+    $change_val = 0.0;
+    $remaining_val = $fat_net - $paidval;
+}
+$remaining = $remaining_val;
 
 $fmtMoney = static function ($v) {
     $v = (float)$v;
@@ -1005,14 +1036,18 @@ $cr_no = $design['header']['cr_no'] ?? '';
                     <?php if (!$is_doc_order): ?>
                     <tr>
                         <td class="lbl">المدفوع من الفاتورة:</td>
-                        <td class="val" style="color: #15803d;"><?= htmlspecialchars($fmtMoney($paidval), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="val" style="color: <?= $paidval > 0 ? '#15803d' : '#64748b' ?>;"><?= htmlspecialchars($fmtMoney($paidval), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
-                    <?php if (abs($remaining) > 0.001): ?>
+                    <?php if ($change_val > 0.001): ?>
                     <tr>
-                        <td class="lbl"><?= $remaining < 0 ? 'المتبقي للعميل (باقي):' : 'المتبقي على العميل (آجل):' ?></td>
-                        <td class="val" style="color: <?= $remaining > 0 ? '#b91c1c' : '#15803d' ?>;">
-                            <?= htmlspecialchars($fmtMoney(abs($remaining)), ENT_QUOTES, 'UTF-8') ?>
-                        </td>
+                        <td class="lbl">الباقي للعميل (مسترجع):</td>
+                        <td class="val" style="color: #15803d; font-weight: 800;"><?= htmlspecialchars($fmtMoney($change_val), ENT_QUOTES, 'UTF-8') ?></td>
+                    </tr>
+                    <?php endif; ?>
+                    <?php if ($remaining_val > 0.001): ?>
+                    <tr>
+                        <td class="lbl">المتبقي على <?= htmlspecialchars($partyLabel, ENT_QUOTES, 'UTF-8') ?> (آجل):</td>
+                        <td class="val" style="color: #b91c1c; font-weight: 800;"><?= htmlspecialchars($fmtMoney($remaining_val), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
                     <?php endif; ?>
                     <?php endif; ?>
