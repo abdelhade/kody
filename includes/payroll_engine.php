@@ -12,6 +12,7 @@ require_once __DIR__ . '/salary_rates.php';
 require_once __DIR__ . '/payroll_calcs_helper.php';
 require_once __DIR__ . '/shift_attendance.php';
 require_once __DIR__ . '/EntitlesSeeder.php';
+require_once __DIR__ . '/../classes/DynamicShiftDetector.php';
 
 function payroll_valid_date(string $date): bool
 {
@@ -156,9 +157,18 @@ function payroll_process_employee(mysqli $conn, int $employeeId, string $startda
         return $fail('exists', 'يوجد سجلات محسوبة مسبقاً في هذه الفترة. احذف المعالجة القديمة أو اختر فترة أخرى.');
     }
 
-    $rowshft = payroll_employee_shift($conn, (int) $rowemp['shift']);
-    if (!$rowshft) {
-        return $fail('shift', 'لا توجد وردية معرّفة في النظام. أضف وردية من إعدادات الورديات ثم أعد المحاولة.');
+    $shiftGroupId = !empty($rowemp['shift_group_id']) ? (int) $rowemp['shift_group_id'] : 0;
+    $groupShifts = $shiftGroupId > 0 ? DynamicShiftDetector::getGroupShifts($conn, $shiftGroupId) : [];
+    $isDynamic = !empty($groupShifts);
+
+    $rowshft = null;
+    if (!$isDynamic) {
+        $rowshft = payroll_employee_shift($conn, (int) $rowemp['shift']);
+        if (!$rowshft) {
+            return $fail('shift', 'لا توجد وردية معرّفة في النظام. أضف وردية من إعدادات الورديات ثم أعد المحاولة.');
+        }
+    } else {
+        $rowshft = $groupShifts[0];
     }
 
     $entTybe = EntitlesSeeder::normalize((int) $rowemp['ent_tybe']);
@@ -201,14 +211,48 @@ function payroll_process_employee(mysqli $conn, int $employeeId, string $startda
         $last = new DateTime($enddate);
         while ($day <= $last) {
             $curday = $day->format('Y-m-d');
-            $baseStatue = in_array($day->format('N'), $workingDays) ? 1 : 0;
 
-            if ($isFlexible) {
-                [$statue, $curhours, $fpin, $fpout] = payroll_flexible_day($conn, $employeeId, $day, $dayCutoff, $dupMinutes, $shiftHours, $singleFpRule, $baseStatue);
-            } else {
-                [$statue, $curhours, $fpin, $fpout] = payroll_fixed_day($conn, $employeeId, $day, $rowshft, $crossMidnight, $shiftStartTs, $shiftEndTs, $shiftHours, $singleFpRule, $baseStatue);
+            // تحديد الوردية لهذا اليوم بعينه (ثابتة أو ديناميكية مستنتجة من البصمة)
+            $dayShift = $rowshft;
+            if ($isDynamic) {
+                $firstFp = payroll_fp_time($conn, $employeeId, $curday, '00:00:00', '23:59:59', 'MIN');
+                if ($firstFp !== null) {
+                    $detected = DynamicShiftDetector::detectShift($firstFp, $groupShifts);
+                    if ($detected) {
+                        $dayShift = $detected;
+                    }
+                } else {
+                    $dayShift = $groupShifts[0];
+                }
             }
-            $defhours = $baseStatue ? $shiftHours : 0;
+
+            $curShiftStart = $dayShift['shiftstart'];
+            $curShiftEnd = $dayShift['shiftend'];
+            $curShiftStartTs = strtotime($curShiftStart);
+            $curShiftEndTs = strtotime($curShiftEnd);
+            $curCrossMidnight = $curShiftEndTs <= $curShiftStartTs;
+            $curShiftSeconds = $curShiftEndTs - $curShiftStartTs;
+            if ($curShiftSeconds <= 0) {
+                $curShiftSeconds += 24 * 3600;
+            }
+            $curShiftHours = round($curShiftSeconds / 3600, 2);
+            $curWorkingDays = array_map('trim', explode(',', (string) $dayShift['workingdays']));
+            $curSingleFpRule = normalize_single_fp_rule($dayShift['single_fp_rule'] ?? 'half');
+            $curIsFlexible = !empty($dayShift['is_flexible']);
+            $curDayCutoff = (string) ($dayShift['day_cutoff'] ?? '06:00:00');
+            $curDupMinutes = (int) ($dayShift['dup_fp_minutes'] ?? 2);
+            if ($curIsFlexible) {
+                $curShiftHours = (float) ($dayShift['required_hours'] ?? 0) > 0 ? round((float) $dayShift['required_hours'], 2) : 8.0;
+            }
+
+            $baseStatue = in_array($day->format('N'), $curWorkingDays) ? 1 : 0;
+
+            if ($curIsFlexible) {
+                [$statue, $curhours, $fpin, $fpout] = payroll_flexible_day($conn, $employeeId, $day, $curDayCutoff, $curDupMinutes, $curShiftHours, $curSingleFpRule, $baseStatue);
+            } else {
+                [$statue, $curhours, $fpin, $fpout] = payroll_fixed_day($conn, $employeeId, $day, $dayShift, $curCrossMidnight, $curShiftStartTs, $curShiftEndTs, $curShiftHours, $curSingleFpRule, $baseStatue);
+            }
+            $defhours = $baseStatue ? $curShiftHours : 0;
 
             $t['days']++;
             if ($baseStatue === 0) {
@@ -231,11 +275,12 @@ function payroll_process_employee(mysqli $conn, int $employeeId, string $startda
             }
 
             $realdue = floor($hourRate * $curhours);
+            $dayShiftId = (int) $dayShift['id'];
             $conn->query("INSERT INTO attlog
-                (employee, day, starttime, endtime, fpin, fpout, defhours, curhours, dueforhour, realdue, statue)
-                VALUES ($employeeId, '$curday', " . payroll_sql_value($conn, $shiftstart) . ", " . payroll_sql_value($conn, $shiftend) . ",
+                (employee, day, starttime, endtime, fpin, fpout, defhours, curhours, dueforhour, realdue, statue, shift_id)
+                VALUES ($employeeId, '$curday', " . payroll_sql_value($conn, $curShiftStart) . ", " . payroll_sql_value($conn, $curShiftEnd) . ",
                 " . payroll_sql_value($conn, $fpin) . ", " . payroll_sql_value($conn, $fpout) . ",
-                $defhours, $curhours, $hourRate, $realdue, $statue)");
+                $defhours, $curhours, $hourRate, $realdue, $statue, $dayShiftId)");
 
             $day->modify('+1 day');
         }

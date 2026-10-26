@@ -5,9 +5,22 @@ require_once __DIR__ . '/InvoiceProcessor.php';
 /**
  * تقفيل شيفت الكاشير.
  *
- * الشيفت المفتوح = حركات المستخدم في ot_head اللي shift_id = 0.
- * عند التقفيل بيتعمل سجل في closed_orders والحركات دي تاخد رقمه،
- * والمتوقع في كل خزنة/بنك بيتحسب من السندات (قبض/دفع/تحويل) مش من الفورم.
+ * ## تعريف الشيفت
+ * الشيفت المفتوح = حركات المستخدم في ot_head اللي shift_id = 0
+ * (فواتير + سندات قبض/دفع/تحويل لنفس user).
+ * عند التقفيل: سجل في closed_orders، والحركات دي تاخد shift_id = رقمه،
+ * وshift_payments بتخزّن بداية/حركة/متوقع/معدود/فرق لكل خزنة أو بنك.
+ *
+ * ## الفاتورة والسند (مساران منفصلان — مقصود)
+ * - ملخص المبيعات/الآجل/المرتجعات: من صفوف الفواتير (3/9/11 ومرتجع ملابس).
+ * - المبيعات النقدية للعرض: مجموع سندات 1/2 المرتبطة بـ op2 = الفاتورة
+ *   (سقف fat_net)، أو paid_amount كـ fallback لبيانات قديمة.
+ * - المتوقع في الجرد: من حركة سندات 1/2/16 على حسابات is_fund أو بنوك 124%
+ *   عبر acc1/acc2 — مش من paid_amount على رأس الفاتورة.
+ * - بند «مقبوضات/مصروفات مستقلة»: سندات op2 = 0 فقط؛ سند فاتورة مش بيتضاعف هنا.
+ *
+ * فاتورة الكاشير وسند القبض اللي اتعمل معاها (نفس user وshift_id = 0)
+ * بيتقفلوا مع بعض في نفس الـ UPDATE.
  */
 class ShiftCloser
 {
@@ -114,6 +127,7 @@ class ShiftCloser
             $shiftId = (int) $this->conn->insert_id;
             $stmt->close();
 
+            // ربط فواتير المستخدم وسنداتها المفتوحة (shift_id=0) بنفس رقم الشيفت
             $types = self::shiftTypes();
             $in = implode(',', array_fill(0, count($types), '?'));
             $stmt = $this->conn->prepare(
@@ -264,6 +278,10 @@ class ShiftCloser
     // ─── Internals ──────────────────────────────────────────────
 
     /**
+     * تلخيص حركات الشيفت تحت شرط واحد (مفتوح: user+shift_id=0، أو مقفول: shift_id=N).
+     *
+     * مسار الفواتير → إحصاء وعرض. مسار السندات → movements للجرد.
+     *
      * @return array{orders_count:int, sales_gross:float, sales_discount:float, sales_net:float,
      *   cash_sales:float, credit_sales:float,
      *   returns_count:int, returns_total:float, net_sales:float, expenses:float, receipts:float,
@@ -279,8 +297,7 @@ class ShiftCloser
             'expenses' => 0.0, 'receipts' => 0.0, 'movements' => [], 'opened_at' => null,
         ];
 
-        // المدفوع من سندات القبض/الدفع المرتبطة (op2) — المصدر الحقيقي؛
-        // paid_amount fallback لو مفيش سندات (بيانات قديمة أو مسار ناقص).
+        // ── مسار الفواتير (عرض): مبيعات/خصم/آجل + مدفوع من سندات op2 أو paid_amount
         // 3/9 مبيعات، 11 مردود مبيعات، 10+«مردود مبيعات» = مرتجع POS ملابس
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, COUNT(*) AS cnt,
@@ -333,6 +350,7 @@ class ShiftCloser
         }
         $stmt->close();
 
+        // ── مسار السندات (جرد): حركة الخزنة/البنك؛ المستقلة (op2=0) فقط في expenses/receipts
         $money = $this->moneyAccounts();
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, oh.acc1, oh.acc2, oh.op2, COALESCE(oh.pro_value, 0) AS val

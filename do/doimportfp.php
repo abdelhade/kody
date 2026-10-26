@@ -19,6 +19,7 @@ spl_autoload_register(function ($className) {
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
+require_once __DIR__ . '/../classes/DynamicShiftDetector.php';
 
 // ═══════════════════════════════════════════════════════════════════
 //  التحقق من الملف
@@ -235,11 +236,13 @@ $imported    = 0;
 $skipped     = 0;
 $missingEmps = [];   // device_id => ['name','emp_no','count']
 $errors      = [];
+$groupShiftsCache = [];
+$shiftsCache = [];
 
 // Prepared statement للإدراج
 $stmtIns = $conn->prepare(
-    "INSERT INTO attandance (employee, fptybe, fpdate, time, user, fromwhere)
-     VALUES (?, ?, ?, ?, ?, '1')"
+    "INSERT INTO attandance (employee, fptybe, fpdate, time, user, fromwhere, detected_shift_id)
+     VALUES (?, ?, ?, ?, ?, '1', ?)"
 );
 
 foreach ($worksheet->getRowIterator(2) as $row) {
@@ -324,7 +327,7 @@ foreach ($worksheet->getRowIterator(2) as $row) {
 
     // ── البحث عن الموظف بـ basma_id ─────────────────────────────
     $stmtEmp = $conn->prepare(
-        "SELECT id, name, shift FROM employees WHERE basma_id = ? AND isdeleted != 1 LIMIT 1"
+        "SELECT id, name, shift, shift_group_id FROM employees WHERE basma_id = ? AND isdeleted != 1 LIMIT 1"
     );
     $stmtEmp->bind_param('s', $deviceId);
     $stmtEmp->execute();
@@ -347,17 +350,40 @@ foreach ($worksheet->getRowIterator(2) as $row) {
 
     $empDbId = $rowemp['id'];
     $shiftId = $rowemp['shift'];
+    $shiftGroupId = !empty($rowemp['shift_group_id']) ? (int) $rowemp['shift_group_id'] : 0;
     $fptype  = '5'; // غير محدد افتراضياً
+    $detectedShiftId = null;
 
-    // ── تحديد نوع البصمة ─────────────────────────────────────────
-    if ($shiftId) {
-        $stmtShft = $conn->prepare("SELECT * FROM shifts WHERE id = ? LIMIT 1");
-        $stmtShft->bind_param('i', $shiftId);
-        $stmtShft->execute();
-        $rowshft = $stmtShft->get_result()->fetch_assoc();
-        $stmtShft->close();
+    // ── تحديد نوع البصمة واستنتاج الوردية ─────────────────────────
+    if ($shiftGroupId > 0) {
+        // نمط التعرف التلقائي الديناميكي
+        if (!isset($groupShiftsCache[$shiftGroupId])) {
+            $groupShiftsCache[$shiftGroupId] = DynamicShiftDetector::getGroupShifts($conn, $shiftGroupId);
+        }
+        $gShifts = $groupShiftsCache[$shiftGroupId];
+        if (!empty($gShifts)) {
+            $detected = DynamicShiftDetector::detectShift($formattedTime, $gShifts);
+            if ($detected) {
+                $detectedShiftId = (int) $detected['id'];
+                // تصنيف نوع البصمة بمنطق التسلسل (يحل edge case ورديتين بنفس الوقت)
+                $fptype = DynamicShiftDetector::classifyPunchType(
+                    $conn, $empDbId, $formattedDate, $formattedTime, $detected
+                );
+            }
+        }
+    } elseif ($shiftId) {
+        // نمط الوردية الثابتة العادية (بدون منطق تسلسل — النوافذ كافية)
+        if (!isset($shiftsCache[$shiftId])) {
+            $stmtShft = $conn->prepare("SELECT * FROM shifts WHERE id = ? LIMIT 1");
+            $stmtShft->bind_param('i', $shiftId);
+            $stmtShft->execute();
+            $shiftsCache[$shiftId] = $stmtShft->get_result()->fetch_assoc();
+            $stmtShft->close();
+        }
+        $rowshft = $shiftsCache[$shiftId];
 
         if ($rowshft) {
+            $detectedShiftId = (int) $rowshft['id'];
             if ($formattedTime >= $rowshft['instart'] && $formattedTime <= $rowshft['inend']) {
                 $fptype = '1'; // حضور
             } elseif ($formattedTime >= $rowshft['outstart'] && $formattedTime <= $rowshft['outend']) {
@@ -367,7 +393,7 @@ foreach ($worksheet->getRowIterator(2) as $row) {
     }
 
     // ── إدراج السجل ──────────────────────────────────────────────
-    $stmtIns->bind_param('isssi', $empDbId, $fptype, $formattedDate, $formattedTime, $userId);
+    $stmtIns->bind_param('isssii', $empDbId, $fptype, $formattedDate, $formattedTime, $userId, $detectedShiftId);
     if ($stmtIns->execute()) {
         $imported++;
     } else {

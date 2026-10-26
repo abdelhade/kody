@@ -366,9 +366,15 @@ if ($empValid) {
                                             $tybName = $rowtyb['name'] ?? 'N/A';
                                         }
                                         $shftName = 'N/A';
-                                        if (!empty($rowemp['shift'])) {
+                                        if (!empty($rowemp['shift_group_id'])) {
+                                            $rowGroup = $conn->query("SELECT name FROM shift_groups WHERE id = '" . (int) $rowemp['shift_group_id'] . "'")->fetch_assoc();
+                                            if (!empty($rowGroup['name'])) {
+                                                $shftName = htmlspecialchars($rowGroup['name']) . ' <span class="badge badge-primary">تعرف تلقائي / ديناميكي</span>';
+                                            }
+                                        }
+                                        if ($shftName === 'N/A' && !empty($rowemp['shift'])) {
                                             $rowshft = $conn->query("SELECT name FROM shifts WHERE id = '" . (int) $rowemp['shift'] . "'")->fetch_assoc();
-                                            $shftName = $rowshft['name'] ?? 'N/A';
+                                            $shftName = htmlspecialchars($rowshft['name'] ?? 'N/A');
                                         }
                                         ?>
                                         <div class="detail-row"><b><?= $lang_addemployee_job ?></b><span><?= htmlspecialchars($jopName ?: 'N/A') ?></span></div>
@@ -377,7 +383,7 @@ if ($empValid) {
                                         <div class="detail-row"><b><?= $lang_addemployee_jobstart ?></b><span><?= htmlspecialchars($rowemp['dateofhire'] ?: '—') ?></span></div>
                                         <div class="detail-row"><b><?= $lang_addemployee_jobend ?></b><span><?= htmlspecialchars($rowemp['dateofend'] ?: '—') ?></span></div>
                                         <div class="detail-row"><b><?= $lang_addemployee_salary ?></b><span><?= number_format((float) $rowemp['salary']) ?> (<?= ($rowemp['calc_type'] ?? 'monthly') === 'daily' ? 'يومي' : 'شهري' ?>)</span></div>
-                                        <div class="detail-row"><b><?= $lang_addemployee_shift ?></b><span><?= htmlspecialchars($shftName) ?></span></div>
+                                        <div class="detail-row"><b><?= $lang_addemployee_shift ?></b><span><?= $shftName ?></span></div>
                                     </div>
                                 </div>
 

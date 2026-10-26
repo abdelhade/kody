@@ -39,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 		move_uploaded_file($kvr_name, "../assets/$new_kvr_name");
 	}
 
+	$shift_group_sql = !empty($_POST['shift_group_id']) ? (int) $_POST['shift_group_id'] : 'NULL';
+
 	$sql = "UPDATE `employees`
 	SET `name` = '$name' ,
 	`number` = '$number' ,
@@ -58,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 	`dateofend` = '$dateofend' , 
 	`salary` = '$salary' , 
 	`shift` = '$shift' , 
+	`shift_group_id` = $shift_group_sql , 
 	`basma_id` = '$basma_id' , 
 	`basma_name` = '$basma_name' , 
 	`password` = '$password' , 

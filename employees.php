@@ -3,6 +3,11 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/navbar.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
+// جلب قائمة الورديات للـ select
+$shifts_list = [];
+$sr = $conn->query("SELECT id, name FROM `shifts` ORDER BY name");
+if ($sr) { while ($row_s = $sr->fetch_assoc()) $shifts_list[] = $row_s; }
+
 // Single optimized query with JOINs instead of N+1 per row
 $sql = "SELECT e.*, j.name AS job_name, d.name AS dept_name, s.name AS shift_name,
                COALESCE(k.total_kbi, 0) AS total_kbi
@@ -121,7 +126,18 @@ if (Can::check('payroll.view')) {
                 <td><span class="k-badge k-badge-secondary"><?= $job ?></span></td>
                 <td><?= $dept !== '—' ? '<span class="text-dark">' . $dept . '</span>' : '<span class="text-muted small">—</span>' ?></td>
                 <td><?= $phone !== '' ? '<span dir="ltr">' . $phone . '</span>' : '<span class="text-muted small">—</span>' ?></td>
-                <td><?= $shift !== '—' ? '<span class="k-badge k-badge-info">' . $shift . '</span>' : '<span class="text-muted small">—</span>' ?></td>
+                <td>
+                  <?php if ($canEdit): ?>
+                  <select class="shift-select" data-emp="<?= $eid ?>" style="border:1px solid #ced4da;border-radius:6px;padding:3px 8px;font-size:0.82rem;background:#fff;max-width:140px;">
+                    <option value="0"<?= !$row['shift'] ? ' selected' : '' ?>>— بدون —</option>
+                    <?php foreach ($shifts_list as $sl): ?>
+                    <option value="<?= (int)$sl['id'] ?>"<?= ((int)$row['shift'] === (int)$sl['id']) ? ' selected' : '' ?>><?= htmlspecialchars($sl['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <?php else: ?>
+                    <?= $shift !== '—' ? '<span class="k-badge k-badge-info">' . $shift . '</span>' : '<span class="text-muted small">—</span>' ?>
+                  <?php endif; ?>
+                </td>
                 <td>
                   <strong class="text-dark"><?= number_format($salary, 2) ?></strong>
                   <small class="text-muted mr-1">(<?= $calcType ?>)</small>
@@ -153,4 +169,39 @@ if (Can::check('payroll.view')) {
   </div>
 </div>
 
+<?php if ($canEdit): ?>
+<script>
+$(function(){
+  $(document).on('change', '.shift-select', function(){
+    var $sel = $(this);
+    var empId = $sel.data('emp');
+    var shiftId = $sel.val();
+    var orig = $sel.data('orig-val');
+    // حفظ القيمة الأصلية عند أول تحميل
+    if (orig === undefined) {
+      $sel.data('orig-val', $sel.find(':selected').val());
+      orig = shiftId;
+    }
+    $sel.css({'border-color':'#6c757d','opacity':'0.7'}).prop('disabled', true);
+    $.post('ajax/update_employee_shift.php', {emp_id: empId, shift: shiftId}, function(res){
+      $sel.prop('disabled', false).css('opacity','1');
+      if (res && res.success) {
+        $sel.css('border-color','#28a745');
+        $sel.data('orig-val', shiftId);
+        setTimeout(function(){ $sel.css('border-color',''); }, 1800);
+      } else {
+        $sel.css('border-color','#dc3545');
+        $sel.val($sel.data('orig-val'));
+        setTimeout(function(){ $sel.css('border-color',''); }, 2000);
+        toastr && toastr.error(res ? res.message : 'فشل التحديث');
+      }
+    }, 'json').fail(function(){
+      $sel.prop('disabled', false).css({'opacity':'1','border-color':'#dc3545'});
+      $sel.val($sel.data('orig-val'));
+      setTimeout(function(){ $sel.css('border-color',''); }, 2000);
+    });
+  });
+});
+</script>
+<?php endif; ?>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

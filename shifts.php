@@ -67,14 +67,17 @@
     <div class="row">
       <div class="col-12">
         <div class="card">
-          <div class="card-header">
-            <?php if (Can::check('shifts.add')) { ?>
-            <h3 class="card-title">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">
+              <?php if (Can::check('shifts.add')) { ?>
               <a href="add_shift.php" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i> <?= $lang_addshift ?>
               </a>
+              <?php } ?>
+              <a href="shift_groups.php" class="btn btn-outline-primary mr-2">
+                <i class="fas fa-layer-group mr-1"></i> مجموعات الورديات (التعرف التلقائي)
+              </a>
             </h3>
-            <?php } ?>
           </div>
           <!-- /.card-header -->
           <div class="card-body">

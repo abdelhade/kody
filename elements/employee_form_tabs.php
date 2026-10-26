@@ -291,7 +291,7 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label><?= $lang_addemployee_shift ?></label>
+                                    <label><?= $lang_addemployee_shift ?> (وردية ثابتة)</label>
                                     <select name="shift" class="custom-select">
                                         <?php
                                         $resshft = $conn->query('SELECT * FROM shifts ORDER BY name');
@@ -302,6 +302,27 @@ $chkActive = !empty($rowemp['active']) && $rowemp['active'] != '0';
                                         </option>
                                         <?php endwhile; ?>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>مجموعة الورديات (تعرف تلقائي / ديناميكي)</label>
+                                    <select name="shift_group_id" class="custom-select">
+                                        <option value="">بدون (الاعتماد على الوردية الثابتة)</option>
+                                        <?php
+                                        $resGroup = $conn->query('SELECT * FROM shift_groups WHERE isdeleted = 0 ORDER BY name');
+                                        if ($resGroup) {
+                                            while ($rowGroup = $resGroup->fetch_assoc()):
+                                        ?>
+                                        <option value="<?= (int) $rowGroup['id'] ?>" <?= $sel('shift_group_id', $rowGroup['id']) ?>>
+                                            <?= htmlspecialchars($rowGroup['name']) ?>
+                                        </option>
+                                        <?php 
+                                            endwhile;
+                                        }
+                                        ?>
+                                    </select>
+                                    <small class="form-text text-muted">لو تم تحديد مجموعة، يستنتج النظام الوردية تلقائياً من البصمة.</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
