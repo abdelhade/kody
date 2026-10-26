@@ -89,47 +89,7 @@ function kody_validate_dbname(string $name): string
  */
 function kody_register_dbname(string $dbName, string $label = ''): void
 {
-    $dbName = kody_validate_dbname($dbName);
-    $label = $label !== '' ? $label : $dbName;
-    $registryFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'db_registry.json';
-    $dir = dirname($registryFile);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-
-    $reg = [
-        'group_id' => 'default',
-        'current' => $dbName,
-        'databases' => [],
-    ];
-    if (is_readable($registryFile)) {
-        $decoded = json_decode((string) file_get_contents($registryFile), true);
-        if (is_array($decoded)) {
-            $reg = array_merge($reg, $decoded);
-            if (empty($reg['databases']) || !is_array($reg['databases'])) {
-                $reg['databases'] = [];
-            }
-        }
-    }
-
-    $names = array_column($reg['databases'], 'name');
-    if (!in_array($dbName, $names, true)) {
-        $reg['databases'][] = [
-            'name' => $dbName,
-            'label' => $label,
-            'created_at' => date('Y-m-d H:i:s'),
-            'closed_at' => null,
-            'parent' => null,
-        ];
-    }
-    $reg['current'] = $dbName;
-
-    @file_put_contents(
-        $registryFile,
-        json_encode($reg, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
-    );
-
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        $_SESSION['active_dbname'] = $dbName;
-    }
+    require_once __DIR__ . '/PeriodManager.php';
+    $pm = PeriodManager::fromEnv();
+    $pm->registerDatabase($dbName, $label, null, true);
 }

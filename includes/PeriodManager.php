@@ -40,15 +40,23 @@ class PeriodManager
         $this->registryPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'db_registry.json';
     }
 
-    public static function fromEnv(mysqli $conn): self
+    public static function fromEnv(?mysqli $conn = null): self
     {
-        return new self(
-            $conn,
-            (string) env('DB_HOST', 'localhost'),
-            (string) env('DB_USER', 'root'),
-            (string) env('DB_PASS', ''),
-            (string) (env('DB_NAME', 'kody2'))
-        );
+        require_once __DIR__ . '/load_env.php';
+        require_once __DIR__ . '/db_name.php';
+
+        $dbHost = (string) env('DB_HOST', 'localhost');
+        $dbUser = (string) env('DB_USER', 'root');
+        $dbPass = (string) env('DB_PASS', '');
+        $currentDb = function_exists('kody_preferred_dbname')
+            ? kody_preferred_dbname()
+            : (string) env('DB_NAME', 'kody2');
+
+        if ($conn === null) {
+            $conn = @new mysqli($dbHost, $dbUser, $dbPass);
+        }
+
+        return new self($conn, $dbHost, $dbUser, $dbPass, $currentDb);
     }
 
     // ─── Registry ───────────────────────────────────────────────
@@ -104,6 +112,31 @@ class PeriodManager
             $this->registryPath,
             json_encode($reg, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
         );
+    }
+
+    public function registerDatabase(string $dbName, string $label = '', ?string $parent = null, bool $makeCurrent = true): void
+    {
+        $dbName = $this->sanitizeDbName($dbName);
+        $label = $label !== '' ? $label : $dbName;
+        $reg = $this->getRegistry();
+        $names = array_column($reg['databases'], 'name');
+        if (!in_array($dbName, $names, true)) {
+            $reg['databases'][] = [
+                'name' => $dbName,
+                'label' => $label,
+                'created_at' => date('Y-m-d H:i:s'),
+                'closed_at' => null,
+                'parent' => $parent,
+            ];
+        }
+        if ($makeCurrent) {
+            $reg['current'] = $dbName;
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['active_dbname'] = $dbName;
+            }
+            $this->updateEnvDbName($dbName);
+        }
+        $this->saveRegistry($reg);
     }
 
     private function defaultRegistry(): array
@@ -179,45 +212,130 @@ class PeriodManager
 
         $dbName = $this->sanitizeDbName($dbName);
         if ($this->databaseExists($dbName)) {
-            throw new RuntimeException("القاعدة `$dbName` موجودة مسبقاً");
+            return [
+                'success' => false,
+                'message' => "قاعدة البيانات `$dbName` موجودة مسبقاً. اختر اسماً آخر.",
+            ];
         }
 
         $admin = $this->adminConnection();
-        $admin->query(
-            "CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"
-        );
+        $sqlCreate = "CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
+        if (!$admin->query($sqlCreate)) {
+            return [
+                'success' => false,
+                'message' => "فشل إنشاء قاعدة البيانات: " . $admin->error,
+            ];
+        }
+
         $admin->select_db($dbName);
         $admin->query('SET FOREIGN_KEY_CHECKS = 0');
 
         $schemaFile = $this->resolveSchemaFile();
-        $import = $this->executeSqlFile($admin, $schemaFile);
-        if (!$import['success']) {
-            throw new RuntimeException($import['message']);
+        $import = $this->executeSqlFile($admin, $schemaFile, false);
+        $admin->query('SET FOREIGN_KEY_CHECKS = 1');
+
+        if (empty($import['success'])) {
+            $admin->query("DROP DATABASE `$dbName`");
+            return [
+                'success' => false,
+                'message' => 'فشل استيراد الهيكل الأساسي: ' . ($import['message'] ?? 'خطأ غير معروف'),
+                'errors' => $import['errors'] ?? [],
+            ];
+        }
+
+        $runner = new MigrationRunner($admin);
+        $mig = $runner->runPending();
+        $this->ensurePeriodMeta($admin, $dbName, $label ?: $dbName, null);
+
+        $this->registerDatabase($dbName, $label, null, true);
+
+        $pendingCount = count($mig['results'] ?? []);
+        $suffix = $pendingCount > 0 ? " وتم تطبيق {$pendingCount} تحديث." : ' (لا تحديثات إضافية).';
+
+        return [
+            'success' => true,
+            'message' => "تم إنشاء القاعدة `$dbName` وتفعيلها." . $suffix,
+            'database' => $dbName,
+            'migrations' => $mig,
+            'status' => $runner->status(),
+        ];
+    }
+
+    // ─── Restore backup ──────────────────────────────────────────
+
+    public function restoreBackup(string $dbName, string $filePath, string $label = ''): array
+    {
+        require_once __DIR__ . '/MigrationRunner.php';
+
+        $dbName = $this->sanitizeDbName($dbName);
+        if (!file_exists($filePath)) {
+            return [
+                'success' => false,
+                'message' => 'ملف النسخة الاحتياطية غير موجود على السيرفر',
+            ];
+        }
+
+        $admin = $this->adminConnection();
+        $sqlCreate = "CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
+        if (!$admin->query($sqlCreate)) {
+            return [
+                'success' => false,
+                'message' => "فشل إنشاء/الوصول لقاعدة `$dbName`: " . $admin->error,
+            ];
+        }
+
+        $admin->select_db($dbName);
+        $this->registerDatabase($dbName, $label, null, true);
+
+        $admin->query('SET FOREIGN_KEY_CHECKS = 0');
+
+        // 1) استيراد النسخة الاحتياطية مع تجاهل تعارضات الدامب القديم
+        $import = $this->executeSqlFile($admin, $filePath, true);
+        $skipped = (int) ($import['skipped'] ?? 0);
+        $message = "تم استعادة النسخة إلى `$dbName` بنجاح" . ($skipped > 0 ? " (تم تجاهل {$skipped} استعلام فاشل)" : '');
+
+        // أخطاء MySQL إن وُجدت
+        $groups = $import['error_groups'] ?? [];
+        if ($skipped > 0 && $groups !== []) {
+            $message .= "\n\nأخطاء MySQL:";
+            foreach (array_slice($groups, 0, 15) as $i => $g) {
+                $n = $i + 1;
+                $message .= "\n{$n}) [{$g['errno']}] {$g['error']} (×{$g['count']})\n   مثال SQL: {$g['sample_sql']}...";
+            }
+            if (count($groups) > 15) {
+                $message .= "\n... وأنواع أخطاء أخرى (" . (count($groups) - 15) . ")";
+            }
+        }
+
+        // 2) مقارنة بالهيكل الأساسي وإضافة الجداول الناقصة إن وجدت
+        $schemaFile = $this->resolveSchemaFile();
+        $ensure = $this->ensureMissingTablesFromSchema($admin, $schemaFile);
+        $addedTables = $ensure['added'] ?? [];
+        if (!empty($addedTables)) {
+            $message .= "\n\n" . $ensure['message'] . ': ' . implode(', ', $addedTables);
+        } else {
+            $message .= "\nالهيكل الأساسي مكتمل.";
         }
 
         $admin->query('SET FOREIGN_KEY_CHECKS = 1');
 
+        // 3) تطبيق التحديثات المعلقة
         $runner = new MigrationRunner($admin);
-        $runner->runPending();
+        $mig = $runner->runPending();
         $this->ensurePeriodMeta($admin, $dbName, $label ?: $dbName, null);
 
-        $reg = $this->getRegistry();
-        $reg['databases'][] = [
-            'name' => $dbName,
-            'label' => $label !== '' ? $label : $dbName,
-            'created_at' => date('Y-m-d H:i:s'),
-            'closed_at' => null,
-            'parent' => null,
-        ];
-        $reg['current'] = $dbName;
-        $this->saveRegistry($reg);
-        $_SESSION['active_dbname'] = $dbName;
-        $this->updateEnvDbName($dbName);
+        $pendingCount = count($mig['results'] ?? []);
+        $suffix = $pendingCount > 0 ? " وتم تطبيق {$pendingCount} تحديث." : ' (لا تحديثات إضافية).';
 
         return [
             'success' => true,
-            'message' => "تم إنشاء القاعدة `$dbName` وتفعيلها",
+            'message' => $message . $suffix,
             'database' => $dbName,
+            'skipped' => $skipped,
+            'error_groups' => $groups,
+            'added_tables' => $addedTables,
+            'migrations' => $mig,
+            'status' => $runner->status(),
         ];
     }
 
@@ -576,11 +694,8 @@ class PeriodManager
 
     public function sanitizeDbName(string $name): string
     {
-        $name = trim($name);
-        if (!preg_match('/^[A-Za-z0-9_]{2,64}$/', $name)) {
-            throw new InvalidArgumentException('اسم القاعدة غير صالح (حروف/أرقام/_ فقط، 2–64)');
-        }
-        return $name;
+        require_once __DIR__ . '/db_name.php';
+        return kody_validate_dbname($name);
     }
 
     public function databaseExists(string $dbName): bool
@@ -670,57 +785,231 @@ class PeriodManager
         throw new RuntimeException('ملف الهيكل db/DB.sql غير موجود');
     }
 
-    private function executeSqlFile(mysqli $conn, string $filePath): array
+    public function parseSqlStatements(string $filePath): array
     {
         if (!file_exists($filePath)) {
-            return ['success' => false, 'message' => 'ملف SQL غير موجود'];
+            return ['error' => 'ملف SQL غير موجود: ' . basename($filePath)];
         }
+
         $lines = file($filePath);
         if ($lines === false) {
-            return ['success' => false, 'message' => 'فشل قراءة ملف SQL'];
+            return ['error' => 'فشل في قراءة ملف SQL'];
         }
 
+        $statements = [];
         $query = '';
         $delimiter = ';';
-        $inBlock = false;
+        $inMultiLineComment = false;
 
         foreach ($lines as $line) {
-            $trim = trim($line);
-            if ($trim === '') {
+            $trimmed = trim($line);
+            if ($trimmed === '') {
                 continue;
             }
-            if (!$inBlock && str_starts_with($trim, '/*')) {
-                if (!str_contains($trim, '*/')) {
-                    $inBlock = true;
+
+            if (!$inMultiLineComment && str_starts_with($trimmed, '/*')) {
+                if (!str_contains($trimmed, '*/')) {
+                    $inMultiLineComment = true;
                 }
                 continue;
             }
-            if ($inBlock) {
-                if (str_contains($trim, '*/')) {
-                    $inBlock = false;
+            if ($inMultiLineComment) {
+                if (str_contains($trimmed, '*/')) {
+                    $inMultiLineComment = false;
                 }
                 continue;
             }
-            if (str_starts_with($trim, '--') || str_starts_with($trim, '#')) {
+
+            if (str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
                 continue;
             }
-            if (preg_match('/^DELIMITER\s+(.+)$/i', $trim, $m)) {
-                $delimiter = trim($m[1]);
+
+            if (preg_match('/^DELIMITER\s+(.+)$/i', $trimmed, $matches)) {
+                $delimiter = trim($matches[1]);
                 continue;
             }
+
             $query .= $line . ' ';
-            if (str_ends_with($trim, $delimiter)) {
-                $exec = substr(trim($query), 0, -strlen($delimiter));
-                if ($exec !== '' && !$conn->query($exec)) {
-                    return [
-                        'success' => false,
-                        'message' => 'خطأ SQL: ' . $conn->error,
-                    ];
+
+            if (str_ends_with($trimmed, $delimiter)) {
+                $execQuery = substr(trim($query), 0, -strlen($delimiter));
+                $execQuery = trim($execQuery);
+                if ($execQuery !== '') {
+                    $statements[] = $execQuery;
                 }
                 $query = '';
             }
         }
 
-        return ['success' => true, 'message' => 'تم الاستيراد'];
+        return $statements;
+    }
+
+    public function normalizeBackupStatement(string $sql): ?string
+    {
+        $sql = trim($sql);
+        if ($sql === '') {
+            return null;
+        }
+
+        if (preg_match('/^(USE|CREATE\s+DATABASE)\b/i', $sql)) {
+            return null;
+        }
+
+        if (preg_match('/^DROP\s+TABLE\s+(?!IF\s+EXISTS)/i', $sql)) {
+            $sql = preg_replace('/^DROP\s+TABLE\s+/i', 'DROP TABLE IF EXISTS ', $sql, 1);
+        }
+
+        if (preg_match('/^CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)/i', $sql)) {
+            $sql = preg_replace('/^CREATE\s+TABLE\s+/i', 'CREATE TABLE IF NOT EXISTS ', $sql, 1);
+        }
+
+        if (preg_match('/^CREATE\s+TABLE\b/i', $sql)) {
+            $sql = preg_replace(
+                '/UNIQUE\s+KEY\s+`?receipt_number`?\s*\(\s*`?receipt_number`?\s*\)/i',
+                'KEY `receipt_number` (`receipt_number`)',
+                $sql
+            );
+        }
+
+        return $sql;
+    }
+
+    public function executeSqlFile(mysqli $conn, string $filePath, bool $continueOnError = false): array
+    {
+        $parsed = $this->parseSqlStatements($filePath);
+        if (isset($parsed['error'])) {
+            return ['success' => false, 'message' => $parsed['error']];
+        }
+
+        $skipped = 0;
+        $errors = [];
+        $errorGroups = [];
+
+        foreach ($parsed as $execQuery) {
+            if ($continueOnError) {
+                $normalized = $this->normalizeBackupStatement($execQuery);
+                if ($normalized === null) {
+                    continue;
+                }
+                $execQuery = $normalized;
+            }
+
+            if (!$conn->query($execQuery)) {
+                $errno = (int) $conn->errno;
+                $error = (string) $conn->error;
+                $sample = substr($execQuery, 0, 220);
+                $errDetail = [
+                    'errno' => $errno,
+                    'error' => $error,
+                    'sql'   => $sample,
+                ];
+
+                if ($continueOnError) {
+                    $skipped++;
+                    $gkey = $errno . '|' . $error;
+                    if (!isset($errorGroups[$gkey])) {
+                        $errorGroups[$gkey] = [
+                            'errno' => $errno,
+                            'error' => $error,
+                            'count' => 0,
+                            'sample_sql' => $sample,
+                        ];
+                    }
+                    $errorGroups[$gkey]['count']++;
+                    if (count($errors) < 25) {
+                        $errors[] = $errDetail;
+                    }
+                    continue;
+                }
+
+                return [
+                    'success' => false,
+                    'message' => 'خطأ في تنفيذ SQL [' . $errno . ']: ' . $error
+                        . "\nالاستعلام: " . $sample . '...',
+                    'errors'  => [$errDetail],
+                ];
+            }
+        }
+
+        $msg = $continueOnError
+            ? 'تم استعادة النسخة الاحتياطية بنجاح'
+            : 'تم تهيئة قاعدة البيانات بنجاح';
+
+        if ($continueOnError && $skipped > 0) {
+            $msg .= "\n\nتم تجاهل {$skipped} استعلام فاشل.";
+        }
+
+        return [
+            'success'      => true,
+            'message'      => $msg,
+            'skipped'      => $skipped,
+            'errors'       => $errors,
+            'error_groups' => array_values($errorGroups),
+        ];
+    }
+
+    public function ensureMissingTablesFromSchema(mysqli $conn, string $schemaFile): array
+    {
+        $parsed = $this->parseSqlStatements($schemaFile);
+        if (isset($parsed['error'])) {
+            return ['success' => false, 'message' => $parsed['error'], 'added' => []];
+        }
+
+        $existing = [];
+        $res = $conn->query('SHOW TABLES');
+        if ($res) {
+            while ($row = $res->fetch_row()) {
+                $existing[strtolower($row[0])] = true;
+            }
+        }
+
+        $added = [];
+        $addedLookup = [];
+
+        foreach ($parsed as $sql) {
+            if (!preg_match('/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([a-zA-Z0-9_]+)`?/i', $sql, $m)) {
+                continue;
+            }
+            $table = $m[1];
+            $key = strtolower($table);
+            if (isset($existing[$key])) {
+                continue;
+            }
+
+            $createSql = preg_replace('/^CREATE\s+TABLE\s+(?!IF\s+NOT\s+EXISTS)/i', 'CREATE TABLE IF NOT EXISTS ', $sql, 1);
+            if ($conn->query($createSql)) {
+                $added[] = $table;
+                $addedLookup[$key] = true;
+                $existing[$key] = true;
+            }
+        }
+
+        if ($added === []) {
+            return [
+                'success' => true,
+                'message' => 'لا جداول ناقصة في الهيكل الأساسي',
+                'added'   => [],
+            ];
+        }
+
+        foreach ($parsed as $sql) {
+            if (preg_match('/^ALTER\s+TABLE\s+`?([a-zA-Z0-9_]+)`?/i', $sql, $m)) {
+                if (isset($addedLookup[strtolower($m[1])])) {
+                    $conn->query($sql);
+                }
+                continue;
+            }
+            if (preg_match('/^INSERT\s+INTO\s+`?([a-zA-Z0-9_]+)`?/i', $sql, $m)) {
+                if (isset($addedLookup[strtolower($m[1])])) {
+                    $conn->query($sql);
+                }
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'تم إضافة ' . count($added) . ' جدول ناقص من الهيكل الأساسي',
+            'added'   => $added,
+        ];
     }
 }
