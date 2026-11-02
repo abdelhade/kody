@@ -67,18 +67,8 @@ if ($fund_id == 0) {
 $submit = isset($_POST['submit']) ? htmlspecialchars($_POST['submit'], ENT_QUOTES, 'UTF-8') : 'save';
 $info = isset($_POST['info']) ? htmlspecialchars(trim($_POST['info']), ENT_QUOTES, 'UTF-8') : '';
 
-// التحقق من صحة البيانات الأساسية
 if ($ot_id == 0) {
     die('خطأ: معرف الفاتورة مطلوب');
-}
-
-if ($acc2_id == 0 || $store_id == 0 || $emp_id == 0) {
-    die('خطأ: بيانات مطلوبة مفقودة');
-}
-
-// التحقق من وجود أصناف
-if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_filter($_POST['itmname']))) {
-    die('خطأ: يجب إضافة صنف واحد على الأقل');
 }
 
 // الحصول على بيانات الفاتورة الأصلية باستخدام Prepared Statement
@@ -97,22 +87,40 @@ if (!$rowop) {
     die('خطأ: الفاتورة غير موجودة');
 }
 
-// إزالة عرض البيانات الحساسة
-// echo "<pre>";
-// print_r($rowop);
-// echo "</pre>";
-
 $pro_tybe = intval($rowop['pro_tybe']);
 Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'edit'));
+$isBarcodePrintDoc = InvoiceProcessor::isBarcodePrint($pro_tybe);
 
 $store_id = isset($_POST['store_id']) ? (int)$_POST['store_id'] : (int)$rowop['store_id'];
-if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
+if ($isBarcodePrintDoc) {
+    if ($store_id <= 0) {
+        $store_id = (int) $rowop['store_id'];
+    }
+    if ($emp_id <= 0) {
+        $emp_id = (int) ($rowop['emp_id'] ?? 0);
+    }
+    $acc2_id = $store_id > 0 ? $store_id : 1;
+    $headtotal = 0;
+    $headdisc = 0;
+    $headplus = 0;
+    $headnet = 0;
+} else {
+    if ($acc2_id == 0 || $store_id == 0 || $emp_id == 0) {
+        die('خطأ: بيانات مطلوبة مفقودة');
+    }
+    if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_filter($_POST['itmname']))) {
+        die('خطأ: يجب إضافة صنف واحد على الأقل');
+    }
+}
+if (!$isBarcodePrintDoc && $pro_tybe === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']) {
     if ($store_id === $acc2_id) {
         die('لا يمكن التحويل من وإلى نفس المخزن');
     }
 }
 $prevent_negative_stock = !Can::check('stock.sell_negative');
-$lineErrors = InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $ot_id);
+$lineErrors = $isBarcodePrintDoc
+    ? []
+    : InvoiceProcessor::validateInvoiceLines($pro_tybe, $_POST, $conn, $store_id, $prevent_negative_stock, $ot_id);
 if ($lineErrors) {
     die(implode(' — ', $lineErrors));
 }
@@ -124,7 +132,9 @@ if (InvoiceProcessor::isNonCashDocument($pro_tybe)) {
     $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 }
 
-$cashPartyError = InvoiceProcessor::validateCashPartyPayment($conn, $pro_tybe, $acc2_id, $paid, isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0);
+$cashPartyError = $isBarcodePrintDoc
+    ? null
+    : InvoiceProcessor::validateCashPartyPayment($conn, $pro_tybe, $acc2_id, $paid, isset($_POST['headnet']) ? floatval($_POST['headnet']) : 0);
 if ($cashPartyError) {
     die($cashPartyError);
 }
@@ -199,12 +209,22 @@ try {
         'fund_id' => $fund_id,
     ]);
 
-    // تحديث القيود — أوامر/عروض بلا قيد؛ التحويل المخزني له قيد
+    // تحديث القيود — أوامر/عروض/باركود بلا قيد؛ التحويل المخزني له قيد
     $skipJournal = in_array($pro_tybe, [
         InvoiceProcessor::INVOICE_TYPES['PURCHASE_ORDER'],
         InvoiceProcessor::INVOICE_TYPES['SALES_ORDER'],
         InvoiceProcessor::INVOICE_TYPES['OFFER'],
+        InvoiceProcessor::INVOICE_TYPES['BARCODE_PRINT'],
     ], true);
+
+    if (InvoiceProcessor::isBarcodePrint($pro_tybe)) {
+        $stmt_jf = $conn->prepare('UPDATE ot_head SET is_journal = 0, is_stock = 0 WHERE id = ?');
+        if ($stmt_jf) {
+            $stmt_jf->bind_param('i', $ot_id);
+            $stmt_jf->execute();
+            $stmt_jf->close();
+        }
+    }
     if (!$skipJournal) {
         InvoiceProcessor::updateMainJournal(
             $conn,
@@ -292,10 +312,16 @@ try {
 }
 
 // إعادة التوجيه حسب نوع العملية
+if (InvoiceProcessor::isBarcodePrint($pro_tybe)) {
+    header('Location: ../inv_operations.php?h=' . md5($ot_id) . '&q=' . $ot_id . '&t=' . md5($pro_tybe));
+    exit;
+}
+
 $redirects = [
     InvoiceProcessor::INVOICE_TYPES['PURCHASE'] => '../operations_summary.php?q=purchase&success=1',
     InvoiceProcessor::INVOICE_TYPES['SALES'] => '../operations_summary.php?q=sale&success=1',
-    InvoiceProcessor::INVOICE_TYPES['POS'] => '../pos_barcode.php?success=1'
+    InvoiceProcessor::INVOICE_TYPES['POS'] => '../pos_barcode.php?success=1',
+    InvoiceProcessor::INVOICE_TYPES['BARCODE_PRINT'] => '../operations_summary.php?q=barcode_print&success=1',
 ];
 
 $redirect = $redirects[$pro_tybe] ?? '../operations_summary.php?success=1';

@@ -141,6 +141,24 @@ $bdPriceSources = [
           </table>
         </div>
 
+        <h5 class="text-muted mb-2">النصوص المخصصة</h5>
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="bd_text_1_content">نص 1</label>
+              <input type="text" class="form-control bd-live" id="bd_text_1_content" name="bd_text_1_content" maxlength="200"
+                     value="<?= htmlspecialchars((string) ($bd['text_1_content'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="نص حر يظهر على الملصق">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="bd_text_2_content">نص 2</label>
+              <input type="text" class="form-control bd-live" id="bd_text_2_content" name="bd_text_2_content" maxlength="200"
+                     value="<?= htmlspecialchars((string) ($bd['text_2_content'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="نص حر يظهر على الملصق">
+            </div>
+          </div>
+        </div>
+
         <h5 class="text-muted mb-2">باركود الوحدة الثانية</h5>
         <div class="row">
           <div class="col-md-6">
@@ -229,8 +247,8 @@ $bdPriceSources = [
       <div class="col-xl-4 mt-4 mt-xl-0">
         <h5 class="text-muted mb-3">معاينة</h5>
         <div id="bdStage" style="background:#edf2f7;border-radius:12px;padding:16px 12px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;min-height:220px;">
-          <div id="bdPreviewScale">
-            <div id="bdPreviewLabel"></div>
+          <div id="bdPreviewScale" dir="ltr" style="direction:ltr;">
+            <div id="bdPreviewLabel" dir="ltr" style="direction:ltr;"></div>
           </div>
         </div>
         <p class="small text-muted mt-2 mb-0">المعاينة بصنف تجريبي. الطباعة تستخدم بيانات الصنف الفعلية.</p>
@@ -254,12 +272,16 @@ document.addEventListener('DOMContentLoaded', function () {
     printed: 120
   };
 
+  function field(name) {
+    var list = document.getElementsByName(name);
+    return list.length ? list[0] : null;
+  }
   function val(name) {
-    var el = document.querySelector('[name="' + name + '"]');
+    var el = field(name);
     return el ? el.value : '';
   }
   function checked(name) {
-    var el = document.querySelector('[name="' + name + '"]');
+    var el = field(name);
     return !!(el && el.checked);
   }
   function num(name, fallback) {
@@ -302,13 +324,22 @@ document.addEventListener('DOMContentLoaded', function () {
       font: num('bd_el[' + key + '][font]', 8)
     };
   }
+  // الحاوية LTR: يسار/يمين فعليين؛ dir على النص يضبط اتجاه العربي/الإنجليزي
   function textStyle(box, extra) {
     var align = val('bd_align') || 'center';
     return 'position:absolute;overflow:hidden;box-sizing:border-box;display:flex;align-items:center;justify-content:' +
       (align === 'left' ? 'flex-start' : (align === 'right' ? 'flex-end' : 'center')) +
-      ';text-align:' + align + ';direction:rtl;line-height:1;white-space:nowrap;' +
+      ';text-align:' + align + ';direction:ltr;line-height:1;white-space:nowrap;color:#000;' +
+      'font-family:Tahoma,Arial,sans-serif;' +
       'top:' + box.top + 'mm;left:' + box.left + 'mm;width:' + box.w + 'mm;height:' + box.h + 'mm;font-size:' + box.font + 'pt;' +
       (extra || '');
+  }
+  function txtSpan(content, dir, block) {
+    var style = 'min-width:0;text-align:inherit;unicode-bidi:plaintext;';
+    if (block) {
+      style += 'display:block;width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word;';
+    }
+    return '<span class="bd-txt" dir="' + (dir || 'auto') + '" style="' + style + '">' + escapeHtml(content) + '</span>';
   }
 
   function render() {
@@ -325,34 +356,54 @@ document.addEventListener('DOMContentLoaded', function () {
     if (sampleEl) sampleEl.textContent = codeText || '—';
 
     var html = '';
-    html += '<div style="position:relative;background:#fff;width:' + w + 'mm;height:' + h + 'mm;box-shadow:0 1px 4px rgba(0,0,0,.15);">';
-    html += '<div style="position:absolute;top:' + mt + 'mm;right:' + mr + 'mm;bottom:' + mb + 'mm;left:' + ml + 'mm;outline:1px dashed #cbd5e0;">';
+    html += '<div dir="ltr" style="direction:ltr;position:relative;background:#fff;width:' + w + 'mm;height:' + h + 'mm;box-shadow:0 1px 4px rgba(0,0,0,.15);overflow:hidden;">';
+    html += '<div dir="ltr" style="direction:ltr;position:absolute;top:' + mt + 'mm;right:' + mr + 'mm;bottom:' + mb + 'mm;left:' + ml + 'mm;outline:1px dashed #cbd5e0;">';
 
     var company = elBox('company');
     if (company.show) {
       var invert = checked('bd_invert');
-      html += '<div style="' + textStyle(company, invert ? 'background:#000;color:#fff;' : 'color:#000;') + '">' +
-        escapeHtml(val('bd_company_name')) + '</div>';
+      html += '<div style="' + textStyle(company, invert ? 'background:#000;color:#fff;' : '') + '">' +
+        txtSpan(val('bd_company_name'), 'auto') + '</div>';
     }
     var item = elBox('item_name');
-    if (item.show) html += '<div style="' + textStyle(item, 'color:#000;') + '">' + escapeHtml(sample.item) + '</div>';
+    if (item.show) {
+      html += '<div style="' + textStyle(item, 'white-space:normal;line-height:1.1;') + '">' +
+        txtSpan(sample.item, 'auto', true) + '</div>';
+    }
     var linear = elBox('barcode_linear');
     if (linear.show) {
-      html += '<div style="position:absolute;overflow:hidden;top:' + linear.top + 'mm;left:' + linear.left + 'mm;width:' + linear.w + 'mm;height:' + linear.h + 'mm;">' +
-        '<svg id="bdPreviewBarcode" style="width:100%;height:100%;"></svg></div>';
+      html += '<div dir="ltr" style="direction:ltr;position:absolute;overflow:hidden;box-sizing:border-box;display:block;' +
+        'top:' + linear.top + 'mm;left:' + linear.left + 'mm;width:' + linear.w + 'mm;height:' + linear.h + 'mm;">' +
+        '<svg id="bdPreviewBarcode" style="width:100%;height:100%;display:block;"></svg></div>';
     }
     var btext = elBox('barcode_text');
-    if (btext.show) html += '<div style="' + textStyle(btext, 'color:#000;') + '">' + escapeHtml(sample.barcode) + '</div>';
+    if (btext.show) html += '<div style="' + textStyle(btext, '') + '">' + txtSpan(sample.barcode, 'ltr') + '</div>';
     var code = elBox('code');
-    if (code.show) html += '<div style="' + textStyle(code, 'color:#000;') + '">' + escapeHtml(codeText) + '</div>';
+    if (code.show) html += '<div style="' + textStyle(code, '') + '">' + txtSpan(codeText, 'ltr') + '</div>';
     var pb = elBox('price_before');
-    if (pb.show) html += '<div style="' + textStyle(pb, 'color:#000;' + (checked('bd_strike_before') ? 'text-decoration:line-through;' : '')) + '">' + escapeHtml(before) + '</div>';
+    if (pb.show) html += '<div style="' + textStyle(pb, checked('bd_strike_before') ? 'text-decoration:line-through;' : '') + '">' + txtSpan(before, 'ltr') + '</div>';
     var pa = elBox('price_after');
-    if (pa.show) html += '<div style="' + textStyle(pa, 'color:#000;font-weight:700;') + '">' + escapeHtml(after) + '</div>';
+    if (pa.show) html += '<div style="' + textStyle(pa, 'font-weight:700;') + '">' + txtSpan(after, 'ltr') + '</div>';
     var pr = elBox('price_retail');
-    if (pr.show) html += '<div style="' + textStyle(pr, 'color:#000;') + '">قطاعي: ' + escapeHtml(money(sample.price1)) + '</div>';
+    if (pr.show) html += '<div style="' + textStyle(pr, '') + '">' + txtSpan('قطاعي: ' + money(sample.price1), 'auto') + '</div>';
     var pw = elBox('price_wholesale');
-    if (pw.show) html += '<div style="' + textStyle(pw, 'color:#000;') + '">جملة: ' + escapeHtml(money(sample.price2)) + '</div>';
+    if (pw.show) html += '<div style="' + textStyle(pw, '') + '">' + txtSpan('جملة: ' + money(sample.price2), 'auto') + '</div>';
+    function drawLine(box) {
+      if (!box.show) return;
+      var lh = Math.max(parseFloat(box.h) || 0, 0.3);
+      html += '<div style="position:absolute;z-index:2;box-sizing:border-box;background:#000;top:' + box.top +
+        'mm;left:' + box.left + 'mm;width:' + box.w + 'mm;height:' + lh + 'mm;"></div>';
+    }
+    function drawCustomText(box, contentName, fallback) {
+      if (!box.show) return;
+      var txt = String(val(contentName) || '').trim();
+      if (!txt) txt = fallback;
+      html += '<div style="' + textStyle(box, '') + '">' + txtSpan(txt, 'auto') + '</div>';
+    }
+    drawLine(elBox('line_1'));
+    drawLine(elBox('line_2'));
+    drawCustomText(elBox('text_1'), 'bd_text_1_content', 'نص 1');
+    drawCustomText(elBox('text_2'), 'bd_text_2_content', 'نص 2');
 
     html += '</div></div>';
     root.innerHTML = html;

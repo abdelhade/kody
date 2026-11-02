@@ -138,7 +138,15 @@
                                     continue;
                                 }
                             }
-                            $rows[] = ['item' => $r2, 'qty_in' => $rowop['qty_in']];
+                            // أوامر/مستند باركود: الكمية في doc_qty لأن qty_in = 0 (بلا حركة مخزون)
+                            $labelQty = (float) ($rowop['qty_in'] ?? 0);
+                            if ($labelQty <= 0) {
+                                $labelQty = (float) ($rowop['doc_qty'] ?? 0);
+                            }
+                            if ($labelQty <= 0) {
+                                $labelQty = 1;
+                            }
+                            $rows[] = ['item' => $r2, 'qty_in' => $labelQty];
                         }
                     }
             ?>

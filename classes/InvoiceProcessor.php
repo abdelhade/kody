@@ -17,6 +17,7 @@ class InvoiceProcessor {
         'SALES_ORDER' => 13,      // أمر بيع
         'OFFER' => 14,            // عرض سعر
         'STORE_TRANSFER' => 18,   // تحويل مخزني
+        'BARCODE_PRINT' => 19,    // مستند طباعة باركود
     ];
 
     // تعريف أنواع العمليات المحاسبية
@@ -38,9 +39,16 @@ class InvoiceProcessor {
         13 => 'sales_orders',
         14 => 'quotations',
         18 => 'store_transfers',
+        19 => 'barcode_docs',
     ];
 
-    /** مستندات بلا سداد نقدي (أوامر / عرض سعر / تحويل مخزني) */
+    /** مستند طباعة باركود (أصناف فقط، بدون قيد/مخزون) */
+    public static function isBarcodePrint(int $proTybe): bool
+    {
+        return $proTybe === self::INVOICE_TYPES['BARCODE_PRINT'];
+    }
+
+    /** مستندات بلا سداد نقدي (أوامر / عرض سعر / تحويل مخزني / طباعة باركود) */
     public static function isNonCashDocument(int $proTybe): bool
     {
         return in_array($proTybe, [
@@ -48,6 +56,7 @@ class InvoiceProcessor {
             self::INVOICE_TYPES['SALES_ORDER'],
             self::INVOICE_TYPES['OFFER'],
             self::INVOICE_TYPES['STORE_TRANSFER'],
+            self::INVOICE_TYPES['BARCODE_PRINT'],
         ], true);
     }
 
@@ -173,6 +182,13 @@ class InvoiceProcessor {
                 'paid_type' => self::ACCOUNTING_TYPES['PAYMENT'],
                 'cost_account' => 0
             ],
+            self::INVOICE_TYPES['BARCODE_PRINT'] => [
+                'note' => 'مستند طباعة باركود',
+                'paid_note' => 'سند',
+                'disc_type' => self::ACCOUNTING_TYPES['PURCHASE_DISC'],
+                'paid_type' => self::ACCOUNTING_TYPES['PAYMENT'],
+                'cost_account' => 0
+            ],
         ];
         
         return isset($configs[$pro_tybe]) ? $configs[$pro_tybe] : null;
@@ -243,6 +259,17 @@ class InvoiceProcessor {
                     'acc4' => $store_id,
                     'acc5' => $fund_id,
                     'acc6' => $acc2_id,
+                ];
+
+            case self::INVOICE_TYPES['BARCODE_PRINT']:
+                // بلا قيد محاسبي — نملأ الحسابات بالمخزن فقط
+                return [
+                    'acc1' => $store_id,
+                    'acc2' => $store_id,
+                    'acc3' => $store_id,
+                    'acc4' => $store_id,
+                    'acc5' => $fund_id,
+                    'acc6' => $store_id,
                 ];
 
             case self::INVOICE_TYPES['SALES_ORDER']:
@@ -2011,7 +2038,12 @@ class InvoiceProcessor {
     /** @return array{0:float,1:float} [qty_in, qty_out] */
     public static function resolveLineQty(int $proTybe, float $qty, float $uVal): array
     {
-        if (in_array($proTybe, [self::INVOICE_TYPES['PURCHASE_ORDER'], self::INVOICE_TYPES['SALES_ORDER'], self::INVOICE_TYPES['OFFER']], true)) {
+        if (in_array($proTybe, [
+            self::INVOICE_TYPES['PURCHASE_ORDER'],
+            self::INVOICE_TYPES['SALES_ORDER'],
+            self::INVOICE_TYPES['OFFER'],
+            self::INVOICE_TYPES['BARCODE_PRINT'],
+        ], true)) {
             return [0.0, 0.0];
         }
         if (in_array($proTybe, [self::INVOICE_TYPES['PURCHASE'], self::INVOICE_TYPES['SALES_RETURN']], true)) {
@@ -2055,6 +2087,9 @@ class InvoiceProcessor {
     public static function validateInvoiceLines(int $proTybe, array $post, $conn = null, $store_id = null, $prevent_negative_stock = false, $editing_invoice_id = null): array
     {
         $errors = [];
+        if (self::isBarcodePrint($proTybe)) {
+            return $errors;
+        }
         $names = $post['itmname'] ?? null;
         if (!is_array($names)) {
             return $errors;

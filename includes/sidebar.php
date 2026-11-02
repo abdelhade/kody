@@ -487,6 +487,20 @@
                   </p>
                 </a>
               </li>
+
+              <li class="nav-item">
+                <a href="sales.php?q=barcode_print" class="nav-link">
+                  <i class="nav-icon fas fa-barcode"></i>
+                  <p>مستند طباعة باركود</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=barcode_print" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>سجل مستندات الباركود</p>
+                </a>
+              </li>
             </ul>
           </li>
         

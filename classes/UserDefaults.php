@@ -188,8 +188,8 @@ final class UserDefaults
             'payment_fund_id' => 'fund',
             'emp_id'   => 'emp',
         ];
-        // التحويل المخزني: acc2_id = مخزن هدف، مش عميل/مورد
-        if ($proType !== 18) {
+        // التحويل المخزني / طباعة باركود: acc2_id مش طرف عميل/مورد
+        if ($proType !== 18 && $proType !== 19) {
             $fields['acc2_id'] = self::partyKey($proType);
         }
         if (self::hasPriceList($proType)) {

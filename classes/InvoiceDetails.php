@@ -70,8 +70,10 @@ class InvoiceDetails extends InvoiceElementBase
     public function render()
     {
         // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
+        require_once __DIR__ . '/InvoiceProcessor.php';
         $showProfit = ((int) $this->invoiceType === 4);
-        $searchColspan = $showProfit ? 11 : 9;
+        $isBarcodePrint = InvoiceProcessor::isBarcodePrint((int) $this->invoiceType);
+        $searchColspan = $isBarcodePrint ? 4 : ($showProfit ? 11 : 9);
         ob_start();
         ?>
         <div class="row">
@@ -84,6 +86,7 @@ class InvoiceDetails extends InvoiceElementBase
                                 <th class="col-5">اسم الصنف</th>
                                 <th>الوحدة</th>
                                 <th>كمية</th>
+                                <?php if (!$isBarcodePrint): ?>
                                 <th>سعر</th>
                                 <th>نسبة %</th>
                                 <th>خصم</th>
@@ -92,6 +95,7 @@ class InvoiceDetails extends InvoiceElementBase
                                 <th title="سعر البيع - قابل للتعديل">س. بيع</th>
                                 <?php endif; ?>
                                 <th>القيمة</th>
+                                <?php endif; ?>
                                 <th></th>
                             </tr>
                         </thead>
@@ -196,6 +200,8 @@ class InvoiceDetails extends InvoiceElementBase
 </style>
 <script>
 window.SHOW_PROFIT_COLS = <?php echo $showProfit ? 'true' : 'false'; ?>;
+window.BARCODE_PRINT_MODE = <?php echo $isBarcodePrint ? 'true' : 'false'; ?>;
+window.INVOICE_AUTO_NEW_ITEM = <?php echo Can::check('items.auto_invoice') ? 'true' : 'false'; ?>;
 
 window.currentInvoicePriceList = function() {
     return parseInt($('#invoicePriceList').val(), 10) || 1;
@@ -518,6 +524,122 @@ $(document).ready(function() {
     let searchTimeout;
     let selectedItem = null;
     let highlightIndex = -1;
+    let autoCreateBusy = false;
+    let searchCacheBust = 0;
+
+    function clearInvoiceItemCaches() {
+        // يكسر كاش بحث الأصناف في نفس السيشن بعد إنشاء صنف جديد
+        searchCacheBust = Date.now();
+        try {
+            if (window.jQuery && $.fn.select2) {
+                const $sel = $('#mySelectitm');
+                if ($sel.length && $sel.hasClass('select2-hidden-accessible') && typeof initializeSelect2 === 'function') {
+                    $sel.select2('destroy');
+                    initializeSelect2();
+                }
+            }
+        } catch (err) {
+            console.warn('clearInvoiceItemCaches:', err);
+        }
+    }
+
+    function focusLastQty() {
+        setTimeout(function() {
+            const $qty = $('#itmrow tr:last .itmqty');
+            if ($qty.length) {
+                $qty.focus().select();
+            }
+        }, 50);
+    }
+
+    function showAutoCreatedAlert() {
+        if (typeof Swal === 'undefined') {
+            focusLastQty();
+            return;
+        }
+        Swal.fire({
+            type: 'success',
+            title: 'تم انشاء صنف جديد',
+            confirmButtonText: 'موافق',
+            allowOutsideClick: false,
+            allowEscapeKey: true,
+            allowEnterKey: true,
+            focusConfirm: true
+        }).then(function() {
+            focusLastQty();
+        });
+    }
+
+    function autoCreateItemFromBarcode(barcode, done) {
+        barcode = String(barcode || '').trim();
+        if (!barcode || !window.INVOICE_AUTO_NEW_ITEM) {
+            if (typeof done === 'function') done(null);
+            return;
+        }
+        if (autoCreateBusy) {
+            if (typeof done === 'function') done(null);
+            return;
+        }
+        autoCreateBusy = true;
+
+        const body = new FormData();
+        body.append('barcode', barcode);
+
+        fetch('ajax/auto_create_item.php', {
+            method: 'POST',
+            body: body,
+            cache: 'no-store',
+            credentials: 'same-origin'
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                // مسح الكاش فوراً عشان تقدر تدخل أصناف تانية في نفس السيشن
+                clearInvoiceItemCaches();
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
+                clearHighlight();
+
+                if (!res || !res.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            type: 'error',
+                            title: 'تعذّر إنشاء الصنف',
+                            text: (res && res.error) ? res.error : 'حدث خطأ',
+                            confirmButtonText: 'موافق'
+                        });
+                    }
+                    if (typeof done === 'function') done(null);
+                    return;
+                }
+
+                if (typeof done === 'function') {
+                    done(res);
+                } else {
+                    selectItem(
+                        { id: res.id, name: res.iname, price: res.price || 0, barcode: res.barcode || barcode },
+                        {
+                            noFocus: true,
+                            fresh: true,
+                            skipSearchFocus: true,
+                            onReady: function() { showAutoCreatedAlert(); }
+                        }
+                    );
+                }
+            })
+            .catch(function() {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        type: 'error',
+                        title: 'خطأ في الاتصال',
+                        confirmButtonText: 'موافق'
+                    });
+                }
+                if (typeof done === 'function') done(null);
+            })
+            .finally(function() {
+                autoCreateBusy = false;
+            });
+    }
 
     function getResultItems() {
         return searchResults.querySelectorAll('.search-result-item');
@@ -586,6 +708,7 @@ $(document).ready(function() {
 
         if (query.length < 1) {
             searchResults.style.display = 'none';
+            delete searchResults.dataset.emptyQuery;
             clearHighlight();
             return;
         }
@@ -594,9 +717,11 @@ $(document).ready(function() {
             positionDropdown();
             searchResults.innerHTML = '<div style="padding:10px; text-align:center;">جاري البحث...</div>';
             searchResults.style.display = 'block';
+            delete searchResults.dataset.emptyQuery;
             clearHighlight();
 
-            fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(query)}&limit=20`)
+            const bust = searchCacheBust ? ('&_=' + searchCacheBust) : '';
+            fetch(`ajax/load_items_lazy.php?search=${encodeURIComponent(query)}&limit=20${bust}`, { cache: 'no-store' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.items.length > 0) {
@@ -619,6 +744,7 @@ $(document).ready(function() {
                             `;
                         });
                         searchResults.innerHTML = html;
+                        delete searchResults.dataset.emptyQuery;
                         bindResultItems();
                         if (window.isSalesReturn()) {
                             window.fetchLastSaleBases(data.items.map(function(item) { return item.id; }), function(map) {
@@ -632,7 +758,12 @@ $(document).ready(function() {
                             });
                         }
                     } else {
-                        searchResults.innerHTML = '<div style="padding:10px; text-align:center; color:#999;">لا توجد نتائج</div>';
+                        var noResMsg = 'لا توجد نتائج';
+                        if (window.INVOICE_AUTO_NEW_ITEM) {
+                            noResMsg += '<br><small style="color:#4B5694;">Enter = إنشاء صنف بالباركود المدخل</small>';
+                        }
+                        searchResults.innerHTML = '<div style="padding:10px; text-align:center; color:#999;">' + noResMsg + '</div>';
+                        searchResults.dataset.emptyQuery = query;
                         clearHighlight();
                     }
                 })
@@ -645,6 +776,41 @@ $(document).ready(function() {
     });
 
     searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (searchResults.style.display !== 'none') {
+                e.preventDefault();
+                searchResults.style.display = 'none';
+                clearHighlight();
+            }
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            const items = getResultItems();
+            if (items.length) {
+                e.preventDefault();
+                var idx = highlightIndex >= 0 ? highlightIndex : 0;
+                var row = items[idx];
+                selectItem({
+                    id: row.dataset.id,
+                    name: row.dataset.name,
+                    price: row.dataset.price,
+                    barcode: row.dataset.barcode
+                });
+                return;
+            }
+
+            // لا توجد نتائج (بعد اكتمال البحث) → إنشاء صنف تلقائي
+            if (window.INVOICE_AUTO_NEW_ITEM) {
+                const query = searchInput.value.trim();
+                if (!query) return;
+                if (searchResults.dataset.emptyQuery !== query) return;
+                e.preventDefault();
+                autoCreateItemFromBarcode(query);
+            }
+            return;
+        }
+
         if (searchResults.style.display === 'none') {
             return;
         }
@@ -670,28 +836,6 @@ $(document).ready(function() {
             } else {
                 setHighlight(highlightIndex - 1);
             }
-            return;
-        }
-
-        if (e.key === 'Enter') {
-            var idx = highlightIndex >= 0 ? highlightIndex : 0;
-            if (items[idx]) {
-                e.preventDefault();
-                var row = items[idx];
-                selectItem({
-                    id: row.dataset.id,
-                    name: row.dataset.name,
-                    price: row.dataset.price,
-                    barcode: row.dataset.barcode
-                });
-            }
-            return;
-        }
-
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            searchResults.style.display = 'none';
-            clearHighlight();
         }
     });
 
@@ -774,7 +918,7 @@ $(document).ready(function() {
             url: 'get/get_iteminfo.php?id=' + item.id,
             method: 'GET',
             dataType: 'json',
-            cache: true,
+            cache: !opts.fresh,
             success: function(data) {
                 if (data.error) {
                     console.error('get_iteminfo error:', data.error, '| item id:', item.id);
@@ -838,9 +982,14 @@ $(document).ready(function() {
 
                     window._pendingItemUnits = data.units || [];
                     var merged = addRowOrMerge(opts.merge);
+                    if (typeof opts.onReady === 'function') {
+                        opts.onReady({ merged: merged });
+                    }
                     if (opts.noFocus) {
                         searchInput.value = '';
-                        searchInput.focus();
+                        if (!opts.skipSearchFocus) {
+                            searchInput.focus();
+                        }
                         return;
                     }
                     setTimeout(function() {
@@ -865,10 +1014,15 @@ $(document).ready(function() {
                 }
             },
             error: function() {
-                addRowOrMerge(opts.merge);
+                var merged = addRowOrMerge(opts.merge);
+                if (typeof opts.onReady === 'function') {
+                    opts.onReady({ merged: merged });
+                }
                 if (opts.noFocus) {
                     searchInput.value = '';
-                    searchInput.focus();
+                    if (!opts.skipSearchFocus) {
+                        searchInput.focus();
+                    }
                     return;
                 }
                 setTimeout(function() {
@@ -946,17 +1100,41 @@ $(document).ready(function() {
                         { id: data.item.id, name: data.item.iname, price: data.item.price1, barcode: data.item.barcode },
                         { unitVal: data.item.u_val, merge: true, focusBarcode: true }
                     );
+                } else if (window.INVOICE_AUTO_NEW_ITEM) {
+                    setBarcodeState('', 'جاري إنشاء صنف...');
+                    autoCreateItemFromBarcode(barcode, function(res) {
+                        barcodeInput.value = '';
+                        barcodeBusy = false;
+                        if (!res) {
+                            setBarcodeState('error', 'تعذّر إنشاء الصنف');
+                            resetBarcodeState(2500);
+                            return;
+                        }
+                        setBarcodeState('ok', '✓ صنف جديد: ' + res.iname);
+                        resetBarcodeState();
+                        selectItem(
+                            { id: res.id, name: res.iname, price: res.price || 0, barcode: res.barcode || barcode },
+                            {
+                                noFocus: true,
+                                fresh: true,
+                                skipSearchFocus: true,
+                                onReady: function() { showAutoCreatedAlert(); }
+                            }
+                        );
+                    });
+                    return;
                 } else {
                     setBarcodeState('error', 'باركود غير موجود: ' + barcode);
                     barcodeInput.select();
                     resetBarcodeState(2500);
                 }
+                barcodeBusy = false;
             })
             .catch(() => {
                 setBarcodeState('error', 'خطأ في الاتصال');
                 resetBarcodeState(2500);
-            })
-            .finally(() => { barcodeBusy = false; });
+                barcodeBusy = false;
+            });
     }
 
     // قارئ الباركود بيكتب بسرعة ثم يرسل Enter - وندعم كمان الكتابة اليدوية بـ debounce
@@ -1023,6 +1201,8 @@ $(document).ready(function() {
         $quantity = ($detail['u_val'] > 0) ? $baseQty / $detail['u_val'] : $baseQty;
         $price = $detail['price'] * ($detail['u_val'] > 0 ? $detail['u_val'] : 1);
         $showProfit = ((int) $this->invoiceType === 4);
+        require_once __DIR__ . '/InvoiceProcessor.php';
+        $isBarcodePrint = InvoiceProcessor::isBarcodePrint((int) $this->invoiceType);
         ?>
         <tr>
             <td class="col-1">
@@ -1049,7 +1229,15 @@ $(document).ready(function() {
                        name="itmqty[]" onclick="sT(this)" 
                        class="itmqty form-control form-control-sm" style="width:90px;">
             </td>
-            
+
+            <?php if ($isBarcodePrint): ?>
+            <td class="d-none">
+                <input type="hidden" name="itmprice[]" value="0">
+                <input type="hidden" name="itmdisc_pct[]" value="0">
+                <input type="hidden" name="itmdisc[]" value="0">
+                <input type="hidden" name="itmval[]" value="0">
+            </td>
+            <?php else: ?>
             <!-- السعر -->
             <td>
                 <input type="number" step="any" name="itmprice[]" onclick="sT(this)" 
@@ -1120,9 +1308,10 @@ $(document).ready(function() {
                        type="number" step="any" name="itmval[]" 
                        class="itmval bg-light form-control form-control-sm" style="width:150px;">
             </td>
+            <?php endif; ?>
             
-            <td>
-                <button type="button" class="deleteRow btn btn-danger">X</button>
+            <td class="td-delete">
+                <button type="button" class="deleteRow btn btn-danger" title="حذف">X</button>
             </td>
         </tr>
         <?php
@@ -1170,6 +1359,10 @@ $(document).ready(function() {
     public function validate()
     {
         $errors = [];
+        require_once __DIR__ . '/InvoiceProcessor.php';
+        if (InvoiceProcessor::isBarcodePrint((int) $this->invoiceType)) {
+            return $errors;
+        }
 
         // التحقق من وجود أصناف
         if (empty($_POST['itmname']) || !is_array($_POST['itmname'])) {

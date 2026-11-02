@@ -507,6 +507,27 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
             // نسبة الربح على أساس سعر الشراء (price)
             const profitPct = price > 0 ? parseFloat(((sprice - price) / price * 100).toFixed(1)) : 0;
 
+            let newRow;
+            if (window.BARCODE_PRINT_MODE) {
+                newRow = $(`<tr>
+                <td class="col-1">${counter++}</td>
+                <td class="col-lg-5">
+                    <p>${itemName}</p>
+                    <input type="number" step="any" name="itmname[]" hidden value="${itemId}">
+                </td>
+                <td>
+                    <select name="u_val[]" class="form-control form-control-sm" style="width:100px;"></select>
+                </td>
+                <td><input type="number" name="itmqty[]" value="${qty}" class="itmqty form-control form-control-sm" style="width:90px;" onclick="sT(this)" step="any"></td>
+                <td class="d-none">
+                    <input type="hidden" name="itmprice[]" value="0">
+                    <input type="hidden" name="itmdisc_pct[]" value="0">
+                    <input type="hidden" name="itmdisc[]" value="0">
+                    <input type="hidden" name="itmval[]" value="0">
+                </td>
+                <td class="td-delete"><button type="button" class="deleteRow btn btn-danger" title="حذف">X</button></td>
+            </tr>`);
+            } else {
             // عمودا نسبة الربح وسعر البيع يظهران في فاتورة المشتريات فقط
             const profitCells = window.SHOW_PROFIT_COLS ? `
                 <td>
@@ -516,7 +537,7 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
                     <input type="number" name="itmsellprice[]" class="itmsellprice form-control form-control-sm" value="${sprice}" style="width:90px;" step="any" onclick="sT(this)" title="يُحفظ في سعر الصنف حسب الاختيار أعلى الفاتورة">
                 </td>` : '';
 
-            const newRow = $(`<tr>
+            newRow = $(`<tr>
                 <td class="col-1">${counter++}</td>
                 <td class="col-lg-5">
                     <p>${itemName}</p>
@@ -531,8 +552,9 @@ function fillRowUnitSelect($select, fallbackVal, fallbackName) {
                 <td><input type="number" name="itmdisc[]"   value="${disc}"            class="itmdisc    form-control form-control-sm" style="width:90px;"  onclick="sT(this)" step="any"></td>
                 ${profitCells}
                 <td><input type="number" name="itmval[]"    value="${parseFloat(val.toFixed(3))}"  class="itmval bg-light form-control form-control-sm" style="width:150px;" readonly step="any"></td>
-                <td><button type="button" class="deleteRow btn btn-danger">X</button></td>
+                <td class="td-delete"><button type="button" class="deleteRow btn btn-danger" title="حذف">X</button></td>
             </tr>`);
+            }
 
             fillRowUnitSelect(newRow.find('select[name="u_val[]"]'), unitVal, unitName);
 
@@ -780,25 +802,27 @@ function calcProfitPct(row) {
             $('#myForm2').on('submit', function(event) {
                 const form = this;
                 $('#invoiceLineWarnBox').removeData('user-closed');
-                const lines = paintInvoiceLineWarnings();
-                if (lines.length) {
-                    event.preventDefault();
-                    $('#invoiceLineWarnBox').show();
-                    const html = lines.map(function(text) {
-                        return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
-                    }).join('');
-                    Swal.fire({
-                        type: 'error',
-                        title: 'لا يمكن حفظ الفاتورة',
-                        html: html,
-                        confirmButtonText: 'حسناً',
-                        showCloseButton: true,
-                        allowOutsideClick: true,
-                        allowEscapeKey: true
-                    });
-                    const $first = $('#itmrow .invoice-warn-qty, #itmrow .invoice-warn-price').first();
-                    if ($first.length) $first.focus().select();
-                    return;
+                if (!window.BARCODE_PRINT_MODE) {
+                    const lines = paintInvoiceLineWarnings();
+                    if (lines.length) {
+                        event.preventDefault();
+                        $('#invoiceLineWarnBox').show();
+                        const html = lines.map(function(text) {
+                            return '<div style="text-align:right;margin:4px 0;">' + $('<div>').text(text).html() + '</div>';
+                        }).join('');
+                        Swal.fire({
+                            type: 'error',
+                            title: 'لا يمكن حفظ الفاتورة',
+                            html: html,
+                            confirmButtonText: 'حسناً',
+                            showCloseButton: true,
+                            allowOutsideClick: true,
+                            allowEscapeKey: true
+                        });
+                        const $first = $('#itmrow .invoice-warn-qty, #itmrow .invoice-warn-price').first();
+                        if ($first.length) $first.focus().select();
+                        return;
+                    }
                 }
 
                 const action = form.getAttribute('action') || '';
@@ -844,11 +868,15 @@ function calcProfitPct(row) {
                         });
                         return;
                     }
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                        return;
+                    }
                     if (pendingSubmit === 'print' && response.order_id) {
                         openSavedInvoicePrint(response.order_id);
                     }
                     let extraHtml = '';
-                    if (response.pro_tybe == 4 && response.order_id) {
+                    if ((response.pro_tybe == 4 || response.pro_tybe == 19) && response.order_id) {
                         let barcodeUrl = 'inv_operations.php?h=' + response.order_id_md5 + '&q=' + response.order_id + '&t=' + response.pro_tybe_md5;
                         extraHtml = '<br><br><a href="' + barcodeUrl + '" target="_blank" class="btn btn-success"><i class="fa fa-barcode"></i> طباعة باركود الأصناف</a>';
                     }
@@ -927,6 +955,9 @@ function rowSalePrice($row) {
 
 function paintInvoiceLineWarnings() {
     const lines = [];
+    if (window.BARCODE_PRINT_MODE) {
+        return lines;
+    }
     const costBased = (typeof window.usesCostPrice === 'function' && window.usesCostPrice())
         || (typeof window.isPurchaseInvoice === 'function' && window.isPurchaseInvoice());
 

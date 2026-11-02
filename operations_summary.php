@@ -161,6 +161,11 @@ switch ($q) {
         $where_clause = "ot.pro_tybe = 18 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
+    case "barcode_print":
+        $report_name = "مستندات طباعة باركود";
+        $where_clause = "ot.pro_tybe = 19 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
+        break;
     case "all":
     default:
         $q = 'all';
@@ -169,7 +174,7 @@ switch ($q) {
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
 }
 $is_all_operations_report = ($q === 'all');
-$is_sales_order_report = in_array($q, ['sales_order', 'price_offer', 'store_transfer'], true);
+$is_sales_order_report = in_array($q, ['sales_order', 'price_offer', 'store_transfer', 'barcode_print'], true);
 $order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
 $order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
 
@@ -393,7 +398,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                         InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'],
                                         InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'],
                                     ], true);
-                                    $is_sales_order = in_array((int) $tybe, [13, 14, 18], true);
+                                    $is_sales_order = in_array((int) $tybe, [13, 14, 18, 19], true);
                                     ?>
                                     <?php
                                     $pro_type_display = !empty($rowop['pro_type_name']) ? $rowop['pro_type_name'] : ($conn->query("SELECT pname FROM pro_tybes WHERE id = $tybe")->fetch_assoc()['pname'] ?? '');
@@ -470,7 +475,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                             <?php } ?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4, 10, 11, 13, 14, 18]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني ?>
+                                            <?php if(in_array($tybe, [3, 4, 10, 11, 13, 14, 18, 19]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني، باركود ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>

@@ -2,17 +2,38 @@
 require_once __DIR__ . '/../includes/connect.php';
 
 $id = isset($_REQUEST['id']) ? (int) $_REQUEST['id'] : 0;
-if ($id <= 0) {
-    header('Location: ../accounts.php');
-    exit;
+$allowedAcc = [
+    'clients', 'suppliers', 'funds', 'banks', 'expenses', 'revenous',
+    'creditors', 'depitors', 'partners', 'assets', 'employees',
+    'rentable', 'stores', 'delivery',
+];
+$accType = isset($_REQUEST['acc']) ? (string) $_REQUEST['acc'] : '';
+if (!in_array($accType, $allowedAcc, true)) {
+    $accType = '';
 }
-Can::authorizeAccountId($conn, $id, 'delete');
+
+function accountListUrl(string $accType): string
+{
+    if ($accType !== '') {
+        return '../acc_report.php?acc=' . urlencode($accType);
+    }
+    return '../accounts.php';
+}
 
 function redirectAccountError(string $message): void
 {
-    header('Location: ../accounts.php?error=' . urlencode($message));
+    global $accType;
+    $base = accountListUrl($accType);
+    $sep = strpos($base, '?') !== false ? '&' : '?';
+    header('Location: ' . $base . $sep . 'error=' . urlencode($message));
     exit;
 }
+
+if ($id <= 0) {
+    header('Location: ' . accountListUrl($accType));
+    exit;
+}
+Can::authorizeAccountId($conn, $id, 'delete');
 
 $stmt = $conn->prepare("SELECT id, deletable, is_basic FROM acc_head WHERE id = ?");
 $stmt->bind_param("i", $id);
@@ -72,5 +93,7 @@ if (!$del->execute()) {
 }
 $del->close();
 
-header('Location: ../accounts.php?msg=deleted');
+$base = accountListUrl($accType);
+$sep = strpos($base, '?') !== false ? '&' : '?';
+header('Location: ' . $base . $sep . 'msg=deleted');
 exit;

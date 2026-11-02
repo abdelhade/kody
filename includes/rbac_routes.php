@@ -22,6 +22,7 @@ $itemLookup = [
     'items.view', 'inventory.audit', 'pos.use',
     'sales.add', 'sales.edit', 'sales_returns.add', 'sales_orders.add', 'quotations.add',
     'purchases.add', 'purchases.edit', 'purchase_returns.add', 'purchase_orders.add',
+    'barcode_docs.add', 'barcode_docs.edit',
     'store_transfers.add', 'store_transfers.edit',
 ];
 
@@ -34,6 +35,7 @@ $accountLookup = [
 $invoiceView = [
     'sales.view', 'sales_returns.view', 'sales_orders.view', 'quotations.view',
     'purchases.view', 'purchase_returns.view', 'purchase_orders.view',
+    'barcode_docs.view',
     'store_transfers.view', 'pos.use', 'pos.closed_sessions',
 ];
 
@@ -116,6 +118,7 @@ return [
     'doimport.php'             => 'items.add',
     'do/doadd_item.php'        => 'items.add',
     'ajax/modal_add_item.php'  => 'items.add',
+    'ajax/auto_create_item.php'=> 'items.auto_invoice',
     'ajax/generate_items.php'  => 'items.add',
     'do/uploaditems.php'       => 'items.add',
     'do/items_template.php'    => 'items.add',
@@ -187,6 +190,7 @@ return [
         'purchase_return' => 'purchase_returns.add', 'resale' => 'purchase_returns.add',
         'po' => 'purchase_orders.add', 'so' => 'sales_orders.add', 'offer' => 'quotations.add',
         'store_transfer' => 'store_transfers.add',
+        'barcode_print' => 'barcode_docs.add',
     ], 'default' => 'login'],
     'do/doadd_invoice.php'     => 'custom',
     'do/doedit_invoice.php'    => 'custom',
@@ -198,6 +202,7 @@ return [
         'price_offer'     => ['quotations.view', 'reports.sales'],
         'purchase'        => ['purchases.view', 'reports.purchases'],
         'store_transfer'  => 'store_transfers.view',
+        'barcode_print'   => 'barcode_docs.view',
         'all'             => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
     ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting'])],
 

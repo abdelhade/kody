@@ -79,6 +79,7 @@ if (empty($design['enabled'])) {
 $w = (float) $design['paper_width'];
 $h = (float) $design['paper_height'];
 $align = $design['align'];
+// الحاوية LTR: flex-start = يسار فعلي، flex-end = يمين فعلي (مش بيتعكس مع العربي)
 $justify = $align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' : 'center');
 ?>
 <!DOCTYPE html>
@@ -92,6 +93,7 @@ $justify = $align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' :
   html, body { margin: 0; padding: 0; background: #fff; }
   .bd-label {
     position: relative;
+    direction: ltr;
     width: <?= $w ?>mm;
     height: <?= $h ?>mm;
     overflow: hidden;
@@ -100,7 +102,7 @@ $justify = $align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' :
     background: #fff;
   }
   .bd-label:last-child { page-break-after: auto; break-after: auto; }
-  .bd-content { position: absolute; }
+  .bd-content { position: absolute; direction: ltr; }
   .bd-el {
     position: absolute;
     overflow: hidden;
@@ -109,25 +111,31 @@ $justify = $align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' :
     align-items: center;
     justify-content: <?= $justify ?>;
     text-align: <?= htmlspecialchars($align, ENT_QUOTES, 'UTF-8') ?>;
-    direction: rtl;
+    direction: ltr;
     line-height: 1;
     white-space: nowrap;
     color: #000;
     font-family: Tahoma, Arial, sans-serif;
+  }
+  .bd-el.bd-barcode {
+    display: block;
   }
   .bd-el.bd-name {
     white-space: normal;
     line-height: 1.1;
     align-items: center;
   }
-  .bd-el.bd-name span {
+  .bd-el .bd-txt {
+    min-width: 0;
+    text-align: inherit;
+    unicode-bidi: plaintext;
+  }
+  .bd-el.bd-name .bd-txt {
     display: block;
     width: 100%;
-    min-width: 0;
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
-    text-align: inherit;
   }
   .bd-el svg { width: 100%; height: 100%; display: block; }
 </style>
@@ -169,8 +177,15 @@ foreach ($codes as $index => $itemCodeRaw) {
                 if ($barcodeValue === '') {
                     continue;
                 }
-                echo '<div class="bd-el" style="' . $box . 'display:block;"><svg id="' . $svgId . '"></svg></div>';
+                echo '<div class="bd-el bd-barcode" style="' . $box . '"><svg id="' . $svgId . '"></svg></div>';
                 $barcodeJobs[] = ['id' => $svgId, 'value' => $barcodeValue];
+                continue;
+            }
+            if ($key === 'line_1' || $key === 'line_2') {
+                $lineH = max((float) $el['h'], 0.2);
+                echo '<div style="position:absolute;box-sizing:border-box;background:#000;top:' . kody_bd_fmt($el['top']) .
+                    'mm;left:' . kody_bd_fmt($el['left']) . 'mm;width:' . kody_bd_fmt($el['w']) .
+                    'mm;height:' . kody_bd_fmt($lineH) . 'mm;"></div>';
                 continue;
             }
             $font = 'font-size:' . kody_bd_fmt($el['font']) . 'pt;';
@@ -183,7 +198,7 @@ foreach ($codes as $index => $itemCodeRaw) {
                 }
             } elseif ($key === 'item_name') {
                 $text = $itemName;
-                echo '<div class="bd-el bd-name" style="' . $box . $font . $extra . '"><span>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span></div>';
+                echo '<div class="bd-el bd-name" style="' . $box . $font . $extra . '"><span class="bd-txt" dir="auto">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span></div>';
                 continue;
             } elseif ($key === 'barcode_text') {
                 $text = $barcodeValue;
@@ -201,8 +216,14 @@ foreach ($codes as $index => $itemCodeRaw) {
                 $text = 'قطاعي: ' . kody_barcode_format_price($priceBag['price1']);
             } elseif ($key === 'price_wholesale') {
                 $text = 'جملة: ' . kody_barcode_format_price($priceBag['price2']);
+            } elseif ($key === 'text_1') {
+                $text = (string) ($design['text_1_content'] ?? '');
+            } elseif ($key === 'text_2') {
+                $text = (string) ($design['text_2_content'] ?? '');
             }
-            echo '<div class="bd-el" style="' . $box . $font . $extra . '">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</div>';
+            // dir=auto: العربي يمين→يسار والإنجليزي/الأرقام يسار→يمين، والمحاذاة الفعلية من الحاوية LTR
+            $txtDir = in_array($key, ['barcode_text', 'code', 'price_before', 'price_after'], true) ? 'ltr' : 'auto';
+            echo '<div class="bd-el" style="' . $box . $font . $extra . '"><span class="bd-txt" dir="' . $txtDir . '">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</span></div>';
         }
         echo '</div></div>';
     }

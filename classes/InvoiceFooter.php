@@ -37,6 +37,11 @@ class InvoiceFooter extends InvoiceElementBase
      */
     public function render()
     {
+        require_once __DIR__ . '/InvoiceProcessor.php';
+        if (InvoiceProcessor::isBarcodePrint((int) $this->invoiceType)) {
+            return $this->renderBarcodePrintFooter();
+        }
+
         ob_start();
         $isPurchase = in_array($this->invoiceType, [4, 10, 12]);
         ?>
@@ -525,6 +530,41 @@ class InvoiceFooter extends InvoiceElementBase
         <?php
     }
 
+    /** ذيل مبسّط لمستند طباعة الباركود */
+    private function renderBarcodePrintFooter()
+    {
+        ob_start();
+        $saveText = $this->isEditMode ? 'تحديث وطباعة باركود' : 'حفظ وطباعة باركود';
+        ?>
+        <div class="invoice-footer-fixed invoice-footer-modern" id="invoiceFooter">
+            <input type="text" name="pro_tybe" hidden value="<?php echo (int) $this->invoiceType; ?>">
+            <input type="hidden" name="headtotal" id="headtotal" value="0">
+            <input type="hidden" name="headdisc" id="headdisc" value="0">
+            <input type="hidden" name="headdisc_pct" id="headdisc_pct" value="0">
+            <input type="hidden" name="headplus" id="headplus" value="0">
+            <input type="hidden" name="headnet" id="headnet" value="0">
+            <input type="hidden" name="paid" id="paid" value="0">
+            <input type="hidden" name="paid_cash" id="paid_cash" value="0">
+            <input type="hidden" name="paid_bank" id="paid_bank" value="0">
+            <input type="hidden" name="fund_id" value="0">
+            <div class="bottom-action-bar d-flex align-items-center justify-content-between flex-wrap" style="gap:8px; padding:8px 10px;">
+                <div class="notes-input-wrapper flex-grow-1" style="min-width:220px;">
+                    <span class="notes-lbl"><i class="far fa-comment-alt"></i> ملاحظات:</span>
+                    <input type="text" class="form-control form-control-sm bg-light" name="info" id="info"
+                           placeholder="ملاحظات اختيارية..." value="<?php echo $this->getInfo(); ?>"
+                           style="height:30px; font-size:12px;">
+                </div>
+                <button id="submit" class="btn btn-success btn-sm text-white font-weight-bold d-flex align-items-center"
+                        type="submit" name="submit" value="save"
+                        style="gap:6px; height:34px; font-size:13px; white-space:nowrap; padding: 4px 18px;">
+                    <i class="fas fa-barcode"></i> <?php echo $saveText; ?> (F12)
+                </button>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
     /**
      * عرض أزرار التحكم
      */
@@ -632,6 +672,11 @@ class InvoiceFooter extends InvoiceElementBase
     public function validate()
     {
         $errors = [];
+        require_once __DIR__ . '/InvoiceProcessor.php';
+        if (InvoiceProcessor::isBarcodePrint((int) $this->invoiceType)
+            || InvoiceProcessor::isNonCashDocument((int) $this->invoiceType)) {
+            return $errors;
+        }
 
         // التحقق من الصندوق
         if (empty($_POST['fund_id'])) {

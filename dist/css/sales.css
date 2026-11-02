@@ -9,6 +9,33 @@
     box-shadow: inset 3px 0 0 #4B5694;
 }
 
+/* زر الحذف يملأ الخلية؛ الـ hover يظلل السطر كله */
+#itmrow td.td-delete {
+    padding: 0 !important;
+    width: 36px;
+    min-width: 36px;
+    vertical-align: middle;
+}
+#itmrow .deleteRow {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 40px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    line-height: 40px;
+    font-weight: 700;
+}
+#itmrow tr:has(.deleteRow:hover) > td {
+    background-color: #fee2e2 !important;
+    box-shadow: none;
+}
+#itmrow tr:has(.deleteRow:hover) > td.td-delete .deleteRow {
+    background-color: #b91c1c;
+}
+
 #invoiceLineWarnBox {
     position: relative;
     display: none;

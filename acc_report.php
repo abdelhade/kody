@@ -359,7 +359,7 @@ $sumCredit = round($sumCredit, 2);
                     <td><?= (int) $rowacc['id'] ?></td>
                     <td>
                         <a href="edit_account.php?id=<?= (int) $rowacc['id'] ?>" class="btn btn-warning"><i class="fa fa-pen text-yellow-50"></i></a>
-                        <a href="do/dodel_account.php?id=<?= (int) $rowacc['id'] ?>" class="btn btn-danger"><i class="fa fa-trash text-yellow-50"></i></a>
+                        <a href="do/dodel_account.php?id=<?= (int) $rowacc['id'] ?><?= isset($_GET['acc']) ? '&acc=' . urlencode((string) $_GET['acc']) : '' ?>" class="btn btn-danger"><i class="fa fa-trash text-yellow-50"></i></a>
                 </td>
                    </tr>
               <?php } ?>

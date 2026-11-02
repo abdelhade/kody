@@ -12,6 +12,10 @@ function kody_barcode_element_defs(): array
         'price_after' => ['label' => 'السعر بعد الخصم', 'font' => true],
         'price_retail' => ['label' => 'سعر القطاعي', 'font' => true],
         'price_wholesale' => ['label' => 'سعر الجملة', 'font' => true],
+        'line_1' => ['label' => 'خط 1', 'font' => false, 'kind' => 'line'],
+        'line_2' => ['label' => 'خط 2', 'font' => false, 'kind' => 'line'],
+        'text_1' => ['label' => 'نص 1', 'font' => true, 'kind' => 'text'],
+        'text_2' => ['label' => 'نص 2', 'font' => true, 'kind' => 'text'],
     ];
 }
 
@@ -38,7 +42,13 @@ function kody_barcode_design_defaults(): array
             'price_after' => ['show' => true, 'h' => 3.5, 'w' => 21, 'top' => 30, 'left' => 0, 'font' => 9],
             'price_retail' => ['show' => false, 'h' => 3.5, 'w' => 21, 'top' => 33.5, 'left' => 0, 'font' => 9],
             'price_wholesale' => ['show' => false, 'h' => 3.5, 'w' => 21, 'top' => 37, 'left' => 0, 'font' => 9],
+            'line_1' => ['show' => false, 'h' => 0.5, 'w' => 21, 'top' => 7.5, 'left' => 0, 'font' => 0],
+            'line_2' => ['show' => false, 'h' => 0.5, 'w' => 21, 'top' => 26, 'left' => 0, 'font' => 0],
+            'text_1' => ['show' => false, 'h' => 3, 'w' => 21, 'top' => 28.5, 'left' => 0, 'font' => 8],
+            'text_2' => ['show' => false, 'h' => 3, 'w' => 21, 'top' => 31.5, 'left' => 0, 'font' => 8],
         ],
+        'text_1_content' => '',
+        'text_2_content' => '',
         'code_prefix' => '',
         'code_suffix' => '',
         'unit_barcode_add' => '',
@@ -122,6 +132,16 @@ function kody_barcode_design_normalize(array $input): array
         ];
     }
 
+    foreach (['text_1_content', 'text_2_content'] as $textKey) {
+        $txt = trim((string) ($input[$textKey] ?? $d[$textKey]));
+        if (function_exists('mb_substr')) {
+            $txt = mb_substr($txt, 0, 200);
+        } else {
+            $txt = substr($txt, 0, 200);
+        }
+        $d[$textKey] = $txt;
+    }
+
     $prefix = trim((string) ($input['code_prefix'] ?? ''));
     $suffix = trim((string) ($input['code_suffix'] ?? ''));
     $d['code_prefix'] = function_exists('mb_substr') ? mb_substr($prefix, 0, 40) : substr($prefix, 0, 40);
@@ -184,6 +204,8 @@ function kody_barcode_design_from_post(array $post): array
         'margin_left' => $post['bd_margin_left'] ?? null,
         'margin_right' => $post['bd_margin_right'] ?? null,
         'elements' => $elements,
+        'text_1_content' => $post['bd_text_1_content'] ?? '',
+        'text_2_content' => $post['bd_text_2_content'] ?? '',
         'code_prefix' => $post['bd_code_prefix'] ?? '',
         'code_suffix' => $post['bd_code_suffix'] ?? '',
         'unit_barcode_add' => $post['bd_unit_barcode_add'] ?? '',

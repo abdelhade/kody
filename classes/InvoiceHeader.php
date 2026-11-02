@@ -77,11 +77,30 @@ class InvoiceHeader extends InvoiceElementBase
         $clientLabel = $this->getClientLabel();
         $addAccountLink = $this->getAddAccountLink();
         $isStoreTransfer = ((int) $this->invoiceType === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']);
+        $isBarcodePrint = InvoiceProcessor::isBarcodePrint((int) $this->invoiceType);
 
         ob_start();
         ?>
         <div class="row frst-row bg--200">
-            <?php if ($isStoreTransfer): ?>
+            <?php if ($isBarcodePrint): ?>
+            <!-- مستند طباعة باركود: أصناف فقط — باقي الحقول افتراضية مخفية -->
+            <div class="col-md-2">
+                <label for="">التاريخ</label>
+                <input type="date" class="form-control bg-secondary" name="pro_date" id="pro_date"
+                       value="<?php echo $this->getProDate(); ?>">
+            </div>
+            <div class="col-md-2">
+                <label for="">رقم المستند</label>
+                <input name="pro_id" type="text" class="form-control form-control-sm"
+                       value="<?php echo $this->getProId(); ?>" readonly>
+            </div>
+            <input type="hidden" name="store_id" id="invoiceStore" value="<?php echo (int) $this->getHiddenDefaultStoreId(); ?>">
+            <input type="hidden" name="emp_id" value="<?php echo (int) $this->getHiddenDefaultEmpId(); ?>">
+            <input type="hidden" name="acc2_id" id="mySelectEmp" value="<?php echo (int) $this->getHiddenDefaultStoreId(); ?>">
+            <input type="hidden" name="accural_date" value="">
+            <input type="hidden" name="pro_serial" value="">
+            <input type="hidden" name="price_list" id="invoicePriceList" value="1">
+            <?php elseif ($isStoreTransfer): ?>
             <!-- من مخزن (مصدر) -->
             <div class="col-md-2">
                 <label for="">من مخزن</label>
@@ -419,6 +438,9 @@ class InvoiceHeader extends InvoiceElementBase
     {
         $errors = [];
         $isStoreTransfer = ((int) $this->invoiceType === InvoiceProcessor::INVOICE_TYPES['STORE_TRANSFER']);
+        if (InvoiceProcessor::isBarcodePrint((int) $this->invoiceType)) {
+            return $errors;
+        }
 
         if ($isStoreTransfer) {
             if (empty($_POST['store_id'])) {
@@ -680,6 +702,34 @@ class InvoiceHeader extends InvoiceElementBase
         } catch (Exception $e) {
             return '';
         }
+    }
+
+    /** مخزن افتراضي للمستندات بدون اختيار ظاهر (طباعة باركود) */
+    private function getHiddenDefaultStoreId(): int
+    {
+        if ($this->isEditMode && $this->data && !empty($this->data['store_id'])) {
+            return (int) $this->data['store_id'];
+        }
+        require_once __DIR__ . '/UserDefaults.php';
+        $def = UserDefaults::get($this->conn, 'store');
+        if ($def > 0) {
+            return $def;
+        }
+        return !empty($this->stores[0]['id']) ? (int) $this->stores[0]['id'] : 0;
+    }
+
+    /** موظف افتراضي للمستندات بدون اختيار ظاهر (طباعة باركود) */
+    private function getHiddenDefaultEmpId(): int
+    {
+        if ($this->isEditMode && $this->data && !empty($this->data['emp_id'])) {
+            return (int) $this->data['emp_id'];
+        }
+        require_once __DIR__ . '/UserDefaults.php';
+        $def = UserDefaults::get($this->conn, 'emp');
+        if ($def > 0) {
+            return $def;
+        }
+        return !empty($this->employees[0]['id']) ? (int) $this->employees[0]['id'] : 0;
     }
 
     /**

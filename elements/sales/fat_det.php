@@ -94,9 +94,9 @@
 
 
               
-              <td>
+              <td class="td-delete">
               <input id="itmprofit" name="itmprofit" hidden>
-              <button class="deleteRow btn btn-danger">X</button>
+              <button type="button" class="deleteRow btn btn-danger" title="حذف">X</button>
               </td>
             </tr>
 
