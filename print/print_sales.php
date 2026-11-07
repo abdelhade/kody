@@ -13,7 +13,10 @@ if ($id_early > 0 && isset($_COOKIE['invoice_print_cashier']) && $_COOKIE['invoi
 
 require_once __DIR__ . '/includes/connect.php';
 require_once __DIR__ . '/../includes/receipt_design.php';
+require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 $design = kody_receipt_design_load($rowstg ?? []);
+// مقاسات الخط في الفاتورة مصممة على حجم أساسي 13px وتتكبّر بنسبة "حجم الخط الأساسي" في الإعدادات
+$fs_scale = round(max(0.6, min(2.2, ((int) ($design['font_size'] ?? 13)) / 13)), 3);
 
 if (!isset($_GET['id'])) {
     echo '<div style="padding:40px; text-align:center; font-family:Cairo,sans-serif;">لا يوجد فاتورة بهذا الرقم</div>';
@@ -167,47 +170,9 @@ if ($is_delivery) {
     $driver_name = trim($dr[1]);
 }
 
-// رصيد الطرف قبل وبعد الفاتورة (من قيود اليومية)
-$party_bal_before = null;
-$party_bal_after = null;
-$show_party_balance = $accid > 0
-    && in_array($tybe, [3, 4, 9, 10, 11], true)
-    && empty($rowfat['isdeleted']);
-if ($show_party_balance) {
-    $isSupplierAcc = (strpos((string)($rowacc1['code'] ?? ''), '211') === 0);
-    $balSign = $isSupplierAcc ? -1 : 1;
-
-    $balAfter = 0.0;
-    $stmtAfter = $conn->prepare(
-        'SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) AS bal
-         FROM journal_entries
-         WHERE account_id = ? AND isdeleted = 0'
-    );
-    if ($stmtAfter) {
-        $stmtAfter->bind_param('i', $accid);
-        $stmtAfter->execute();
-        $balAfter = (float)(($stmtAfter->get_result()->fetch_assoc()['bal'] ?? 0));
-        $stmtAfter->close();
-    }
-
-    $balBefore = $balAfter;
-    $stmtBefore = $conn->prepare(
-        'SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) AS bal
-         FROM journal_entries
-         WHERE account_id = ? AND isdeleted = 0
-           AND NOT (COALESCE(op2, 0) = ?
-                OR journal_id IN (SELECT id FROM journal_heads WHERE op_id = ? OR op2 = ?))'
-    );
-    if ($stmtBefore) {
-        $stmtBefore->bind_param('iiii', $accid, $id, $id, $id);
-        $stmtBefore->execute();
-        $balBefore = (float)(($stmtBefore->get_result()->fetch_assoc()['bal'] ?? 0));
-        $stmtBefore->close();
-    }
-
-    $party_bal_before = round($balBefore * $balSign, 2);
-    $party_bal_after = round($balAfter * $balSign, 2);
-}
+// رصيد الطرف قبل وبعد الفاتورة (للعميل/المورد غير النقدي فقط)
+$party_balance = InvoiceProcessor::partyBalanceSnapshot($conn, $rowfat);
+$show_party_balance = $party_balance !== null;
 
 // بيانات اللوجو
 $_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : (!empty($rowstg['logo']) ? $rowstg['logo'] : 'logo.jpg');
@@ -364,6 +329,9 @@ $cr_no = $design['header']['cr_no'] ?? '';
     <title><?= htmlspecialchars($doc_title, ENT_QUOTES, 'UTF-8') ?> #<?= htmlspecialchars((string)$rowfat['pro_id'], ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
     <style>
+        :root {
+            --fs: <?= $fs_scale ?>;
+        }
         * {
             box-sizing: border-box;
         }
@@ -374,7 +342,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             padding: 24px 12px;
             direction: rtl;
             color: #0f172a;
-            font-size: 13.5px;
+            font-size: calc(13.5px * var(--fs));
             line-height: 1.4;
             -webkit-font-smoothing: antialiased;
         }
@@ -411,14 +379,14 @@ $cr_no = $design['header']['cr_no'] ?? '';
             object-fit: contain;
         }
         .inv-brand .company-title {
-            font-size: 20px;
+            font-size: calc(20px * var(--fs));
             font-weight: 800;
             color: #0f172a;
             margin: 2px 0;
             line-height: 1.2;
         }
         .inv-brand .company-details {
-            font-size: 12px;
+            font-size: calc(12px * var(--fs));
             color: #475569;
             margin-top: 4px;
             line-height: 1.6;
@@ -440,12 +408,12 @@ $cr_no = $design['header']['cr_no'] ?? '';
             margin-bottom: 8px;
         }
         .inv-meta-card .doc-title-text {
-            font-size: 15px;
+            font-size: calc(15px * var(--fs));
             font-weight: 800;
             color: #0f172a;
         }
         .inv-meta-card .inv-number {
-            font-size: 15px;
+            font-size: calc(15px * var(--fs));
             font-weight: 800;
             background: #0f172a;
             color: #fff;
@@ -455,7 +423,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
         .inv-meta-row {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: calc(12px * var(--fs));
             color: #334155;
             margin: 3px 0;
         }
@@ -467,7 +435,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             padding: 4px 8px;
             background: #e2e8f0;
             border-radius: 4px;
-            font-size: 11.5px;
+            font-size: calc(11.5px * var(--fs));
             font-weight: 700;
             text-align: center;
             color: #1e293b;
@@ -498,7 +466,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             flex-wrap: wrap;
             gap: 8px 24px;
             align-items: center;
-            font-size: 13px;
+            font-size: calc(13px * var(--fs));
         }
         .party-grid-item {
             display: inline-flex;
@@ -517,7 +485,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             width: 100%;
             border-collapse: collapse;
             margin: 14px 0;
-            font-size: 13px;
+            font-size: calc(13px * var(--fs));
         }
         .items-table th, .items-table td {
             padding: 8px 8px;
@@ -529,7 +497,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             background: #f1f5f9;
             color: #0f172a;
             font-weight: 700;
-            font-size: 12.5px;
+            font-size: calc(12.5px * var(--fs));
             border-bottom: 2px solid #0f172a;
         }
         .items-table td.item-name {
@@ -573,7 +541,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
         .financial-table td {
             padding: 7px 12px;
             border: 1px solid #e2e8f0;
-            font-size: 13px;
+            font-size: calc(13px * var(--fs));
         }
         .financial-table td.lbl {
             text-align: right;
@@ -586,7 +554,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             text-align: center;
             font-weight: 700;
             font-family: Arial, Tahoma, sans-serif;
-            font-size: 13.5px;
+            font-size: calc(13.5px * var(--fs));
             color: #0f172a;
             width: 45%;
             white-space: nowrap;
@@ -595,7 +563,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             background: #0f172a;
             color: #ffffff !important;
             font-weight: 800;
-            font-size: 14.5px;
+            font-size: calc(14.5px * var(--fs));
             border-color: #0f172a;
         }
         .financial-table tr.net-highlight td.lbl {
@@ -620,7 +588,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
         .balance-table th {
             background: #f1f5f9;
             color: #0f172a;
-            font-size: 12.5px;
+            font-size: calc(12.5px * var(--fs));
             font-weight: 700;
             padding: 6px 10px;
             text-align: center;
@@ -630,7 +598,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
         .balance-table td {
             padding: 6px 10px;
             border: 1px solid #e2e8f0;
-            font-size: 12.5px;
+            font-size: calc(12.5px * var(--fs));
         }
         .balance-table td.lbl {
             text-align: right;
@@ -659,7 +627,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             border: 1px dashed #cbd5e1;
             border-radius: 6px;
             padding: 10px 14px;
-            font-size: 11.5px;
+            font-size: calc(11.5px * var(--fs));
             color: #475569;
             line-height: 1.6;
         }
@@ -667,7 +635,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             color: #0f172a;
             display: block;
             margin-bottom: 3px;
-            font-size: 12px;
+            font-size: calc(12px * var(--fs));
         }
 
         /* توقيعات أسفل الفاتورة */
@@ -678,7 +646,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             margin-top: 24px;
             padding-top: 14px;
             border-top: 1px dashed #cbd5e1;
-            font-size: 12.5px;
+            font-size: calc(12.5px * var(--fs));
             font-weight: 700;
             color: #334155;
             page-break-inside: avoid;
@@ -689,7 +657,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
             text-align: center;
             margin-top: 14px;
             padding-top: 8px;
-            font-size: 11px;
+            font-size: calc(11px * var(--fs));
             color: #64748b;
             font-weight: 600;
             page-break-inside: avoid;
@@ -755,7 +723,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
                 padding: 0 !important;
                 margin: 0 !important;
                 color: #000000 !important;
-                font-size: 12px !important;
+                font-size: calc(12px * var(--fs)) !important;
             }
             .invoice-sheet {
                 max-width: 100% !important;
@@ -973,7 +941,7 @@ $cr_no = $design['header']['cr_no'] ?? '';
     <div class="invoice-bottom-grid">
         <!-- قسم الشروط وكشف الحساب (اليمين) -->
         <div class="terms-box-side">
-            <?php if ($show_party_balance && $party_bal_before !== null && $party_bal_after !== null): ?>
+            <?php if ($show_party_balance): ?>
             <table class="balance-table">
                 <thead>
                     <tr>
@@ -982,12 +950,22 @@ $cr_no = $design['header']['cr_no'] ?? '';
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="lbl">الرصيد السابق للفاتورة:</td>
-                        <td class="val"><?= htmlspecialchars($fmtBal($party_bal_before), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="lbl">الرصيد السابق:</td>
+                        <td class="val"><?= htmlspecialchars($fmtBal($party_balance['before']), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
+                    <tr>
+                        <td class="lbl">صافي الفاتورة:</td>
+                        <td class="val"><?= htmlspecialchars($fmtMoney($party_balance['net']), ENT_QUOTES, 'UTF-8') ?></td>
+                    </tr>
+                    <?php if ($party_balance['paid'] != 0): ?>
+                    <tr>
+                        <td class="lbl">المدفوع:</td>
+                        <td class="val"><?= htmlspecialchars($fmtMoney($party_balance['paid']), ENT_QUOTES, 'UTF-8') ?></td>
+                    </tr>
+                    <?php endif; ?>
                     <tr class="balance-net">
-                        <td class="lbl">إجمالي الرصيد الحالي بعد الفاتورة:</td>
-                        <td class="val"><?= htmlspecialchars($fmtBal($party_bal_after), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="lbl">الرصيد الحالي:</td>
+                        <td class="val"><?= htmlspecialchars($fmtBal($party_balance['after']), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
                 </tbody>
             </table>

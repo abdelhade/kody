@@ -25,7 +25,8 @@ class InvoiceProcessor {
         'RECEIPT' => 1,           // سند قبض ذ
         'PAYMENT' => 2,           // سند دفع
         'SALES_DISC' => 7,        // خصم مبيعات
-        'PURCHASE_DISC' => 6      // خصم مشتريات
+        'PURCHASE_DISC' => 6,     // خصم مشتريات
+        'COST_OF_SALES' => 20,    // قيد تكلفة مبيعات (journal_heads.pro_tybe)
     ];
 
     // كيان الصلاحية لكل نوع فاتورة (sales.add, purchases.edit ...)
@@ -112,6 +113,110 @@ class InvoiceProcessor {
             return 'الحساب "' . $account['aname'] . '" تعامل نقدي فقط — يجب أن يكون المدفوع مساوياً لصافي الفاتورة (' . round((float) $net, 2) . ')';
         }
         return null;
+    }
+
+    /** حساب الطرف (عميل/مورد) في الفاتورة حسب نوعها. */
+    public static function partyAccountId(array $invoice): int
+    {
+        $proTybe = (int) ($invoice['pro_tybe'] ?? 0);
+        if ($proTybe === self::INVOICE_TYPES['PURCHASE_RETURN']) {
+            return (int) ($invoice['acc1'] ?? 0);
+        }
+        return (int) ($invoice['acc2'] ?? 0);
+    }
+
+    /**
+     * رصيد الطرف وقت الفاتورة (مدين - دائن: موجب = عليه، سالب = له) للطباعة.
+     * السابق = حركات الحساب قبل الفاتورة (بالتاريخ ثم ترتيب القيد)، والحالي = السابق + أثر الفاتورة وسداداتها.
+     * يرجع null لو الطرف "تعامل نقدي فقط" أو النوع مش فاتورة بطرف أو الفاتورة ملهاش قيد على الطرف.
+     *
+     * @return array{account_id:int, before:float, net:float, paid:float, after:float}|null
+     */
+    public static function partyBalanceSnapshot(mysqli $conn, array $invoice): ?array
+    {
+        $proTybe = (int) ($invoice['pro_tybe'] ?? 0);
+        $partyDebitTypes = [
+            self::INVOICE_TYPES['SALES'],
+            self::INVOICE_TYPES['POS'],
+            self::INVOICE_TYPES['PURCHASE_RETURN'],
+        ];
+        $partyCreditTypes = [
+            self::INVOICE_TYPES['PURCHASE'],
+            self::INVOICE_TYPES['SALES_RETURN'],
+        ];
+        if (!in_array($proTybe, array_merge($partyDebitTypes, $partyCreditTypes), true) || !empty($invoice['isdeleted'])) {
+            return null;
+        }
+
+        $invoiceId = (int) ($invoice['id'] ?? 0);
+        $accId = self::partyAccountId($invoice);
+        if ($invoiceId <= 0 || $accId <= 0) {
+            return null;
+        }
+
+        $stmt = $conn->prepare('SELECT cash_only FROM acc_head WHERE id = ? LIMIT 1');
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('i', $accId);
+        $stmt->execute();
+        $account = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$account || self::isCashPartyAccount($account)) {
+            return null;
+        }
+
+        $ownEntry = '(COALESCE(je.op_id, 0) = ? OR COALESCE(je.op2, 0) = ? OR COALESCE(jh.op_id, 0) = ? OR COALESCE(jh.op2, 0) = ?)';
+
+        $stmt = $conn->prepare(
+            "SELECT COUNT(*) AS cnt, MIN(je.id) AS first_id,
+                    COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0) AS effect
+             FROM journal_entries je
+             LEFT JOIN journal_heads jh ON jh.id = je.journal_id
+             WHERE je.account_id = ? AND je.isdeleted = 0 AND $ownEntry"
+        );
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('iiiii', $accId, $invoiceId, $invoiceId, $invoiceId, $invoiceId);
+        $stmt->execute();
+        $own = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$own || (int) $own['cnt'] === 0) {
+            return null;
+        }
+        $firstEntryId = (int) $own['first_id'];
+        $effect = (float) $own['effect'];
+
+        $proDate = (string) ($invoice['pro_date'] ?? date('Y-m-d'));
+        $stmt = $conn->prepare(
+            "SELECT COALESCE(SUM(je.debit), 0) - COALESCE(SUM(je.credit), 0) AS bal
+             FROM journal_entries je
+             LEFT JOIN journal_heads jh ON jh.id = je.journal_id
+             WHERE je.account_id = ? AND je.isdeleted = 0
+               AND NOT $ownEntry
+               AND (COALESCE(jh.jdate, DATE(je.crtime)) < ?
+                    OR (COALESCE(jh.jdate, DATE(je.crtime)) = ? AND je.id < ?))"
+        );
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('iiiiissi', $accId, $invoiceId, $invoiceId, $invoiceId, $invoiceId, $proDate, $proDate, $firstEntryId);
+        $stmt->execute();
+        $before = (float) ($stmt->get_result()->fetch_assoc()['bal'] ?? 0);
+        $stmt->close();
+
+        $net = (float) ($invoice['fat_net'] ?? 0);
+        $netSign = in_array($proTybe, $partyDebitTypes, true) ? 1 : -1;
+        $paid = round($net - $netSign * $effect, 2);
+
+        return [
+            'account_id' => $accId,
+            'before'     => round($before, 2),
+            'net'        => round($net, 2),
+            'paid'       => abs($paid) < 0.01 ? 0.0 : $paid,
+            'after'      => round($before + $effect, 2),
+        ];
     }
 
     /**
@@ -1433,13 +1538,7 @@ class InvoiceProcessor {
         $journalLastId = (int) $conn->insert_id;
         $stmt->close();
 
-        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS']], true)) {
-            $debitAcc = $partyAccId;
-            $creditAcc = self::resolveSalesAccountId($conn);
-        } else {
-            $debitAcc = (int) $accounts['acc1'];
-            $creditAcc = (int) $accounts['acc2'];
-        }
+        [$debitAcc, $creditAcc] = self::mainJournalSides($conn, $proTybe, $accounts, $partyAccId);
 
         $stmt = $conn->prepare(
             'INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id)
@@ -1478,17 +1577,23 @@ class InvoiceProcessor {
         string $proDate
     ): void {
         $details = ($config['note'] ?? 'فاتورة') . ' _ ' . $invoiceId;
+        $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
         $stmt = $conn->prepare(
-            'UPDATE journal_heads SET total = ?, jdate = ?, details = ? WHERE op_id = ? AND isdeleted = 0'
+            'UPDATE journal_heads SET total = ?, jdate = ?, details = ?
+             WHERE op_id = ? AND isdeleted = 0 AND COALESCE(pro_tybe, 0) <> ?'
         );
-        $stmt->bind_param('dssi', $headnet, $proDate, $details, $invoiceId);
+        $stmt->bind_param('dssii', $headnet, $proDate, $details, $invoiceId, $costType);
         if (!$stmt->execute()) {
             throw new Exception('فشل تحديث رأس القيد: ' . $stmt->error);
         }
         $stmt->close();
 
-        $stmt = $conn->prepare('SELECT id FROM journal_heads WHERE op_id = ? AND isdeleted = 0 LIMIT 1');
-        $stmt->bind_param('i', $invoiceId);
+        $stmt = $conn->prepare(
+            'SELECT id FROM journal_heads
+             WHERE op_id = ? AND isdeleted = 0 AND COALESCE(pro_tybe, 0) <> ?
+             ORDER BY id LIMIT 1'
+        );
+        $stmt->bind_param('ii', $invoiceId, $costType);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
@@ -1497,13 +1602,7 @@ class InvoiceProcessor {
         }
         $journalId = (int) $row['id'];
 
-        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS']], true)) {
-            $debitAcc = $partyAccId;
-            $creditAcc = self::resolveSalesAccountId($conn);
-        } else {
-            $debitAcc = (int) $accounts['acc1'];
-            $creditAcc = (int) $accounts['acc2'];
-        }
+        [$debitAcc, $creditAcc] = self::mainJournalSides($conn, $proTybe, $accounts, $partyAccId);
 
         $stmt = $conn->prepare(
             'UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 WHERE journal_id = ? AND tybe = 0'
@@ -1518,6 +1617,318 @@ class InvoiceProcessor {
         $stmt->bind_param('idi', $creditAcc, $headnet, $journalId);
         $stmt->execute();
         $stmt->close();
+    }
+
+    /**
+     * طرفا القيد الرئيسي [مدين، دائن].
+     * مردود المبيعات: المبيعات مدين / العميل دائن — رجوع البضاعة للمخزن في قيد التكلفة.
+     *
+     * @return array{0:int,1:int}
+     */
+    private static function mainJournalSides(mysqli $conn, int $proTybe, array $accounts, int $partyAccId): array
+    {
+        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS']], true)) {
+            return [$partyAccId, self::resolveSalesAccountId($conn)];
+        }
+        if ($proTybe === self::INVOICE_TYPES['SALES_RETURN']) {
+            return [self::resolveSalesAccountId($conn), $partyAccId];
+        }
+        return [(int) $accounts['acc1'], (int) $accounts['acc2']];
+    }
+
+    /** أول حساب فرعي تحت 42 (تكلفة البضاعة المباعة)، أو 0 لو مش موجود. */
+    public static function resolveCostOfSalesAccountId(mysqli $conn): int
+    {
+        $stmt = $conn->prepare(
+            "SELECT id FROM acc_head
+             WHERE code LIKE '42%' AND is_basic = 0 AND isdeleted = 0
+             ORDER BY code LIMIT 1"
+        );
+        if (!$stmt) {
+            return 0;
+        }
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ? (int) $row['id'] : 0;
+    }
+
+    /**
+     * إعادة بناء قيد تكلفة المبيعات للفاتورة من بنودها (كمية × cost_price لكل مخزن).
+     * مبيعات/كاشير: تكلفة البضاعة المباعة مدين / المخزن دائن. مردود مبيعات: العكس.
+     * يُنشأ فقط لو للفاتورة قيد رئيسي قائم (الطلب المعلّق بلا قيود).
+     * يُستدعى بعد حفظ البنود.
+     *
+     * @return int[] الحسابات المتأثرة (لو $recalcBalances = false يعيد حساب أرصدتها المستدعي)
+     */
+    public static function syncCostOfSalesJournal(mysqli $conn, int $invoiceId, bool $recalcBalances = true): array
+    {
+        $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
+        $touched = self::deleteCostOfSalesJournal($conn, $invoiceId);
+
+        $stmt = $conn->prepare('SELECT pro_tybe, pro_date, user, isdeleted FROM ot_head WHERE id = ? LIMIT 1');
+        if (!$stmt) {
+            throw new Exception('فشل تحضير قراءة الفاتورة: ' . $conn->error);
+        }
+        $stmt->bind_param('i', $invoiceId);
+        $stmt->execute();
+        $head = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $proTybe = (int) ($head['pro_tybe'] ?? 0);
+        $isReturn = $proTybe === self::INVOICE_TYPES['SALES_RETURN'];
+        $types = [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS'], self::INVOICE_TYPES['SALES_RETURN']];
+        $amounts = [];
+
+        if ($head && empty($head['isdeleted']) && in_array($proTybe, $types, true)
+            && self::hasMainJournal($conn, $invoiceId)
+        ) {
+            $qtyCol = $isReturn ? 'qty_in' : 'qty_out';
+            $stmt = $conn->prepare(
+                "SELECT det_store, SUM($qtyCol * cost_price) AS cost
+                 FROM fat_details
+                 WHERE (fatid = ? OR pro_id = ?) AND isdeleted = 0 AND det_store > 0
+                 GROUP BY det_store"
+            );
+            if (!$stmt) {
+                throw new Exception('فشل تحضير حساب التكلفة: ' . $conn->error);
+            }
+            $stmt->bind_param('ii', $invoiceId, $invoiceId);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $cost = round((float) $row['cost'], 2);
+                if ($cost > 0) {
+                    $amounts[(int) $row['det_store']] = $cost;
+                }
+            }
+            $stmt->close();
+        }
+
+        $total = array_sum($amounts);
+        $cogsAcc = $total > 0 ? self::resolveCostOfSalesAccountId($conn) : 0;
+        if ($total > 0 && $cogsAcc <= 0) {
+            error_log('قيد تكلفة المبيعات: لا يوجد حساب فرعي تحت 42 — شغّل تحديثات قاعدة البيانات (فاتورة ' . $invoiceId . ')');
+        }
+
+        if ($total > 0 && $cogsAcc > 0) {
+            $journalNum = self::nextJournalNumber($conn);
+            $details = 'قيد تكلفة ' . ($isReturn ? 'مردود مبيعات' : 'مبيعات') . ' _ ' . $invoiceId;
+            $proDate = (string) $head['pro_date'];
+            $userId = (int) $head['user'];
+            $stmt = $conn->prepare(
+                'INSERT INTO journal_heads (journal_id, total, jdate, details, user, op_id, pro_tybe)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            );
+            if (!$stmt) {
+                throw new Exception('فشل تحضير رأس قيد التكلفة: ' . $conn->error);
+            }
+            $stmt->bind_param('idssiii', $journalNum, $total, $proDate, $details, $userId, $invoiceId, $costType);
+            if (!$stmt->execute()) {
+                throw new Exception('فشل إدخال رأس قيد التكلفة: ' . $stmt->error);
+            }
+            $journalId = (int) $conn->insert_id;
+            $stmt->close();
+
+            $entries = [];
+            if ($isReturn) {
+                foreach ($amounts as $storeId => $amount) {
+                    $entries[] = [$storeId, $amount, 0.0, 0];
+                }
+                $entries[] = [$cogsAcc, 0.0, $total, 1];
+            } else {
+                $entries[] = [$cogsAcc, $total, 0.0, 0];
+                foreach ($amounts as $storeId => $amount) {
+                    $entries[] = [$storeId, 0.0, $amount, 1];
+                }
+            }
+
+            $stmt = $conn->prepare(
+                'INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id)
+                 VALUES (?, ?, ?, ?, ?, ?)'
+            );
+            if (!$stmt) {
+                throw new Exception('فشل تحضير بنود قيد التكلفة: ' . $conn->error);
+            }
+            foreach ($entries as [$accountId, $debit, $credit, $tybe]) {
+                $stmt->bind_param('iiddii', $journalId, $accountId, $debit, $credit, $tybe, $invoiceId);
+                if (!$stmt->execute()) {
+                    throw new Exception('فشل إدخال بند قيد التكلفة: ' . $stmt->error);
+                }
+                $touched[] = $accountId;
+            }
+            $stmt->close();
+        }
+
+        $touched = array_values(array_unique(array_map('intval', $touched)));
+        if ($recalcBalances) {
+            foreach ($touched as $accountId) {
+                self::recalcAccountBalance($conn, $accountId);
+            }
+        }
+        return $touched;
+    }
+
+    /**
+     * بأثر رجعي: إعادة بناء قيود تكلفة المبيعات لكل فواتير المبيعات/الكاشير/مردود المبيعات
+     * من cost_price المسجّل على البنود، وحذف قيود التكلفة لفواتير اتحذفت.
+     * والقيود الرئيسية القديمة اللي بتقيد المخزن بقيمة البيع (مبيعات: المخزن دائن،
+     * مردود: المخزن مدين) تتحوّل لحساب المبيعات، عشان المخزن ميتحركش غير بالتكلفة.
+     *
+     * @return array{invoices:int,journals:int,total_cost:float,main_fixed:int}
+     */
+    public static function rebuildAllCostOfSalesJournals(mysqli $conn): array
+    {
+        if (self::resolveCostOfSalesAccountId($conn) <= 0) {
+            throw new Exception('لا يوجد حساب فرعي تحت 42 (تكلفة البضاعة المباعة) — شغّل "تحديث قاعدة البيانات" أولاً');
+        }
+
+        $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
+        $sales = self::INVOICE_TYPES['SALES'];
+        $pos = self::INVOICE_TYPES['POS'];
+        $salesReturn = self::INVOICE_TYPES['SALES_RETURN'];
+
+        $invoiceIds = self::fetchIds(
+            $conn,
+            'SELECT id FROM ot_head WHERE isdeleted = 0 AND pro_tybe IN (?, ?, ?)
+             UNION
+             SELECT DISTINCT op_id FROM journal_heads WHERE pro_tybe = ? AND op_id > 0',
+            'iiii',
+            [$sales, $pos, $salesReturn, $costType]
+        );
+
+        $conn->begin_transaction();
+        try {
+            $touched = [];
+
+            $stmt = $conn->prepare(
+                'SELECT e.id, e.account_id, h.id AS invoice_id
+                 FROM journal_entries e
+                 JOIN journal_heads j ON j.id = e.journal_id
+                 JOIN ot_head h ON h.id = j.op_id
+                 JOIN acc_head a ON a.id = e.account_id
+                 WHERE h.isdeleted = 0 AND j.isdeleted = 0 AND e.isdeleted = 0
+                   AND COALESCE(j.pro_tybe, 0) <> ? AND a.is_stock = 1
+                   AND ((h.pro_tybe IN (?, ?) AND e.tybe = 1) OR (h.pro_tybe = ? AND e.tybe = 0))'
+            );
+            if (!$stmt) {
+                throw new Exception('فشل تحضير تصحيح القيود الرئيسية: ' . $conn->error);
+            }
+            $stmt->bind_param('iiii', $costType, $sales, $pos, $salesReturn);
+            $stmt->execute();
+            $wrongEntries = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+
+            $fixedInvoices = [];
+            if (!empty($wrongEntries)) {
+                $salesAcc = self::resolveSalesAccountId($conn);
+                $fix = $conn->prepare('UPDATE journal_entries SET account_id = ? WHERE id = ?');
+                if (!$fix) {
+                    throw new Exception('فشل تحضير تصحيح القيود الرئيسية: ' . $conn->error);
+                }
+                foreach ($wrongEntries as $row) {
+                    $entryId = (int) $row['id'];
+                    $fix->bind_param('ii', $salesAcc, $entryId);
+                    $fix->execute();
+                    $touched[] = (int) $row['account_id'];
+                    $touched[] = $salesAcc;
+                    $fixedInvoices[(int) $row['invoice_id']] = true;
+                }
+                $fix->close();
+            }
+
+            foreach ($invoiceIds as $invoiceId) {
+                $touched = array_merge($touched, self::syncCostOfSalesJournal($conn, (int) $invoiceId, false));
+            }
+            foreach (array_unique($touched) as $accountId) {
+                self::recalcAccountBalance($conn, (int) $accountId);
+            }
+
+            $conn->commit();
+        } catch (Throwable $e) {
+            $conn->rollback();
+            throw $e;
+        }
+
+        $stmt = $conn->prepare(
+            'SELECT COUNT(*) AS n, COALESCE(SUM(total), 0) AS total
+             FROM journal_heads WHERE pro_tybe = ? AND isdeleted = 0'
+        );
+        $stmt->bind_param('i', $costType);
+        $stmt->execute();
+        $stats = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return [
+            'invoices' => count($invoiceIds),
+            'journals' => (int) $stats['n'],
+            'total_cost' => (float) $stats['total'],
+            'main_fixed' => count($fixedInvoices),
+        ];
+    }
+
+    /** هل للفاتورة قيد رئيسي قائم (غير قيد التكلفة)؟ */
+    private static function hasMainJournal(mysqli $conn, int $invoiceId): bool
+    {
+        $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
+        $stmt = $conn->prepare(
+            'SELECT 1 FROM journal_heads
+             WHERE op_id = ? AND isdeleted = 0 AND COALESCE(pro_tybe, 0) <> ?
+             LIMIT 1'
+        );
+        if (!$stmt) {
+            return false;
+        }
+        $stmt->bind_param('ii', $invoiceId, $costType);
+        $stmt->execute();
+        $found = (bool) $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $found;
+    }
+
+    /**
+     * حذف نهائي لقيد التكلفة الحالي للفاتورة.
+     *
+     * @return int[] الحسابات اللي كانت عليه (لإعادة حساب أرصدتها)
+     */
+    private static function deleteCostOfSalesJournal(mysqli $conn, int $invoiceId): array
+    {
+        $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
+        $journalIds = self::fetchIds(
+            $conn,
+            'SELECT id FROM journal_heads WHERE op_id = ? AND pro_tybe = ?',
+            'ii',
+            [$invoiceId, $costType]
+        );
+        if (empty($journalIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($journalIds), '?'));
+        $types = str_repeat('i', count($journalIds));
+        $accountIds = self::fetchIds(
+            $conn,
+            "SELECT DISTINCT account_id FROM journal_entries WHERE journal_id IN ($placeholders)",
+            $types,
+            $journalIds
+        );
+
+        $stmt = $conn->prepare("DELETE FROM journal_entries WHERE journal_id IN ($placeholders)");
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف بنود قيد التكلفة: ' . $conn->error);
+        }
+        $stmt->bind_param($types, ...$journalIds);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $conn->prepare("DELETE FROM journal_heads WHERE id IN ($placeholders)");
+        if (!$stmt) {
+            throw new Exception('فشل تحضير حذف قيد التكلفة: ' . $conn->error);
+        }
+        $stmt->bind_param($types, ...$journalIds);
+        $stmt->execute();
+        $stmt->close();
+
+        return $accountIds;
     }
 
     /**

@@ -337,7 +337,7 @@ function kody_receipt_design_from_post(array $post): array
             'show_total' => isset($post['rd_show_col_total']),
             'show_item_disc_subline' => isset($post['rd_show_item_disc_subline']),
             'border_style' => $post['rd_table_border_style'] ?? 'solid',
-            'font_size' => $post['rd_items_font_size'] ?? 13,
+            'font_size' => $post['rd_items_font_size'] ?? $post['rd_font_size'] ?? 13,
         ],
 
         'totals' => [

@@ -405,6 +405,8 @@ try {
     $stmt->execute();
     $stmt->close();
 
+    InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);
+
     // ===== تحديث حالة الطاولة =====
     if (!empty($tableNumber)) {
         $tnum = intval($tableNumber);

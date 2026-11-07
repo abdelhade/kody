@@ -81,17 +81,21 @@ try {
     $stmt->execute();
 
     // مزامنة القيود المحاسبية المرتبطة بالفاتورة (إن وجدت)
-    $stmt = $conn->prepare("UPDATE journal_heads SET total = ? WHERE op_id = ?");
-    $stmt->bind_param('di', $new_net, $order_id);
+    $costType = InvoiceProcessor::ACCOUNTING_TYPES['COST_OF_SALES'];
+    $stmt = $conn->prepare("UPDATE journal_heads SET total = ? WHERE op_id = ? AND COALESCE(pro_tybe, 0) <> ?");
+    $stmt->bind_param('dii', $new_net, $order_id, $costType);
     $stmt->execute();
 
-    $stmt = $conn->prepare("UPDATE journal_entries SET debit = ? WHERE op_id = ? AND tybe = 0");
-    $stmt->bind_param('di', $new_net, $order_id);
+    $mainJournalFilter = "journal_id IN (SELECT id FROM journal_heads WHERE op_id = ? AND COALESCE(pro_tybe, 0) <> ?)";
+    $stmt = $conn->prepare("UPDATE journal_entries SET debit = ? WHERE op_id = ? AND tybe = 0 AND $mainJournalFilter");
+    $stmt->bind_param('diii', $new_net, $order_id, $order_id, $costType);
     $stmt->execute();
 
-    $stmt = $conn->prepare("UPDATE journal_entries SET credit = ? WHERE op_id = ? AND tybe = 1");
-    $stmt->bind_param('di', $new_net, $order_id);
+    $stmt = $conn->prepare("UPDATE journal_entries SET credit = ? WHERE op_id = ? AND tybe = 1 AND $mainJournalFilter");
+    $stmt->bind_param('diii', $new_net, $order_id, $order_id, $costType);
     $stmt->execute();
+
+    InvoiceProcessor::syncCostOfSalesJournal($conn, $order_id);
 
     $conn->commit();
 

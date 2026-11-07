@@ -656,6 +656,7 @@ try {
     if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         InvoiceProcessor::recalcProfit($conn, (int) $last_op);
     }
+    InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);
     
     // إغلاق طلب الطاولة وتفريغها (يعمل بعد إنشاء قيود الدفع أعلاه، فلا تتكرر القيود)
     if ($finalize_order && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {

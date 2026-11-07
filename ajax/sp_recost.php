@@ -49,14 +49,24 @@ try {
         if ($extra instanceof mysqli_result) $extra->free();
     }
 
+    // 4. قيود تكلفة المبيعات تتبني من cost_price اللي اتعاد حسابه
+    require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+    $costJournalsMsg = '';
+    if (InvoiceProcessor::resolveCostOfSalesAccountId($conn) > 0) {
+        $rebuild = InvoiceProcessor::rebuildAllCostOfSalesJournals($conn);
+        $costJournalsMsg = "\nوتم إعادة بناء {$rebuild['journals']} قيد تكلفة مبيعات (إجمالي " . number_format($rebuild['total_cost'], 2) . ')';
+    } else {
+        $costJournalsMsg = "\nقيود تكلفة المبيعات لم تُبنَ — شغّل \"تحديث قاعدة البيانات\" أولاً";
+    }
+
     $t2 = microtime(true);
     $ms = round(($t2 - $t1) * 1000, 1);
 
     echo json_encode([
         'success' => true,
-        'message' => "تم تحديث وتثبيت الإجراء المخزن (Stored Procedure) وإعادة حساب التكاليف والأرباح بنجاح في {$ms} ملي ثانية!",
+        'message' => "تم تحديث وتثبيت الإجراء المخزن (Stored Procedure) وإعادة حساب التكاليف والأرباح بنجاح في {$ms} ملي ثانية!" . $costJournalsMsg,
         'duration_ms' => $ms
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

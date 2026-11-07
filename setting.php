@@ -605,6 +605,11 @@ endif;
                         <i class="fas fa-calculator ml-1"></i> إعادة حساب التكاليف (Stored Procedure)
                       </button>
                       <?php } ?>
+                      <?php if (Can::check('system.manage')) { ?>
+                      <button type="button" class="btn btn-outline-secondary" id="btnRebuildCostJournals">
+                        <i class="fas fa-balance-scale ml-1"></i> إعادة بناء قيود تكلفة المبيعات
+                      </button>
+                      <?php } ?>
                       <button type="button" class="btn btn-outline-warning" id="btnRestoreBackup">
                         <i class="fas fa-file-import ml-1"></i> استعادة نسخة احتياطية
                       </button>
@@ -876,6 +881,25 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(function () {
           btnMig.disabled = false;
           btnMig.innerHTML = '<i class="fas fa-sync-alt ml-1"></i> تحديث قاعدة البيانات';
+        });
+    });
+  }
+
+  var btnCostJ = document.getElementById('btnRebuildCostJournals');
+  if (btnCostJ) {
+    btnCostJ.addEventListener('click', function () {
+      if (!confirm('إعادة بناء قيود تكلفة المبيعات لكل فواتير المبيعات والكاشير ومردود المبيعات بأثر رجعي؟\nالقيد بيتحسب من تكلفة السطور المسجّلة — لو التكلفة القديمة ناقصة شغّل "إعادة حساب التكاليف" الأول.')) return;
+      btnCostJ.disabled = true;
+      btnCostJ.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري إعادة البناء...';
+      fetch('ajax/rebuild_cost_journals.php', { method: 'POST', credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          alert(data.message || (data.success ? 'تم بنجاح' : 'حدث خطأ'));
+        })
+        .catch(function () { alert('خطأ في الاتصال بالخادم'); })
+        .finally(function () {
+          btnCostJ.disabled = false;
+          btnCostJ.innerHTML = '<i class="fas fa-balance-scale ml-1"></i> إعادة بناء قيود تكلفة المبيعات';
         });
     });
   }

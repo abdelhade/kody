@@ -272,6 +272,7 @@ try {
     if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
         InvoiceProcessor::recalcProfit($conn, (int) $ot_id);
     }
+    InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $ot_id);
     
     // إتمام المعاملة
     $conn->commit();

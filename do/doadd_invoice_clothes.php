@@ -143,9 +143,10 @@ try {
     $stmt_details = $conn->prepare("
         INSERT INTO fat_details (
             pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-            discount, det_value, fatid, fat_tybe, det_store
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            discount, det_value, fatid, fat_tybe, det_store, cost_price
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
+    $stmt_cost = $conn->prepare("SELECT cost_price FROM myitems WHERE id = ?");
     
     foreach ($_POST['itmname'] as $index => $itmname) {
         if (empty($itmname)) continue;
@@ -158,11 +159,14 @@ try {
         $det_value = $itmqty * ($itmprice - $itmdisc);
         $qty_in = $is_return ? ($itmqty * $u_val) : 0;
         $qty_out = $is_return ? 0 : ($itmqty * $u_val);
+        $stmt_cost->bind_param("i", $itmname);
+        $stmt_cost->execute();
+        $cost_price = (float) ($stmt_cost->get_result()->fetch_assoc()['cost_price'] ?? 0);
         
         $stmt_details->bind_param(
-            "iiiddddddiii",
+            "iiiddddddiiid",
             $pro_tybe, $last_op, $itmname, $u_val, $qty_in, $qty_out,
-            $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe, $store_id
+            $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe, $store_id, $cost_price
         );
         
         if (!$stmt_details->execute()) {
@@ -171,6 +175,7 @@ try {
     }
     
     $stmt_details->close();
+    $stmt_cost->close();
     
     // إنشاء القيد المحاسبي للفاتورة
     // الحصول على رقم القيد التالي
@@ -212,12 +217,13 @@ try {
     $stmt->close();
     
     // إدخال تفاصيل القيد (الطرف الثاني - الدائن)
-    // بيع: دائن المخزن | مردود: دائن العميل
+    // بيع: دائن المبيعات (المخزن يُخصم بالتكلفة في قيد التكلفة) | مردود: دائن العميل
+    require_once __DIR__ . '/../classes/InvoiceProcessor.php';
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, 0, ?, 1, ?)
     ");
-    $acc2_journal = $is_return ? $acc2_id : $store_account;
+    $acc2_journal = $is_return ? $acc2_id : InvoiceProcessor::resolveSalesAccountId($conn);
     $stmt->bind_param("iidi", $journal_lastid, $acc2_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
@@ -293,6 +299,8 @@ try {
         $stmt->execute();
         $stmt->close();
     }
+
+    InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);
     
     $conn->commit();
     

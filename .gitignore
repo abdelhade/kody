@@ -7,3 +7,4 @@ composer.phar
 config/db_registry.json
 config/license.json
 license_generate.html
+/tauri-hr/

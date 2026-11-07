@@ -570,6 +570,7 @@ return [
     'logs_viewer.php'          => $system,
     'view_logs.php'            => $system,
     'ajax/run_migrations.php'  => $system,
+    'ajax/rebuild_cost_journals.php' => $system,
     'ajax/period_ops.php'      => $system,
     'ajax/git_pull.php'        => $system,
     'do/dobackup.php'          => $system,
