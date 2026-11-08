@@ -241,18 +241,6 @@ if (!$finalize_order && $is_table_order && $headnet > 0 && ($paid_cash + $paid_b
  */
 $is_pending_table_order = ($is_table_order && !$finalize_order);
 
-// تأكد من وجود عمود table_id
-$col_chk = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'table_id'");
-if ($col_chk && $col_chk->num_rows == 0) {
-    $conn->query("ALTER TABLE ot_head ADD COLUMN table_id INT DEFAULT NULL");
-}
-
-// تأكد من وجود عمود delivery_person_id (الطيار على ot_head)
-$col_dp = $conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
-if ($col_dp && $col_dp->num_rows == 0) {
-    $conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
-}
-
 // تحديد المبلغ المدفوع حسب نوع الفاتورة
 // أوامر الشراء/البيع وعروض الأسعار والتحويل المخزني لا تحتاج مدفوعات
 if (InvoiceProcessor::isNonCashDocument($pro_tybe)) {

@@ -15,12 +15,6 @@ if (!isset($_GET['id'])) {
 
 $id = intval($_GET['id']);
 
-// تأكد من عمود الطيار على ot_head
-$col_dp = @$conn->query("SHOW COLUMNS FROM ot_head LIKE 'delivery_person_id'");
-if ($col_dp && $col_dp->num_rows == 0) {
-    @$conn->query("ALTER TABLE ot_head ADD COLUMN delivery_person_id INT(11) DEFAULT NULL AFTER emp2_id");
-}
-
 $rowfat = null;
 try {
     $rowfat = $conn->query(
