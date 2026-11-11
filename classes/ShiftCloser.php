@@ -19,12 +19,16 @@ class ShiftCloser
         $this->conn = $conn;
     }
 
-    /** أنواع الحركات اللي بتدخل في الشيفت */
+    /**
+     * أنواع الحركات اللي بتدخل في الشيفت.
+     * المشتريات ومردود المشتريات بره الشيفت. مرتجع الملابس متسجل نوع مردود مشتريات
+     * ومعاه «مردود مبيعات» في الملاحظات، وده مردود بيع ويفضل جوه الشيفت.
+     */
     public static function shiftTypes(): array
     {
         $t = InvoiceProcessor::INVOICE_TYPES;
         return [
-            $t['SALES'], $t['POS'], $t['SALES_RETURN'], $t['PURCHASE'], $t['PURCHASE_RETURN'],
+            $t['SALES'], $t['POS'], $t['SALES_RETURN'],
             self::VOUCHER_RECEIPT, self::VOUCHER_PAYMENT, self::VOUCHER_TRANSFER,
         ];
     }
@@ -108,15 +112,21 @@ class ShiftCloser
             $shiftId = (int) $this->conn->insert_id;
             $stmt->close();
 
-            // ربط فواتير المستخدم وسنداتها المفتوحة (shift_id=0) بنفس رقم الشيفت
+            // ربط فواتير البيع وسنداتها المفتوحة. المشتريات ومردودها وسنداتهما مايتقفّلوش مع الشيفت.
             $types = self::shiftTypes();
-            $in = implode(',', array_fill(0, count($types), '?'));
+            $in = implode(',', array_map('intval', $types));
+            $clothesReturn = (int) InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'];
+            $purchaseScope = $this->purchaseExclusionSql('oh');
             $stmt = $this->conn->prepare(
-                "UPDATE ot_head SET shift_id = ?, mdtime = mdtime
-                 WHERE `user` = ? AND shift_id = 0 AND isdeleted = 0 AND pro_tybe IN ($in)"
+                "UPDATE ot_head oh SET oh.shift_id = ?, oh.mdtime = oh.mdtime
+                 WHERE oh.`user` = ? AND oh.shift_id = 0 AND oh.isdeleted = 0
+                   AND (
+                        oh.pro_tybe IN ($in)
+                        OR (oh.pro_tybe = $clothesReturn AND oh.info LIKE '%مردود مبيعات%')
+                   )
+                   AND $purchaseScope"
             );
-            $params = array_merge([$shiftId, $userId], $types);
-            $stmt->bind_param(str_repeat('i', count($params)), ...$params);
+            $stmt->bind_param('ii', $shiftId, $userId);
             $stmt->execute();
             $claimed = $stmt->affected_rows;
             $stmt->close();
@@ -230,7 +240,7 @@ class ShiftCloser
         $changes = [];
         $live = null;
         if ((int) $shift['user_id'] > 0) {
-            $live = $this->summarize('oh.shift_id = ?', 'i', [$shiftId]);
+            $live = $this->summarize('oh.shift_id = ?', 'i', [$shiftId], false);
             if (abs($live['sales_net'] - (float) $shift['total_sales']) >= 0.01) {
                 $changes[] = 'صافي المبيعات أصبح ' . number_format($live['sales_net'], 2);
             }
@@ -268,7 +278,7 @@ class ShiftCloser
      *   returns_count:int, returns_total:float, net_sales:float, expenses:float, receipts:float,
      *   movements:array<int,float>, opened_at:?string}
      */
-    private function summarize(string $cond, string $types, array $params): array
+    private function summarize(string $cond, string $types, array $params, bool $skipPurchases = true): array
     {
         $t = InvoiceProcessor::INVOICE_TYPES;
         $out = [
@@ -332,11 +342,14 @@ class ShiftCloser
         $stmt->close();
 
         // ── مسار السندات (جرد): حركة الخزنة/البنك؛ المستقلة (op2=0) فقط في expenses/receipts
+        // سندات فواتير المشتريات ومردود المشتريات مش بتدخل في الجرد
         $money = $this->moneyAccounts();
+        $purchaseScope = $skipPurchases ? 'AND ' . $this->purchaseExclusionSql('oh') : '';
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, oh.acc1, oh.acc2, oh.op2, COALESCE(oh.pro_value, 0) AS val
              FROM ot_head oh
-             WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)"
+             WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)
+               $purchaseScope"
         );
         $p = array_merge($params, [self::VOUCHER_RECEIPT, self::VOUCHER_PAYMENT, self::VOUCHER_TRANSFER]);
         $stmt->bind_param($types . 'iii', ...$p);
@@ -362,7 +375,8 @@ class ShiftCloser
         }
         $stmt->close();
 
-        $stmt = $this->conn->prepare("SELECT MIN(oh.crtime) AS opened FROM ot_head oh WHERE $cond AND oh.isdeleted = 0");
+        $openedScope = $skipPurchases ? 'AND ' . $this->purchaseExclusionSql('oh') : '';
+        $stmt = $this->conn->prepare("SELECT MIN(oh.crtime) AS opened FROM ot_head oh WHERE $cond AND oh.isdeleted = 0 $openedScope");
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $out['opened_at'] = $stmt->get_result()->fetch_assoc()['opened'] ?? null;
@@ -376,6 +390,37 @@ class ShiftCloser
         }
         $out['net_sales'] = round($out['sales_net'] - $out['returns_total'], 2);
         return $out;
+    }
+
+    /**
+     * فواتير المشتريات وأوامر الشراء ومردود المشتريات، وسندات القبض/الصرف/التحويل المربوطة بيها.
+     * مرتجع الملابس (نوع مردود المشتريات + «مردود مبيعات») مش جوه الشرط ده.
+     */
+    private function purchaseExclusionSql(string $alias): string
+    {
+        $t = InvoiceProcessor::INVOICE_TYPES;
+        $purchase = (int) $t['PURCHASE'];
+        $order = (int) $t['PURCHASE_ORDER'];
+        $ret = (int) $t['PURCHASE_RETURN'];
+        $vouchers = self::VOUCHER_RECEIPT . ', ' . self::VOUCHER_PAYMENT . ', ' . self::VOUCHER_TRANSFER;
+
+        return "NOT (
+            {$alias}.pro_tybe IN ($purchase, $order)
+            OR ({$alias}.pro_tybe = $ret AND IFNULL({$alias}.info, '') NOT LIKE '%مردود مبيعات%')
+            OR (
+                {$alias}.pro_tybe IN ($vouchers)
+                AND {$alias}.op2 IN (
+                    SELECT id FROM (
+                        SELECT p.id FROM ot_head p
+                        WHERE p.isdeleted = 0
+                          AND (
+                            p.pro_tybe IN ($purchase, $order)
+                            OR (p.pro_tybe = $ret AND IFNULL(p.info, '') NOT LIKE '%مردود مبيعات%')
+                          )
+                    ) purchase_docs
+                )
+            )
+        )";
     }
 
     /**

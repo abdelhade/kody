@@ -67,7 +67,7 @@ function shift_grace_action_label(string $action): string
 
 /**
  * تطبيق البصمة التلقائية عند اختيار "لا تعليق":
- * - عند تسجيل حضور فقط: تُحدد بصمة الانصراف عند نهاية الانصراف (outend).
+ * - عند تسجيل حضور فقط: تُحدد بصمة الانصراف عند نهاية الوردية (shiftend).
  * - عند تسجيل انصراف فقط: تُحدد بصمة الحضور عند نهاية الحضور (inend).
  *
  * @param string|null $fpin
@@ -87,7 +87,7 @@ function apply_single_fp_no_comment_fallback(
 
     if ($hasIn xor $hasOut) {
         if ($hasIn && !$hasOut) {
-            $fallbackOut = !empty($shiftRow['outend']) ? $shiftRow['outend'] : ($shiftRow['shiftend'] ?? '');
+            $fallbackOut = !empty($shiftRow['shiftend']) ? $shiftRow['shiftend'] : ($shiftRow['outend'] ?? '');
             if ($isCrossMidnight && !empty($fallbackOut)) {
                 $fpoDt = new DateTime($fallbackOut);
                 $hours = (int)$fpoDt->format('H');

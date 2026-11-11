@@ -125,12 +125,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['login'] = $row['uname'];
                         Can::login($conn, $userId, $dbname);
 
-                        // تسجيل وقت الجلسة (prepared)
-                        $session_stmt = $conn->prepare("INSERT INTO session_time(user) VALUES (?)");
-                        if ($session_stmt) {
-                            $session_stmt->bind_param("i", $userId);
-                            $session_stmt->execute();
-                            $session_stmt->close();
+                        // تسجيل وقت الجلسة. لو id مش AUTO_INCREMENT الإدراج بياخد 0 ويتكرر المفتاح.
+                        try {
+                            $session_stmt = $conn->prepare("INSERT INTO session_time(`user`) VALUES (?)");
+                            if ($session_stmt) {
+                                $session_stmt->bind_param("i", $userId);
+                                $session_stmt->execute();
+                                $session_stmt->close();
+                            }
+                        } catch (mysqli_sql_exception $e) {
+                            try {
+                                $fallback = $conn->prepare("INSERT INTO session_time (id, `user`) SELECT IFNULL(MAX(id), 0) + 1, ? FROM session_time");
+                                if ($fallback) {
+                                    $fallback->bind_param("i", $userId);
+                                    $fallback->execute();
+                                    $fallback->close();
+                                }
+                            } catch (mysqli_sql_exception $ignored) {
+                            }
                         }
 
                         // هنا ممكن تستدعي logger لو معرف
