@@ -132,7 +132,7 @@ if (!isset($action_url)) {
                                         <small class="text-success fw-bold d-block mb-1">الإجمالي المطلوب</small>
                                         <h2 class="mb-0 text-success fw-bolder" id="net_display" style="font-size: 2.5rem;">0.00</h2>
                                     </div>
-                                    <span class="fs-4 text-success fw-bold">ج.م</span>
+                                    <span class="fs-4 text-success fw-bold"> </span>
                                     
                                     <input type="hidden" name="headtotal" id="total" value="0.00">
                                     <input type="hidden" name="headnet" id="net_val" value="0.00">
@@ -293,7 +293,7 @@ if (!isset($action_url)) {
                         <div class="card border-0 shadow-sm bg-success bg-opacity-10">
                             <div class="card-body py-4 text-center">
                                 <h5 class="text-success fw-bold mb-2">المبلغ المطلوب للدفع</h5>
-                                <h1 class="display-3 fw-bolder text-success mb-0" id="modal_net_large">0.00 ج.م</h1>
+                                <h1 class="display-3 fw-bolder text-success mb-0" id="modal_net_large">0.00  </h1>
                             </div>
                         </div>
                     </div>
@@ -307,7 +307,7 @@ if (!isset($action_url)) {
                                     <span class="input-group-text bg-primary text-white"><i class="fas fa-money-bill-wave"></i></span>
                                     <input class="form-control text-center fw-bolder fs-2" type="number" 
                                            id="modal_paid_cash" placeholder="0.00" step="0.01" min="0" style="color: #0d6efd;">
-                                    <span class="input-group-text fw-bold">ج.م</span>
+                                    <span class="input-group-text fw-bold"> </span>
                                 </div>
                             </div>
                         </div>
@@ -318,7 +318,7 @@ if (!isset($action_url)) {
                         <div class="card border-0 shadow-sm bg-danger bg-opacity-10">
                             <div class="card-body p-3 text-center">
                                 <h6 class="text-danger fw-bold mb-1">الباقي للعميل (الصرف)</h6>
-                                <h2 class="fw-bolder text-danger mb-0" id="modal_change">0.00 ج.م</h2>
+                                <h2 class="fw-bolder text-danger mb-0" id="modal_change">0.00  </h2>
                             </div>
                         </div>
                     </div>

@@ -81,6 +81,10 @@ function kody_receipt_design_defaults(): array
             'show_paid' => true,         // المدفوع
             'show_change' => true,       // الباقي / المتبقي
             'highlight_net' => true,     // تمييز الصافي بخط أكبر
+            'show_vat' => false,         // تفصيل ضريبة القيمة المضافة
+            'show_vat_qr' => false,      // QR ضريبة (ZATCA TLV)
+            'vat_rate' => 14,            // نسبة الضريبة %
+            'vat_inclusive' => true,     // الأسعار شاملة الضريبة
         ],
 
         // التذييل
@@ -217,6 +221,10 @@ function kody_receipt_design_normalize(array $input): array
     $d['totals']['show_paid'] = kody_rd_bool($t, 'show_paid', $d['totals']['show_paid']);
     $d['totals']['show_change'] = kody_rd_bool($t, 'show_change', $d['totals']['show_change']);
     $d['totals']['highlight_net'] = kody_rd_bool($t, 'highlight_net', $d['totals']['highlight_net']);
+    $d['totals']['show_vat'] = kody_rd_bool($t, 'show_vat', $d['totals']['show_vat']);
+    $d['totals']['show_vat_qr'] = kody_rd_bool($t, 'show_vat_qr', $d['totals']['show_vat_qr']);
+    $d['totals']['vat_rate'] = kody_rd_num($t['vat_rate'] ?? null, 0, 100, $d['totals']['vat_rate']);
+    $d['totals']['vat_inclusive'] = kody_rd_bool($t, 'vat_inclusive', $d['totals']['vat_inclusive']);
 
     // Footer
     $f = is_array($input['footer'] ?? null) ? $input['footer'] : [];
@@ -350,6 +358,10 @@ function kody_receipt_design_from_post(array $post): array
             'show_paid' => isset($post['rd_show_paid']),
             'show_change' => isset($post['rd_show_change']),
             'highlight_net' => isset($post['rd_highlight_net']),
+            'show_vat' => isset($post['rd_show_vat']),
+            'show_vat_qr' => isset($post['rd_show_vat_qr']),
+            'vat_rate' => $post['rd_vat_rate'] ?? 14,
+            'vat_inclusive' => isset($post['rd_vat_inclusive']),
         ],
 
         'footer' => [

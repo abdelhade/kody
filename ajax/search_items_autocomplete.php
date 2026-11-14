@@ -20,7 +20,7 @@ if (!empty($term)) {
         }
         $items[] = [
             'id' => $row['id'],
-            'label' => $row['name'] . ' (' . ($row['barcode'] ?: $row['id']) . ') - ' . $row['price'] . ' ج.م',
+            'label' => $row['name'] . ' (' . ($row['barcode'] ?: $row['id']) . ') - ' . $row['price'] . '  ',
             'value' => $row['name'],
             'item' => $row
         ];
@@ -38,7 +38,7 @@ if (!empty($term)) {
             $row['market_price'] = 0;
             $items[] = [
                 'id' => $row['id'],
-                'label' => $row['name'] . ' (' . $row['barcode'] . ') - ' . $row['price'] . ' ج.م',
+                'label' => $row['name'] . ' (' . $row['barcode'] . ') - ' . $row['price'] . '  ',
                 'value' => $row['name'],
                 'item' => $row
             ];
@@ -77,7 +77,7 @@ if (!empty($term)) {
             if (!$exists) {
                 $items[] = [
                     'id' => $row['id'],
-                    'label' => $row['name'] . ' (' . ($row['barcode'] ?: $row['id']) . ') - ' . $row['price'] . ' ج.م',
+                    'label' => $row['name'] . ' (' . ($row['barcode'] ?: $row['id']) . ') - ' . $row['price'] . '  ',
                     'value' => $row['name'],
                     'item' => $row
                 ];

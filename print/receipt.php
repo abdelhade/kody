@@ -6,6 +6,7 @@ if (!isset($_SESSION['login'])) {
 }
 require_once __DIR__ . '/includes/connect.php';
 require_once __DIR__ . '/../includes/receipt_design.php';
+require_once __DIR__ . '/../includes/vat_qr.php';
 require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 
 if (!isset($_GET['id'])) {
@@ -638,6 +639,9 @@ $plus_val = (float)($rowfat['fat_plus'] ?? 0);
 $plus_pct = !empty($rowfat['fat_plus_per']) ? (float)$rowfat['fat_plus_per'] : (($fat_total > 0 && $plus_val > 0) ? round(($plus_val / $fat_total) * 100, 2) : 0);
 
 $totCfg = $design['totals'] ?? [];
+$vat_amounts = kody_vat_amounts($fat_net, $design, $rowfat);
+$vat_qr = kody_vat_qr_build($design, is_array($rowstg ?? null) ? $rowstg : [], $rowfat);
+$show_vat_lines = (!empty($totCfg['show_vat']) || $vat_qr !== null) && $vat_amounts !== null;
 ?>
 <table class="rcpt-totals">
 <?php if (!empty($totCfg['show_items_total']) && $total_item_disc > 0): ?>
@@ -675,10 +679,21 @@ $totCfg = $design['totals'] ?? [];
 </tr>
 <?php endif; ?>
 
+<?php if ($show_vat_lines): ?>
+<tr>
+    <td class="tot-label">قبل الضريبة</td>
+    <td class="tot-val"><?= number_format($vat_amounts['exclusive'], 2) ?></td>
+</tr>
+<tr>
+    <td class="tot-label">ضريبة القيمة المضافة (<?= rtrim(rtrim(number_format($vat_amounts['rate'], 2, '.', ''), '0'), '.') ?>%)</td>
+    <td class="tot-val"><?= number_format($vat_amounts['vat'], 2) ?></td>
+</tr>
+<?php endif; ?>
+
 <?php if (!empty($totCfg['show_net'])): ?>
 <tr>
-    <td class="tot-label">الصافي</td>
-    <td class="tot-val net"><?= number_format($fat_net, 2) ?></td>
+    <td class="tot-label"><?= $show_vat_lines ? 'الإجمالي شامل الضريبة' : 'الصافي' ?></td>
+    <td class="tot-val net"><?= number_format($show_vat_lines ? $vat_amounts['total'] : $fat_net, 2) ?></td>
 </tr>
 <?php endif; ?>
 
@@ -739,6 +754,13 @@ if ($party_balance !== null):
 </table>
 <?php endif; ?>
 
+<?php if ($vat_qr !== null): ?>
+<div class="vat-qr-wrap" style="text-align:center; margin: 8px 0 4px;">
+    <canvas id="vatQrCanvas" width="140" height="140" style="width:140px; height:140px; image-rendering:pixelated;"></canvas>
+    <div style="font-size:<?= max(8, $font_size_sm - 2) ?>px; margin-top:2px;">QR ضريبة القيمة المضافة</div>
+</div>
+<?php endif; ?>
+
 <!-- التاريخ والوقت -->
 <?php if (!empty($design['meta']['show_datetime']) && !empty($rowfat['crtime'])): ?>
 <p style="font-size:<?= $font_size_sm ?>px; text-align:center; margin: 4px 0;"><?= htmlspecialchars($rowfat['crtime']) ?></p>
@@ -760,8 +782,12 @@ if ($party_balance !== null):
 </div> <!-- /#printed -->
 
 <script src="code.js"></script>
+<?php if ($vat_qr !== null): ?>
+<script src="../assets/libs/qrcode.min.js"></script>
+<?php endif; ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var vatQrReady = Promise.resolve();
     <?php if (!empty($design['meta']['show_invoice_barcode'])): ?>
     if (window.JsBarcode) {
         try {
@@ -776,10 +802,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     <?php endif; ?>
 
+    <?php if ($vat_qr !== null): ?>
+    (function() {
+        var canvas = document.getElementById('vatQrCanvas');
+        var payload = <?= json_encode($vat_qr['payload'], JSON_UNESCAPED_UNICODE) ?>;
+        if (canvas && window.QRCode && typeof QRCode.toCanvas === 'function') {
+            vatQrReady = new Promise(function(resolve) {
+                QRCode.toCanvas(canvas, payload, {
+                    width: 140,
+                    margin: 1,
+                    errorCorrectionLevel: 'M'
+                }, function() { resolve(); });
+            });
+        }
+    })();
+    <?php endif; ?>
+
     var printButton = document.getElementById('printButton');
     if (printButton) {
         printButton.addEventListener('click', function() {
-            window.print();
+            vatQrReady.then(function() { window.print(); });
         });
     }
 
@@ -831,10 +873,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // حتى يظل المستخدم على نفس صفحة بون الكاشير عند الضغط على Cancel
 
     <?php if (!empty($design['auto_print'])): ?>
-    // طباعة تلقائية بعد فتح الصفحة
-    setTimeout(function() {
-        window.print();
-    }, 300);
+    // طباعة تلقائية بعد جاهزية الـ QR
+    vatQrReady.then(function() {
+        setTimeout(function() { window.print(); }, 200);
+    });
     <?php endif; ?>
 });
 </script>

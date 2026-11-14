@@ -157,7 +157,7 @@ $(document).ready(function() {
                                 <input type="hidden" class="priceInput" value="${item.price.toFixed(2)}" name="itmprice[]">
                                 <input type="hidden" name="itmdisc[]" value="0">
                                 <input type="hidden" class="subtotal" readonly value="${item.price.toFixed(2)}" name="itmval[]">
-                                <span class="text-primary fw-bold display-subtotal">${item.price.toFixed(2)} ج.م</span>
+                                <span class="text-primary fw-bold display-subtotal">${item.price.toFixed(2)}  </span>
                             </div>
                         </div>
                     </div>
@@ -178,7 +178,7 @@ $(document).ready(function() {
         if (subtotal < 0) subtotal = 0;
         
         row.find('.subtotal').val(subtotal.toFixed(2));
-        row.find('.display-subtotal').text(subtotal.toFixed(2) + ' ج.م');
+        row.find('.display-subtotal').text(subtotal.toFixed(2) + '  ');
         
         calculateTotals();
     }
@@ -191,7 +191,7 @@ $(document).ready(function() {
         });
         
         $('#total').val(total.toFixed(2));
-        $('#total_display').text(total.toFixed(2) + ' ج.م');
+        $('#total_display').text(total.toFixed(2) + '  ');
         
         // Update Payment Modal Net
         let discount = parseFloat($('#modal_discount').val()) || 0;

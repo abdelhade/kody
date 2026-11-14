@@ -249,7 +249,7 @@
                                          style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;">
                                         <strong>${item.iname}</strong>
                                         ${item.name2 ? ' // ' + item.name2 : ''}
-                                        <span style="float:left;color:var(--primary-color);">${item.price1} ج.م</span>
+                                        <span style="float:left;color:var(--primary-color);">${item.price1}  </span>
                                      </div>`;
                         });
                         searchResults.innerHTML = html;

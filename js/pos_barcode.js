@@ -278,7 +278,7 @@ $(document).ready(function() {
         
         $('#modal_item_name').text(itemName);
         $('#modal_item_barcode').text(itemBarcode || '-');
-        $('#modal_item_price').text(itemPrice.toFixed(2) + ' ج.م');
+        $('#modal_item_price').text(itemPrice.toFixed(2) + '  ');
         $('#modal_item_desc').text(itemDesc);
         $('#modal_item_image').html(imageHtml);
         
@@ -413,16 +413,16 @@ $(document).ready(function() {
             total += parseFloat($(this).val()) || 0;
         });
         $('#total').val(total.toFixed(2));
-        $('#total_display').text(total.toFixed(2) + ' ج.م');
-        $('#total_display_btn').text(total.toFixed(2) + ' ج.م');
-        $('#hold_total_display').text(total.toFixed(2) + ' ج.م');
-        $('#modal_total').text(total.toFixed(2) + ' ج.م');
+        $('#total_display').text(total.toFixed(2) + '  ');
+        $('#total_display_btn').text(total.toFixed(2) + '  ');
+        $('#hold_total_display').text(total.toFixed(2) + '  ');
+        $('#modal_total').text(total.toFixed(2) + '  ');
         
         let discount = parseFloat($('#discount').val()) || 0;
         let net = total - discount;
         $('#net_val').val(net.toFixed(2));
-        $('#net_display').text(net.toFixed(2) + ' ج.م');
-        $('#modal_net').text(net.toFixed(2) + ' ج.م');
+        $('#net_display').text(net.toFixed(2) + '  ');
+        $('#modal_net').text(net.toFixed(2) + '  ');
         
         // حساب الباقي مع القيم الحالية
         calculateChange();
@@ -445,7 +445,7 @@ $(document).ready(function() {
             // عرض المدفوع سابقاً
             if (oldTotalPaid > 0) {
                 $('#old_payment_container').show();
-                $('#old_paid_display').text(oldTotalPaid.toFixed(2) + ' ج.م');
+                $('#old_paid_display').text(oldTotalPaid.toFixed(2) + '  ');
             } else {
                 $('#old_payment_container').hide();
             }
@@ -830,9 +830,9 @@ $(document).ready(function() {
         $('#modal_discount').val(discount);
         $('#discount').val(discount);
         let net = (total - discount).toFixed(2);
-        $('#modal_net').text(net + ' ج.م');
+        $('#modal_net').text(net + '  ');
         $('#net_val').val(net);
-        $('#net_display').text(net + ' ج.م');
+        $('#net_display').text(net + '  ');
         
         // حساب الباقي
         calculateChange();
@@ -845,9 +845,9 @@ $(document).ready(function() {
         let percentage = total > 0 ? ((discount / total) * 100).toFixed(2) : 0;
         $('#modal_discperc').val(percentage);
         let net = (total - discount).toFixed(2);
-        $('#modal_net').text(net + ' ج.م');
+        $('#modal_net').text(net + '  ');
         $('#net_val').val(net);
-        $('#net_display').text(net + ' ج.م');
+        $('#net_display').text(net + '  ');
         
         // حساب الباقي
         calculateChange();
@@ -872,7 +872,7 @@ $(document).ready(function() {
         let change = totalPaid - net;
         
         // الباقي للحساب فقط - لا يؤثر على السند
-        $('#modal_change').text(change.toFixed(2) + ' ج.م');
+        $('#modal_change').text(change.toFixed(2) + '  ');
     }
 
     // ========================================
@@ -906,8 +906,8 @@ $(document).ready(function() {
                                 updateItemCount();
                                 // تحديث الإجمالي المعروض
                                 if (res.new_total !== undefined) {
-                                    $('#total_display').text(parseFloat(res.new_total).toFixed(2) + ' ج.م');
-                                    $('#net_display').text(parseFloat(res.new_total).toFixed(2) + ' ج.م');
+                                    $('#total_display').text(parseFloat(res.new_total).toFixed(2) + '  ');
+                                    $('#net_display').text(parseFloat(res.new_total).toFixed(2) + '  ');
                                     $('#total').val(parseFloat(res.new_total).toFixed(2));
                                     $('#net_val').val(parseFloat(res.new_total).toFixed(2));
                                 }
@@ -1290,7 +1290,7 @@ function loadRecentOrders() {
                                 <span class="badge bg-info">${order.type}</span>
                             </td>
                             <td class="text-nowrap fw-bold text-success">
-                                ${order.total.toFixed(2)} ج.م
+                                ${order.total.toFixed(2)}  
                             </td>
                             <td>
                                 <span class="badge ${order.status === 'مكتمل' ? 'bg-success' : 'bg-warning'}">
@@ -1453,7 +1453,7 @@ function showOrderItemsModal(orderId) {
             html += '</tbody></table></div>';
             html += `<div class="d-flex justify-content-between align-items-center px-2 pt-2 pb-1">
                 <span class="text-muted small">عدد الأصناف: <strong>${res.items.length}</strong></span>
-                <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span> ج.م</span>
+                <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span>  </span>
             </div>`;
             $('#orderItemsBody').html(html);
         },

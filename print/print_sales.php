@@ -13,6 +13,7 @@ if ($id_early > 0 && isset($_COOKIE['invoice_print_cashier']) && $_COOKIE['invoi
 
 require_once __DIR__ . '/includes/connect.php';
 require_once __DIR__ . '/../includes/receipt_design.php';
+require_once __DIR__ . '/../includes/vat_qr.php';
 require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 $design = kody_receipt_design_load($rowstg ?? []);
 // مقاسات الخط في الفاتورة مصممة على حجم أساسي 13px وتتكبّر بنسبة "حجم الخط الأساسي" في الإعدادات
@@ -319,6 +320,9 @@ $company_tel  = !empty($rowstg['company_tel']) ? $rowstg['company_tel'] : '';
 $company_add  = !empty($rowstg['company_add']) ? $rowstg['company_add'] : '';
 $tax_no = $design['header']['tax_no'] ?? '';
 $cr_no = $design['header']['cr_no'] ?? '';
+$vat_amounts = kody_vat_amounts($fat_net, $design, $rowfat);
+$vat_qr = kody_vat_qr_build($design, is_array($rowstg ?? null) ? $rowstg : [], $rowfat);
+$show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) && $vat_amounts !== null;
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -1007,9 +1011,19 @@ $cr_no = $design['header']['cr_no'] ?? '';
                         <td class="val" style="color: #15803d;">+ <?= htmlspecialchars($fmtMoney($plus_val), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
                     <?php endif; ?>
+                    <?php if ($show_vat_lines): ?>
+                    <tr>
+                        <td class="lbl">قبل الضريبة:</td>
+                        <td class="val"><?= htmlspecialchars($fmtMoney($vat_amounts['exclusive']), ENT_QUOTES, 'UTF-8') ?></td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">ضريبة القيمة المضافة (<?= rtrim(rtrim(number_format($vat_amounts['rate'], 2, '.', ''), '0'), '.') ?>%):</td>
+                        <td class="val"><?= htmlspecialchars($fmtMoney($vat_amounts['vat']), ENT_QUOTES, 'UTF-8') ?></td>
+                    </tr>
+                    <?php endif; ?>
                     <tr class="net-highlight">
-                        <td class="lbl">صافي القيمة المطلوب:</td>
-                        <td class="val"><?= htmlspecialchars($fmtMoney($fat_net), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td class="lbl"><?= $show_vat_lines ? 'الإجمالي شامل الضريبة:' : 'صافي القيمة المطلوب:' ?></td>
+                        <td class="val"><?= htmlspecialchars($fmtMoney($show_vat_lines ? $vat_amounts['total'] : $fat_net), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
                     <?php if (!$is_doc_order): ?>
                     <tr>
@@ -1033,6 +1047,13 @@ $cr_no = $design['header']['cr_no'] ?? '';
             </table>
         </div>
     </div>
+
+    <?php if ($vat_qr !== null): ?>
+    <div class="vat-qr-box" style="text-align:center; margin: 12px 0 8px;">
+        <canvas id="vatQrCanvas" width="160" height="160" style="width:160px; height:160px;"></canvas>
+        <div style="font-size: calc(11px * var(--fs)); margin-top: 4px; color:#475569;">QR ضريبة القيمة المضافة</div>
+    </div>
+    <?php endif; ?>
 
     <!-- التوقيعات -->
     <div class="signatures-section">
@@ -1063,8 +1084,13 @@ $cr_no = $design['header']['cr_no'] ?? '';
 </div>
 
 <script src="code.js"></script>
+<?php if ($vat_qr !== null): ?>
+<script src="../assets/libs/qrcode.min.js"></script>
+<?php endif; ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var vatQrReady = Promise.resolve();
+
     // 1. إنشاء باركود الفاتورة
     if (window.JsBarcode) {
         try {
@@ -1078,11 +1104,27 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {}
     }
 
+    <?php if ($vat_qr !== null): ?>
+    (function() {
+        var canvas = document.getElementById('vatQrCanvas');
+        var payload = <?= json_encode($vat_qr['payload'], JSON_UNESCAPED_UNICODE) ?>;
+        if (canvas && window.QRCode && typeof QRCode.toCanvas === 'function') {
+            vatQrReady = new Promise(function(resolve) {
+                QRCode.toCanvas(canvas, payload, {
+                    width: 160,
+                    margin: 1,
+                    errorCorrectionLevel: 'M'
+                }, function() { resolve(); });
+            });
+        }
+    })();
+    <?php endif; ?>
+
     // 2. زر أمر الطباعة
     var printButton = document.getElementById('printButton');
     if (printButton) {
         printButton.addEventListener('click', function() {
-            window.print();
+            vatQrReady.then(function() { window.print(); });
         });
     }
 
@@ -1132,10 +1174,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 5. فتح أمر الطباعة تلقائياً بمجرد تحميل الصفحة
-    setTimeout(function() {
-        window.print();
-    }, 350);
+    // 5. فتح أمر الطباعة تلقائياً بعد جاهزية الـ QR
+    vatQrReady.then(function() {
+        setTimeout(function() { window.print(); }, 250);
+    });
 
     // ملاحظة هامة: تم إلغاء ربط afterprint بـ doGoBack()
     // حتى إذا قام المستخدم بالضغط على Cancel، تُغلق نافذة الطباعة فقط وتبقى صفحة الفاتورة مفتوحة أمامه.

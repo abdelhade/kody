@@ -389,7 +389,7 @@ function displayItems(items) {
                     </div>
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
-                        <div class="item-price">${priceFromItem(item).toFixed(2)} ج.م</div>
+                        <div class="item-price">${priceFromItem(item).toFixed(2)}  </div>
                         <div class="item-balance text-muted" style="font-size: 0.85rem; font-weight: bold; color: var(--primary-violet) !important;">الرصيد: ${item.balance}</div>
                     </div>
                 </div>
@@ -442,7 +442,7 @@ function paintClothesReturnPrices(items) {
                 const base = parseFloat(prices[item.id]);
                 if (!(base > 0)) return;
                 const card = document.querySelector('.item-card[data-item-id="' + item.id + '"] .item-price');
-                if (card) card.textContent = base.toFixed(2) + ' ج.م';
+                if (card) card.textContent = base.toFixed(2) + '  ';
             });
         });
 }
@@ -587,7 +587,7 @@ function updateOrderDisplay() {
                                   onclick="event.stopPropagation(); openItemDiscountModal(${index})" 
                                   title="اضغط لتعديل الخصم"
                                   style="font-size: 0.95rem; padding: 3px 8px;">
-                                <i class="fas fa-tag me-1"></i>خصم: ${totalDiscount.toFixed(2)} ج.م (${itemDisc.toFixed(2)} للقطعة)
+                                <i class="fas fa-tag me-1"></i>خصم: ${totalDiscount.toFixed(2)}   (${itemDisc.toFixed(2)} للقطعة)
                             </span>
                             <button type="button" class="btn btn-sm text-danger p-0 ms-1" onclick="event.stopPropagation(); removeItemDiscount(${index});" title="إلغاء الخصم" style="line-height: 1;">
                                 <i class="fas fa-times-circle" style="font-size: 1.1rem;"></i>
@@ -671,12 +671,12 @@ function openItemDiscountModal(index) {
         html: `
             <div class="text-start" style="font-size: 0.95rem; direction: rtl;">
                 <div class="mb-3 p-2 bg-light rounded text-center border">
-                    <span class="mx-2">السعر: <b class="text-primary">${currentPrice.toFixed(2)} ج.م</b></span> | 
+                    <span class="mx-2">السعر: <b class="text-primary">${currentPrice.toFixed(2)}  </b></span> | 
                     <span class="mx-2">الكمية: <b class="text-success">${currentQty}</b></span> | 
-                    <span class="mx-2">الإجمالي: <b>${(currentPrice * currentQty).toFixed(2)} ج.م</b></span>
+                    <span class="mx-2">الإجمالي: <b>${(currentPrice * currentQty).toFixed(2)}  </b></span>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold mb-1"><i class="fas fa-money-bill me-1 text-success"></i>قيمة الخصم للقطعة (ج.م):</label>
+                    <label class="form-label fw-bold mb-1"><i class="fas fa-money-bill me-1 text-success"></i>قيمة الخصم للقطعة ( ):</label>
                     <input type="number" 
                            id="swal_item_disc_val" 
                            class="form-control form-control-lg text-center fw-bold" 
@@ -698,7 +698,7 @@ function openItemDiscountModal(index) {
                            placeholder="0 %">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold mb-1"><i class="fas fa-calculator me-1 text-warning"></i>إجمالي خصم الصنف للكمية كاملة (ج.م):</label>
+                    <label class="form-label fw-bold mb-1"><i class="fas fa-calculator me-1 text-warning"></i>إجمالي خصم الصنف للكمية كاملة ( ):</label>
                     <input type="number" 
                            id="swal_item_disc_total" 
                            class="form-control form-control-lg text-center fw-bold" 
@@ -709,7 +709,7 @@ function openItemDiscountModal(index) {
                            placeholder="0.00">
                 </div>
                 <div class="text-center p-2 rounded border mb-2" style="background: #eef2ff; color: #4338ca; font-size: 1.1rem;">
-                    صافي الصنف بعد الخصم: <b id="swal_item_net_preview" style="font-size: 1.3rem;">${(currentQty * Math.max(0, currentPrice - currentDisc)).toFixed(2)}</b> ج.م
+                    صافي الصنف بعد الخصم: <b id="swal_item_net_preview" style="font-size: 1.3rem;">${(currentQty * Math.max(0, currentPrice - currentDisc)).toFixed(2)}</b>  
                 </div>
                 ${currentDisc > 0 ? `
                     <div class="mt-2">
@@ -877,9 +877,9 @@ function updateTotals() {
     const totalDisplay = document.getElementById('total_display');
     const netDisplay = document.getElementById('net_display');
     const totalDisplayBtn = document.getElementById('total_display_btn');
-    if (totalDisplay) totalDisplay.textContent = total.toFixed(2) + ' ج.م';
-    if (netDisplay) netDisplay.textContent = net.toFixed(2) + ' ج.م';
-    if (totalDisplayBtn) totalDisplayBtn.textContent = net.toFixed(2) + ' ج.م';
+    if (totalDisplay) totalDisplay.textContent = total.toFixed(2) + '  ';
+    if (netDisplay) netDisplay.textContent = net.toFixed(2) + '  ';
+    if (totalDisplayBtn) totalDisplayBtn.textContent = net.toFixed(2) + '  ';
     
     const totalInput = document.getElementById('total');
     const netInput = document.getElementById('net_val');
@@ -892,8 +892,8 @@ function updateTotals() {
     if (totalQtyEl) totalQtyEl.textContent = totalQty;
     
     if (document.getElementById('modal_total')) {
-        document.getElementById('modal_total').textContent = total.toFixed(2) + ' ج.م';
-        document.getElementById('modal_net').textContent = net.toFixed(2) + ' ج.م';
+        document.getElementById('modal_total').textContent = total.toFixed(2) + '  ';
+        document.getElementById('modal_net').textContent = net.toFixed(2) + '  ';
         document.getElementById('modal_paid').value = net.toFixed(2);
         updateChange();
     }
@@ -909,7 +909,7 @@ function hideItems() {
 }
 
 function updateChange() {
-    const net = parseFloat(document.getElementById('modal_net').textContent.replace(' ج.م', '')) || 0;
+    const net = parseFloat(document.getElementById('modal_net').textContent.replace('  ', '')) || 0;
     const paid = parseFloat(document.getElementById('modal_paid').value) || 0;
     const change = paid - net;
     

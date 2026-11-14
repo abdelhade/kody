@@ -203,29 +203,29 @@ $shift_end = $sales_data['last_sale_time'] ? date('H:i', strtotime($sales_data['
             </tr>
             <tr>
                 <td><strong>الإجمالي:</strong></td>
-                <td class="text-end"><?= number_format($sales_data['total_sales'], 2) ?> ج.م</td>
+                <td class="text-end"><?= number_format($sales_data['total_sales'], 2) ?>  </td>
             </tr>
             <?php if ($sales_data['total_discounts'] > 0): ?>
             <tr>
                 <td><strong>الخصم:</strong></td>
-                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['total_discounts'], 2) ?>  </td>
             </tr>
             <?php endif; ?>
             <?php if ($sales_data['total_plus'] > 0): ?>
             <tr>
                 <td><strong>الإضافي:</strong></td>
-                <td class="text-end" style="color: #28a745;">+ <?= number_format($sales_data['total_plus'], 2) ?> ج.م</td>
+                <td class="text-end" style="color: #28a745;">+ <?= number_format($sales_data['total_plus'], 2) ?>  </td>
             </tr>
             <?php endif; ?>
             <?php if ((float) $sales_data['returns_total'] > 0): ?>
             <tr>
                 <td><strong>المردودات:</strong></td>
-                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['returns_total'], 2) ?> ج.م</td>
+                <td class="text-end" style="color: #dc3545;">- <?= number_format($sales_data['returns_total'], 2) ?>  </td>
             </tr>
             <?php endif; ?>
             <tr class="table-success">
                 <td><strong>الصافي:</strong></td>
-                <td class="text-end"><strong><?= number_format($sales_data['net_sales'], 2) ?> ج.م</strong></td>
+                <td class="text-end"><strong><?= number_format($sales_data['net_sales'], 2) ?>  </strong></td>
             </tr>
         </tbody>
     </table>

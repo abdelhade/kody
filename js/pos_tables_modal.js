@@ -97,7 +97,7 @@
             html += '<span>' + escapeHtml(t.name) + '</span>';
             html += '<small>' + statusLabel(t.status) + '</small>';
             if (t.order_total > 0) {
-                html += '<span class="ptp-order-total">' + fmt(t.order_total) + ' ج.م</span>';
+                html += '<span class="ptp-order-total">' + fmt(t.order_total) + '  </span>';
             }
             html += '</button></div>';
         });

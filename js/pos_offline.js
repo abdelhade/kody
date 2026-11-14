@@ -100,7 +100,7 @@ class OfflinePOS {
                     <div class="card-body text-center">
                         <i class="fas fa-utensils fa-3x text-primary mb-2"></i>
                         <h6 class="card-title">${item.name}</h6>
-                        <p class="card-text text-success fw-bold">${item.price.toFixed(2)} ج.م</p>
+                        <p class="card-text text-success fw-bold">${item.price.toFixed(2)}  </p>
                         <small class="text-muted">كود: ${item.barcode}</small>
                     </div>
                 </div>
@@ -174,7 +174,7 @@ class OfflinePOS {
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <strong>${item.name}</strong><br>
-                        <small class="text-muted">${item.price.toFixed(2)} ج.م × ${item.quantity}</small>
+                        <small class="text-muted">${item.price.toFixed(2)}   × ${item.quantity}</small>
                     </div>
                     <div class="d-flex align-items-center">
                         <button class="btn btn-sm btn-outline-secondary me-1" 
@@ -194,7 +194,7 @@ class OfflinePOS {
 
     updateTotal() {
         const total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        document.getElementById('totalAmount').textContent = total.toFixed(2) + ' ج.م';
+        document.getElementById('totalAmount').textContent = total.toFixed(2) + '  ';
     }
 
     processOrder() {
@@ -242,7 +242,7 @@ class OfflinePOS {
             <div class="border-bottom pb-2 mb-2">
                 <div class="d-flex justify-content-between">
                     <small><strong>طلب #${order.id}</strong></small>
-                    <small class="text-muted">${order.total.toFixed(2)} ج.م</small>
+                    <small class="text-muted">${order.total.toFixed(2)}  </small>
                 </div>
                 <small class="text-muted">
                     ${new Date(order.timestamp).toLocaleString('ar-EG')}

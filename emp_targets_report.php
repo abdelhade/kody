@@ -241,7 +241,7 @@ function achBg(float $pct): string {
             <span class="info-box-icon bg-info" style="border-radius:10px 0 0 10px;"><i class="fas fa-bullseye"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">إجمالي التارجيت</span>
-                <span class="info-box-number"><?= number_format($grand_target, 0) ?> ج.م</span>
+                <span class="info-box-number"><?= number_format($grand_target, 0) ?>  </span>
             </div>
         </div>
     </div>
@@ -250,7 +250,7 @@ function achBg(float $pct): string {
             <span class="info-box-icon bg-success" style="border-radius:10px 0 0 10px;"><i class="fas fa-chart-line"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">إجمالي المبيعات</span>
-                <span class="info-box-number"><?= number_format($grand_actual, 0) ?> ج.م</span>
+                <span class="info-box-number"><?= number_format($grand_actual, 0) ?>  </span>
             </div>
         </div>
     </div>
@@ -291,9 +291,9 @@ function achBg(float $pct): string {
                 </div>
             </div>
             <div class="d-flex justify-content-between mt-1" style="font-size:.75rem;color:#6b7280;">
-                <span>تارجيت: <?= number_format($row['target_value'],0) ?> ج.م</span>
-                <span>فعلي: <?= number_format($row['actual_sales'],0) ?> ج.م</span>
-                <span>فرق: <span style="color:<?= $row['diff']>=0?'#16a34a':'#dc2626' ?>;"><?= ($row['diff']>=0?'+':'') . number_format($row['diff'],0) ?> ج.م</span></span>
+                <span>تارجيت: <?= number_format($row['target_value'],0) ?>  </span>
+                <span>فعلي: <?= number_format($row['actual_sales'],0) ?>  </span>
+                <span>فرق: <span style="color:<?= $row['diff']>=0?'#16a34a':'#dc2626' ?>;"><?= ($row['diff']>=0?'+':'') . number_format($row['diff'],0) ?>  </span></span>
             </div>
         </div>
         <?php endforeach; ?>
@@ -316,9 +316,9 @@ function achBg(float $pct): string {
                         <th style="width:40px;">#</th>
                         <th class="text-right">الموظف</th>
                         <th>القسم</th>
-                        <th>التارجيت (ج.م)</th>
-                        <th>المبيعات الفعلية (ج.م)</th>
-                        <th>الفرق (ج.م)</th>
+                        <th>التارجيت ( )</th>
+                        <th>المبيعات الفعلية ( )</th>
+                        <th>الفرق ( )</th>
                         <th style="width:160px;">نسبة التحقيق</th>
                         <th>الحالة</th>
                         <th>ملاحظات</th>
@@ -387,9 +387,9 @@ function achBg(float $pct): string {
                 <tfoot class="bg-light font-weight-bold text-center">
                     <tr>
                         <td colspan="3" class="text-right">الإجمالي:</td>
-                        <td><?= number_format($grand_target, 2) ?> ج.م</td>
-                        <td class="text-primary"><?= number_format($grand_actual, 2) ?> ج.م</td>
-                        <td style="color:<?= $grand_diff>=0?'#16a34a':'#dc2626' ?>;"><?= ($grand_diff>=0?'+':'').number_format($grand_diff,2) ?> ج.م</td>
+                        <td><?= number_format($grand_target, 2) ?>  </td>
+                        <td class="text-primary"><?= number_format($grand_actual, 2) ?>  </td>
+                        <td style="color:<?= $grand_diff>=0?'#16a34a':'#dc2626' ?>;"><?= ($grand_diff>=0?'+':'').number_format($grand_diff,2) ?>  </td>
                         <td colspan="3" style="color:<?= achColor($grand_pct) ?>;font-size:1rem;"><?= $grand_pct ?>%</td>
                     </tr>
                 </tfoot>

@@ -19,7 +19,7 @@
                                         </label>
                                     </div>
                                     <div class="col-8">
-                                        <h4 class="mb-0 text-end" style="color: var(--primary-navy);" id="modal_total">0.00 ج.م</h4>
+                                        <h4 class="mb-0 text-end" style="color: var(--primary-navy);" id="modal_total">0.00  </h4>
                                     </div>
                                 </div>
                             </div>
@@ -58,7 +58,7 @@
                                         </label>
                                     </div>
                                     <div class="col-8">
-                                        <h3 class="mb-0 text-end" style="color: var(--primary-violet);" id="modal_net">0.00 ج.م</h3>
+                                        <h3 class="mb-0 text-end" style="color: var(--primary-violet);" id="modal_net">0.00  </h3>
                                     </div>
                                 </div>
                             </div>

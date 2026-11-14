@@ -132,7 +132,7 @@ if ($restables && $restables->num_rows > 0) {
 
                 <?php if ($orderTotal > 0): ?>
                 <div class="mt-2 badge bg-white text-dark border shadow-sm px-2 py-1 fs-6">
-                    <?= number_format($orderTotal, 2) ?> ج.م
+                    <?= number_format($orderTotal, 2) ?>  
                 </div>
                 <?php endif; ?>
             </div>
@@ -166,7 +166,7 @@ if ($restables && $restables->num_rows > 0) {
 
             <?php if ($orderTotal > 0): ?>
             <div class="mt-2 badge bg-white text-dark border shadow-sm px-2 py-1 fs-6">
-                <?= number_format($orderTotal, 2) ?> ج.م
+                <?= number_format($orderTotal, 2) ?>  
             </div>
             <?php endif; ?>
         </button>

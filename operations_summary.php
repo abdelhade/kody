@@ -505,7 +505,7 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                                             </div>
                                                             <div class="form-group border-bottom pb-2">
                                                                 <label class="font-weight-bold text-muted">قيمة الأجل:</label>
-                                                                <p class="h4 text-danger"><?= number_format($rowop['jal_amount'], 2) ?> ج.م</p>
+                                                                <p class="h4 text-danger"><?= number_format($rowop['jal_amount'], 2) ?>  </p>
                                                             </div>
                                                             <div class="form-group">
                                                                 <label class="font-weight-bold text-muted">ملاحظات:</label>

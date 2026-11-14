@@ -739,7 +739,7 @@ $(document).ready(function() {
                                      style="padding:10px; cursor:pointer; border-bottom:1px solid #eee;">
                                     <strong>${item.iname}</strong>
                                     ${item.name2 ? ' // ' + item.name2 : ''}
-                                    <span class="search-result-price" style="float:left; color:#10b981;">${listPrice} ج.م</span>
+                                    <span class="search-result-price" style="float:left; color:#10b981;">${listPrice}  </span>
                                 </div>
                             `;
                         });
@@ -753,7 +753,7 @@ $(document).ready(function() {
                                     if (!(base > 0)) return;
                                     el.dataset.price = base;
                                     var label = el.querySelector('.search-result-price');
-                                    if (label) label.textContent = base + ' ج.م';
+                                    if (label) label.textContent = base + '  ';
                                 });
                             });
                         }

@@ -152,13 +152,13 @@ $default_store_id = UserDefaults::get($conn, 'store') ?: $default_store_id;
             <div class="row mb-2">
                 <div class="col-6 text-center">
                     <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الإجمالي</small>
-                    <h6 class="mb-0 mt-1" style="color: var(--primary-navy); font-size: 1.35rem; font-weight: 800;" id="total_display">0.00 ج.م</h6>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-navy); font-size: 1.35rem; font-weight: 800;" id="total_display">0.00  </h6>
                     <input type="hidden" name="headtotal" id="total" value="0.00">
                     <input name="headplus" type="hidden" value="0">
                 </div>
                 <div class="col-6 text-center">
                     <small class="text-muted" style="font-size: 0.85rem; font-weight: bold;">الصافي</small>
-                    <h6 class="mb-0 mt-1" style="color: var(--primary-violet); font-size: 1.35rem; font-weight: 800;" id="net_display">0.00 ج.م</h6>
+                    <h6 class="mb-0 mt-1" style="color: var(--primary-violet); font-size: 1.35rem; font-weight: 800;" id="net_display">0.00  </h6>
                     <input type="hidden" name="headnet" id="net_val" value="0">
                     <input type="hidden" name="headdisc" id="discount" value="0">
                 </div>
@@ -167,7 +167,7 @@ $default_store_id = UserDefaults::get($conn, 'store') ?: $default_store_id;
             <div class="d-grid gap-1">
                 <button type="button" id="payBtn" class="btn btn-violet py-2" data-bs-toggle="modal" data-bs-target="#paymentModal" style="font-size: 1.15rem; font-weight: bold;">
                     <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
-                    <div style="font-size: 0.95rem; font-weight: bold;" id="total_display_btn">0.00 ج.م</div>
+                    <div style="font-size: 0.95rem; font-weight: bold;" id="total_display_btn">0.00  </div>
                 </button>
                 <button type="button" class="btn btn-outline-danger py-2" onclick="clearItems();" style="font-size: 0.95rem; font-weight: bold;">
                     <i class="fas fa-eraser me-1"></i>مسح الكل

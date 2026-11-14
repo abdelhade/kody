@@ -616,6 +616,32 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                       <label class="custom-control-label font-weight-bold text-primary" for="rd_highlight_net">تمييز الصافي بخط بارز</label>
                     </div>
                   </div>
+                  <div class="col-12"><hr class="my-2"></div>
+                  <div class="col-6 col-md-4">
+                    <div class="custom-control custom-switch mb-3">
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_vat" name="rd_show_vat" value="1" <?= !empty($rd['totals']['show_vat']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label font-weight-bold" for="rd_show_vat">تفصيل ضريبة القيمة المضافة (VAT)</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="custom-control custom-switch mb-3">
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_vat_qr" name="rd_show_vat_qr" value="1" <?= !empty($rd['totals']['show_vat_qr']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label font-weight-bold text-success" for="rd_show_vat_qr">QR ضريبة القيمة المضافة</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="custom-control custom-switch mb-3">
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_vat_inclusive" name="rd_vat_inclusive" value="1" <?= !empty($rd['totals']['vat_inclusive']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label" for="rd_vat_inclusive">الأسعار شاملة الضريبة</label>
+                    </div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="form-group mb-2">
+                      <label for="rd_vat_rate" class="small font-weight-bold">نسبة الضريبة %</label>
+                      <input type="number" class="form-control form-control-sm rd-live" id="rd_vat_rate" name="rd_vat_rate" min="0" max="100" step="0.01" value="<?= htmlspecialchars((string)($rd['totals']['vat_rate'] ?? 14), ENT_QUOTES, 'UTF-8') ?>">
+                      <small class="text-muted">مطلوب رقم ضريبي في الترويسة ليعمل الـ QR</small>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1544,6 +1570,10 @@ document.addEventListener('DOMContentLoaded', function () {
         setChecked('rd_show_company_tel', true);
         setChecked('rd_show_company_add', true);
         setChecked('rd_show_tax_no', true);
+        setChecked('rd_show_vat', true);
+        setChecked('rd_show_vat_qr', true);
+        setChecked('rd_vat_inclusive', true);
+        setVal('rd_vat_rate', 14);
         setChecked('rd_show_cr_no', true);
         setChecked('rd_show_invoice_num', true);
         setVal('rd_invoice_num_style', 'badge');

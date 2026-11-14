@@ -12,20 +12,7 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `kody2`
---
-
--- --------------------------------------------------------
-
---
--- Table structure for table `acc_groups`
---
 
 CREATE TABLE `acc_groups` (
   `id` int(1) NOT NULL,
@@ -40,11 +27,7 @@ CREATE TABLE `acc_groups` (
   `branch` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
 
---
--- Table structure for table `acc_head`
---
 
 CREATE TABLE `acc_head` (
   `id` int(1) NOT NULL,
@@ -76,9 +59,7 @@ CREATE TABLE `acc_head` (
   `branch` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `acc_head`
---
+
 
 INSERT INTO `acc_head` (`id`, `code`, `deletable`, `editable`, `aname`, `phone`, `address`, `e_mail`, `constant`, `is_stock`, `is_fund`, `rentable`, `parent_id`, `nature`, `kind`, `is_basic`, `start_balance`, `credit`, `debit`, `balance`, `secret`, `crtime`, `mdtime`, `info`, `isdeleted`, `tenant`, `branch`) VALUES
 (1, '1', 0, 0, 'الاصول', NULL, NULL, NULL, 0, 0, 0, NULL, 0, 1, 1, 1, 0, 0, 0, 0.000, 0, '2023-11-25 00:55:49', '2024-11-16 20:16:48', NULL, 0, 0, 0),
@@ -127,11 +108,7 @@ INSERT INTO `acc_head` (`id`, `code`, `deletable`, `editable`, `aname`, `phone`,
 (131, '213001', 0, 1, 'الموظف 1', NULL, NULL, NULL, 0, 0, 0, 0, 35, NULL, 1, 0, 0, 0, 0, 20535.000, 0, '2024-06-18 06:41:56', '2025-10-28 08:51:24', NULL, 0, 0, 0),
 (148, '122001', 0, 0, 'العميل الافتراضي', '', '', NULL, 0, 0, 0, 0, 19, NULL, 1, 0, 0, 0, 0, 595.000, 0, '2024-06-22 22:26:46', '2025-10-28 08:51:22', NULL, 0, 0, 0);
 
--- --------------------------------------------------------
 
---
--- Table structure for table `allowances`
---
 
 CREATE TABLE `allowances` (
   `id` int(11) NOT NULL,
@@ -145,11 +122,7 @@ CREATE TABLE `allowances` (
   `branch` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
 
---
--- Table structure for table `analisys`
---
 
 CREATE TABLE `analisys` (
   `id` int(11) NOT NULL,
@@ -166,11 +139,7 @@ CREATE TABLE `analisys` (
   `branch` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
 
---
--- Table structure for table `attandance`
---
 
 CREATE TABLE `attandance` (
   `id` int(11) NOT NULL,
@@ -186,9 +155,7 @@ CREATE TABLE `attandance` (
   `branch` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `attandance`
---
+
 
 INSERT INTO `attandance` (`id`, `employee`, `fptybe`, `fpdate`, `time`, `user`, `crtime`, `isdeleted`, `fromwhere`, `tenant`, `branch`) VALUES
 (757, 138, 1, '2026-02-03', '10:00:00', 1, '2026-02-03 12:27:07', 1, NULL, 0, 0);

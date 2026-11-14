@@ -74,7 +74,7 @@ $months_ar = [
                         </div>
 
                         <div class="form-group">
-                            <label class="font-weight-bold text-secondary" style="font-size:.85rem;">قيمة التارجيت (ج.م)</label>
+                            <label class="font-weight-bold text-secondary" style="font-size:.85rem;">قيمة التارجيت ( )</label>
                             <input type="number" step="0.01" min="0" name="target_value" id="target_value"
                                    class="form-control form-control-sm" placeholder="مثال: 50000">
                         </div>
@@ -159,7 +159,7 @@ $months_ar = [
                       + '<div>' + badge
                       + '<span class="font-weight-bold">' + period + '</span>'
                       + notes + '</div>'
-                      + '<div class="target-value">' + parseFloat(t.target_value).toLocaleString('ar-EG', {minimumFractionDigits:2}) + ' ج.م</div>'
+                      + '<div class="target-value">' + parseFloat(t.target_value).toLocaleString('ar-EG', {minimumFractionDigits:2}) + '  </div>'
                       + '</div>';
             });
             $('#targetsList').html(html);

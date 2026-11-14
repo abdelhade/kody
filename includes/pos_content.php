@@ -427,8 +427,8 @@ body {
                                 <input name="headplus" type="hidden">
                                 <input type="hidden" name="headnet" id="net_val" value="0">
                                 <input type="hidden" name="headdisc" id="discount" value="0">
-                                <span id="total_display" class="d-none">0.00 ج.م</span>
-                                <span id="net_display" class="d-none">0.00 ج.م</span>
+                                <span id="total_display" class="d-none">0.00  </span>
+                                <span id="net_display" class="d-none">0.00  </span>
                                 <div id="selectedTableDisplay" class="badge bg-primary text-white mb-2"
                                     style="font-size: 0.7rem; display: none;">
                                     <i class="fas fa-chair me-1"></i><span id="selectedTableName"></span>
@@ -440,12 +440,12 @@ body {
                                 <button type="button" class="btn btn-warning w-100 fw-bold mb-2 d-none"
                                     id="holdOrderBtn" onclick="submitPOS('hold');">
                                     <i class="fas fa-clock me-1"></i>حفظ معلّق
-                                    <span class="fw-bold ms-1" id="hold_total_display">0.00 ج.م</span>
+                                    <span class="fw-bold ms-1" id="hold_total_display">0.00  </span>
                                 </button>
                                 <button type="button" class="btn btn-primary w-100 order-pay-btn"
                                     data-bs-toggle="modal" data-bs-target="#paymentModal">
                                     <i class="fas fa-money-bill-wave me-1"></i>دفع وحفظ
-                                    <span class="fw-bold ms-1" id="total_display_btn">0.00 ج.م</span>
+                                    <span class="fw-bold ms-1" id="total_display_btn">0.00  </span>
                                 </button>
                             </div>
                     </div>
@@ -581,7 +581,7 @@ body {
                                             <div class="bg-primary rounded px-2 py-1 mb-2">
                                                 <p class="card-text fw-bold text-white mb-0" style="font-size: 1.1rem;">
                                                     <span class="item-card-price"><?= number_format($itemPrice, 2) ?></span> <span
-                                                        class="text-white opacity-75">ج.م</span>
+                                                        class="text-white opacity-75"> </span>
                                                 </p>
                                             </div>
 
@@ -619,15 +619,15 @@ body {
                     <div class="pay-summary-strip">
                         <div class="pay-stat">
                             <span class="pay-stat-lbl">الإجمالي</span>
-                            <strong class="pay-stat-val text-primary" id="modal_total">0.00 ج.م</strong>
+                            <strong class="pay-stat-val text-primary" id="modal_total">0.00  </strong>
                         </div>
                         <div class="pay-stat">
                             <span class="pay-stat-lbl">الصافي</span>
-                            <strong class="pay-stat-val text-success" id="modal_net">0.00 ج.م</strong>
+                            <strong class="pay-stat-val text-success" id="modal_net">0.00  </strong>
                         </div>
                         <div class="pay-stat">
                             <span class="pay-stat-lbl">الباقي</span>
-                            <strong class="pay-stat-val text-danger" id="modal_change">0.00 ج.م</strong>
+                            <strong class="pay-stat-val text-danger" id="modal_change">0.00  </strong>
                         </div>
                     </div>
 
@@ -646,7 +646,7 @@ body {
 
                     <div class="pay-old-paid" id="old_payment_container" style="display: none;">
                         <span><i class="fas fa-history"></i> مدفوع سابقاً</span>
-                        <strong class="text-info" id="old_paid_display">0.00 ج.م</strong>
+                        <strong class="text-info" id="old_paid_display">0.00  </strong>
                     </div>
 
                     <div class="row g-1 pay-row">
@@ -667,7 +667,7 @@ body {
                             <div class="input-group input-group-sm mt-1">
                                 <input class="form-control text-center fw-bold" type="number"
                                     id="modal_paid_cash" value="0.00" step="0.01" min="0">
-                                <span class="input-group-text">ج.م</span>
+                                <span class="input-group-text"> </span>
                             </div>
                         </div>
                         <div class="col-6">
@@ -683,7 +683,7 @@ body {
                             <div class="input-group input-group-sm mt-1">
                                 <input class="form-control text-center fw-bold" type="number"
                                     id="modal_paid_bank" value="0.00" step="0.01" min="0">
-                                <span class="input-group-text">ج.م</span>
+                                <span class="input-group-text"> </span>
                             </div>
                         </div>
                     </div>
@@ -731,7 +731,7 @@ body {
                         </div>
                         <div class="col-6">
                             <label class="text-muted small">السعر</label>
-                            <p class="fw-bold text-success fs-5" id="modal_item_price">0.00 ج.م</p>
+                            <p class="fw-bold text-success fs-5" id="modal_item_price">0.00  </p>
                         </div>
                         <div class="col-12">
                             <label class="text-muted small">الوصف</label>
@@ -784,15 +784,15 @@ body {
                                 </tr>
                                 <tr>
                                     <td class="text-start py-2 px-3">إجمالي المبيعات</td>
-                                    <td class="py-2 px-3" id="shift_total_gross">0.00 ج.م</td>
+                                    <td class="py-2 px-3" id="shift_total_gross">0.00  </td>
                                 </tr>
                                 <tr>
                                     <td class="text-start py-2 px-3">إجمالي الخصومات</td>
-                                    <td class="py-2 px-3 text-danger" id="shift_total_discount">0.00 ج.م</td>
+                                    <td class="py-2 px-3 text-danger" id="shift_total_discount">0.00  </td>
                                 </tr>
                                 <tr class="table-success fw-bold">
                                     <td class="text-start py-2 px-3">صافي المبيعات</td>
-                                    <td class="py-2 px-3 text-success" id="shift_total_net">0.00 ج.م</td>
+                                    <td class="py-2 px-3 text-success" id="shift_total_net">0.00  </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -960,7 +960,7 @@ body {
 
                             if (response.success) {
                                 var d = response.data;
-                                var fmt = function (v) { return d.blind ? '—' : parseFloat(v || 0).toFixed(2) + ' ج.م'; };
+                                var fmt = function (v) { return d.blind ? '—' : parseFloat(v || 0).toFixed(2) + '  '; };
                                 $('#shift_cashier_name').text(d.cashier_name || 'الكاشير');
                                 $('#shift_total_orders').text(d.total_orders || 0);
                                 $('#shift_total_gross').text(fmt(d.total_gross));
@@ -969,26 +969,26 @@ body {
                             } else {
                                 $('#shift_cashier_name').text('خطأ');
                                 $('#shift_total_orders').text('0');
-                                $('#shift_total_gross').text('0.00 ج.م');
-                                $('#shift_total_discount').text('0.00 ج.م');
-                                $('#shift_total_net').text('0.00 ج.م');
+                                $('#shift_total_gross').text('0.00  ');
+                                $('#shift_total_discount').text('0.00  ');
+                                $('#shift_total_net').text('0.00  ');
                             }
                         } catch (e) {
                             console.error('Error parsing shift info:', e);
                             $('#shift_cashier_name').text('خطأ');
                             $('#shift_total_orders').text('0');
-                            $('#shift_total_gross').text('0.00 ج.م');
-                            $('#shift_total_discount').text('0.00 ج.م');
-                            $('#shift_total_net').text('0.00 ج.م');
+                            $('#shift_total_gross').text('0.00  ');
+                            $('#shift_total_discount').text('0.00  ');
+                            $('#shift_total_net').text('0.00  ');
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('AJAX Error:', error);
                         $('#shift_cashier_name').text('خطأ');
                         $('#shift_total_orders').text('0');
-                        $('#shift_total_gross').text('0.00 ج.م');
-                        $('#shift_total_discount').text('0.00 ج.م');
-                        $('#shift_total_net').text('0.00 ج.م');
+                        $('#shift_total_gross').text('0.00  ');
+                        $('#shift_total_discount').text('0.00  ');
+                        $('#shift_total_net').text('0.00  ');
                     }
                 });
             }
@@ -1005,7 +1005,7 @@ body {
                                 var cashierName = response.data.cashier_name || 'الكاشير';
                                 var shiftLabel = response.data.blind
                                     ? (response.data.total_orders || 0) + ' فاتورة'
-                                    : parseFloat(response.data.total_net || 0).toFixed(2) + ' ج.م';
+                                    : parseFloat(response.data.total_net || 0).toFixed(2) + '  ';
                                 $('#shift_info_display').text(cashierName + ' - ' + shiftLabel);
                             } else {
                                 $('#shift_info_display').text('غير متاح');
@@ -1998,7 +1998,7 @@ body {
                         html += '</tbody></table></div>';
                         html += `<div class="d-flex justify-content-between align-items-center px-2 pt-2">
                             <span class="text-muted small">عدد الأصناف: <strong>${res.items.length}</strong></span>
-                            <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span> ج.م</span>
+                            <span class="fw-bold text-success">الإجمالي: <span id="items-total-${orderId}">${parseFloat(res.total).toFixed(2)}</span>  </span>
                         </div>`;
                         $('#orderItemsBody').html(html);
                     },

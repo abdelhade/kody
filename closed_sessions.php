@@ -96,21 +96,21 @@ endif;
                         <span class="badge badge-light px-2 py-1" style="font-size: 0.85rem;"><i class="far fa-clock text-secondary me-1"></i><?= $rowcl['endtime'] ?></span>
                     </td>
                     <td>
-                        <span class="badge badge-success px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);"><?= number_format((float) $rowcl['total_sales'] - (float) ($rowcl['total_returns'] ?? 0), 2) ?> ج.م</span>
+                        <span class="badge badge-success px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);"><?= number_format((float) $rowcl['total_sales'] - (float) ($rowcl['total_returns'] ?? 0), 2) ?>  </span>
                     </td>
                     <td>
                         <?php if ($rowcl['expenses'] > 0): ?>
-                            <span class="badge badge-danger px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);"><?= number_format($rowcl['expenses'], 2) ?> ج.م</span>
+                            <span class="badge badge-danger px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);"><?= number_format($rowcl['expenses'], 2) ?>  </span>
                         <?php else: ?>
                             <span class="text-muted">-</span>
                         <?php endif; ?>
                     </td>
                     <td class="text-wrap" style="max-width: 150px;"><?= htmlspecialchars($rowcl['exp_notes'] ?? '') ?: '<span class="text-muted">-</span>' ?></td>
                     <td>
-                        <span class="badge badge-info px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);"><?= number_format($rowcl['cash'], 2) ?> ج.م</span>
+                        <span class="badge badge-info px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);"><?= number_format($rowcl['cash'], 2) ?>  </span>
                     </td>
                     <td>
-                        <span class="badge badge-secondary px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(108, 117, 125, 0.15);"><?= number_format($rowcl['fund_after'], 2) ?> ج.م</span>
+                        <span class="badge badge-secondary px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(108, 117, 125, 0.15);"><?= number_format($rowcl['fund_after'], 2) ?>  </span>
                     </td>
                     <td>
                         <?php if ((int) ($rowcl['user_id'] ?? 0) > 0): $diff = (float) $rowcl['deficit']; ?>

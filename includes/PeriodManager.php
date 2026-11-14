@@ -218,6 +218,8 @@ class PeriodManager
             ];
         }
 
+        $this->allowLongRun();
+
         $admin = $this->adminConnection();
         $sqlCreate = "CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
         if (!$admin->query($sqlCreate)) {
@@ -226,6 +228,20 @@ class PeriodManager
                 'message' => "فشل إنشاء قاعدة البيانات: " . $admin->error,
             ];
         }
+
+        // لو السكريبت وقف في النص (timeout/crash) متسيبش قاعدة ناقصة تمنع إعادة المحاولة
+        $finished = false;
+        register_shutdown_function(function () use (&$finished, $dbName) {
+            if ($finished) {
+                return;
+            }
+            try {
+                $c = $this->adminConnection();
+                $c->query("DROP DATABASE IF EXISTS `$dbName`");
+                $c->close();
+            } catch (Throwable $e) {
+            }
+        });
 
         $admin->select_db($dbName);
         $admin->query('SET FOREIGN_KEY_CHECKS = 0');
@@ -236,6 +252,7 @@ class PeriodManager
 
         if (empty($import['success'])) {
             $admin->query("DROP DATABASE `$dbName`");
+            $finished = true;
             return [
                 'success' => false,
                 'message' => 'فشل استيراد الهيكل الأساسي: ' . ($import['message'] ?? 'خطأ غير معروف'),
@@ -246,6 +263,7 @@ class PeriodManager
         $runner = new MigrationRunner($admin);
         $mig = $runner->runPending();
         $this->ensurePeriodMeta($admin, $dbName, $label ?: $dbName, null);
+        $finished = true;
 
         $this->registerDatabase($dbName, $label, null, true);
 
@@ -274,6 +292,8 @@ class PeriodManager
                 'message' => 'ملف النسخة الاحتياطية غير موجود على السيرفر',
             ];
         }
+
+        $this->allowLongRun();
 
         $admin = $this->adminConnection();
         $sqlCreate = "CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci";
@@ -356,6 +376,8 @@ class PeriodManager
         if ($this->databaseExists($newDbName)) {
             throw new RuntimeException("القاعدة `$newDbName` موجودة مسبقاً");
         }
+
+        $this->allowLongRun();
 
         $admin = $this->adminConnection();
         $admin->query(
@@ -715,6 +737,13 @@ class PeriodManager
         $ok = $res && $res->num_rows > 0;
         $stmt->close();
         return $ok;
+    }
+
+    /** إنشاء/استعادة القاعدة على HDD بطيء ممكن يعدّي max_execution_time (120ث في XAMPP) */
+    private function allowLongRun(): void
+    {
+        @set_time_limit(0);
+        @ignore_user_abort(true);
     }
 
     private function adminConnection(): mysqli

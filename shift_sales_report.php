@@ -157,23 +157,23 @@ include('includes/header.php');
                                         </tr>
                                         <tr>
                                             <td><strong>الإجمالي:</strong></td>
-                                            <td class="text-end"><?= number_format($sales_data['total_sales'], 2) ?> ج.م</td>
+                                            <td class="text-end"><?= number_format($sales_data['total_sales'], 2) ?>  </td>
                                         </tr>
                                         <?php if ($sales_data['total_discounts'] > 0): ?>
                                         <tr>
                                             <td><strong>الخصم:</strong></td>
-                                            <td class="text-end text-danger"><?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+                                            <td class="text-end text-danger"><?= number_format($sales_data['total_discounts'], 2) ?>  </td>
                                         </tr>
                                         <?php endif; ?>
                                         <?php if ((float) $sales_data['returns_total'] > 0): ?>
                                         <tr>
                                             <td><strong>المردودات:</strong></td>
-                                            <td class="text-end text-danger">- <?= number_format($sales_data['returns_total'], 2) ?> ج.م</td>
+                                            <td class="text-end text-danger">- <?= number_format($sales_data['returns_total'], 2) ?>  </td>
                                         </tr>
                                         <?php endif; ?>
                                         <tr class="table-success">
                                             <td><strong>الصافي:</strong></td>
-                                            <td class="text-end"><strong><?= number_format($sales_data['net_sales'], 2) ?> ج.م</strong></td>
+                                            <td class="text-end"><strong><?= number_format($sales_data['net_sales'], 2) ?>  </strong></td>
                                         </tr>
                                     </table>
                                 </div>
@@ -213,8 +213,8 @@ include('includes/header.php');
                                                     <td><?= $item['iname'] ?></td>
                                                     <td><code><?= $item['barcode'] ?: 'غير محدد' ?></code></td>
                                                     <td class="text-center"><?= number_format($item['total_qty'], 1) ?></td>
-                                                    <td class="text-center"><?= number_format($item['price'], 2) ?> ج.م</td>
-                                                    <td class="text-center"><strong><?= number_format($item['total_value'], 2) ?> ج.م</strong></td>
+                                                    <td class="text-center"><?= number_format($item['price'], 2) ?>  </td>
+                                                    <td class="text-center"><strong><?= number_format($item['total_value'], 2) ?>  </strong></td>
                                                     <td class="text-center"><?= $item['order_count'] ?></td>
                                                 </tr>
                                                 <?php endwhile; ?>
@@ -255,7 +255,7 @@ include('includes/header.php');
                                                     <td>
                                                         <span class="badge bg-primary"><?= $invoice['order_type'] ?></span>
                                                     </td>
-                                                    <td class="text-end"><strong><?= number_format($invoice['fat_net'], 2) ?> ج.م</strong></td>
+                                                    <td class="text-end"><strong><?= number_format($invoice['fat_net'], 2) ?>  </strong></td>
                                                     <td><?= $invoice['info'] ?: '-' ?></td>
                                                 </tr>
                                                 <?php endwhile; ?>

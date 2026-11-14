@@ -220,7 +220,7 @@ $can_pos_delivery = Can::userCan($conn, $posUserId, 'pos.delivery') && Can::user
                                     <input type="hidden" class="priceInput" value="<?= $price ?>" name="itmprice[]">
                                     <input type="hidden" name="itmdisc[]" value="0">
                                     <input type="hidden" class="subtotal" readonly value="<?= $subtotal ?>" name="itmval[]">
-                                    <span class="text-primary fw-bold display-subtotal"><?= number_format($subtotal, 2, '.', '') ?> ج.م</span>
+                                    <span class="text-primary fw-bold display-subtotal"><?= number_format($subtotal, 2, '.', '') ?>  </span>
                                 </div>
                             </div>
                         </div>
@@ -236,7 +236,7 @@ $can_pos_delivery = Can::userCan($conn, $posUserId, 'pos.delivery') && Can::user
     <div class="bg-white border-top shadow-lg z-2 p-2 mt-auto" style="position: sticky; bottom: 0; left: 0; right: 0;">
         <div class="d-flex justify-content-between align-items-center mb-2 px-1">
             <span class="text-muted fw-bold">الإجمالي</span>
-            <h4 class="text-primary mb-0 fw-bold" id="total_display">0.00 ج.م</h4>
+            <h4 class="text-primary mb-0 fw-bold" id="total_display">0.00  </h4>
             <input type="hidden" name="headtotal" id="total" value="0">
             <input name="headplus" type="hidden">
             <input type="hidden" name="headnet" id="net_val" value="0">
@@ -306,7 +306,7 @@ $can_pos_delivery = Can::userCan($conn, $posUserId, 'pos.delivery') && Can::user
                     <div class="input-group input-group-lg">
                         <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('modal_paid_cash').value = parseFloat(document.getElementById('modal_net_display').innerText); calcRemaining();">كل المبلغ</button>
                         <input class="form-control text-center fw-bold text-primary" type="number" id="modal_paid_cash" value="0.00" step="0.01" min="0">
-                        <span class="input-group-text">ج.م</span>
+                        <span class="input-group-text"> </span>
                     </div>
                     
                     <div class="d-flex justify-content-between mt-3 text-muted">

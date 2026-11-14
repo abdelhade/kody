@@ -169,33 +169,33 @@ if (file_exists($logo_path)) {
 
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th style="width:35%">اجمالي:</th>
-<td class="float-right"><?= number_format($sales_data['total_sales'], 2) ?> ج.م</td>
+<td class="float-right"><?= number_format($sales_data['total_sales'], 2) ?>  </td>
 </tr>
 
 <?php if ($sales_data['total_discounts'] > 0) { ?>
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th>خصم:</th>
-<td class="float-right">- <?= number_format($sales_data['total_discounts'], 2) ?> ج.م</td>
+<td class="float-right">- <?= number_format($sales_data['total_discounts'], 2) ?>  </td>
 </tr>
 <?php } ?>
 
 <?php if ($sales_data['total_plus'] > 0) { ?>
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th>إضافي:</th>
-<td class="float-right">+ <?= number_format($sales_data['total_plus'], 2) ?> ج.م</td>
+<td class="float-right">+ <?= number_format($sales_data['total_plus'], 2) ?>  </td>
 </tr>
 <?php } ?>
 
 <?php if ((float) $sales_data['returns_total'] > 0) { ?>
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th>مردودات:</th>
-<td class="float-right">- <?= number_format($sales_data['returns_total'], 2) ?> ج.م</td>
+<td class="float-right">- <?= number_format($sales_data['returns_total'], 2) ?>  </td>
 </tr>
 <?php } ?>
 
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">
 <th>الصافي:</th>
-<td class="float-right"><strong><?= number_format($sales_data['net_sales'], 2) ?> ج.م</strong></td>
+<td class="float-right"><strong><?= number_format($sales_data['net_sales'], 2) ?>  </strong></td>
 </tr>
 
 <tr class="bg-slate-100 border-b-2 border-l-2 border-slate-900">

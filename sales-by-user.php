@@ -154,32 +154,32 @@ $stmt->close();
                 <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-info p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي المبيعات</h6>
-                        <h4><?= number_format($grand_total_sales, 2) ?> ج.م</h4>
+                        <h4><?= number_format($grand_total_sales, 2) ?>  </h4>
                     </div>
                 </div>
                 <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-warning p-3 text-center text-dark shadow-sm" style="border-radius: 10px;"
                          <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
                         <h6>إجمالي الخصم</h6>
-                        <h4><?= number_format($grand_total_discount, 2) ?> ج.م</h4>
+                        <h4><?= number_format($grand_total_discount, 2) ?>  </h4>
                     </div>
                 </div>
                 <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-danger p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي المردودات</h6>
-                        <h4><?= number_format($grand_total_returns, 2) ?> ج.م</h4>
+                        <h4><?= number_format($grand_total_returns, 2) ?>  </h4>
                     </div>
                 </div>
                 <div class="col-lg col-md-6 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-primary p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>صافي المبيعات</h6>
-                        <h4><?= number_format($grand_total_net, 2) ?> ج.م</h4>
+                        <h4><?= number_format($grand_total_net, 2) ?>  </h4>
                     </div>
                 </div>
                 <div class="col-lg col-md-6 col-sm-12 col-12 mb-2">
                     <div class="small-box bg-success p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>إجمالي العمولات</h6>
-                        <h4><?= number_format($grand_total_commission, 2) ?> ج.م</h4>
+                        <h4><?= number_format($grand_total_commission, 2) ?>  </h4>
                     </div>
                 </div>
             </div>
@@ -207,15 +207,15 @@ $stmt->close();
                                         <tr class="text-center">
                                             <td><?= $x ?></td>
                                             <td class="text-right font-weight-bold"><?= htmlspecialchars($row['user_name']) ?></td>
-                                            <td class="font-weight-bold text-info"><?= number_format($row['total_sales'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold text-info"><?= number_format($row['total_sales'], 2) ?>  </td>
                                             <td class="font-weight-bold" style="color: #d97706;">
                                                 <?php if ($row['total_discount'] > 0): ?>
                                                     <span <?php if ($row['return_discount'] > 0): ?>title="خصم مبيعات: <?= number_format($row['sales_discount'], 2) ?> − خصم مردود: <?= number_format($row['return_discount'], 2) ?>"<?php endif; ?>>
-                                                        − <?= number_format($row['total_discount'], 2) ?> ج.م
+                                                        − <?= number_format($row['total_discount'], 2) ?>  
                                                     </span>
                                                 <?php elseif ($row['total_discount'] < 0): ?>
                                                     <span <?php if ($row['return_discount'] > 0): ?>title="خصم مبيعات: <?= number_format($row['sales_discount'], 2) ?> − خصم مردود: <?= number_format($row['return_discount'], 2) ?>"<?php endif; ?>>
-                                                        + <?= number_format(abs($row['total_discount']), 2) ?> ج.م
+                                                        + <?= number_format(abs($row['total_discount']), 2) ?>  
                                                     </span>
                                                 <?php else: ?>
                                                     <span class="text-muted">—</span>
@@ -223,14 +223,14 @@ $stmt->close();
                                             </td>
                                             <td class="font-weight-bold text-danger">
                                                 <?php if ($row['total_returns'] > 0): ?>
-                                                    <span>− <?= number_format($row['total_returns'], 2) ?> ج.م</span>
+                                                    <span>− <?= number_format($row['total_returns'], 2) ?>  </span>
                                                 <?php else: ?>
                                                     <span class="text-muted">—</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="font-weight-bold text-primary"><?= number_format($row['net_sales'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold text-primary"><?= number_format($row['net_sales'], 2) ?>  </td>
                                             <td><span class="badge badge-info font-weight-normal"><?= number_format($row['commission_pct'], 2) ?> %</span></td>
-                                            <td class="font-weight-bold text-success"><?= number_format($row['commission_val'], 2) ?> ج.م</td>
+                                            <td class="font-weight-bold text-success"><?= number_format($row['commission_val'], 2) ?>  </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
@@ -246,24 +246,24 @@ $stmt->close();
                                 <tfoot class="bg-light font-weight-bold text-center">
                                     <tr>
                                         <td colspan="2" class="text-right">الإجمالي الكلي:</td>
-                                        <td class="text-info"><?= number_format($grand_total_sales, 2) ?> ج.م</td>
+                                        <td class="text-info"><?= number_format($grand_total_sales, 2) ?>  </td>
                                         <td style="color: #d97706;">
                                             <?php if ($grand_total_discount > 0): ?>
                                                 <span <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
-                                                    − <?= number_format($grand_total_discount, 2) ?> ج.م
+                                                    − <?= number_format($grand_total_discount, 2) ?>  
                                                 </span>
                                             <?php elseif ($grand_total_discount < 0): ?>
                                                 <span <?php if ($grand_return_discount > 0): ?>title="خصم مبيعات: <?= number_format($grand_sales_discount, 2) ?> − خصم مردود: <?= number_format($grand_return_discount, 2) ?>"<?php endif; ?>>
-                                                    + <?= number_format(abs($grand_total_discount), 2) ?> ج.م
+                                                    + <?= number_format(abs($grand_total_discount), 2) ?>  
                                                 </span>
                                             <?php else: ?>
                                                 —
                                             <?php endif; ?>
                                         </td>
-                                        <td class="text-danger"><?= $grand_total_returns > 0 ? '− ' . number_format($grand_total_returns, 2) . ' ج.م' : '—' ?></td>
-                                        <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_net, 2) ?> ج.م</td>
+                                        <td class="text-danger"><?= $grand_total_returns > 0 ? '− ' . number_format($grand_total_returns, 2) . '  ' : '—' ?></td>
+                                        <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_net, 2) ?>  </td>
                                         <td>-</td>
-                                        <td class="text-success" style="font-size: 1.1rem;"><?= number_format($grand_total_commission, 2) ?> ج.م</td>
+                                        <td class="text-success" style="font-size: 1.1rem;"><?= number_format($grand_total_commission, 2) ?>  </td>
                                     </tr>
                                 </tfoot>
                             <?php endif; ?>

@@ -33,7 +33,7 @@
                                    id="total" 
                                    value="0.00"
                                    style="font-size: 1.2rem;">
-                            <span class="input-group-text bg-primary text-white">ج.م</span>
+                            <span class="input-group-text bg-primary text-white"> </span>
                         </div>
                         <input name="headplus" type="hidden">
                     </div>
@@ -67,7 +67,7 @@
                                    id="discount" 
                                    value="0"
                                    step="0.01">
-                            <span class="input-group-text">ج.م</span>
+                            <span class="input-group-text"> </span>
                         </div>
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                                    value="0"
                                    readonly
                                    style="font-size: 1.5rem; border: 2px solid #28a745;">
-                            <span class="input-group-text bg-success text-white fw-bold">ج.م</span>
+                            <span class="input-group-text bg-success text-white fw-bold"> </span>
                         </div>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
                                    id="paid" 
                                    value="0.00"
                                    step="0.01">
-                            <span class="input-group-text">ج.م</span>
+                            <span class="input-group-text"> </span>
                         </div>
                     </div>
                     <div class="col-6">
@@ -131,7 +131,7 @@
                                    id="change" 
                                    value="0.00"
                                    readonly>
-                            <span class="input-group-text bg-danger text-white">ج.م</span>
+                            <span class="input-group-text bg-danger text-white"> </span>
                         </div>
                     </div>
                 </div>

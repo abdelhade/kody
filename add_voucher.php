@@ -249,13 +249,13 @@ if ($is_edit && $rowedit) {
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
                         <div class="d-flex align-items-center gap-1">
                           <span class="text-muted small"><i class="fas fa-cash-register ml-1"></i>المسلّم قبل:</span>
-                          <strong id="fundBalBefore" class="text-dark ml-1">0.00 ج.م</strong>
+                          <strong id="fundBalBefore" class="text-dark ml-1">0.00  </strong>
                           <span id="fundBalBeforeTag" class="badge badge-light border"></span>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                           <i class="fas fa-arrow-left text-muted mx-1 small"></i>
                           <span class="text-muted small">المسلّم بعد:</span>
-                          <strong id="fundBalAfter" class="font-weight-bold ml-1 text-primary">0.00 ج.م</strong>
+                          <strong id="fundBalAfter" class="font-weight-bold ml-1 text-primary">0.00  </strong>
                           <span id="fundBalAfterStatusTag" class="badge badge-light border"></span>
                           <span id="fundBalAfterTag" class="badge badge-light border"></span>
                         </div>
@@ -293,13 +293,13 @@ if ($is_edit && $rowedit) {
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
                         <div>
                           <span class="text-muted small"><i class="fas fa-wallet ml-1"></i>المستلم قبل:</span>
-                          <strong id="accBalBefore" class="text-dark ml-1">0.00 ج.م</strong>
+                          <strong id="accBalBefore" class="text-dark ml-1">0.00  </strong>
                           <span id="accBalBeforeTag" class="badge badge-light border"></span>
                         </div>
                         <div>
                           <i class="fas fa-arrow-left text-muted mx-1 small"></i>
                           <span class="text-muted small">المستلم بعد:</span>
-                          <strong id="accBalAfter" class="font-weight-bold ml-1 text-success">0.00 ج.م</strong>
+                          <strong id="accBalAfter" class="font-weight-bold ml-1 text-success">0.00  </strong>
                           <span id="accBalAfterTag" class="badge badge-light border"></span>
                         </div>
                       </div>
@@ -345,13 +345,13 @@ if ($is_edit && $rowedit) {
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
                         <div>
                           <span class="text-muted small">قبل:</span>
-                          <strong id="accBalBefore" class="text-dark ml-1">0.00 ج.م</strong>
+                          <strong id="accBalBefore" class="text-dark ml-1">0.00  </strong>
                           <span id="accBalBeforeTag" class="badge badge-light border"></span>
                         </div>
                         <div>
                           <i class="fas fa-arrow-left text-muted mx-1 small"></i>
                           <span class="text-muted small">بعد:</span>
-                          <strong id="accBalAfter" class="font-weight-bold ml-1 text-success">0.00 ج.م</strong>
+                          <strong id="accBalAfter" class="font-weight-bold ml-1 text-success">0.00  </strong>
                           <span id="accBalAfterTag" class="badge badge-light border"></span>
                         </div>
                       </div>
@@ -392,13 +392,13 @@ if ($is_edit && $rowedit) {
                       <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
                         <div class="d-flex align-items-center gap-1">
                           <span class="text-muted small"><i class="fas fa-cash-register ml-1"></i>الخزينة قبل:</span>
-                          <strong id="fundBalBefore" class="text-dark ml-1">0.00 ج.م</strong>
+                          <strong id="fundBalBefore" class="text-dark ml-1">0.00  </strong>
                           <span id="fundBalBeforeTag" class="badge badge-light border"></span>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                           <i class="fas fa-arrow-left text-muted mx-1 small"></i>
                           <span class="text-muted small">الخزينة بعد:</span>
-                          <strong id="fundBalAfter" class="font-weight-bold ml-1 text-primary">0.00 ج.م</strong>
+                          <strong id="fundBalAfter" class="font-weight-bold ml-1 text-primary">0.00  </strong>
                           <span id="fundBalAfterStatusTag" class="badge badge-light border"></span>
                           <span id="fundBalAfterTag" class="badge badge-light border"></span>
                         </div>
@@ -496,7 +496,7 @@ $(document).ready(function() {
   function formatMoney(amount, showSign = false) {
     const isNegative = amount < -0.001;
     const abs = Math.abs(amount);
-    const formatted = abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ج.م";
+    const formatted = abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "  ";
     if (showSign && isNegative) {
       return "-" + formatted;
     }

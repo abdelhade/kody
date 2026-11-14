@@ -104,7 +104,7 @@ $banks = $conn->query("SELECT * FROM acc_head WHERE (parent_id = 124 OR code LIK
                                         <td><?= $fund['code'] ?></td>
                                         <td><?= htmlspecialchars($fund['aname']) ?></td>
                                         <td class="text-end <?= $balance_class ?>">
-                                            <?= number_format($balance, 2) ?> ج.م
+                                            <?= number_format($balance, 2) ?>  
                                         </td>
                                     </tr>
                                     <?php
@@ -145,7 +145,7 @@ $banks = $conn->query("SELECT * FROM acc_head WHERE (parent_id = 124 OR code LIK
                                         <td><?= $bank['code'] ?></td>
                                         <td><?= htmlspecialchars($bank['aname']) ?></td>
                                         <td class="text-end <?= $balance_class ?>">
-                                            <?= number_format($balance, 2) ?> ج.م
+                                            <?= number_format($balance, 2) ?>  
                                         </td>
                                     </tr>
                                     <?php

@@ -156,7 +156,7 @@ $(document).ready(function() {
                                 <strong class="text-dark d-block">${item.item.name}</strong>
                                 <small class="text-muted">${item.item.barcode || 'بدون باركود'}</small>
                             </div>
-                            <span class="badge bg-primary fs-6">${priceFromItem(item.item).toFixed(2)} ج.م</span>
+                            <span class="badge bg-primary fs-6">${priceFromItem(item.item).toFixed(2)}  </span>
                          </div>`)
                 .appendTo(ul);
         };
@@ -166,9 +166,9 @@ $(document).ready(function() {
     // Payment Modal Calculation
     $('#paymentModal').on('shown.bs.modal', function() {
         let net = parseFloat($('#net_val').val()) || 0;
-        $('#modal_net_large').text(net.toFixed(2) + ' ج.م');
+        $('#modal_net_large').text(net.toFixed(2) + '  ');
         $('#modal_paid_cash').val(net.toFixed(2));
-        $('#modal_change').text('0.00 ج.م');
+        $('#modal_change').text('0.00  ');
         if (window.openedByPlus) {
             $('#btn_save_print').focus();
             window.openedByPlus = false;
@@ -182,7 +182,7 @@ $(document).ready(function() {
         let net = parseFloat($('#net_val').val()) || 0;
         let change = paid - net;
         if (change < 0) change = 0;
-        $('#modal_change').text(change.toFixed(2) + ' ج.م');
+        $('#modal_change').text(change.toFixed(2) + '  ');
     });
 
     // Submit on Enter in Payment Modal
