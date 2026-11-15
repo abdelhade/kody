@@ -1189,7 +1189,7 @@ class InvoiceProcessor {
         $info = (string) ($opts['info'] ?? '');
         $details = (string) ($opts['details'] ?? '');
 
-        if ($amount <= 0 || $debitAcc <= 0) {
+        if ($amount <= 0 || $debitAcc <= 0 || $creditAcc <= 0) {
             return 0;
         }
 
@@ -1539,6 +1539,11 @@ class InvoiceProcessor {
         $stmt->close();
 
         [$debitAcc, $creditAcc] = self::mainJournalSides($conn, $proTybe, $accounts, $partyAccId);
+        if ($debitAcc <= 0 || $creditAcc <= 0) {
+            throw new Exception(
+                'لا يوجد حساب فرعي تحت 3111 (المبيعات) أو حساب طرف غير صالح — شغّل «تحديث قاعدة البيانات» أولاً'
+            );
+        }
 
         $stmt = $conn->prepare(
             'INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id)
@@ -1603,6 +1608,11 @@ class InvoiceProcessor {
         $journalId = (int) $row['id'];
 
         [$debitAcc, $creditAcc] = self::mainJournalSides($conn, $proTybe, $accounts, $partyAccId);
+        if ($debitAcc <= 0 || $creditAcc <= 0) {
+            throw new Exception(
+                'لا يوجد حساب فرعي تحت 3111 (المبيعات) أو حساب طرف غير صالح — شغّل «تحديث قاعدة البيانات» أولاً'
+            );
+        }
 
         $stmt = $conn->prepare(
             'UPDATE journal_entries SET account_id = ?, debit = ?, credit = 0 WHERE journal_id = ? AND tybe = 0'

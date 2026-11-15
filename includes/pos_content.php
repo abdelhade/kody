@@ -1044,6 +1044,7 @@ body {
     
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
+    <script src="js/print_agent_client.js?v=<?= time() ?>"></script>
     <script src="js/pos_barcode.js?v=<?= time() ?>"></script>
     <script src="js/pos_tables_modal.js?v=<?= time() ?>"></script>
     
@@ -1936,7 +1937,7 @@ body {
                         Swal.fire({ icon: 'success', title: 'تم', text: data.message, timer: 1500, showConfirmButton: false });
                         if (window.PosTablesPanel) PosTablesPanel.refresh();
                         if (action === 'cash' && data.order_id) {
-                            window.open('print/receipt.php?id=' + data.order_id, '_blank');
+                            window.open('print/choose.php?id=' + data.order_id, '_blank');
                         }
                         setTimeout(updateShiftInfoButton, 500);
                     } else {
@@ -2117,9 +2118,7 @@ body {
 
             // Global functions for actions
             window.reprintOrder = function(orderId) {
-                // Use existing print function logic or redirect
-                // Usually calling the print endpoint directly
-                 window.open('print/receipt.php?order_id=' + orderId, '_blank');
+                window.open('print/choose.php?id=' + orderId, '_blank');
             };
 
             window.showOrderItems = function(orderId) {

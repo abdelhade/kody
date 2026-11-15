@@ -113,6 +113,8 @@ return [
     'get/get_iteminfo.php'     => $itemLookup,
     'api/items.php'            => $itemLookup,
     'api/categories.php'       => $itemLookup,
+    // وكيل الطباعة: ping/groups عامة، وjobs بتتحقق من الدخول جوه الملف
+    'api/print_agent.php'      => 'public',
     'add_item.php'             => ['param' => 'edit', 'map' => ['' => 'items.add'], 'default' => 'items.edit'],
     'items_factory.php'        => 'items.add',
     'doimport.php'             => 'items.add',
@@ -238,7 +240,8 @@ return [
     'ajax/get_daily_sales.php' => 'pos.use',
     'print/receipt.php'        => ['pos.use', 'pos.closed_sessions', 'sales.view'],
     'print/receipt_waiter.php' => 'pos.use',
-    'print/preparation.php'    => 'pos.use',
+    'print/preparation.php'    => ['pos.use', 'pos.closed_sessions', 'sales.view'],
+    'print/choose.php'         => ['pos.use', 'pos.closed_sessions', 'sales.view'],
     'ajax/cancel_order.php'      => 'pos.cancel_order',
     'ajax/delete_order.php'      => 'pos.cancel_order',
     'ajax/delete_order_item.php' => 'pos.cancel_order',

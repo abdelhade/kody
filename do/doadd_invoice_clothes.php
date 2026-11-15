@@ -76,7 +76,7 @@ try {
             $conn->rollback();
             $_SESSION['success_message'] = 'تم حفظ الفاتورة بنجاح (تم منع التكرار)';
             if ($submit == 'cash') {
-                header("Location: ../print/receipt.php?id=" . $row_check['id']);
+                header("Location: ../print/choose.php?id=" . $row_check['id']);
             } else {
                 $stmt_sett = $conn->prepare("SELECT pos_type FROM settings LIMIT 1");
                 $stmt_sett->execute();
@@ -314,8 +314,8 @@ try {
 
 // إعادة التوجيه
 if ($submit == 'cash') {
-    // حفظ وطباعة — redirect مباشر للطباعة
-    header("Location: ../print/receipt.php?id=$last_op");
+    // حفظ وطباعة — اختيار نوع الطباعة (فاتورة / بون تحضير)
+    header("Location: ../print/choose.php?id=$last_op");
 } else {
     // حفظ فقط — رجوع للـ POS
     $stmt = $conn->prepare("SELECT pos_type FROM settings LIMIT 1");

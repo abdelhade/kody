@@ -559,7 +559,7 @@
 
         $('#ptpBtnPrint').on('click', function () {
             if (!state.selected || !state.selected.order_id) return;
-            window.open('print/receipt.php?id=' + state.selected.order_id, '_blank');
+            window.open('print/choose.php?id=' + state.selected.order_id, '_blank');
         });
 
         $('#ptpBtnRefresh').on('click', function () {

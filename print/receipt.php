@@ -1,13 +1,8 @@
 <?php
 session_start();
-if (!isset($_SESSION['login'])) {
-    header('Location: ../index.php');
-    exit;
-}
-require_once __DIR__ . '/includes/connect.php';
-require_once __DIR__ . '/../includes/receipt_design.php';
-require_once __DIR__ . '/../includes/vat_qr.php';
-require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+require_once __DIR__ . '/../includes/load_env.php';
+require_once __DIR__ . '/../includes/db_name.php';
+require_once __DIR__ . '/../classes/PrintAgentToken.php';
 
 if (!isset($_GET['id'])) {
     echo "لا يوجد فاتورة بهذا الرقم";
@@ -15,6 +10,18 @@ if (!isset($_GET['id'])) {
 }
 
 $id = intval($_GET['id']);
+$agentPrint = PrintAgentToken::verify($id);
+if ($agentPrint) {
+    define('KODY_SKIP_GUARD', true);
+} elseif (!isset($_SESSION['login'])) {
+    header('Location: ../index.php');
+    exit;
+}
+
+require_once __DIR__ . '/includes/connect.php';
+require_once __DIR__ . '/../includes/receipt_design.php';
+require_once __DIR__ . '/../includes/vat_qr.php';
+require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 
 $rowfat = null;
 try {
@@ -76,6 +83,9 @@ $is_return = in_array((int)$rowfat['pro_tybe'], [10, 11], true);
 
 // تحميل التصميم الديناميكي الكامل
 $design = kody_receipt_design_load($rowstg);
+if (!empty($agentPrint) || !empty($_GET['agent_print'])) {
+    $design['auto_print'] = true;
+}
 
 // إعدادات الورقة والمظهر
 $receipt_paper_width = trim((string)($design['paper_width'] ?? '78mm'));
@@ -326,7 +336,9 @@ html, body {
 <body>
 
 <div class="actions no-print">
-    <button type="button" id="printButton">طباعة</button>
+    <button type="button" id="printButton">طباعة الفاتورة</button>
+    <a href="preparation.php?id=<?= (int)$id ?>">بون التحضير</a>
+    <a href="choose.php?id=<?= (int)$id ?><?= $from_invoice ? '&src=invoice' : '' ?>">اختيار الطباعة</a>
     <?php if ($from_invoice): ?>
     <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:4px; cursor:pointer; font-weight:bold;">
         <input type="checkbox" id="printCashierCheck" checked>
@@ -577,7 +589,7 @@ while ($rowdet = $resdet->fetch_assoc()) {
         <?php endif; ?>
     </td>
     <?php endif; ?>
-    <?php if ($col_qty): ?><td><?= number_format($qty, 2) ?></td><?php endif; ?>
+    <?php if ($col_qty): ?><td><?= (int) round((float) $qty) ?></td><?php endif; ?>
     <?php if ($col_unit): ?><td><?= htmlspecialchars($unit_name) ?></td><?php endif; ?>
     <?php if ($col_price): ?><td><?= number_format($linePrice, 2) ?></td><?php endif; ?>
     <?php if ($col_disc): ?><td><?= $lineDisc > 0 ? number_format($lineDisc, 2) : '-' ?></td><?php endif; ?>

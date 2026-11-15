@@ -392,7 +392,7 @@ function printOrder() {
         return;
     }
     
-    window.open('print/table_invoice.php?invoice_id=' + orderId, '_blank');
+    window.open('print/choose.php?id=' + orderId, '_blank');
 }
 
 // إلغاء الطلب

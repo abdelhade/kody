@@ -915,7 +915,7 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
                 <td><?= $idx ?></td>
                 <td><?= htmlspecialchars((string)$itm['code'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td class="item-name"><?= htmlspecialchars((string)$itm['name'], ENT_QUOTES, 'UTF-8') ?></td>
-                <td><?= number_format($itm['qty'], 2) ?></td>
+                <td><?= (int) round((float) $itm['qty']) ?></td>
                 <td><?= htmlspecialchars((string)$itm['unit'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td><?= number_format($itm['price'], 2) ?></td>
                 <?php if ($has_any_item_disc): ?>
@@ -937,7 +937,7 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
                 <td colspan="3" style="text-align: right; padding-right: 14px;">
                     إجمالي الكميات (عدد الأصناف: <?= count($items) ?>)
                 </td>
-                <td><?= number_format($total_qty, 2) ?></td>
+                <td><?= (int) round((float) $total_qty) ?></td>
                 <td colspan="<?= $has_any_item_disc ? 4 : 3 ?>"></td>
             </tr>
         </tfoot>
@@ -1080,6 +1080,12 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
     <button type="button" id="printButton">
         طباعة الفاتورة
     </button>
+    <a href="preparation.php?id=<?= (int)$id ?>" class="back-btn">
+        بون التحضير
+    </a>
+    <a href="choose.php?id=<?= (int)$id ?>&src=invoice" class="back-btn">
+        اختيار الطباعة
+    </a>
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back" class="back-btn">
         عودة
     </a>

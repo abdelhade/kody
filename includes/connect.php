@@ -115,7 +115,10 @@ require_once __DIR__ . '/../classes/UserDefaults.php';
 if ($selected !== null) {
     Can::boot($conn, $dbname);
 }
-Can::guardRoute();
+// طباعة وكيل محلي بتوكن: نتخطى RBAC بعد التحقق في صفحة print/
+if (!defined('KODY_SKIP_GUARD') || !KODY_SKIP_GUARD) {
+    Can::guardRoute();
+}
 
 $edit_pass = $rowstg['edit_pass'];
 date_default_timezone_set(env('APP_TIMEZONE', 'Africa/Cairo')); 

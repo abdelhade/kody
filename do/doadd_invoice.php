@@ -830,7 +830,7 @@ if ($submit == 'print') {
         $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
     }
     error_log('CONDITION MATCHED: submit == cash');
-    $redirect_url = "../print/receipt.php?id=$last_op";
+    $redirect_url = "../print/choose.php?id=$last_op";
     error_log('Redirecting to: ' . $redirect_url);
     
     // التحقق من طلب القفل بعد الحفظ والطباعة

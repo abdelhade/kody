@@ -491,14 +491,22 @@ $(document).ready(function() {
         calculateChange();
     };
 
-    /** في المختلط: الشبكة = المطلوب − الكاش */
-    window.syncMixedBankFromCash = function syncMixedBankFromCash() {
+    /** في المختلط: الشبكة = المطلوب − الكاش
+     * formatCash=true يعيد تنسيق الكاش (عند blur/submit) — أثناء الكتابة لا نلمس قيمة الكاش حتى يقبل أكثر من رقم.
+     */
+    window.syncMixedBankFromCash = function syncMixedBankFromCash(formatCash) {
         if (($('#pay_method').val() || 'cash') !== 'mixed') return;
+        if (formatCash === undefined) formatCash = true;
         const due = getPaymentDueAmount();
-        let cash = parseFloat($('#modal_paid_cash').val());
+        const $cash = $('#modal_paid_cash');
+        let cash = parseFloat($cash.val());
         if (isNaN(cash) || cash < 0) cash = 0;
-        if (cash > due) cash = due;
-        $('#modal_paid_cash').val(cash.toFixed(2));
+        if (cash > due) {
+            cash = due;
+            $cash.val(cash.toFixed(2));
+        } else if (formatCash) {
+            $cash.val(cash.toFixed(2));
+        }
         $('#modal_paid_bank').val(Math.max(0, due - cash).toFixed(2));
     };
 
@@ -915,10 +923,28 @@ $(document).ready(function() {
         }
     });
 
-    // في المختلط: أي تغيير في الكاش يكمّل الشبكة بالباقي
+    // عند التركيز: تحديد كل الرقم عشان الكتابة تستبدل المبلغ
+    $(document).on('focus', '#modal_paid_cash', function() {
+        if (this.readOnly) return;
+        const el = this;
+        setTimeout(function() { try { el.select(); } catch (e) {} }, 0);
+    });
+
+    // في المختلط: أي تغيير في الكاش يكمّل الشبكة بالباقي (بدون toFixed أثناء الكتابة)
     $('#modal_paid_cash').on('input', function() {
         if (($('#pay_method').val() || 'cash') === 'mixed') {
-            syncMixedBankFromCash();
+            syncMixedBankFromCash(false);
+        }
+        calculateChange();
+    });
+
+    $('#modal_paid_cash').on('blur', function() {
+        if (($('#pay_method').val() || 'cash') === 'mixed') {
+            syncMixedBankFromCash(true);
+        } else {
+            let cash = parseFloat($(this).val());
+            if (isNaN(cash) || cash < 0) cash = 0;
+            $(this).val(cash.toFixed(2));
         }
         calculateChange();
     });
@@ -1370,7 +1396,7 @@ function loadRecentOrders() {
                                     <button class="btn btn-danger show-order-items" data-id="${order.id}" title="حذف صنف">
                                         <i class="fas fa-minus"></i>
                                     </button>
-                                    <button class="btn btn-secondary print-order" data-id="${order.id}" title="طباعة الفاتورة">
+                                    <button class="btn btn-secondary print-order" data-id="${order.id}" title="اختيار الطباعة">
                                         <i class="fas fa-print"></i>
                                     </button>
                                     <button class="btn btn-dark delete-order" data-id="${order.id}" title="حذف الطلب">
@@ -1603,7 +1629,7 @@ $(document).ready(function() {
         e.stopPropagation();
         const orderId = $(this).data('id');
         console.log('Print button clicked for order:', orderId);
-        window.open('print/receipt.php?id=' + orderId, '_blank');
+        window.open('print/choose.php?id=' + orderId, '_blank');
     });
 
     // Load orders when offcanvas is shown
