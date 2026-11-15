@@ -185,7 +185,7 @@ $sqlacc = "SELECT a.id, a.code, a.aname, a.balance, a.address, a.phone, a.parent
                   COALESCE(p.id, pc.id, a.parent_id) AS group_id
            FROM acc_head a
            LEFT JOIN acc_head p ON p.id = a.parent_id AND p.isdeleted = 0
-           LEFT JOIN acc_head pc ON p.id IS NULL AND pc.isdeleted = 0 AND pc.code = CAST(a.parent_id AS CHAR)
+           LEFT JOIN acc_head pc ON p.id IS NULL AND pc.isdeleted = 0 AND pc.code = CAST(a.parent_id AS CHAR) COLLATE utf8mb4_general_ci
            WHERE a.is_basic = 0 $a01 AND a.isdeleted = 0
            ORDER BY a.aname";
 $resacc = $conn->query($sqlacc);
