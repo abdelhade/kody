@@ -37,7 +37,7 @@ function kody_journal_filter_where(mysqli $conn, string $from, string $to, strin
     }
     if ($search !== '') {
         $s = $conn->real_escape_string($search);
-        $where[] = "(CAST(jh.journal_id AS CHAR) LIKE '%$s%' OR jh.details LIKE '%$s%' OR CAST(jh.id AS CHAR) LIKE '%$s%' OR CAST(jh.op_id AS CHAR) LIKE '%$s%' OR CAST(jh.op2 AS CHAR) LIKE '%$s%')";
+        $where[] = "(jh.journal_id LIKE '%$s%' OR jh.details LIKE '%$s%' OR jh.id LIKE '%$s%' OR jh.op_id LIKE '%$s%' OR jh.op2 LIKE '%$s%')";
     }
     return implode(' AND ', $where);
 }

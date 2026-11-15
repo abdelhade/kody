@@ -37,6 +37,8 @@ if ($selected === null) {
 }
 
 mysqli_set_charset($conn, "utf8mb4");
+// نفس collation الجداول (DB.sql) عشان CAST/literals مايتخلطوش مع utf8mb4_unicode_ci
+@$conn->query("SET collation_connection = 'utf8mb4_general_ci'");
 
 // Enable SQL error reporting for debugging
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);

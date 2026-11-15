@@ -241,7 +241,7 @@ if ($to !== '') {
 }
 if ($search !== '') {
     $s = $conn->real_escape_string($search);
-    $where[] = "(CAST(jh.journal_id AS CHAR) LIKE '%$s%' OR jh.details LIKE '%$s%' OR CAST(jh.id AS CHAR) LIKE '%$s%')";
+    $where[] = "(jh.journal_id LIKE '%$s%' OR jh.details LIKE '%$s%' OR jh.id LIKE '%$s%')";
 }
 
 $sql = "

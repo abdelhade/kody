@@ -753,6 +753,7 @@ class PeriodManager
             throw new RuntimeException('فشل الاتصال بـ MySQL: ' . $c->connect_error);
         }
         $c->set_charset('utf8mb4');
+        @$c->query("SET collation_connection = 'utf8mb4_general_ci'");
         return $c;
     }
 
