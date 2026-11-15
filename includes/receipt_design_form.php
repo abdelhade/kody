@@ -453,8 +453,14 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                   </div>
                   <div class="col-md-6">
                     <div class="custom-control custom-switch mb-2">
-                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_customer_balance" name="rd_show_customer_balance" value="1" <?= !empty($rd['customer']['show_balance']) ? 'checked' : '' ?>>
-                      <label class="custom-control-label" for="rd_show_customer_balance">رصيد الحساب قبل / بعد الفاتورة</label>
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_customer_balance_before" name="rd_show_customer_balance_before" value="1" <?= !empty($rd['customer']['show_balance_before']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label" for="rd_show_customer_balance_before">الرصيد السابق</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="custom-control custom-switch mb-2">
+                      <input type="checkbox" class="custom-control-input rd-live" id="rd_show_customer_balance_after" name="rd_show_customer_balance_after" value="1" <?= !empty($rd['customer']['show_balance_after']) ? 'checked' : '' ?>>
+                      <label class="custom-control-label" for="rd_show_customer_balance_after">الرصيد الحالي</label>
                     </div>
                   </div>
                 </div>
@@ -760,8 +766,8 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
                         <div id="prevCustName"><strong>العميل:</strong> محمد إبراهيم</div>
                         <div id="prevCustPhone"><strong>الهاتف:</strong> 01122334455</div>
                         <div id="prevCustAddress"><strong>العنوان:</strong> مدينة نصر - الحي السابع</div>
-                        <div id="prevCustBalBefore"><strong>الحساب السابق:</strong> 150.00 مدين</div>
-                        <div id="prevCustBalAfter"><strong>الحساب بعد الفاتورة:</strong> 275.00 مدين</div>
+                        <div id="prevCustBalBefore"><strong>الرصيد السابق:</strong> 150.00 مدين</div>
+                        <div id="prevCustBalAfter"><strong>الرصيد الحالي:</strong> 275.00 مدين</div>
                       </div>
                     </div>
 
@@ -1226,9 +1232,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (cName) cName.style.display = isChecked('rd_show_customer_name') ? 'block' : 'none';
       if (cPhone) cPhone.style.display = isChecked('rd_show_customer_phone') ? 'block' : 'none';
       if (cAdd) cAdd.style.display = isChecked('rd_show_customer_address') ? 'block' : 'none';
-      var showBal = isChecked('rd_show_customer_balance');
-      if (cBalBefore) cBalBefore.style.display = showBal ? 'block' : 'none';
-      if (cBalAfter) cBalAfter.style.display = showBal ? 'block' : 'none';
+      if (cBalBefore) cBalBefore.style.display = isChecked('rd_show_customer_balance_before') ? 'block' : 'none';
+      if (cBalAfter) cBalAfter.style.display = isChecked('rd_show_customer_balance_after') ? 'block' : 'none';
     }
 
     // بناء جدول الأصناف ديناميكياً
@@ -1584,7 +1589,8 @@ document.addEventListener('DOMContentLoaded', function () {
         setChecked('rd_show_customer_name', true);
         setChecked('rd_show_customer_phone', true);
         setChecked('rd_show_customer_address', true);
-        setChecked('rd_show_customer_balance', true);
+        setChecked('rd_show_customer_balance_before', true);
+        setChecked('rd_show_customer_balance_after', true);
         setChecked('rd_show_col_index', true);
         setChecked('rd_show_col_code', true);
         setChecked('rd_show_col_name', true);
@@ -1638,7 +1644,8 @@ document.addEventListener('DOMContentLoaded', function () {
         setChecked('rd_show_order_type', false);
         setChecked('rd_show_driver', false);
         setChecked('rd_show_customer', false);
-        setChecked('rd_show_customer_balance', false);
+        setChecked('rd_show_customer_balance_before', false);
+        setChecked('rd_show_customer_balance_after', false);
         setChecked('rd_show_col_index', false);
         setChecked('rd_show_col_code', false);
         setChecked('rd_show_col_name', true);

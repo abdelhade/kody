@@ -41,6 +41,22 @@ function plFormat(float $value, bool $showSign = false): string {
         : $formatted;
 }
 
+/** رابط كشف حساب للحساب المعروض في قائمة الأرباح والخسائر */
+function plAccLink(array $row, string $startdate, string $enddate, bool $canStatement): string {
+    $label = htmlspecialchars(($row['code'] ?? '') . ' - ' . ($row['aname'] ?? ''), ENT_QUOTES, 'UTF-8');
+    if (!$canStatement || empty($row['id'])) {
+        return $label;
+    }
+    return '<form action="summary.php" method="post" target="_blank" class="pl-acc-form">'
+        . '<input type="hidden" name="acc_id" value="' . (int) $row['id'] . '">'
+        . '<input type="hidden" name="startdate" value="' . htmlspecialchars($startdate, ENT_QUOTES, 'UTF-8') . '">'
+        . '<input type="hidden" name="enddate" value="' . htmlspecialchars($enddate, ENT_QUOTES, 'UTF-8') . '">'
+        . '<button type="submit" class="pl-acc-link" title="فتح كشف الحساب">' . $label . '</button>'
+        . '</form>';
+}
+
+$canAccStatement = Can::canVisit('summary.php');
+
 // ── جلب اسم الشركة بأمان ────────────────────────────────────
 $company_name = $rowstg['company_name'] ?? 'الشركة';
 
@@ -68,20 +84,43 @@ $returns_total     = (float)$row_sales['returns_total'];
 $gross_sales_total = (float)bcadd((string)$cashier_sales, (string)bcadd((string)$pos_sales, (string)$credit_sales, 4), 4);
 $net_sales         = (float)bcsub((string)$gross_sales_total, (string)$returns_total, 4);
 
-// ── 2. إيرادات أخرى (32%) من journal_entries ──────────────
+// ── 2. إيرادات أخرى (32% غير تشغيلية) — بدون قيود فواتير المبيعات/الكاشير/المردود
+// (المبيعات معروضة من ot_head؛ قيودها كانت بتتقيد غلط على إيرادات التأجير)
+require_once __DIR__ . '/classes/InvoiceProcessor.php';
+$plSales = InvoiceProcessor::INVOICE_TYPES['SALES'];
+$plPos = InvoiceProcessor::INVOICE_TYPES['POS'];
+$plSalesReturn = InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'];
+$plCostType = InvoiceProcessor::ACCOUNTING_TYPES['COST_OF_SALES'];
+
+$rev32_exclude = "
+    AND COALESCE(jh.pro_tybe, 0) <> ?
+    AND NOT EXISTS (
+        SELECT 1 FROM ot_head oh
+        WHERE oh.isdeleted = 0
+          AND oh.pro_tybe IN (?, ?, ?)
+          AND (
+              oh.id = jh.op_id
+              OR oh.id = je.op_id
+              OR oh.id = je.op2
+          )
+    )
+";
+
 $stmt_rev32 = $conn->prepare("
     SELECT
         COALESCE(SUM(je.credit), 0) AS total_credit,
         COALESCE(SUM(je.debit),  0) AS total_debit
     FROM journal_entries je
     INNER JOIN acc_head ah ON je.account_id = ah.id
+    LEFT JOIN journal_heads jh ON jh.id = je.journal_id AND jh.isdeleted = 0
     WHERE ah.code LIKE '32%'
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
       AND je.isdeleted = 0
       AND je.crtime >= ? AND je.crtime < ?
+      $rev32_exclude
 ");
-$stmt_rev32->bind_param("ss", $startdate, $enddate_plus1);
+$stmt_rev32->bind_param("ssiiii", $startdate, $enddate_plus1, $plCostType, $plSales, $plPos, $plSalesReturn);
 $stmt_rev32->execute();
 $rev32_row     = $stmt_rev32->get_result()->fetch_assoc();
 $stmt_rev32->close();
@@ -96,14 +135,31 @@ $stmt_rev32_detail = $conn->prepare("
     LEFT JOIN journal_entries je ON je.account_id = ah.id
         AND je.isdeleted = 0
         AND je.crtime >= ? AND je.crtime < ?
+    LEFT JOIN journal_heads jh ON jh.id = je.journal_id AND jh.isdeleted = 0
     WHERE ah.code LIKE '32%'
       AND ah.is_basic = 0
       AND ah.isdeleted = 0
+      AND (
+          je.id IS NULL
+          OR (
+              COALESCE(jh.pro_tybe, 0) <> ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM ot_head oh
+                  WHERE oh.isdeleted = 0
+                    AND oh.pro_tybe IN (?, ?, ?)
+                    AND (
+                        oh.id = jh.op_id
+                        OR oh.id = je.op_id
+                        OR oh.id = je.op2
+                    )
+              )
+          )
+      )
     GROUP BY ah.id, ah.code, ah.aname
     HAVING ABS(net_credit) > 0.001
     ORDER BY ah.code
 ");
-$stmt_rev32_detail->bind_param("ss", $startdate, $enddate_plus1);
+$stmt_rev32_detail->bind_param("ssiiii", $startdate, $enddate_plus1, $plCostType, $plSales, $plPos, $plSalesReturn);
 $stmt_rev32_detail->execute();
 $rev32_details = $stmt_rev32_detail->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt_rev32_detail->close();
@@ -296,6 +352,13 @@ foreach ($rev32_details as $r32d) {
 .pl-table tr:hover td { background-color:#f8fafc; }
 .pl-table .acc-name  { padding-right:40px; color:#4a5568; }
 .pl-table .acc-value { text-align:left; font-weight:500; width:200px; font-family:'Courier New',monospace; }
+.pl-acc-form { display:inline; margin:0; padding:0; }
+.pl-acc-link {
+    background:none; border:none; padding:0; margin:0; cursor:pointer;
+    color:#2b6cb0; text-decoration:underline; text-underline-offset:2px;
+    font:inherit; text-align:inherit;
+}
+.pl-acc-link:hover { color:#1a365d; }
 .pl-table .total-row td {
     font-weight:bold; border-top:2px solid #e2e8f0; border-bottom:2px solid #e2e8f0;
     background:#f7fafc; font-size:1rem; padding:12px 20px;
@@ -469,7 +532,7 @@ foreach ($rev32_details as $r32d) {
                 if (abs($disp) < 0.001) continue;
             ?>
             <tr>
-              <td class="acc-name"><?= htmlspecialchars($r32d['code']) ?> - <?= htmlspecialchars($r32d['aname']) ?></td>
+              <td class="acc-name"><?= plAccLink($r32d, $startdate, $enddate, $canAccStatement) ?></td>
               <td class="acc-value <?= $disp >= 0 ? 'profit-text' : 'loss-text' ?>"><?= plFormat($disp) ?></td>
             </tr>
             <?php endforeach; ?>
@@ -494,7 +557,7 @@ foreach ($rev32_details as $r32d) {
                 $val = (float)$cos_row['net_debit'];
             ?>
             <tr>
-              <td class="acc-name"><?= htmlspecialchars($cos_row['code']) ?> - <?= htmlspecialchars($cos_row['aname']) ?></td>
+              <td class="acc-name"><?= plAccLink($cos_row, $startdate, $enddate, $canAccStatement) ?></td>
               <td class="acc-value loss-text"><?= plFormat($val) ?></td>
             </tr>
             <?php endforeach; ?>
@@ -558,7 +621,7 @@ foreach ($rev32_details as $r32d) {
                 $has_exp = true;
             ?>
             <tr>
-              <td class="acc-name"><?= htmlspecialchars($row['code']) ?> - <?= htmlspecialchars($row['aname']) ?></td>
+              <td class="acc-name"><?= plAccLink($row, $startdate, $enddate, $canAccStatement) ?></td>
               <td class="acc-value loss-text"><?= number_format($val, 2) ?></td>
             </tr>
             <?php } ?>

@@ -52,7 +52,8 @@ function kody_receipt_design_defaults(): array
             'show_name' => true,
             'show_phone' => true,
             'show_address' => true,
-            'show_balance' => true, // رصيد الحساب قبل وبعد الفاتورة
+            'show_balance_before' => true, // الرصيد السابق
+            'show_balance_after' => true,  // الرصيد الحالي
         ],
 
         // جدول الأصناف والأعمدة
@@ -194,7 +195,16 @@ function kody_receipt_design_normalize(array $input): array
     $d['customer']['show_name'] = kody_rd_bool($c, 'show_name', $d['customer']['show_name']);
     $d['customer']['show_phone'] = kody_rd_bool($c, 'show_phone', $d['customer']['show_phone']);
     $d['customer']['show_address'] = kody_rd_bool($c, 'show_address', $d['customer']['show_address']);
-    $d['customer']['show_balance'] = kody_rd_bool($c, 'show_balance', $d['customer']['show_balance']);
+    // توافق مع show_balance القديم: لو موجود وبدون المفتاحين الجديدين يطبّق على الاثنين
+    $legacyBal = array_key_exists('show_balance', $c)
+        ? kody_rd_bool($c, 'show_balance', true)
+        : null;
+    $d['customer']['show_balance_before'] = array_key_exists('show_balance_before', $c)
+        ? kody_rd_bool($c, 'show_balance_before', $d['customer']['show_balance_before'])
+        : ($legacyBal !== null ? $legacyBal : $d['customer']['show_balance_before']);
+    $d['customer']['show_balance_after'] = array_key_exists('show_balance_after', $c)
+        ? kody_rd_bool($c, 'show_balance_after', $d['customer']['show_balance_after'])
+        : ($legacyBal !== null ? $legacyBal : $d['customer']['show_balance_after']);
 
     // Items
     $it = is_array($input['items'] ?? null) ? $input['items'] : [];
@@ -331,7 +341,8 @@ function kody_receipt_design_from_post(array $post): array
             'show_name' => isset($post['rd_show_customer_name']),
             'show_phone' => isset($post['rd_show_customer_phone']),
             'show_address' => isset($post['rd_show_customer_address']),
-            'show_balance' => isset($post['rd_show_customer_balance']),
+            'show_balance_before' => isset($post['rd_show_customer_balance_before']),
+            'show_balance_after' => isset($post['rd_show_customer_balance_after']),
         ],
 
         'items' => [

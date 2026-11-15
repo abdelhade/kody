@@ -634,13 +634,13 @@ body {
                     <div class="row g-1 pay-row">
                         <div class="col-6">
                             <label class="pay-lbl" for="modal_discperc">خصم %</label>
-                            <input class="form-control form-control-sm text-center" type="number"
-                                id="modal_discperc" value="0" min="0" max="100" step="0.1">
+                            <input class="form-control form-control-sm text-center pay-num" type="text" inputmode="decimal"
+                                id="modal_discperc" value="0" autocomplete="off">
                         </div>
                         <div class="col-6">
                             <label class="pay-lbl" for="modal_discount">ق. الخصم</label>
-                            <input class="form-control form-control-sm text-center" type="number"
-                                id="modal_discount" value="0" step="0.01">
+                            <input class="form-control form-control-sm text-center pay-num" type="text" inputmode="decimal"
+                                id="modal_discount" value="0" autocomplete="off">
                         </div>
                     </div>
 
@@ -649,9 +649,25 @@ body {
                         <strong class="text-info" id="old_paid_display">0.00  </strong>
                     </div>
 
-                    <div class="row g-1 pay-row">
-                        <div class="col-6">
-                            <label class="pay-lbl" for="payment_fund_id"><i class="fas fa-money-bill"></i> كاش</label>
+                    <div class="pay-method-row">
+                        <span class="pay-lbl mb-1">طريقة الدفع</span>
+                        <div class="btn-group w-100 pay-method-group" role="group" id="pay_method_btns">
+                            <button type="button" class="btn btn-success btn-sm active" data-pay-method="cash">
+                                <i class="fas fa-money-bill-wave"></i> كاش
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-pay-method="bank">
+                                <i class="fas fa-university"></i> شبكة
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" data-pay-method="mixed">
+                                <i class="fas fa-coins"></i> مختلط
+                            </button>
+                        </div>
+                        <input type="hidden" id="pay_method" name="pay_method" value="cash">
+                    </div>
+
+                    <div class="row g-1 pay-row" id="pay_accounts_row">
+                        <div class="col-12" id="pay_fund_col">
+                            <label class="pay-lbl" for="payment_fund_id"><i class="fas fa-wallet"></i> الصندوق</label>
                             <select class="form-select form-select-sm pay-select" id="payment_fund_id">
                                 <?php
                                 $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
@@ -660,31 +676,50 @@ body {
                                     if ($rowstg['def_pos_fund'] == $rowfund['id']) {
                                         $selected = 'selected';
                                     }
+                                    if (($selected = UserDefaults::pick($conn, 'fund', $rowfund['id'], $selected, !isset($_GET['edit']))) === null) continue;
                                 ?>
                                 <option <?= $selected ?> value="<?= $rowfund['id'] ?>"><?= $rowfund['aname'] ?></option>
                                 <?php } ?>
                             </select>
-                            <div class="input-group input-group-sm mt-1">
-                                <input class="form-control text-center fw-bold" type="number"
-                                    id="modal_paid_cash" value="0.00" step="0.01" min="0">
-                                <span class="input-group-text"> </span>
-                            </div>
                         </div>
-                        <div class="col-6">
-                            <label class="pay-lbl" for="payment_bank_id"><i class="fas fa-credit-card"></i> صرافة</label>
+                        <div class="col-12 d-none" id="pay_bank_col">
+                            <label class="pay-lbl" for="payment_bank_id"><i class="fas fa-university"></i> البنك / الشبكة</label>
                             <select class="form-select form-select-sm pay-select" id="payment_bank_id">
-                                <option value="">-- بنك --</option>
+                                <option value="">-- اختر البنك --</option>
                                 <?php
-                                $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
-                                while ($rowbank = $resbank->fetch_assoc()) { ?>
-                                <option value="<?= $rowbank['id'] ?>"><?= $rowbank['aname'] ?></option>
+                                $banks_parent_id = 0;
+                                $banksParentRes = $conn->query("SELECT id FROM acc_head WHERE code = '124' AND isdeleted = 0 LIMIT 1");
+                                if ($banksParentRes && ($banksParentRow = $banksParentRes->fetch_assoc())) {
+                                    $banks_parent_id = (int)$banksParentRow['id'];
+                                }
+                                $bankSql = "SELECT * FROM `acc_head` WHERE is_basic = 0 AND isdeleted = 0 AND (code LIKE '124%'";
+                                if ($banks_parent_id > 0) {
+                                    $bankSql .= " OR parent_id = " . $banks_parent_id;
+                                }
+                                $bankSql .= ") ORDER BY aname";
+                                $resbank = $conn->query($bankSql);
+                                $first_bank_selected = false;
+                                while ($resbank && $rowbank = $resbank->fetch_assoc()) {
+                                    if ((string)$rowbank['code'] === '124') continue;
+                                    $bankSel = !$first_bank_selected ? 'selected' : '';
+                                    $first_bank_selected = true;
+                                ?>
+                                <option <?= $bankSel ?> value="<?= (int)$rowbank['id'] ?>"><?= htmlspecialchars($rowbank['aname']) ?></option>
                                 <?php } ?>
                             </select>
-                            <div class="input-group input-group-sm mt-1">
-                                <input class="form-control text-center fw-bold" type="number"
-                                    id="modal_paid_bank" value="0.00" step="0.01" min="0">
-                                <span class="input-group-text"> </span>
-                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-1 pay-row" id="pay_amounts_row">
+                        <div class="col-12" id="pay_cash_amount_col">
+                            <label class="pay-lbl" for="modal_paid_cash"><i class="fas fa-money-bill"></i> المدفوع كاش</label>
+                            <input class="form-control form-control-sm text-center fw-bold pay-num" type="text" inputmode="decimal"
+                                id="modal_paid_cash" value="0.00" autocomplete="off" readonly>
+                        </div>
+                        <div class="col-6 d-none" id="pay_bank_amount_col">
+                            <label class="pay-lbl" for="modal_paid_bank"><i class="fas fa-credit-card"></i> المدفوع شبكة</label>
+                            <input class="form-control form-control-sm text-center fw-bold pay-num" type="text" inputmode="decimal"
+                                id="modal_paid_bank" value="0.00" autocomplete="off" readonly>
                         </div>
                     </div>
                 </div>
@@ -700,6 +735,122 @@ body {
             </div>
         </div>
     </div>
+
+    <script>
+    // منطق طريقة الدفع داخل الصفحة مباشرة حتى يظهر البنك فور اختيار شبكة/مختلط
+    (function () {
+        function setPayMethodUi(method, resetAmounts) {
+            method = method || 'cash';
+            $('#pay_method').val(method);
+
+            $('#pay_method_btns [data-pay-method]').each(function () {
+                var m = $(this).data('pay-method');
+                $(this).removeClass('btn-success btn-primary btn-warning active btn-outline-success btn-outline-primary btn-outline-warning');
+                if (m === method) {
+                    if (m === 'cash') $(this).addClass('btn-success active');
+                    else if (m === 'bank') $(this).addClass('btn-primary active');
+                    else $(this).addClass('btn-warning active');
+                } else {
+                    if (m === 'cash') $(this).addClass('btn-outline-success');
+                    else if (m === 'bank') $(this).addClass('btn-outline-primary');
+                    else $(this).addClass('btn-outline-warning');
+                }
+            });
+
+            var due = (typeof getPaymentDueAmount === 'function')
+                ? getPaymentDueAmount()
+                : Math.max(0, (parseFloat($('#net_val').val()) || 0));
+
+            var $fundCol = $('#pay_fund_col');
+            var $bankCol = $('#pay_bank_col');
+            var $cashAmt = $('#pay_cash_amount_col');
+            var $bankAmt = $('#pay_bank_amount_col');
+            var $paidCash = $('#modal_paid_cash');
+            var $paidBank = $('#modal_paid_bank');
+
+            if (method === 'cash') {
+                $fundCol.removeClass('col-6 d-none').addClass('col-12');
+                $bankCol.addClass('d-none');
+                $cashAmt.removeClass('col-6 d-none').addClass('col-12');
+                $bankAmt.addClass('d-none');
+                $paidCash.prop('readonly', true);
+                $paidBank.prop('readonly', true);
+                if (resetAmounts !== false) {
+                    $paidCash.val(due.toFixed(2));
+                    $paidBank.val('0.00');
+                }
+            } else if (method === 'bank') {
+                $fundCol.addClass('d-none');
+                $bankCol.removeClass('col-6 d-none').addClass('col-12');
+                $cashAmt.addClass('d-none');
+                $bankAmt.removeClass('col-6 d-none').addClass('col-12');
+                $paidCash.prop('readonly', true);
+                $paidBank.prop('readonly', true);
+                if (resetAmounts !== false) {
+                    $paidCash.val('0.00');
+                    $paidBank.val(due.toFixed(2));
+                }
+                ensureBankSelected();
+            } else {
+                $fundCol.removeClass('col-12 d-none').addClass('col-6');
+                $bankCol.removeClass('col-12 d-none').addClass('col-6');
+                $cashAmt.removeClass('col-12 d-none').addClass('col-6');
+                $bankAmt.removeClass('col-12 d-none').addClass('col-6');
+                $paidCash.prop('readonly', false);
+                $paidBank.prop('readonly', true);
+                if (resetAmounts !== false) {
+                    $paidCash.val(due.toFixed(2));
+                    $paidBank.val('0.00');
+                } else if (typeof syncMixedBankFromCash === 'function') {
+                    syncMixedBankFromCash();
+                }
+                ensureBankSelected();
+            }
+
+            if (typeof calculateChange === 'function') calculateChange();
+            else if (typeof window.calculateChange === 'function') window.calculateChange();
+        }
+
+        function ensureBankSelected() {
+            var $sel = $('#payment_bank_id');
+            if (!$sel.length) return;
+            if (!$sel.val()) {
+                var $first = $sel.find('option[value!=""]').first();
+                if ($first.length) $sel.val($first.val());
+            }
+        }
+
+        window.setPayMethodUi = setPayMethodUi;
+        window.applyPayMethod = function (resetAmounts) {
+            setPayMethodUi($('#pay_method').val() || 'cash', resetAmounts);
+        };
+
+        $(document).on('click', '#pay_method_btns [data-pay-method]', function (e) {
+            e.preventDefault();
+            setPayMethodUi($(this).data('pay-method'), true);
+        });
+
+        $(document).on('shown.bs.modal', '#paymentModal', function () {
+            var method = $('#pay_method').val() || 'cash';
+            var editId = $('#edit_order_id').val();
+            if (editId) {
+                var savedCash = parseFloat($('#edit_paid_cash').val()) || 0;
+                var savedBank = parseFloat($('#edit_paid_bank').val()) || 0;
+                if (savedCash > 0 && savedBank > 0) method = 'mixed';
+                else if (savedBank > 0 && savedCash <= 0) method = 'bank';
+                else method = 'cash';
+
+                var savedFundId = $('#edit_payment_fund_id').val();
+                var savedBankId = $('#edit_payment_bank_id').val();
+                if (savedFundId && savedFundId != '0') $('#payment_fund_id').val(savedFundId);
+                if (savedBankId && savedBankId != '0') $('#payment_bank_id').val(savedBankId);
+            } else {
+                method = 'cash';
+            }
+            setPayMethodUi(method, true);
+        });
+    })();
+    </script>
 
     <!-- Modal الطاولات (full screen) -->
     <?php include('includes/pos_tables_modal.php'); ?>
@@ -1564,14 +1715,28 @@ body {
             }
         }
         
-        // جمع بيانات الدفع
+        // جمع بيانات الدفع حسب الطريقة (كاش / شبكة / مختلط)
         const isHold = (action === 'hold');
+        const payMethod = $('#pay_method').val() || 'cash';
+        if (!isHold && payMethod === 'mixed' && typeof syncMixedBankFromCash === 'function') {
+            syncMixedBankFromCash();
+        }
         let paidCash = isHold ? 0 : (parseFloat($('#modal_paid_cash').val()) || 0);
         let paidBank = isHold ? 0 : (parseFloat($('#modal_paid_bank').val()) || 0);
         let fundId = isHold ? '' : $('#payment_fund_id').val();
         let bankId = isHold ? '' : $('#payment_bank_id').val();
         let net = parseFloat($('#net_val').val()) || 0;
-        
+
+        if (!isHold) {
+            if (payMethod === 'cash') {
+                paidBank = 0;
+                bankId = '';
+            } else if (payMethod === 'bank') {
+                paidCash = 0;
+                fundId = '';
+            }
+        }
+
         // في حالة التعديل - اجمع المدفوع القديم + الجديد
         // (الباك اند يحذف سندات الدفع القديمة ويعيد إنشاءها بالمبلغ المرسل)
         let editIdForPayment = $('#edit_order_id').val();
@@ -1580,34 +1745,18 @@ body {
             let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
             paidCash = savedPaidCash + paidCash;
             paidBank = savedPaidBank + paidBank;
-            // استرجاع الصندوق/البنك المحفوظ إذا لم يختر المستخدم غيره
             let savedFundId = $('#edit_payment_fund_id').val();
             let savedBankId = $('#edit_payment_bank_id').val();
-            if ((!fundId || fundId == '0') && savedFundId && savedFundId != '0') {
+            if (payMethod !== 'bank' && (!fundId || fundId == '0') && savedFundId && savedFundId != '0') {
                 fundId = savedFundId;
             }
-            if ((!bankId || bankId == '0' || bankId == '') && savedBankId && savedBankId != '0') {
+            if (payMethod !== 'cash' && (!bankId || bankId == '0' || bankId == '') && savedBankId && savedBankId != '0') {
                 bankId = savedBankId;
             }
-            console.log('✏️ Edit Mode - Cumulative Payment: old_cash=' + savedPaidCash + ' old_bank=' + savedPaidBank + ' => total_cash=' + paidCash + ', total_bank=' + paidBank);
         }
-        
-        console.log('=== INLINE PAYMENT DATA DEBUG ===');
-        console.log('modal_paid_cash value:', $('#modal_paid_cash').val());
-        console.log('modal_paid_bank value:', $('#modal_paid_bank').val());
-        console.log('payment_fund_id value:', $('#payment_fund_id').val());
-        console.log('payment_bank_id value:', $('#payment_bank_id').val());
-        console.log('Processed:', {
-            paidCash: paidCash,
-            paidBank: paidBank,
-            fundId: fundId,
-            bankId: bankId,
-            net: net
-        });
-        console.log('==================================');
-        
+
         // التحقق من صحة البيانات
-        if (paidCash > 0 && (!fundId || fundId == '0')) {
+        if (!isHold && paidCash > 0 && (!fundId || fundId == '0')) {
             Swal.fire({
                 icon: 'warning',
                 title: 'تنبيه',
@@ -1615,12 +1764,21 @@ body {
             });
             return false;
         }
-        
-        if (paidBank > 0 && (!bankId || bankId == '0' || bankId == '')) {
+
+        if (!isHold && paidBank > 0 && (!bankId || bankId == '0' || bankId == '')) {
             Swal.fire({
                 icon: 'warning',
                 title: 'تنبيه',
-                text: 'يجب اختيار البنك عند الدفع صرافة'
+                text: 'يجب اختيار البنك عند الدفع شبكة'
+            });
+            return false;
+        }
+
+        if (!isHold && payMethod === 'mixed' && paidCash <= 0 && paidBank <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'تنبيه',
+                text: 'يجب توزيع المبلغ بين الكاش والشبكة'
             });
             return false;
         }

@@ -888,7 +888,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var btnCostJ = document.getElementById('btnRebuildCostJournals');
   if (btnCostJ) {
     btnCostJ.addEventListener('click', function () {
-      if (!confirm('إعادة بناء قيود تكلفة المبيعات لكل فواتير المبيعات والكاشير ومردود المبيعات بأثر رجعي؟\nالقيد بيتحسب من تكلفة السطور المسجّلة — لو التكلفة القديمة ناقصة شغّل "إعادة حساب التكاليف" الأول.')) return;
+      if (!confirm('إعادة بناء قيود تكلفة المبيعات لكل فواتير المبيعات والكاشير ومردود المبيعات بأثر رجعي؟\nكمان بيحوّل طرف المبيعات من المخزن/إيرادات التأجير لحساب المبيعات (3111).\nلو التكلفة القديمة ناقصة شغّل "إعادة حساب التكاليف" الأول.')) return;
       btnCostJ.disabled = true;
       btnCostJ.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري إعادة البناء...';
       fetch('ajax/rebuild_cost_journals.php', { method: 'POST', credentials: 'same-origin' })

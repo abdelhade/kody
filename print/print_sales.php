@@ -173,7 +173,9 @@ if ($is_delivery) {
 
 // رصيد الطرف قبل وبعد الفاتورة (للعميل/المورد غير النقدي فقط)
 $party_balance = InvoiceProcessor::partyBalanceSnapshot($conn, $rowfat);
-$show_party_balance = $party_balance !== null;
+$show_bal_before = !empty($design['customer']['show_balance_before']);
+$show_bal_after = !empty($design['customer']['show_balance_after']);
+$show_party_balance = $party_balance !== null && ($show_bal_before || $show_bal_after);
 
 // بيانات اللوجو
 $_logo_file = !empty($rowstg['company_logo']) ? $rowstg['company_logo'] : (!empty($rowstg['logo']) ? $rowstg['logo'] : 'logo.jpg');
@@ -953,10 +955,12 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if ($show_bal_before): ?>
                     <tr>
                         <td class="lbl">الرصيد السابق:</td>
                         <td class="val"><?= htmlspecialchars($fmtBal($party_balance['before']), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
+                    <?php endif; ?>
                     <tr>
                         <td class="lbl">صافي الفاتورة:</td>
                         <td class="val"><?= htmlspecialchars($fmtMoney($party_balance['net']), ENT_QUOTES, 'UTF-8') ?></td>
@@ -967,10 +971,12 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
                         <td class="val"><?= htmlspecialchars($fmtMoney($party_balance['paid']), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
                     <?php endif; ?>
+                    <?php if ($show_bal_after): ?>
                     <tr class="balance-net">
                         <td class="lbl">الرصيد الحالي:</td>
                         <td class="val"><?= htmlspecialchars($fmtBal($party_balance['after']), ENT_QUOTES, 'UTF-8') ?></td>
                     </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
             <?php endif; ?>

@@ -44,9 +44,10 @@ function ensureRecostProcedure(mysqli $conn): void {
  * دالة إعادة حساب متوسط التكلفة والأرباح لجميع الأصناف والفواتير
  *
  * @param mysqli $conn
+ * @param bool $rebuildCostJournals لو true يعيد بناء قيود تكلفة المبيعات من cost_price بعد الحساب
  * @return bool
  */
-function recalculateAverageCosts(mysqli $conn): bool {
+function recalculateAverageCosts(mysqli $conn, bool $rebuildCostJournals = false): bool {
     try {
         ensureRecostProcedure($conn);
 
@@ -59,6 +60,13 @@ function recalculateAverageCosts(mysqli $conn): bool {
             $extra = $conn->use_result();
             if ($extra instanceof mysqli_result) {
                 $extra->free();
+            }
+        }
+
+        if ($rebuildCostJournals) {
+            require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+            if (InvoiceProcessor::resolveCostOfSalesAccountId($conn) > 0) {
+                InvoiceProcessor::rebuildAllCostOfSalesJournals($conn);
             }
         }
 

@@ -1071,24 +1071,24 @@ class InvoiceProcessor {
         return $row && $row['max_id'] ? ((int) $row['max_id'] + 1) : 1;
     }
 
+    /**
+     * حساب المبيعات التشغيلي تحت 3111 — مش إيرادات التأجير (32%).
+     * لو مفيش فرع، شغّل تحديثات قاعدة البيانات (043).
+     */
     public static function resolveSalesAccountId(mysqli $conn): int
     {
-        $salesAccount = 99;
         $stmt = $conn->prepare(
-            "SELECT ah.id FROM acc_head ah
-             INNER JOIN acc_head parent ON ah.parent_id = parent.id
-             WHERE parent.code LIKE '32%' AND ah.is_basic = 0 AND ah.isdeleted = 0
-             ORDER BY ah.code LIMIT 1"
+            "SELECT id FROM acc_head
+             WHERE code LIKE '3111%' AND is_basic = 0 AND isdeleted = 0
+             ORDER BY code LIMIT 1"
         );
-        if ($stmt) {
-            $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            if ($row) {
-                $salesAccount = (int) $row['id'];
-            }
-            $stmt->close();
+        if (!$stmt) {
+            return 0;
         }
-        return $salesAccount;
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        return $row ? (int) $row['id'] : 0;
     }
 
     /**
@@ -1782,6 +1782,10 @@ class InvoiceProcessor {
         if (self::resolveCostOfSalesAccountId($conn) <= 0) {
             throw new Exception('لا يوجد حساب فرعي تحت 42 (تكلفة البضاعة المباعة) — شغّل "تحديث قاعدة البيانات" أولاً');
         }
+        $salesAcc = self::resolveSalesAccountId($conn);
+        if ($salesAcc <= 0) {
+            throw new Exception('لا يوجد حساب فرعي تحت 3111 (المبيعات) — شغّل "تحديث قاعدة البيانات" أولاً');
+        }
 
         $costType = self::ACCOUNTING_TYPES['COST_OF_SALES'];
         $sales = self::INVOICE_TYPES['SALES'];
@@ -1801,27 +1805,26 @@ class InvoiceProcessor {
         try {
             $touched = [];
 
+            // طرف المبيعات في القيد الرئيسي: كان بيتقيد غلط على مخزن أو إيرادات تأجير (32%)
             $stmt = $conn->prepare(
                 'SELECT e.id, e.account_id, h.id AS invoice_id
                  FROM journal_entries e
                  JOIN journal_heads j ON j.id = e.journal_id
                  JOIN ot_head h ON h.id = j.op_id
-                 JOIN acc_head a ON a.id = e.account_id
                  WHERE h.isdeleted = 0 AND j.isdeleted = 0 AND e.isdeleted = 0
-                   AND COALESCE(j.pro_tybe, 0) <> ? AND a.is_stock = 1
+                   AND COALESCE(j.pro_tybe, 0) <> ? AND e.account_id <> ?
                    AND ((h.pro_tybe IN (?, ?) AND e.tybe = 1) OR (h.pro_tybe = ? AND e.tybe = 0))'
             );
             if (!$stmt) {
                 throw new Exception('فشل تحضير تصحيح القيود الرئيسية: ' . $conn->error);
             }
-            $stmt->bind_param('iiii', $costType, $sales, $pos, $salesReturn);
+            $stmt->bind_param('iiiii', $costType, $salesAcc, $sales, $pos, $salesReturn);
             $stmt->execute();
             $wrongEntries = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             $stmt->close();
 
             $fixedInvoices = [];
             if (!empty($wrongEntries)) {
-                $salesAcc = self::resolveSalesAccountId($conn);
                 $fix = $conn->prepare('UPDATE journal_entries SET account_id = ? WHERE id = ?');
                 if (!$fix) {
                     throw new Exception('فشل تحضير تصحيح القيود الرئيسية: ' . $conn->error);

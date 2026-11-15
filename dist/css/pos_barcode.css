@@ -616,6 +616,22 @@ html {
     border-radius: 5px;
 }
 
+#paymentModal .pay-method-row {
+    margin-bottom: 0.4rem;
+}
+
+#paymentModal .pay-method-group .btn {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.28rem 0.35rem;
+}
+
+#paymentModal #modal_paid_cash[readonly],
+#paymentModal #modal_paid_bank[readonly] {
+    background-color: #f1f5f9;
+    cursor: default;
+}
+
 #paymentModal .payment-modal-footer {
     padding: 0.35rem 0.45rem !important;
     gap: 0.3rem;

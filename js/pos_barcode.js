@@ -428,60 +428,93 @@ $(document).ready(function() {
         calculateChange();
     }
     
-    // عند فتح موديل الدفع، تعبئة المدفوع كاش أو استرجاع بيانات الدفع المحفوظة (في حالة التعديل)
-    $(document).on('shown.bs.modal', '#paymentModal', function() {
+    /** المبلغ المطلوب سداده الآن (الصافي − المدفوع سابقاً) */
+    window.getPaymentDueAmount = function getPaymentDueAmount() {
         let net = parseFloat($('#net_val').val()) || 0;
+        let oldPaid = 0;
+        if ($('#edit_order_id').val()) {
+            oldPaid = (parseFloat($('#edit_paid_cash').val()) || 0) + (parseFloat($('#edit_paid_bank').val()) || 0);
+        }
+        return Math.max(0, net - oldPaid);
+    };
+
+    /** تطبيق طريقة الدفع (يستدعي الواجهة المعرفة بجانب المودال إن وُجدت) */
+    window.applyPayMethod = function applyPayMethod(resetAmounts) {
+        if (typeof window.setPayMethodUi === 'function') {
+            window.setPayMethodUi($('#pay_method').val() || 'cash', resetAmounts);
+            return;
+        }
+        const method = $('#pay_method').val() || 'cash';
+        const due = getPaymentDueAmount();
+        const $fundCol = $('#pay_fund_col');
+        const $bankCol = $('#pay_bank_col');
+        const $cashAmtCol = $('#pay_cash_amount_col');
+        const $bankAmtCol = $('#pay_bank_amount_col');
+        const $paidCash = $('#modal_paid_cash');
+        const $paidBank = $('#modal_paid_bank');
+
+        if (method === 'cash') {
+            $fundCol.removeClass('col-6 d-none').addClass('col-12');
+            $bankCol.addClass('d-none');
+            $cashAmtCol.removeClass('col-6 d-none').addClass('col-12');
+            $bankAmtCol.addClass('d-none');
+            $paidCash.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val(due.toFixed(2));
+                $paidBank.val('0.00');
+            }
+        } else if (method === 'bank') {
+            $fundCol.addClass('d-none');
+            $bankCol.removeClass('col-6 d-none').addClass('col-12');
+            $cashAmtCol.addClass('d-none');
+            $bankAmtCol.removeClass('col-6 d-none').addClass('col-12');
+            $paidBank.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val('0.00');
+                $paidBank.val(due.toFixed(2));
+            }
+        } else {
+            $fundCol.removeClass('col-12 d-none').addClass('col-6');
+            $bankCol.removeClass('col-12 d-none').addClass('col-6');
+            $cashAmtCol.removeClass('col-12 d-none').addClass('col-6');
+            $bankAmtCol.removeClass('col-12 d-none').addClass('col-6');
+            $paidCash.prop('readonly', false);
+            $paidBank.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val(due.toFixed(2));
+                $paidBank.val('0.00');
+            } else {
+                syncMixedBankFromCash();
+            }
+        }
+        calculateChange();
+    };
+
+    /** في المختلط: الشبكة = المطلوب − الكاش */
+    window.syncMixedBankFromCash = function syncMixedBankFromCash() {
+        if (($('#pay_method').val() || 'cash') !== 'mixed') return;
+        const due = getPaymentDueAmount();
+        let cash = parseFloat($('#modal_paid_cash').val());
+        if (isNaN(cash) || cash < 0) cash = 0;
+        if (cash > due) cash = due;
+        $('#modal_paid_cash').val(cash.toFixed(2));
+        $('#modal_paid_bank').val(Math.max(0, due - cash).toFixed(2));
+    };
+
+    // عرض المدفوع سابقاً عند فتح المودال (طريقة الدفع تتولاها سكربت المودال)
+    $(document).on('shown.bs.modal', '#paymentModal', function() {
         let editId = $('#edit_order_id').val();
-        
         if (editId) {
-            // في حالة التعديل - استخدم البيانات المحفوظة
-            let savedPaidCash = parseFloat($('#edit_paid_cash').val()) || 0;
-            let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
-            let savedFundId = $('#edit_payment_fund_id').val();
-            let savedBankId = $('#edit_payment_bank_id').val();
-            let savedChange = parseFloat($('#edit_change_amount').val()) || 0;
-            let oldTotalPaid = savedPaidCash + savedPaidBank;
-            
-            // عرض المدفوع سابقاً
+            let oldTotalPaid = (parseFloat($('#edit_paid_cash').val()) || 0) + (parseFloat($('#edit_paid_bank').val()) || 0);
             if (oldTotalPaid > 0) {
                 $('#old_payment_container').show();
                 $('#old_paid_display').text(oldTotalPaid.toFixed(2) + '  ');
             } else {
                 $('#old_payment_container').hide();
             }
-            
-            /**
-             * في التعديل يُدخل المستخدم المبلغ الإضافي فقط (الإجمالي = القديم + الجديد في submitPOS).
-             * أما "دفع وإغلاق" طلب طاولة فهو سداد كامل، فيُعبّأ المتبقي تلقائياً
-             * وإلا أُغلق الطلب بصافي مدفوع صفر.
-             */
-            let finalizing = $('#posForm input[name="finalize_order"]').val() === '1';
-            if (finalizing) {
-                let remaining = Math.max(0, net - oldTotalPaid);
-                $('#modal_paid_cash').val(remaining.toFixed(2));
-            } else {
-                $('#modal_paid_cash').val('0.00');
-            }
-            $('#modal_paid_bank').val('0.00');
-            
-            if (savedFundId && savedFundId != '0') {
-                $('#payment_fund_id').val(savedFundId);
-            }
-            if (savedBankId && savedBankId != '0') {
-                $('#payment_bank_id').val(savedBankId);
-            }
         } else {
-            // طلب جديد - إخفاء المدفوع سابقاً
             $('#old_payment_container').hide();
-            
-            // تعبئة المدفوع كاش تلقائياً بقيمة الصافي
-            let currentPaid = parseFloat($('#modal_paid_cash').val()) || 0;
-            if (currentPaid === 0) {
-                $('#modal_paid_cash').val(net.toFixed(2));
-            }
-            $('#modal_paid_bank').val('0.00');
         }
-        calculateChange();
     });
     
     // ========================================
@@ -824,6 +857,16 @@ $(document).ready(function() {
     // ========================================
     // Modal Calculations
     // ========================================
+    function refreshPaymentAmountsAfterNetChange() {
+        const method = $('#pay_method').val() || 'cash';
+        if (method === 'mixed') {
+            syncMixedBankFromCash();
+            calculateChange();
+        } else {
+            applyPayMethod(true);
+        }
+    }
+
     $('#modal_discperc').on('input', function() {
         let total = parseFloat($('#total').val()) || 0;
         let discount = (total * (parseFloat($(this).val()) || 0) / 100).toFixed(2);
@@ -833,9 +876,7 @@ $(document).ready(function() {
         $('#modal_net').text(net + '  ');
         $('#net_val').val(net);
         $('#net_display').text(net + '  ');
-        
-        // حساب الباقي
-        calculateChange();
+        refreshPaymentAmountsAfterNetChange();
     });
 
     $('#modal_discount').on('input', function() {
@@ -848,32 +889,52 @@ $(document).ready(function() {
         $('#modal_net').text(net + '  ');
         $('#net_val').val(net);
         $('#net_display').text(net + '  ');
-        
-        // حساب الباقي
+        refreshPaymentAmountsAfterNetChange();
+    });
+
+    // حقول الدفع/الخصم: text تقبل أرقام وعلامة عشرية فقط
+    $(document).on('input', '#paymentModal .pay-num', function() {
+        let v = String(this.value || '');
+        v = v.replace(/[^\d.]/g, '');
+        const parts = v.split('.');
+        if (parts.length > 2) {
+            v = parts[0] + '.' + parts.slice(1).join('');
+        }
+        if (this.value !== v) this.value = v;
+    });
+
+    $(document).on('keypress', '#paymentModal .pay-num', function(e) {
+        const ch = String.fromCharCode(e.which);
+        if (!/[0-9.]/.test(ch)) {
+            e.preventDefault();
+            return;
+        }
+        if (ch === '.' && String(this.value).indexOf('.') !== -1) {
+            e.preventDefault();
+        }
+    });
+
+    // في المختلط: أي تغيير في الكاش يكمّل الشبكة بالباقي
+    $('#modal_paid_cash').on('input', function() {
+        if (($('#pay_method').val() || 'cash') === 'mixed') {
+            syncMixedBankFromCash();
+        }
         calculateChange();
     });
 
-    // حساب الباقي عند تغيير المدفوع كاش أو صرافة
-    $('#modal_paid_cash, #modal_paid_bank').on('input', function() {
-        calculateChange();
-    });
-
-    function calculateChange() {
+    window.calculateChange = function calculateChange() {
         let net = parseFloat($('#net_val').val()) || 0;
         let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
         let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
         let totalPaid = paidCash + paidBank;
-        
-        // في حالة التعديل - أضف المدفوع سابقاً للحساب
+
         if ($('#edit_order_id').val()) {
             totalPaid += (parseFloat($('#edit_paid_cash').val()) || 0) + (parseFloat($('#edit_paid_bank').val()) || 0);
         }
-        
+
         let change = totalPaid - net;
-        
-        // الباقي للحساب فقط - لا يؤثر على السند
         $('#modal_change').text(change.toFixed(2) + '  ');
-    }
+    };
 
     // ========================================
     // Delete & Update Row
@@ -959,47 +1020,47 @@ $(document).ready(function() {
         }
         console.log('✅ Validation passed');
         
-// جمع بيانات الدفع
+        // جمع بيانات الدفع حسب الطريقة (كاش / شبكة / مختلط)
+        const payMethod = $('#pay_method').val() || 'cash';
+        if (payMethod === 'mixed' && typeof syncMixedBankFromCash === 'function') {
+            syncMixedBankFromCash();
+        }
         let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
         let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
         let fundId = $('#payment_fund_id').val();
         let bankId = $('#payment_bank_id').val();
         let net = parseFloat($('#net_val').val()) || 0;
-        
+
+        if (payMethod === 'cash') {
+            paidBank = 0;
+            bankId = '';
+        } else if (payMethod === 'bank') {
+            paidCash = 0;
+            fundId = '';
+        }
+
         // في حالة التعديل - اجمع المدفوع القديم + الجديد
         let editId = $('#edit_order_id').val();
         if (editId) {
             let savedPaidCash = parseFloat($('#edit_paid_cash').val()) || 0;
             let savedPaidBank = parseFloat($('#edit_paid_bank').val()) || 0;
-            // المبلغ الإجمالي = المدفوع سابقاً + المبلغ الإضافي الجديد
             paidCash = savedPaidCash + paidCash;
             paidBank = savedPaidBank + paidBank;
-            console.log('✏️ Edit Mode - Cumulative Payment: old_cash=' + savedPaidCash + ' + new_cash=' + $('#modal_paid_cash').val() + ' = ' + paidCash + ', old_bank=' + savedPaidBank + ' + new_bank=' + $('#modal_paid_bank').val() + ' = ' + paidBank);
         }
-        
-        console.log('=== PAYMENT DATA DEBUG ===');
-        console.log('modal_paid_cash value:', $('#modal_paid_cash').val());
-        console.log('modal_paid_bank value:', $('#modal_paid_bank').val());
-        console.log('payment_fund_id value:', $('#payment_fund_id').val());
-        console.log('payment_bank_id value:', $('#payment_bank_id').val());
-        console.log('edit_id:', editId);
-        console.log('Processed:', {
-            paidCash: paidCash,
-            paidBank: paidBank,
-            fundId: fundId,
-            bankId: bankId,
-            net: net
-        });
-        console.log('==========================');
-        
+
         // التحقق من صحة البيانات
         if (paidCash > 0 && (!fundId || fundId == '0')) {
             alert('يجب اختيار الصندوق عند الدفع كاش');
             return false;
         }
-        
+
         if (paidBank > 0 && (!bankId || bankId == '0' || bankId == '')) {
-            alert('يجب اختيار البنك عند الدفع صرافة');
+            alert('يجب اختيار البنك عند الدفع شبكة');
+            return false;
+        }
+
+        if (payMethod === 'mixed' && paidCash <= 0 && paidBank <= 0) {
+            alert('يجب توزيع المبلغ بين الكاش والشبكة');
             return false;
         }
         

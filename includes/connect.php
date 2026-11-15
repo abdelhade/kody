@@ -36,6 +36,8 @@ if ($selected === null) {
     $dbname = $selected;
 }
 
+mysqli_set_charset($conn, "utf8mb4");
+
 // Enable SQL error reporting for debugging
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 

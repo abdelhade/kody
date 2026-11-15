@@ -418,7 +418,12 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                     ?>
                                     <tr class="<?= $is_return ? 'table-danger' : '' ?>" data-doc-kind="<?= $is_return ? 'return' : ($is_sales_order ? 'order' : 'sale') ?>">
                                         <td data-sort="<?= $x ?>"><?= $x ?></td>
-                                        <td data-sort="<?= htmlspecialchars($rowop['crtime'] ?: ($rowop['pro_date'] ?? '')) ?>"><?= $rowop['crtime'] ?></td>
+                                        <td data-sort="<?= htmlspecialchars($rowop['crtime'] ?: ($rowop['pro_date'] ?? '')) ?>">
+                                            <a href="#" class="op-journals-link text-primary" data-op-id="<?= (int) $rowop['id'] ?>" title="عرض القيود المرتبطة">
+                                                <?= htmlspecialchars($rowop['crtime'] ?? '') ?>
+                                                <i class="fa fa-book-open ms-1" style="font-size:.75em; opacity:.7;"></i>
+                                            </a>
+                                        </td>
                                         <td data-sort="<?= htmlspecialchars($pro_type_display) ?>">
                                             <?php
                                             $use_a4 = in_array((int) $tybe, [2, 3, 4, 13, 14, 18], true);
@@ -725,10 +730,147 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
         </div>
     </section>
 </div>
+
+<!-- مودال القيود المرتبطة بالعملية -->
+<div class="modal fade" id="opJournalsModal" tabindex="-1" role="dialog" aria-labelledby="opJournalsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="opJournalsModalLabel">
+                    <i class="fa fa-book"></i> القيود المرتبطة بالعملية <span id="opJournalsOpId"></span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="إغلاق">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="opJournalsBody">
+                <div class="text-center text-muted py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2 mb-0">جاري التحميل...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const toggleBtn = document.getElementById("toggleFiltersBtn");
         const filterRow = document.getElementById("filterRow");
+
+        // فتح مودال القيود عند الضغط على التاريخ
+        (function initOpJournalsModal() {
+            const modalEl = document.getElementById('opJournalsModal');
+            const bodyEl = document.getElementById('opJournalsBody');
+            const titleOpEl = document.getElementById('opJournalsOpId');
+            if (!modalEl || !bodyEl) return;
+
+            function fmt(n) {
+                return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function linkBadge(kind, proTypeName) {
+                if (kind === 'voucher') {
+                    return '<span class="badge badge-info">سند مرتبط</span>';
+                }
+                if (kind === 'typed' && proTypeName) {
+                    return '<span class="badge badge-secondary">' + escapeHtml(proTypeName) + '</span>';
+                }
+                return '<span class="badge badge-success">قيد العملية</span>';
+            }
+
+            function escapeHtml(str) {
+                return String(str == null ? '' : str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function renderJournals(data) {
+                if (!data.journals || data.journals.length === 0) {
+                    bodyEl.innerHTML = '<div class="alert alert-warning mb-0 text-center">لا توجد قيود مرتبطة بهذه العملية</div>';
+                    return;
+                }
+
+                let html = '';
+                if (data.op && data.op.info) {
+                    html += '<p class="text-muted small mb-3">' + escapeHtml(data.op.info) + '</p>';
+                }
+
+                data.journals.forEach(function (j) {
+                    const balClass = j.balanced ? 'text-success' : 'text-danger';
+                    const balLabel = j.balanced ? 'متوازن' : 'غير متوازن';
+                    html += '<div class="card mb-3 shadow-sm">';
+                    html += '<div class="card-header py-2 d-flex flex-wrap align-items-center justify-content-between" style="gap:6px;">';
+                    html += '<div><strong>قيد #' + j.journal_num + '</strong> ';
+                    html += '<span class="text-muted small mx-1">' + escapeHtml(j.jdate || '') + '</span> ';
+                    html += linkBadge(j.link_kind, j.pro_type_name);
+                    html += '</div>';
+                    html += '<div class="small ' + balClass + '"><i class="fa fa-' + (j.balanced ? 'check' : 'exclamation-triangle') + '"></i> ' + balLabel + '</div>';
+                    html += '</div>';
+                    html += '<div class="card-body p-0">';
+                    if (j.details) {
+                        html += '<div class="px-3 py-2 border-bottom bg-light small">' + escapeHtml(j.details) + '</div>';
+                    }
+                    html += '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">';
+                    html += '<thead class="thead-light"><tr><th>الحساب</th><th class="text-center" style="width:110px;">مدين</th><th class="text-center" style="width:110px;">دائن</th></tr></thead><tbody>';
+                    (j.entries || []).forEach(function (e) {
+                        html += '<tr>';
+                        html += '<td>' + escapeHtml(e.account_name);
+                        if (e.account_code) html += ' <small class="text-muted">(' + escapeHtml(e.account_code) + ')</small>';
+                        html += '</td>';
+                        html += '<td class="text-center">' + (e.debit > 0 ? fmt(e.debit) : '') + '</td>';
+                        html += '<td class="text-center">' + (e.credit > 0 ? fmt(e.credit) : '') + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody><tfoot><tr class="font-weight-bold bg-light">';
+                    html += '<td>الإجمالي</td>';
+                    html += '<td class="text-center">' + fmt(j.sum_debit) + '</td>';
+                    html += '<td class="text-center">' + fmt(j.sum_credit) + '</td>';
+                    html += '</tr></tfoot></table></div>';
+                    html += '</div></div>';
+                });
+
+                bodyEl.innerHTML = html;
+            }
+
+            function loadJournals(opId) {
+                titleOpEl.textContent = '#' + opId;
+                bodyEl.innerHTML = '<div class="text-center text-muted py-4"><i class="fa fa-spinner fa-spin fa-2x"></i><p class="mt-2 mb-0">جاري التحميل...</p></div>';
+                $('#opJournalsModal').modal('show');
+
+                $.ajax({
+                    url: 'ajax/get_operation_journals.php',
+                    method: 'GET',
+                    dataType: 'json',
+                    data: { op_id: opId },
+                    success: function (res) {
+                        if (!res || !res.success) {
+                            bodyEl.innerHTML = '<div class="alert alert-danger mb-0">' + escapeHtml((res && res.message) || 'تعذر تحميل القيود') + '</div>';
+                            return;
+                        }
+                        renderJournals(res);
+                    },
+                    error: function (xhr) {
+                        var msg = 'تعذر الاتصال بالخادم';
+                        if (xhr.status === 403) msg = 'ليس لديك صلاحية لعرض القيود';
+                        bodyEl.innerHTML = '<div class="alert alert-danger mb-0">' + msg + '</div>';
+                    }
+                });
+            }
+
+            document.addEventListener('click', function (e) {
+                const link = e.target.closest('.op-journals-link');
+                if (!link) return;
+                e.preventDefault();
+                const opId = parseInt(link.getAttribute('data-op-id'), 10);
+                if (opId > 0) loadJournals(opId);
+            });
+        })();
         
         if (toggleBtn && filterRow) {
             toggleBtn.addEventListener("click", function () {
@@ -1089,6 +1231,15 @@ function printBrutal() {
 </script>
 
 <style>
+.op-journals-link {
+    cursor: pointer;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+.op-journals-link:hover {
+    text-decoration: underline !important;
+}
+
 th.sortable {
     cursor: pointer !important;
     user-select: none !important;

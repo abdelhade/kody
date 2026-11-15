@@ -33,7 +33,7 @@ try {
             . "\nفواتير تمت مراجعتها: " . $result['invoices']
             . "\nقيود تكلفة قائمة: " . $result['journals']
             . "\nإجمالي التكلفة: " . number_format($result['total_cost'], 2)
-            . "\nفواتير اتصحّح قيدها الرئيسي (كان بيقيد المخزن بقيمة البيع): " . $result['main_fixed'],
+            . "\nفواتير اتصحّح قيدها الرئيسي (كان على مخزن أو إيرادات تأجير بدل المبيعات): " . $result['main_fixed'],
         'result' => $result,
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {

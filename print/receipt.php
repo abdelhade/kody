@@ -721,7 +721,9 @@ $show_vat_lines = (!empty($totCfg['show_vat']) || $vat_qr !== null) && $vat_amou
 
 <?php
 $party_balance = InvoiceProcessor::partyBalanceSnapshot($conn, $rowfat);
-if ($party_balance !== null):
+$show_bal_before = !empty($design['customer']['show_balance_before']);
+$show_bal_after = !empty($design['customer']['show_balance_after']);
+if ($party_balance !== null && ($show_bal_before || $show_bal_after)):
     $fmtBal = static function (float $v): string {
         if ($v > 0.001) {
             return number_format($v, 2) . ' (عليه)';
@@ -733,10 +735,12 @@ if ($party_balance !== null):
     };
 ?>
 <table class="rcpt-totals">
+<?php if ($show_bal_before): ?>
 <tr>
     <td class="tot-label">الرصيد السابق</td>
     <td class="tot-val"><?= $fmtBal($party_balance['before']) ?></td>
 </tr>
+<?php endif; ?>
 <tr>
     <td class="tot-label">صافي الفاتورة</td>
     <td class="tot-val"><?= number_format($party_balance['net'], 2) ?></td>
@@ -747,10 +751,12 @@ if ($party_balance !== null):
     <td class="tot-val"><?= number_format($party_balance['paid'], 2) ?></td>
 </tr>
 <?php endif; ?>
+<?php if ($show_bal_after): ?>
 <tr>
     <td class="tot-label">الرصيد الحالي</td>
     <td class="tot-val net"><?= $fmtBal($party_balance['after']) ?></td>
 </tr>
+<?php endif; ?>
 </table>
 <?php endif; ?>
 

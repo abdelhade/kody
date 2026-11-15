@@ -205,6 +205,7 @@ return [
         'barcode_print'   => 'barcode_docs.view',
         'all'             => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
     ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting'])],
+    'ajax/get_operation_journals.php' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting', 'journals.view']),
 
     // ===== نقاط البيع =====
     'pos_clothes.php'          => 'pos.use',
