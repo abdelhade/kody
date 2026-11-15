@@ -458,7 +458,7 @@ $(document).ready(function() {
             $bankCol.addClass('d-none');
             $cashAmtCol.removeClass('col-6 d-none').addClass('col-12');
             $bankAmtCol.addClass('d-none');
-            $paidCash.prop('readonly', true);
+            $paidCash.prop('readonly', false);
             if (resetAmounts !== false) {
                 $paidCash.val(due.toFixed(2));
                 $paidBank.val('0.00');
@@ -468,6 +468,7 @@ $(document).ready(function() {
             $bankCol.removeClass('col-6 d-none').addClass('col-12');
             $cashAmtCol.addClass('d-none');
             $bankAmtCol.removeClass('col-6 d-none').addClass('col-12');
+            $paidCash.prop('readonly', true);
             $paidBank.prop('readonly', true);
             if (resetAmounts !== false) {
                 $paidCash.val('0.00');

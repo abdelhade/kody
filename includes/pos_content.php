@@ -714,7 +714,7 @@ body {
                         <div class="col-12" id="pay_cash_amount_col">
                             <label class="pay-lbl" for="modal_paid_cash"><i class="fas fa-money-bill"></i> المدفوع كاش</label>
                             <input class="form-control form-control-sm text-center fw-bold pay-num" type="text" inputmode="decimal"
-                                id="modal_paid_cash" value="0.00" autocomplete="off" readonly>
+                                id="modal_paid_cash" value="0.00" autocomplete="off">
                         </div>
                         <div class="col-6 d-none" id="pay_bank_amount_col">
                             <label class="pay-lbl" for="modal_paid_bank"><i class="fas fa-credit-card"></i> المدفوع شبكة</label>
@@ -773,7 +773,7 @@ body {
                 $bankCol.addClass('d-none');
                 $cashAmt.removeClass('col-6 d-none').addClass('col-12');
                 $bankAmt.addClass('d-none');
-                $paidCash.prop('readonly', true);
+                $paidCash.prop('readonly', false);
                 $paidBank.prop('readonly', true);
                 if (resetAmounts !== false) {
                     $paidCash.val(due.toFixed(2));

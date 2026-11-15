@@ -1,6 +1,7 @@
 <?php
 session_start();
 include('../includes/connect.php');
+require_once __DIR__ . '/../includes/receipt_design.php';
 require_once __DIR__ . '/../classes/ShiftCloser.php';
 
 if (!isset($_GET['id'])) {
@@ -17,9 +18,33 @@ $payments = $detail['payments'];
 $changes = $detail['changes'];
 $isNewShift = (int) ($shift['user_id'] ?? 0) > 0;
 
-// جلب إعدادات النظام للترويسة
+// جلب إعدادات النظام للترويسة وتصميم الإيصال
 $settings_query = $conn->query("SELECT * FROM settings WHERE id = 1");
 $settings = $settings_query->fetch_assoc();
+$design = kody_receipt_design_load($settings ?: []);
+
+$receipt_paper_width = trim((string)($design['paper_width'] ?? '78mm'));
+if ($receipt_paper_width === '58mm') {
+    $receipt_page_size = '58mm auto';
+} elseif ($receipt_paper_width === '100%') {
+    $receipt_page_size = 'A4';
+} elseif (preg_match('/^\d+(\.\d+)?mm$/i', $receipt_paper_width)) {
+    $receipt_page_size = $receipt_paper_width . ' auto';
+} else {
+    $receipt_page_size = '80mm auto';
+}
+
+$font_family = $design['font_family'] ?? 'Cairo';
+$font_size = (int)($design['font_size'] ?? 13);
+$line_spacing = (float)($design['line_spacing'] ?? 1.25);
+$margin_top = (float)($design['margin_top'] ?? 2);
+$margin_bottom = (float)($design['margin_bottom'] ?? 4);
+$margin_right = (float)($design['margin_right'] ?? 2);
+$margin_left = (float)($design['margin_left'] ?? 2);
+$show_borders = !empty($design['show_borders']);
+$paper_css = ($receipt_paper_width === '100%')
+    ? '100%; max-width: 850px;'
+    : htmlspecialchars($receipt_paper_width, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -27,19 +52,63 @@ $settings = $settings_query->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طباعة تقرير شيفت مغلق</title>
-    <!-- Bootstrap -->
     <link href="../assets/libs/bootstrap5/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            font-family: <?= htmlspecialchars($font_family, ENT_QUOTES, 'UTF-8') ?>, Cairo, Arial, Tahoma, sans-serif;
+            direction: rtl;
+        }
+        @page {
+            size: <?= htmlspecialchars($receipt_page_size, ENT_QUOTES, 'UTF-8') ?>;
+            margin: 0;
+        }
         @media print {
-            body, html { margin: 0; padding: 0; background-color: #fff; }
-            #printed { box-shadow: none !important; border: none !important; margin: 0 !important; }
+            html, body {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
+            body * { visibility: hidden; }
+            #printed, #printed * { visibility: visible; }
+            #printed {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                right: auto !important;
+                float: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: <?= $margin_top ?>mm <?= $margin_left ?>mm <?= $margin_bottom ?>mm <?= $margin_right ?>mm !important;
+                border: <?= $show_borders ? '1px solid #000' : 'none' ?> !important;
+                box-shadow: none !important;
+            }
             .no-print { display: none !important; }
         }
+        .actions {
+            width: <?= $paper_css ?>;
+            margin: 12px auto;
+            text-align: center;
+        }
         #printed {
-            font-family: 'Cairo', sans-serif;
-            color: #000;
+            width: <?= $paper_css ?>;
+            margin: 0 auto;
+            float: none;
+            border: <?= $show_borders ? '1px solid #000' : '1px solid #eee' ?>;
             background: #fff;
-            padding: 5px;
+            color: #000;
+            direction: rtl;
+            padding: <?= $margin_top ?>mm <?= $margin_left ?>mm <?= $margin_bottom ?>mm <?= $margin_right ?>mm;
+            font-family: <?= htmlspecialchars($font_family, ENT_QUOTES, 'UTF-8') ?>, Cairo, Arial, Tahoma, sans-serif;
+            font-weight: bold;
+            font-size: <?= $font_size ?>px;
+            line-height: <?= $line_spacing ?>;
         }
         .header-title {
             font-weight: bold;
@@ -56,9 +125,6 @@ $settings = $settings_query->fetch_assoc();
             margin-bottom: 3px;
             font-weight: bold;
         }
-        .info-row span:last-child {
-            margin-left: 15mm;
-        }
         .summary-box {
             border: 1px dashed #000;
             padding: 5px;
@@ -74,25 +140,19 @@ $settings = $settings_query->fetch_assoc();
             padding-top: 5px;
             margin-top: 5px;
         }
-        .total-row span:last-child {
-            margin-left: 15mm;
-        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="card no-print mx-auto mt-3" style="width: 78mm;">
-    <div class="card-body text-center">
-        <button onclick="window.print()" class="btn btn-primary w-100"><i class="fas fa-print"></i> طباعة الان</button>
-        <button onclick="window.close()" class="btn btn-secondary w-100 mt-2">إغلاق</button>
-    </div>
+<div class="actions no-print">
+    <button onclick="window.print()" class="btn btn-primary w-100"><i class="fas fa-print"></i> طباعة الان</button>
+    <button onclick="window.close()" class="btn btn-secondary w-100 mt-2">إغلاق</button>
 </div>
 
-<div class="card shadow-sm" id="printed" style="width: 78mm; margin: 0; border: 1px solid #eee; float: right; margin-right: 10mm;">
-    <div class="card-body" style="padding: 15px !important;">
+<div id="printed">
         
         <div class="text-center mb-2">
-            <h4 class="mb-1" style="font-size: 16px; font-weight: bold;"><?= $settings['site_name'] ?? 'النظام' ?></h4>
+            <h4 class="mb-1" style="font-size: 16px; font-weight: bold;"><?= htmlspecialchars($settings['site_name'] ?? 'النظام') ?></h4>
             <p class="mb-0" style="font-size: 11px;">نسخة مطبوعة من شيفت مغلق</p>
         </div>
 
@@ -100,11 +160,11 @@ $settings = $settings_query->fetch_assoc();
         
         <div class="info-row">
             <span>التاريخ:</span>
-            <span><?= $shift['date'] ?></span>
+            <span><?= htmlspecialchars((string) $shift['date']) ?></span>
         </div>
         <div class="info-row">
             <span>وقت الإغلاق:</span>
-            <span><?= $shift['endtime'] ?></span>
+            <span><?= htmlspecialchars((string) $shift['endtime']) ?></span>
         </div>
         <div class="info-row">
             <span>الكاشير:</span>
@@ -112,7 +172,7 @@ $settings = $settings_query->fetch_assoc();
         </div>
         <div class="info-row">
             <span>رقم الشيفت:</span>
-            <span>#<?= $shift['id'] ?></span>
+            <span>#<?= (int) $shift['id'] ?></span>
         </div>
 
         <?php if ($isNewShift): ?>
@@ -210,7 +270,6 @@ $settings = $settings_query->fetch_assoc();
             تمت الطباعة في: <?= date('Y-m-d H:i:s') ?>
         </div>
 
-    </div>
 </div>
 
 <script>
