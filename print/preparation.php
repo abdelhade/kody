@@ -100,7 +100,9 @@ $auto_print = !empty($design['auto_print']) || !empty($_GET['agent_print']) || !
 if (!empty($_GET['no_auto'])) {
     $auto_print = false;
 }
-$auto_close = !empty($design['auto_close']) || !empty($_GET['agent_print']) || !empty($agentPrint);
+// no_auto = وكيل الطباعة: متتنقلش بعد afterprint (CDP بيطلقه أثناء printToPDF)
+$auto_close = (empty($_GET['no_auto']))
+    && (!empty($design['auto_close']) || !empty($_GET['agent_print']) || !empty($agentPrint));
 $has_group_filter = array_key_exists('group', $_GET);
 $filter_group = $has_group_filter ? (int) $_GET['group'] : -1;
 
@@ -113,7 +115,7 @@ if (!empty($_SESSION['pos_back_page'])) {
 }
 
 $info_text = trim((string) ($rowfat['info'] ?? ''));
-$order_label = 'بون تحضير';
+$order_label = 'قسم التحضير';
 if ($info_text !== '') {
     if (strpos($info_text, 'دليفري') !== false || strpos($info_text, 'delivery') !== false) {
         $order_label = 'تحضير — دليفري';
@@ -268,7 +270,7 @@ if ($embed) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>بون تحضير <?= (int) $id ?></title>
+<title>قسم <?= (int) $id ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
 <style>
 * { box-sizing: border-box; }
@@ -380,7 +382,7 @@ html, body {
 <body>
 
 <div class="actions no-print">
-    <button type="button" id="printButton">طباعة بون التحضير</button>
+    <button type="button" id="printButton">طباعة قسم التحضير</button>
     <a href="receipt.php?id=<?= (int) $id ?>">الفاتورة</a>
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back">عودة</a>
 </div>

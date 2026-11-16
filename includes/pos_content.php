@@ -121,7 +121,7 @@ body {
                                 <div class="btn-group w-100" role="group">
                                     <input type="radio" class="btn-check" id="age1" name="age" value="1" <?= $order_type_val == 1 ? 'checked' : '' ?>>
                                     <label class="btn btn-outline-primary btn-sm" for="age1">
-                                        تيك اواي
+                                        سفري
                                     </label>
 
                                     <input type="radio" class="btn-check" id="age2" name="age" value="2"

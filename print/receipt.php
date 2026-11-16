@@ -902,8 +902,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     <?php endif; ?>
 
-    <?php if (!empty($agentPrint) || !empty($_GET['agent_print'])): ?>
-    // وكيل الطباعة: اقفل النافذة بعد الطباعة عشان الـ kiosk يخلص بسرعة
+    <?php
+    // no_auto = مسار الوكيل (HTML → CDP): ممنوع about:blank بعد الطباعة
+    // لأن Page.printToPDF يطلق afterprint؛ لو الصفحة اتفضّت قبل/بين المحاولات تطلع فاتورة فاضية
+    if ((!empty($agentPrint) || !empty($_GET['agent_print'])) && empty($_GET['no_auto'])):
+    ?>
     window.addEventListener('afterprint', function() {
         setTimeout(function() {
             try { window.close(); } catch (e) {}

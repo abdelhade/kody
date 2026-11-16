@@ -165,11 +165,22 @@ if ($action === 'jobs') {
             return null;
         }
         $baseHref = rtrim($origin, '/') . '/print/';
+        // visibility:hidden + position:absolute في صفحات الطباعة أحياناً يطلّع PDF فاضي من CDP
         $inject = '<base href="' . htmlspecialchars($baseHref, ENT_QUOTES, 'UTF-8') . '">'
             . '<style id="kody-agent-thermal">@page{size:80mm auto;margin:0!important}'
-            . 'html,body{width:72mm!important;max-width:72mm!important;margin:0!important;padding:0!important}'
+            . 'html,body{width:72mm!important;max-width:72mm!important;margin:0!important;padding:0!important;background:#fff!important}'
             . '.no-print,.actions{display:none!important}'
-            . '</style>';
+            . '@media print{'
+            . 'html,body,body *{visibility:visible!important}'
+            . '#printed,#printed *{visibility:visible!important}'
+            . '#printed{position:static!important;left:auto!important;top:auto!important;'
+            . 'right:auto!important;width:100%!important;max-width:100%!important;margin:0!important}'
+            . '.no-print,.actions{display:none!important}'
+            . '}'
+            . '</style>'
+            . '<script id="kody-agent-no-nav">(function(){try{'
+            . 'window.addEventListener("afterprint",function(e){try{e.stopImmediatePropagation();}catch(_){}},true);'
+            . '}catch(_){}})();</script>';
         if (stripos($html, '</head>') !== false) {
             $html = preg_replace('/<\/head>/i', $inject . '</head>', $html, 1);
         } else {
