@@ -392,7 +392,11 @@ function printOrder() {
         return;
     }
     
-    window.open('print/choose.php?id=' + orderId, '_blank');
+    if (window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+        window.KodyPrintAgent.printInvoice(orderId, { direct: !!window.KODY_DIRECT_PRINT });
+    } else if (!window.KODY_DIRECT_PRINT) {
+        window.open('print/combo.php?id=' + orderId, '_blank');
+    }
 }
 
 // إلغاء الطلب

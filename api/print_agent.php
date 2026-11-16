@@ -3,8 +3,7 @@
  * واجهة وكيل الطباعة المحلية (Tauri).
  * action=ping|groups|jobs
  *
- * ping/groups: عامة للجهاز المحلي
- * jobs: تحتاج تسجيل دخول (من المتصفح) لبناء روابط بتوكن
+ * ?db=dbname لاختيار قاعدة معيّنة (بعد التبديل / من إعدادات الوكيل)
  */
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
@@ -18,28 +17,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $action = isset($_GET['action']) ? (string) $_GET['action'] : 'ping';
 
-if ($action === 'ping') {
-    // اتصال خفيف بدون قاعدة إن أمكن، ومع قاعدة لو موجودة
-    $okDb = false;
-    try {
-        require_once __DIR__ . '/../includes/connect.php';
-        $okDb = isset($conn) && $conn instanceof mysqli;
-    } catch (Throwable $e) {
-        $okDb = false;
-    }
+require_once __DIR__ . '/../includes/load_env.php';
+require_once __DIR__ . '/../includes/db_name.php';
 
-    echo json_encode([
-        'ok' => true,
-        'service' => 'kody',
-        'db' => $okDb,
-        'message' => $okDb ? 'كودي جاهز' : 'كودي رد لكن قاعدة البيانات غير متاحة',
-        'time' => date('c'),
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
+// اختيار قاعدة من الوكيل قبل connect
+$requestDb = isset($_GET['db']) ? trim((string) $_GET['db']) : '';
+if ($requestDb !== '' && preg_match('/^[A-Za-z0-9_]{2,64}$/', $requestDb)) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (!defined('KODY_FORCE_DBNAME')) {
+        define('KODY_FORCE_DBNAME', $requestDb);
+    }
+    $_SESSION['active_dbname'] = $requestDb;
+}
+
+/**
+ * @return list<array{name:string,label:string,is_current:bool}>
+ */
+function print_agent_list_databases(?string $active): array
+{
+    $out = [];
+    $registryFile = dirname(__DIR__) . '/config/db_registry.json';
+    if (!is_readable($registryFile)) {
+        if ($active) {
+            $out[] = ['name' => $active, 'label' => $active, 'is_current' => true];
+        }
+        return $out;
+    }
+    $reg = json_decode((string) file_get_contents($registryFile), true);
+    if (!is_array($reg)) {
+        return $out;
+    }
+    $current = (string) ($reg['current'] ?? '');
+    foreach (($reg['databases'] ?? []) as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $name = (string) ($row['name'] ?? '');
+        if ($name === '' || !preg_match('/^[A-Za-z0-9_]{2,64}$/', $name)) {
+            continue;
+        }
+        $out[] = [
+            'name' => $name,
+            'label' => (string) ($row['label'] ?? $name),
+            'is_current' => ($active ? $name === $active : $name === $current),
+        ];
+    }
+    return $out;
 }
 
 require_once __DIR__ . '/../includes/connect.php';
 require_once __DIR__ . '/../classes/PrintAgentToken.php';
+
+$activeDb = isset($dbname) ? (string) $dbname : kody_preferred_dbname();
+$databases = print_agent_list_databases($activeDb);
+
+if ($action === 'ping') {
+    echo json_encode([
+        'ok' => true,
+        'service' => 'kody',
+        'db' => true,
+        'dbname' => $activeDb,
+        'databases' => $databases,
+        'message' => 'كودي جاهز — القاعدة: ' . $activeDb,
+        'time' => date('c'),
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 if ($action === 'groups') {
     $groups = [];
@@ -54,6 +99,8 @@ if ($action === 'groups') {
     }
     echo json_encode([
         'ok' => true,
+        'dbname' => $activeDb,
+        'databases' => $databases,
         'groups' => $groups,
     ], JSON_UNESCAPED_UNICODE);
     exit;
@@ -74,7 +121,6 @@ if ($action === 'jobs') {
 
     $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
     $mode = isset($_GET['mode']) ? (string) $_GET['mode'] : 'both';
-    // receipt | prep | both
     if ($id <= 0) {
         http_response_code(400);
         echo json_encode(['ok' => false, 'message' => 'رقم فاتورة غير صالح'], JSON_UNESCAPED_UNICODE);
@@ -83,22 +129,54 @@ if ($action === 'jobs') {
 
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    // مسار المشروع من موقع api/
     $basePath = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/kody')), '/\\');
     if ($basePath === '' || $basePath === '\\') {
         $basePath = '';
     }
     $origin = $scheme . '://' . $host . $basePath;
-
     $jobs = [];
 
-    if ($mode === 'receipt' || $mode === 'both') {
-        $q = PrintAgentToken::query($id, 'print');
-        $jobs[] = [
-            'type' => 'receipt',
-            'url' => $origin . '/print/receipt.php?id=' . $id . '&' . $q . '&agent_print=1',
-        ];
-    }
+    /**
+     * يجيب HTML صفحة الطباعة من السيرفر (بتوكن) عشان الوكيل يطبع الملف مباشرة.
+     * بيحط <base href> على مجلد print/ عشان لما الوكيل يفتح الملف محلياً
+     * الصور/اللينكات النسبية متطلعش file not found.
+     */
+    $fetchPrintHtml = static function (string $url) use ($origin): ?string {
+        $ctx = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 20,
+                'follow_location' => 0,
+                'header' => "Accept: text/html\r\nConnection: close\r\n",
+            ],
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
+        $html = @file_get_contents($url, false, $ctx);
+        if ($html === false || strlen($html) < 200) {
+            return null;
+        }
+        if (stripos($html, 'type="password"') !== false || stripos($html, "type='password'") !== false) {
+            return null;
+        }
+        if (stripos($html, 'id="printed"') === false && stripos($html, "id='printed'") === false) {
+            return null;
+        }
+        $baseHref = rtrim($origin, '/') . '/print/';
+        $inject = '<base href="' . htmlspecialchars($baseHref, ENT_QUOTES, 'UTF-8') . '">'
+            . '<style id="kody-agent-thermal">@page{size:80mm auto;margin:0!important}'
+            . 'html,body{width:72mm!important;max-width:72mm!important;margin:0!important;padding:0!important}'
+            . '.no-print,.actions{display:none!important}'
+            . '</style>';
+        if (stripos($html, '</head>') !== false) {
+            $html = preg_replace('/<\/head>/i', $inject . '</head>', $html, 1);
+        } else {
+            $html = $inject . $html;
+        }
+        return $html;
+    };
 
     if ($mode === 'prep' || $mode === 'both') {
         $groupIds = [];
@@ -123,31 +201,57 @@ if ($action === 'jobs') {
         }
 
         if (empty($groupIds)) {
-            $q = PrintAgentToken::query($id, 'prep');
+            $groupIds[0] = true;
+        }
+
+        foreach (array_keys($groupIds) as $gid) {
+            $gid = (int) $gid;
+            $q = PrintAgentToken::query($id, 'prep', 600, $activeDb);
+            $url = $origin . '/print/preparation.php?id=' . $id
+                . '&' . $q . '&agent_print=1&no_auto=1';
+            if ($gid > 0) {
+                $url .= '&group=' . $gid;
+            }
+            $html = $fetchPrintHtml($url);
+            if ($html === null) {
+                http_response_code(502);
+                echo json_encode([
+                    'ok' => false,
+                    'message' => 'تعذر تجهيز بون التحضير للطباعة',
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
             $jobs[] = [
                 'type' => 'prep',
-                'group_id' => null,
-                'url' => $origin . '/print/preparation.php?id=' . $id . '&' . $q . '&agent_print=1',
+                'group_id' => $gid > 0 ? $gid : null,
+                'html' => $html,
             ];
-        } else {
-            foreach (array_keys($groupIds) as $gid) {
-                $q = PrintAgentToken::query($id, 'prep');
-                $gid = (int) $gid;
-                $url = $origin . '/print/preparation.php?id=' . $id
-                    . '&' . $q . '&agent_print=1&group=' . $gid;
-                $jobs[] = [
-                    'type' => 'prep',
-                    'group_id' => $gid > 0 ? $gid : null,
-                    'url' => $url,
-                ];
-            }
         }
+    }
+
+    if ($mode === 'receipt' || $mode === 'both') {
+        $q = PrintAgentToken::query($id, 'print', 600, $activeDb);
+        $url = $origin . '/print/receipt.php?id=' . $id . '&' . $q . '&agent_print=1&no_auto=1';
+        $html = $fetchPrintHtml($url);
+        if ($html === null) {
+            http_response_code(502);
+            echo json_encode([
+                'ok' => false,
+                'message' => 'تعذر تجهيز الفاتورة للطباعة',
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        $jobs[] = [
+            'type' => 'receipt',
+            'html' => $html,
+        ];
     }
 
     echo json_encode([
         'ok' => true,
         'id' => $id,
         'mode' => $mode,
+        'dbname' => $activeDb,
         'jobs' => $jobs,
         'agent' => 'http://127.0.0.1:17890/print',
     ], JSON_UNESCAPED_UNICODE);

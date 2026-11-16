@@ -314,7 +314,14 @@ try {
 
 // إعادة التوجيه
 if ($submit == 'cash') {
-    // حفظ وطباعة — اختيار نوع الطباعة (فاتورة / بون تحضير)
+    if (!function_exists('kody_receipt_design_load')) {
+        require_once __DIR__ . '/../includes/receipt_design.php';
+    }
+    $cashDesign = kody_receipt_design_load($rowstg ?? []);
+    if (!empty($cashDesign['direct_print'])) {
+        header('Location: ../pos_clothes.php?print_id=' . (int) $last_op . '&r=' . time());
+        exit;
+    }
     header("Location: ../print/choose.php?id=$last_op");
 } else {
     // حفظ فقط — رجوع للـ POS

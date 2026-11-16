@@ -559,7 +559,12 @@
 
         $('#ptpBtnPrint').on('click', function () {
             if (!state.selected || !state.selected.order_id) return;
-            window.open('print/choose.php?id=' + state.selected.order_id, '_blank');
+            var oid = state.selected.order_id;
+            if (window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+                window.KodyPrintAgent.printInvoice(oid, { direct: !!window.KODY_DIRECT_PRINT });
+            } else if (!window.KODY_DIRECT_PRINT) {
+                window.open('print/combo.php?id=' + oid, '_blank');
+            }
         });
 
         $('#ptpBtnRefresh').on('click', function () {

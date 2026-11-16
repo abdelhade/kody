@@ -19,7 +19,12 @@ final class Can
     private const SETTINGS_UNLOCK_PASSWORD = 'hadi@1234';
     private const SETTINGS_UNLOCK_TTL = 1800;
     /** setting.php هي اللي بتعرض فورم الباسورد، والنسخة الاحتياطية من الناف بار */
-    private const SETTINGS_LOCK_EXEMPT = ['setting.php', 'do/dobackup.php'];
+    private const SETTINGS_LOCK_EXEMPT = [
+        'setting.php',
+        'do/dobackup.php',
+        'do/doedit_settings.php',
+        'ajax/save_direct_print.php',
+    ];
 
     /** باسورد المستخدم الحالي (password_hash أو md5 القديم) */
     public static function verifyPassword(mysqli $conn, string $password): bool

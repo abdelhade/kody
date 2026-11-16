@@ -15,6 +15,7 @@ function kody_receipt_design_defaults(): array
         'margin_right' => 2,         // mm
         'auto_print' => true,        // فتح نافذة الطباعة تلقائياً
         'auto_close' => true,        // الرجوع/الإغلاق تلقائياً بعد اكتمال الطباعة
+        'direct_print' => false,     // true = مباشرة عبر وكيل الطباعة بدون عرض الصفحة
         'show_borders' => true,      // إطار خارجي للإيصال
 
         // الترويسة والشعار
@@ -160,6 +161,7 @@ function kody_receipt_design_normalize(array $input): array
 
     $d['auto_print'] = kody_rd_bool($input, 'auto_print', $d['auto_print']);
     $d['auto_close'] = kody_rd_bool($input, 'auto_close', $d['auto_close']);
+    $d['direct_print'] = kody_rd_bool($input, 'direct_print', $d['direct_print']);
     $d['show_borders'] = kody_rd_bool($input, 'show_borders', $d['show_borders']);
 
     // Header
@@ -307,6 +309,7 @@ function kody_receipt_design_from_post(array $post): array
         'margin_right' => $post['rd_margin_right'] ?? 2,
         'auto_print' => isset($post['rd_auto_print']),
         'auto_close' => isset($post['rd_auto_close']),
+        'direct_print' => (($post['rd_direct_print'] ?? '') === '1'),
         'show_borders' => isset($post['rd_show_borders']),
 
         'header' => [

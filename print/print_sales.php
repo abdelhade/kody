@@ -1080,11 +1080,8 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
     <button type="button" id="printButton">
         طباعة الفاتورة
     </button>
-    <a href="preparation.php?id=<?= (int)$id ?>" class="back-btn">
-        بون التحضير
-    </a>
-    <a href="choose.php?id=<?= (int)$id ?>&src=invoice" class="back-btn">
-        اختيار الطباعة
+    <a href="combo.php?id=<?= (int)$id ?>" class="back-btn">
+        تحضير + فاتورة
     </a>
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back" class="back-btn">
         عودة

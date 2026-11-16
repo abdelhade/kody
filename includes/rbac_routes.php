@@ -242,6 +242,7 @@ return [
     'print/receipt_waiter.php' => 'pos.use',
     'print/preparation.php'    => ['pos.use', 'pos.closed_sessions', 'sales.view'],
     'print/choose.php'         => ['pos.use', 'pos.closed_sessions', 'sales.view'],
+    'print/combo.php'          => ['pos.use', 'pos.closed_sessions', 'sales.view'],
     'ajax/cancel_order.php'      => 'pos.cancel_order',
     'ajax/delete_order.php'      => 'pos.cancel_order',
     'ajax/delete_order_item.php' => 'pos.cancel_order',
@@ -568,6 +569,7 @@ return [
     // ===== الإعدادات والنظام =====
     'setting.php'              => ['settings.manage', 'system.manage'],
     'do/doedit_settings.php'   => 'settings.manage',
+    'ajax/save_direct_print.php' => 'settings.manage',
     'news.php'                 => 'news.view',
     'add_news.php'             => 'news.add',
     'do/doadd_news.php'        => 'news.add',

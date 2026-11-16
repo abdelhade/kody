@@ -1042,6 +1042,15 @@ body {
     }
     </script>
     
+    <?php
+    if (!function_exists('kody_receipt_design_load')) {
+        require_once __DIR__ . '/receipt_design.php';
+    }
+    $_kody_rd = kody_receipt_design_load($rowstg ?? []);
+    ?>
+    <script>
+    window.KODY_DIRECT_PRINT = <?= !empty($_kody_rd['direct_print']) ? 'true' : 'false' ?>;
+    </script>
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
     <script src="js/print_agent_client.js?v=<?= time() ?>"></script>
@@ -1059,6 +1068,20 @@ body {
             } else {
                 console.log('🌐 Device is online - Offline adapter ready');
             }
+
+            // لو رجعنالـ POS بـ print_id (مسار قديم/redirect): اطبع من هنا من غير صفحة تانية
+            try {
+                var params = new URLSearchParams(window.location.search || '');
+                var printId = parseInt(params.get('print_id') || '0', 10);
+                if (printId > 0 && window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+                    params.delete('print_id');
+                    var clean = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, '', clean);
+                    }
+                    window.KodyPrintAgent.printInvoice(printId, { direct: !!window.KODY_DIRECT_PRINT });
+                }
+            } catch (e) {}
         });
     </script>
 
@@ -1889,7 +1912,8 @@ body {
         if (isHold && finalizeInput) finalizeInput.value = '0';
         const isFinalizing = !isHold && !!(finalizeInput && finalizeInput.value === '1');
 
-        if ((isTableOrder || isFinalizing) && (action === 'save' || action === 'cash' || action === 'hold')) {
+        // حفظ نقدي/معلّق/طاولة: AJAX عشان نفضل على الـ POS والطباعة تروح للطابور
+        if ((isTableOrder || isFinalizing || action === 'cash' || action === 'hold') && (action === 'save' || action === 'cash' || action === 'hold')) {
             let ajaxInput = form.querySelector('input[name="ajax_save"]');
             if (!ajaxInput) {
                 ajaxInput = document.createElement('input');
@@ -1914,8 +1938,8 @@ body {
                             form.appendChild(editIdInput);
                         }
 
-                        if (data.finalized) {
-                            // الطلب أُغلق: أفرِغ السياق حتى لا يُعدّل طلب مقفول
+                        if (data.finalized || action === 'cash') {
+                            // الطلب أُغلق أو اتحاسب نقدي: أفرِغ السلة ونفضل على الـ POS
                             if (finalizeInput) finalizeInput.value = '0';
                             editIdInput.value = '';
                             $('#edit_order_id, #selected_order_id').val('');
@@ -1934,10 +1958,18 @@ body {
                             editIdInput.value = data.order_id;
                         }
 
-                        Swal.fire({ icon: 'success', title: 'تم', text: data.message, timer: 1500, showConfirmButton: false });
                         if (window.PosTablesPanel) PosTablesPanel.refresh();
                         if (action === 'cash' && data.order_id) {
-                            window.open('print/choose.php?id=' + data.order_id, '_blank');
+                            // الطباعة فقط عبر toast — بدون صفحة اختيار/فاتورة
+                            if (window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+                                window.KodyPrintAgent.printInvoice(data.order_id, { direct: !!window.KODY_DIRECT_PRINT });
+                            } else if (!window.KODY_DIRECT_PRINT) {
+                                window.open('print/combo.php?id=' + data.order_id, '_blank');
+                            } else {
+                                Swal.fire({ toast: true, position: 'top', icon: 'warning', title: 'وكيل الطباعة غير محمّل', timer: 2500, showConfirmButton: false });
+                            }
+                        } else {
+                            Swal.fire({ icon: 'success', title: 'تم', text: data.message, timer: 1500, showConfirmButton: false });
                         }
                         setTimeout(updateShiftInfoButton, 500);
                     } else {
@@ -2118,7 +2150,11 @@ body {
 
             // Global functions for actions
             window.reprintOrder = function(orderId) {
-                window.open('print/choose.php?id=' + orderId, '_blank');
+                if (window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+                    window.KodyPrintAgent.printInvoice(orderId, { direct: !!window.KODY_DIRECT_PRINT });
+                } else if (!window.KODY_DIRECT_PRINT) {
+                    window.open('print/combo.php?id=' + orderId, '_blank');
+                }
             };
 
             window.showOrderItems = function(orderId) {

@@ -141,6 +141,29 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
           </div>
         </div>
 
+        <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px;">
+          <div class="card-body py-3 px-4">
+            <label class="font-weight-bold d-block mb-2">
+              <i class="fas fa-print text-primary ml-1"></i>
+              طريقة طباعة الكاشير (تحضير + فاتورة)
+            </label>
+            <div class="btn-group d-flex flex-wrap" role="group" aria-label="طريقة الطباعة">
+              <label class="btn btn-outline-primary flex-fill mb-1 <?= empty($rd['direct_print']) ? 'active' : '' ?>" id="rd_direct_print_0_lbl" for="rd_direct_print_0">
+                <input type="radio" class="rd-live d-none" name="rd_direct_print" id="rd_direct_print_0" value="0" <?= empty($rd['direct_print']) ? 'checked' : '' ?>>
+                غير مباشرة — عرض الورقتين ثم أمر طباعة واحد
+              </label>
+              <label class="btn btn-outline-success flex-fill mb-1 <?= !empty($rd['direct_print']) ? 'active' : '' ?>" id="rd_direct_print_1_lbl" for="rd_direct_print_1">
+                <input type="radio" class="rd-live d-none" name="rd_direct_print" id="rd_direct_print_1" value="1" <?= !empty($rd['direct_print']) ? 'checked' : '' ?>>
+                مباشرة — عبر وكيل الطباعة بدون عرض الصفحة
+              </label>
+            </div>
+            <small class="form-text text-muted mb-0">
+              الترتيب دائماً: بون التحضير ثم الفاتورة.
+              <span id="rdDirectPrintStatus" class="font-weight-bold text-success"></span>
+            </small>
+          </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-3 px-1">
           <small class="text-muted font-weight-bold"><i class="fas fa-layer-group ml-1"></i> أقسام تخصيص الفاتورة:</small>
           <div class="btn-group btn-group-sm">
@@ -1707,6 +1730,64 @@ document.addEventListener('DOMContentLoaded', function () {
       if (defaultBtn) defaultBtn.click();
     });
   }
+
+  // حفظ فوري لطريقة الطباعة على قاعدة الجلسة الحالية
+  function syncDirectPrintUi() {
+    var v0 = document.getElementById('rd_direct_print_0');
+    var v1 = document.getElementById('rd_direct_print_1');
+    var l0 = document.getElementById('rd_direct_print_0_lbl');
+    var l1 = document.getElementById('rd_direct_print_1_lbl');
+    if (l0) l0.classList.toggle('active', !!(v0 && v0.checked));
+    if (l1) l1.classList.toggle('active', !!(v1 && v1.checked));
+  }
+  function saveDirectPrintNow() {
+    var checked = document.querySelector('input[name="rd_direct_print"]:checked');
+    var val = checked ? checked.value : '0';
+    var status = document.getElementById('rdDirectPrintStatus');
+    if (status) {
+      status.className = 'font-weight-bold text-muted';
+      status.textContent = ' جاري الحفظ...';
+    }
+    var fd = new FormData();
+    fd.append('direct_print', val);
+    fetch('ajax/save_direct_print.php', {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(function (r) { return r.text(); })
+      .then(function (text) {
+        var data = null;
+        try { data = JSON.parse(text); } catch (e) { data = null; }
+        if (status) {
+          if (!data) {
+            status.className = 'font-weight-bold text-danger';
+            status.textContent = ' فشل الحفظ (رد غير متوقع من السيرفر)';
+            return;
+          }
+          status.className = 'font-weight-bold ' + (data.ok ? 'text-success' : 'text-danger');
+          status.textContent = ' ' + (data.message || 'تعذر الحفظ')
+            + (data.db ? (' — DB: ' + data.db) : '');
+        }
+      })
+      .catch(function () {
+        if (status) {
+          status.className = 'font-weight-bold text-danger';
+          status.textContent = ' فشل الاتصال أثناء الحفظ';
+        }
+      });
+  }
+  document.querySelectorAll('input[name="rd_direct_print"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      syncDirectPrintUi();
+      saveDirectPrintNow();
+    });
+  });
+  syncDirectPrintUi();
 
   // تهيئة المعاينة الأولية
   updateLivePreview();

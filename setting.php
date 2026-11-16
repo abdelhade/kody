@@ -1202,6 +1202,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
   }
+  // فتح التاب من الـ hash (#tab-print إلخ)
+  function activateTabFromHash() {
+    var hash = window.location.hash;
+    if (!hash) return;
+    var pane = document.querySelector(hash);
+    if (!pane) return;
+    var link = document.querySelector('[data-toggle="pill"][href="' + hash + '"]');
+    if (!link) return;
+    if (window.jQuery) {
+      window.jQuery(link).tab('show');
+    } else {
+      link.click();
+    }
+  }
+  activateTabFromHash();
+  window.addEventListener('hashchange', activateTabFromHash);
 });
 </script>
 

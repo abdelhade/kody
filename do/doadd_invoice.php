@@ -830,15 +830,42 @@ if ($submit == 'print') {
         $_SESSION['pos_back_page'] = $_SERVER['HTTP_REFERER'];
     }
     error_log('CONDITION MATCHED: submit == cash');
-    $redirect_url = "../print/choose.php?id=$last_op";
-    error_log('Redirecting to: ' . $redirect_url);
-    
+
     // التحقق من طلب القفل بعد الحفظ والطباعة
     if (isset($_POST['lock_after_save']) && $_POST['lock_after_save'] == '1') {
         error_log('Lock after save and print requested');
         $_SESSION['lock_after_print'] = true;
     }
-    
+
+    // طباعة مباشرة: ارجع للـ POS واطبع من هناك (من غير صفحة طابور)
+    if (!function_exists('kody_receipt_design_load')) {
+        require_once __DIR__ . '/../includes/receipt_design.php';
+    }
+    $cashDesign = kody_receipt_design_load($rowstg ?? []);
+    if (!empty($cashDesign['direct_print'])) {
+        $posPage = '../pos_barcode.php';
+        $posType = $rowstg['pos_type'] ?? 'barcode';
+        if ($posType === 'clothes') {
+            $posPage = '../pos_clothes.php';
+        } elseif ($posType === 'tables' || $posType === 'restaurant') {
+            $posPage = '../pos_tables.php';
+        }
+        if (!empty($_SESSION['pos_back_page']) && strpos((string) $_SESSION['pos_back_page'], 'pos_') !== false) {
+            $back = (string) $_SESSION['pos_back_page'];
+            // لو referer كامل URL خده path فقط نسبياً
+            if (preg_match('~/pos_[a-z0-9_]+\.php~i', $back, $m)) {
+                $posPage = '..' . $m[0];
+            } elseif (strpos($back, 'pos_') !== false) {
+                $posPage = $back;
+            }
+        }
+        $sep = (strpos($posPage, '?') !== false) ? '&' : '?';
+        header('Location: ' . $posPage . $sep . 'print_id=' . (int) $last_op . '&r=' . time());
+        exit;
+    }
+
+    $redirect_url = "../print/choose.php?id=$last_op";
+    error_log('Redirecting to: ' . $redirect_url);
     header("Location: $redirect_url");
     error_log('Header sent - this should not appear if redirect works');
     exit;

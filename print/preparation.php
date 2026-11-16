@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 require_once __DIR__ . '/../includes/load_env.php';
 require_once __DIR__ . '/../includes/db_name.php';
 require_once __DIR__ . '/../classes/PrintAgentToken.php';
@@ -9,6 +11,7 @@ $table_id = isset($_GET['table_id']) ? (int) $_GET['table_id'] : 0;
 $agentPrint = $id > 0 && PrintAgentToken::verify($id);
 if ($agentPrint) {
     define('KODY_SKIP_GUARD', true);
+    PrintAgentToken::applyForcedDb();
 } elseif (!isset($_SESSION['login'])) {
     header('Location: ../index.php');
     exit;
@@ -94,7 +97,10 @@ if ($receipt_paper_width === '58mm') {
 $font_family = $design['font_family'] ?? 'Cairo';
 $font_size = max(14, (int) ($design['font_size'] ?? 13) + 2);
 $auto_print = !empty($design['auto_print']) || !empty($_GET['agent_print']) || !empty($agentPrint);
-$auto_close = !empty($design['auto_close']);
+if (!empty($_GET['no_auto'])) {
+    $auto_print = false;
+}
+$auto_close = !empty($design['auto_close']) || !empty($_GET['agent_print']) || !empty($agentPrint);
 $has_group_filter = array_key_exists('group', $_GET);
 $filter_group = $has_group_filter ? (int) $_GET['group'] : -1;
 
@@ -203,6 +209,59 @@ if ($filter_group > 0) {
 $paper_css = ($receipt_paper_width === '100%')
     ? '100%; max-width: 420px;'
     : htmlspecialchars($receipt_paper_width, ENT_QUOTES, 'UTF-8');
+$embed = !empty($_GET['embed']) || !empty($kody_print_embed);
+
+ob_start();
+?>
+<div id="<?= $embed ? 'prepPrinted' : 'printed' ?>" class="prep-sheet">
+    <div class="prep-title"><?= htmlspecialchars($order_label, ENT_QUOTES, 'UTF-8') ?></div>
+    <div class="prep-meta">
+        <div>رقم الطلب: <?= htmlspecialchars($invoice_num, ENT_QUOTES, 'UTF-8') ?></div>
+        <div>الوقت: <?= htmlspecialchars($pro_date, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php if ($emp_name !== ''): ?>
+        <div>الكاشير: <?= htmlspecialchars($emp_name, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($driver_name !== ''): ?>
+        <div>المندوب: <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($info_text !== '' && strpos($order_label, $info_text) === false): ?>
+        <div><?= htmlspecialchars($info_text, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+    </div>
+
+    <?php if (empty($items)): ?>
+    <div class="prep-empty">لا توجد أصناف للتحضير</div>
+    <?php else: ?>
+    <table class="prep-table">
+        <thead>
+            <tr>
+                <th class="prep-qty">الكمية</th>
+                <th>الصنف</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($items as $item): ?>
+            <tr>
+                <td class="prep-qty"><?= (int) round((float) $item['qty']) ?></td>
+                <td class="prep-name">
+                    <?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>
+                    <?php if ($item['unit'] !== ''): ?>
+                    <div class="prep-unit"><?= htmlspecialchars($item['unit'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+</div>
+<?php
+$prep_body_html = ob_get_clean();
+
+if ($embed) {
+    echo $prep_body_html;
+    return;
+}
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -323,51 +382,11 @@ html, body {
 <div class="actions no-print">
     <button type="button" id="printButton">طباعة بون التحضير</button>
     <a href="receipt.php?id=<?= (int) $id ?>">الفاتورة</a>
-    <a href="choose.php?id=<?= (int) $id ?>">اختيار الطباعة</a>
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back">عودة</a>
 </div>
 
 <div id="printed">
-    <div class="prep-title"><?= htmlspecialchars($order_label, ENT_QUOTES, 'UTF-8') ?></div>
-    <div class="prep-meta">
-        <div>رقم الطلب: <?= htmlspecialchars($invoice_num, ENT_QUOTES, 'UTF-8') ?></div>
-        <div>الوقت: <?= htmlspecialchars($pro_date, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php if ($emp_name !== ''): ?>
-        <div>الكاشير: <?= htmlspecialchars($emp_name, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-        <?php if ($driver_name !== ''): ?>
-        <div>المندوب: <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-        <?php if ($info_text !== '' && strpos($order_label, $info_text) === false): ?>
-        <div><?= htmlspecialchars($info_text, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php endif; ?>
-    </div>
-
-    <?php if (empty($items)): ?>
-    <div class="prep-empty">لا توجد أصناف للتحضير</div>
-    <?php else: ?>
-    <table class="prep-table">
-        <thead>
-            <tr>
-                <th class="prep-qty">الكمية</th>
-                <th>الصنف</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($items as $item): ?>
-            <tr>
-                <td class="prep-qty"><?= (int) round((float) $item['qty']) ?></td>
-                <td class="prep-name">
-                    <?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>
-                    <?php if ($item['unit'] !== ''): ?>
-                    <div class="prep-unit"><?= htmlspecialchars($item['unit'], ENT_QUOTES, 'UTF-8') ?></div>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php endif; ?>
+<?= $prep_body_html ?>
 </div>
 
 <script>

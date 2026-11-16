@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 require_once __DIR__ . '/../includes/load_env.php';
 require_once __DIR__ . '/../includes/db_name.php';
 require_once __DIR__ . '/../classes/PrintAgentToken.php';
@@ -13,6 +15,7 @@ $id = intval($_GET['id']);
 $agentPrint = PrintAgentToken::verify($id);
 if ($agentPrint) {
     define('KODY_SKIP_GUARD', true);
+    PrintAgentToken::applyForcedDb();
 } elseif (!isset($_SESSION['login'])) {
     header('Location: ../index.php');
     exit;
@@ -85,6 +88,9 @@ $is_return = in_array((int)$rowfat['pro_tybe'], [10, 11], true);
 $design = kody_receipt_design_load($rowstg);
 if (!empty($agentPrint) || !empty($_GET['agent_print'])) {
     $design['auto_print'] = true;
+}
+if (!empty($_GET['no_auto'])) {
+    $design['auto_print'] = false;
 }
 
 // إعدادات الورقة والمظهر
@@ -337,8 +343,7 @@ html, body {
 
 <div class="actions no-print">
     <button type="button" id="printButton">طباعة الفاتورة</button>
-    <a href="preparation.php?id=<?= (int)$id ?>">بون التحضير</a>
-    <a href="choose.php?id=<?= (int)$id ?><?= $from_invoice ? '&src=invoice' : '' ?>">اختيار الطباعة</a>
+    <a href="combo.php?id=<?= (int)$id ?>">تحضير + فاتورة</a>
     <?php if ($from_invoice): ?>
     <label for="printCashierCheck" style="display:inline-flex; align-items:center; gap:6px; margin:4px; cursor:pointer; font-weight:bold;">
         <input type="checkbox" id="printCashierCheck" checked>
@@ -893,7 +898,17 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php if (!empty($design['auto_print'])): ?>
     // طباعة تلقائية بعد جاهزية الـ QR
     vatQrReady.then(function() {
-        setTimeout(function() { window.print(); }, 200);
+        setTimeout(function() { window.print(); }, 150);
+    });
+    <?php endif; ?>
+
+    <?php if (!empty($agentPrint) || !empty($_GET['agent_print'])): ?>
+    // وكيل الطباعة: اقفل النافذة بعد الطباعة عشان الـ kiosk يخلص بسرعة
+    window.addEventListener('afterprint', function() {
+        setTimeout(function() {
+            try { window.close(); } catch (e) {}
+            try { window.location.replace('about:blank'); } catch (e2) {}
+        }, 50);
     });
     <?php endif; ?>
 });

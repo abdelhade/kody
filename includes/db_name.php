@@ -8,6 +8,13 @@ function kody_db_candidates(): array
 {
     $candidates = [];
 
+    // طباعة الوكيل: القاعدة الممرَّرة في الرابط لها الأولوية
+    if (defined('KODY_FORCE_DBNAME')
+        && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) KODY_FORCE_DBNAME)
+    ) {
+        $candidates[] = (string) KODY_FORCE_DBNAME;
+    }
+
     if (session_status() === PHP_SESSION_ACTIVE
         && !empty($_SESSION['active_dbname'])
         && preg_match('/^[A-Za-z0-9_]{2,64}$/', (string) $_SESSION['active_dbname'])
