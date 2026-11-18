@@ -89,6 +89,7 @@ if(isset($_SESSION['success_message'])){
     ?>
     <script>
     window.KODY_DIRECT_PRINT = <?= !empty($_kody_rd_clothes['direct_print']) ? 'true' : 'false' ?>;
+    window.KODY_PRINT_JOBS = <?= json_encode(kody_receipt_print_jobs($_kody_rd_clothes), JSON_UNESCAPED_UNICODE) ?>;
     </script>
     <script src="js/print_agent_client.js?v=<?= time() ?>"></script>
     <script src="components/pos_clothes/scripts.js?v=<?= time() ?>"></script>

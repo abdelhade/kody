@@ -181,13 +181,37 @@
     });
   }
 
+  function resolvePrintJobs(options) {
+    options = options || {};
+    var jobs = options.mode || options.printJobs || options.print_jobs;
+    if (!jobs && typeof window.KODY_PRINT_JOBS !== 'undefined') {
+      jobs = window.KODY_PRINT_JOBS;
+    }
+    jobs = String(jobs || 'both');
+    if (['both', 'receipt', 'prep'].indexOf(jobs) === -1) {
+      jobs = 'both';
+    }
+    return jobs;
+  }
+
+  function printJobsUrl(invoiceId, jobs) {
+    if (jobs === 'receipt') {
+      return appUrl('print/receipt.php?id=' + encodeURIComponent(invoiceId));
+    }
+    if (jobs === 'prep') {
+      return appUrl('print/preparation.php?id=' + encodeURIComponent(invoiceId));
+    }
+    return appUrl('print/combo.php?id=' + encodeURIComponent(invoiceId));
+  }
+
   function printOrFallback(invoiceId, mode, fallbackUrls) {
+    var jobs = resolvePrintJobs({ mode: mode });
     var urls = fallbackUrls;
-    if ((!urls || !urls.length) && (mode === 'both' || !mode)) {
-      urls = [appUrl('print/combo.php?id=' + encodeURIComponent(invoiceId))];
+    if (!urls || !urls.length) {
+      urls = [printJobsUrl(invoiceId, jobs)];
     }
     toast('info', 'جاري الطباعة...', 60000);
-    return printViaAgent(invoiceId, mode)
+    return printViaAgent(invoiceId, jobs)
       .then(function (used) {
         if (used) {
           toast('success', 'تمت الطباعة بنجاح');
@@ -225,8 +249,8 @@
     if (typeof options.direct === 'undefined' && typeof window.KODY_DIRECT_PRINT !== 'undefined') {
       direct = !!window.KODY_DIRECT_PRINT;
     }
-    var comboUrl =
-      options.comboUrl || appUrl('print/combo.php?id=' + encodeURIComponent(invoiceId));
+    var jobs = resolvePrintJobs(options);
+    var comboUrl = options.comboUrl || printJobsUrl(invoiceId, jobs);
 
     if (!direct) {
       window.open(comboUrl, '_blank');
@@ -234,7 +258,7 @@
     }
 
     toast('info', 'جاري الطباعة...', 60000);
-    return printViaAgent(invoiceId, 'both')
+    return printViaAgent(invoiceId, jobs)
       .then(function (used) {
         if (used) {
           toast('success', 'تمت الطباعة بنجاح');

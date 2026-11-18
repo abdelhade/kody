@@ -144,24 +144,50 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
           </div>
         </div>
 
+        <?php
+          $rd_print_jobs = kody_receipt_print_jobs($rd);
+        ?>
         <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px;">
           <div class="card-body py-3 px-4">
             <label class="font-weight-bold d-block mb-2">
+              <i class="fas fa-receipt text-info ml-1"></i>
+              ماذا يُطبع من الكاشير؟
+            </label>
+            <div class="btn-group d-flex flex-wrap" role="group" aria-label="محتوى الطباعة">
+              <label class="btn btn-outline-info flex-fill mb-1 <?= $rd_print_jobs === 'both' ? 'active' : '' ?>" id="rd_print_jobs_both_lbl" for="rd_print_jobs_both">
+                <input type="radio" class="rd-live d-none" name="rd_print_jobs" id="rd_print_jobs_both" value="both" <?= $rd_print_jobs === 'both' ? 'checked' : '' ?>>
+                بون التحضير + الفاتورة
+              </label>
+              <label class="btn btn-outline-secondary flex-fill mb-1 <?= $rd_print_jobs === 'receipt' ? 'active' : '' ?>" id="rd_print_jobs_receipt_lbl" for="rd_print_jobs_receipt">
+                <input type="radio" class="rd-live d-none" name="rd_print_jobs" id="rd_print_jobs_receipt" value="receipt" <?= $rd_print_jobs === 'receipt' ? 'checked' : '' ?>>
+                الفاتورة فقط (بدون بون)
+              </label>
+              <label class="btn btn-outline-warning flex-fill mb-1 <?= $rd_print_jobs === 'prep' ? 'active' : '' ?>" id="rd_print_jobs_prep_lbl" for="rd_print_jobs_prep">
+                <input type="radio" class="rd-live d-none" name="rd_print_jobs" id="rd_print_jobs_prep" value="prep" <?= $rd_print_jobs === 'prep' ? 'checked' : '' ?>>
+                بون التحضير فقط
+              </label>
+            </div>
+            <small class="form-text text-muted mb-3">
+              لإلغاء البون اختَر «الفاتورة فقط».
+              <span id="rdPrintJobsStatus" class="font-weight-bold text-success"></span>
+            </small>
+
+            <label class="font-weight-bold d-block mb-2">
               <i class="fas fa-print text-primary ml-1"></i>
-              طريقة طباعة الكاشير (تحضير + فاتورة)
+              طريقة الطباعة
             </label>
             <div class="btn-group d-flex flex-wrap" role="group" aria-label="طريقة الطباعة">
               <label class="btn btn-outline-primary flex-fill mb-1 <?= empty($rd['direct_print']) ? 'active' : '' ?>" id="rd_direct_print_0_lbl" for="rd_direct_print_0">
                 <input type="radio" class="rd-live d-none" name="rd_direct_print" id="rd_direct_print_0" value="0" <?= empty($rd['direct_print']) ? 'checked' : '' ?>>
-                غير مباشرة — عرض الورقتين ثم أمر طباعة واحد
+                غير مباشرة — عرض ثم أمر طباعة
               </label>
               <label class="btn btn-outline-success flex-fill mb-1 <?= !empty($rd['direct_print']) ? 'active' : '' ?>" id="rd_direct_print_1_lbl" for="rd_direct_print_1">
                 <input type="radio" class="rd-live d-none" name="rd_direct_print" id="rd_direct_print_1" value="1" <?= !empty($rd['direct_print']) ? 'checked' : '' ?>>
-                مباشرة — عبر وكيل الطباعة بدون عرض الصفحة
+                مباشرة — عبر وكيل الطباعة بدون عرض
               </label>
             </div>
             <small class="form-text text-muted mb-0">
-              الترتيب دائماً: بون التحضير ثم الفاتورة.
+              عند اختيار الاتنين: بون التحضير ثم الفاتورة.
               <span id="rdDirectPrintStatus" class="font-weight-bold text-success"></span>
             </small>
           </div>
@@ -1781,7 +1807,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // حفظ فوري لطريقة الطباعة على قاعدة الجلسة الحالية
+  // حفظ فوري لطريقة/محتوى الطباعة على قاعدة الجلسة الحالية
   function syncDirectPrintUi() {
     var v0 = document.getElementById('rd_direct_print_0');
     var v1 = document.getElementById('rd_direct_print_1');
@@ -1789,17 +1815,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var l1 = document.getElementById('rd_direct_print_1_lbl');
     if (l0) l0.classList.toggle('active', !!(v0 && v0.checked));
     if (l1) l1.classList.toggle('active', !!(v1 && v1.checked));
+
+    ['both', 'receipt', 'prep'].forEach(function (job) {
+      var input = document.getElementById('rd_print_jobs_' + job);
+      var lbl = document.getElementById('rd_print_jobs_' + job + '_lbl');
+      if (lbl) lbl.classList.toggle('active', !!(input && input.checked));
+    });
   }
-  function saveDirectPrintNow() {
-    var checked = document.querySelector('input[name="rd_direct_print"]:checked');
-    var val = checked ? checked.value : '0';
-    var status = document.getElementById('rdDirectPrintStatus');
-    if (status) {
-      status.className = 'font-weight-bold text-muted';
-      status.textContent = ' جاري الحفظ...';
+  function saveCashierPrintOptions(statusEl) {
+    var directChecked = document.querySelector('input[name="rd_direct_print"]:checked');
+    var jobsChecked = document.querySelector('input[name="rd_print_jobs"]:checked');
+    var directVal = directChecked ? directChecked.value : '0';
+    var jobsVal = jobsChecked ? jobsChecked.value : 'both';
+    if (statusEl) {
+      statusEl.className = 'font-weight-bold text-muted';
+      statusEl.textContent = ' جاري الحفظ...';
     }
     var fd = new FormData();
-    fd.append('direct_print', val);
+    fd.append('direct_print', directVal);
+    fd.append('print_jobs', jobsVal);
     fetch('ajax/save_direct_print.php', {
       method: 'POST',
       body: fd,
@@ -1813,28 +1847,34 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (text) {
         var data = null;
         try { data = JSON.parse(text); } catch (e) { data = null; }
-        if (status) {
+        if (statusEl) {
           if (!data) {
-            status.className = 'font-weight-bold text-danger';
-            status.textContent = ' فشل الحفظ (رد غير متوقع من السيرفر)';
+            statusEl.className = 'font-weight-bold text-danger';
+            statusEl.textContent = ' فشل الحفظ (رد غير متوقع من السيرفر)';
             return;
           }
-          status.className = 'font-weight-bold ' + (data.ok ? 'text-success' : 'text-danger');
-          status.textContent = ' ' + (data.message || 'تعذر الحفظ')
+          statusEl.className = 'font-weight-bold ' + (data.ok ? 'text-success' : 'text-danger');
+          statusEl.textContent = ' ' + (data.message || 'تعذر الحفظ')
             + (data.db ? (' — DB: ' + data.db) : '');
         }
       })
       .catch(function () {
-        if (status) {
-          status.className = 'font-weight-bold text-danger';
-          status.textContent = ' فشل الاتصال أثناء الحفظ';
+        if (statusEl) {
+          statusEl.className = 'font-weight-bold text-danger';
+          statusEl.textContent = ' فشل الاتصال أثناء الحفظ';
         }
       });
   }
   document.querySelectorAll('input[name="rd_direct_print"]').forEach(function (r) {
     r.addEventListener('change', function () {
       syncDirectPrintUi();
-      saveDirectPrintNow();
+      saveCashierPrintOptions(document.getElementById('rdDirectPrintStatus'));
+    });
+  });
+  document.querySelectorAll('input[name="rd_print_jobs"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      syncDirectPrintUi();
+      saveCashierPrintOptions(document.getElementById('rdPrintJobsStatus'));
     });
   });
   syncDirectPrintUi();

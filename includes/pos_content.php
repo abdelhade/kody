@@ -1050,6 +1050,7 @@ body {
     ?>
     <script>
     window.KODY_DIRECT_PRINT = <?= !empty($_kody_rd['direct_print']) ? 'true' : 'false' ?>;
+    window.KODY_PRINT_JOBS = <?= json_encode(kody_receipt_print_jobs($_kody_rd), JSON_UNESCAPED_UNICODE) ?>;
     </script>
     <script src="js/pos_config_loader.js?v=<?= time() ?>"></script>
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>

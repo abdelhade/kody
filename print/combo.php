@@ -35,6 +35,16 @@ if (!$rowfat) {
 $design = kody_receipt_design_load($rowstg ?? []);
 $auto_print = !empty($design['auto_print']);
 $auto_close = !empty($design['auto_close']);
+$print_jobs = kody_receipt_print_jobs($design);
+
+if ($print_jobs === 'receipt') {
+    header('Location: receipt.php?id=' . $id);
+    exit;
+}
+if ($print_jobs === 'prep') {
+    header('Location: preparation.php?id=' . $id);
+    exit;
+}
 
 $tybe = (int) ($rowfat['pro_tybe'] ?? 0);
 $pos_type = $rowstg['pos_type'] ?? 'barcode';

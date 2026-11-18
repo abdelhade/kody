@@ -1,6 +1,6 @@
 <?php
 /**
- * حفظ إعداد الطباعة المباشرة على قاعدة الجلسة الحالية (ديناميكية).
+ * حفظ إعدادات طباعة الكاشير على قاعدة الجلسة الحالية (ديناميكية).
  * بيرد JSON دايماً — حتى عند الخطأ.
  */
 header('Content-Type: application/json; charset=utf-8');
@@ -27,10 +27,19 @@ try {
     }
 
     $direct = isset($_POST['direct_print']) && (string) $_POST['direct_print'] === '1';
+    $printJobs = (string) ($_POST['print_jobs'] ?? '');
+    if (!in_array($printJobs, ['both', 'receipt', 'prep'], true)) {
+        $printJobs = '';
+    }
 
     kody_receipt_design_ensure_column($conn);
     $design = kody_receipt_design_load($rowstg ?? []);
     $design['direct_print'] = $direct;
+    if ($printJobs !== '') {
+        $design['print_jobs'] = $printJobs;
+    } else {
+        $printJobs = kody_receipt_print_jobs($design);
+    }
     $json = kody_receipt_design_json($design);
 
     $stmt = $conn->prepare('UPDATE settings SET receipt_design = ? WHERE id = 1');
@@ -43,13 +52,21 @@ try {
     $ok = $stmt->execute();
     $stmt->close();
 
+    $jobsLabel = [
+        'both' => 'بون التحضير + الفاتورة',
+        'receipt' => 'الفاتورة فقط',
+        'prep' => 'بون التحضير فقط',
+    ];
+    $msgParts = [];
+    $msgParts[] = $direct ? 'طباعة مباشرة' : 'طباعة غير مباشرة';
+    $msgParts[] = $jobsLabel[$printJobs] ?? $printJobs;
+
     echo json_encode([
         'ok' => (bool) $ok,
         'direct_print' => $direct,
+        'print_jobs' => $printJobs,
         'db' => isset($dbname) ? (string) $dbname : '',
-        'message' => $ok
-            ? ($direct ? 'تم تفعيل الطباعة المباشرة (بدون عرض)' : 'تم تفعيل الطباعة غير المباشرة')
-            : 'فشل الحفظ',
+        'message' => $ok ? ('تم الحفظ: ' . implode(' — ', $msgParts)) : 'فشل الحفظ',
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);

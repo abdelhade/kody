@@ -16,6 +16,7 @@ function kody_receipt_design_defaults(): array
         'auto_print' => true,        // فتح نافذة الطباعة تلقائياً
         'auto_close' => true,        // الرجوع/الإغلاق تلقائياً بعد اكتمال الطباعة
         'direct_print' => false,     // true = مباشرة عبر وكيل الطباعة بدون عرض الصفحة
+        'print_jobs' => 'both',      // both | receipt | prep — ماذا يُطبع من الكاشير
         'show_borders' => true,      // إطار خارجي للإيصال
 
         // الترويسة والشعار
@@ -162,6 +163,8 @@ function kody_receipt_design_normalize(array $input): array
     $d['auto_print'] = kody_rd_bool($input, 'auto_print', $d['auto_print']);
     $d['auto_close'] = kody_rd_bool($input, 'auto_close', $d['auto_close']);
     $d['direct_print'] = kody_rd_bool($input, 'direct_print', $d['direct_print']);
+    $printJobs = (string) ($input['print_jobs'] ?? $d['print_jobs']);
+    $d['print_jobs'] = in_array($printJobs, ['both', 'receipt', 'prep'], true) ? $printJobs : 'both';
     $d['show_borders'] = kody_rd_bool($input, 'show_borders', $d['show_borders']);
 
     // Header
@@ -249,6 +252,13 @@ function kody_receipt_design_normalize(array $input): array
     return $d;
 }
 
+/** ماذا يُطبع من الكاشير: both | receipt | prep */
+function kody_receipt_print_jobs(?array $design): string
+{
+    $jobs = (string) (($design ?? [])['print_jobs'] ?? 'both');
+    return in_array($jobs, ['both', 'receipt', 'prep'], true) ? $jobs : 'both';
+}
+
 function kody_receipt_design_load(?array $rowstg): array
 {
     $defaults = kody_receipt_design_defaults();
@@ -310,6 +320,7 @@ function kody_receipt_design_from_post(array $post): array
         'auto_print' => isset($post['rd_auto_print']),
         'auto_close' => isset($post['rd_auto_close']),
         'direct_print' => (($post['rd_direct_print'] ?? '') === '1'),
+        'print_jobs' => (string) ($post['rd_print_jobs'] ?? 'both'),
         'show_borders' => isset($post['rd_show_borders']),
 
         'header' => [
