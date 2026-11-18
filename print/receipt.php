@@ -646,23 +646,6 @@ if (is_array($pnotes)) {
 $pay_status = (string)($rowfat['payment_status'] ?? '');
 $is_non_cash_doc = in_array($tybe, [12, 13, 14, 18], true);
 
-$pay_method_label = '';
-if (!$is_non_cash_doc) {
-    if ($notes_paid_cash > 0.001 && $notes_paid_bank > 0.001) {
-        $pay_method_label = 'مختلط (كاش + شبكة)';
-    } elseif ($notes_paid_bank > 0.001) {
-        $pay_method_label = 'شبكة';
-    } elseif ($notes_paid_cash > 0.001) {
-        $pay_method_label = 'كاش';
-    } elseif ($pay_status === 'paid') {
-        $pay_method_label = 'مدفوع';
-    } elseif ($pay_status === 'partial') {
-        $pay_method_label = 'جزئي';
-    } elseif ($pay_status === 'unpaid') {
-        $pay_method_label = 'آجل';
-    }
-}
-
 if ($voucher_paid > 0) {
     $paid_amount = $voucher_paid;
 } elseif ($head_paid > 0 || $notes_paid > 0) {
@@ -746,13 +729,6 @@ $show_vat_lines = (!empty($totCfg['show_vat']) || $vat_qr !== null) && $vat_amou
 <tr>
     <td class="tot-label"><?= $show_vat_lines ? 'الإجمالي شامل الضريبة' : 'الصافي' ?></td>
     <td class="tot-val net"><?= number_format($show_vat_lines ? $vat_amounts['total'] : $fat_net, 2) ?></td>
-</tr>
-<?php endif; ?>
-
-<?php if ($pay_method_label !== '' && !$is_non_cash_doc): ?>
-<tr>
-    <td class="tot-label">طريقة الدفع</td>
-    <td class="tot-val"><?= htmlspecialchars($pay_method_label, ENT_QUOTES, 'UTF-8') ?></td>
 </tr>
 <?php endif; ?>
 
