@@ -333,6 +333,43 @@ endif;
                       </div>
                       <div class="col-lg-6">
                         <div class="form-group">
+                          <label for="pos_icon_size_barcode">حجم أيقونات باركود المطعم</label>
+                          <select class="form-control" id="pos_icon_size_barcode" name="pos_icon_size_barcode">
+                            <?php
+                            $posIconSizeOptions = ['small' => 'صغير', 'medium' => 'متوسط', 'large' => 'كبير', 'xlarge' => 'كبير جداً'];
+                            $posIconBarcode = (string) ($rowstg['pos_icon_size_barcode'] ?? 'medium');
+                            if (!isset($posIconSizeOptions[$posIconBarcode])) {
+                                $posIconBarcode = 'medium';
+                            }
+                            foreach ($posIconSizeOptions as $posIconVal => $posIconLabel) {
+                                $posIconSel = ($posIconBarcode === $posIconVal) ? 'selected' : '';
+                                echo '<option value="' . $posIconVal . '" ' . $posIconSel . '>' . $posIconLabel . '</option>';
+                            }
+                            ?>
+                          </select>
+                          <small class="form-text text-muted">حجم بطاقات الأصناف في شاشة كاشير المطعم.</small>
+                        </div>
+                      </div>
+                      <div class="col-lg-6">
+                        <div class="form-group">
+                          <label for="pos_icon_size_clothes">حجم أيقونات الملابس</label>
+                          <select class="form-control" id="pos_icon_size_clothes" name="pos_icon_size_clothes">
+                            <?php
+                            $posIconClothes = (string) ($rowstg['pos_icon_size_clothes'] ?? 'medium');
+                            if (!isset($posIconSizeOptions[$posIconClothes])) {
+                                $posIconClothes = 'medium';
+                            }
+                            foreach ($posIconSizeOptions as $posIconVal => $posIconLabel) {
+                                $posIconSel = ($posIconClothes === $posIconVal) ? 'selected' : '';
+                                echo '<option value="' . $posIconVal . '" ' . $posIconSel . '>' . $posIconLabel . '</option>';
+                            }
+                            ?>
+                          </select>
+                          <small class="form-text text-muted">حجم بطاقات الأصناف في شاشة كاشير الملابس.</small>
+                        </div>
+                      </div>
+                      <div class="col-lg-6">
+                        <div class="form-group">
                           <label class="d-block">حماية POS بكلمة مرور</label>
                           <div class="custom-control custom-switch pt-1">
                             <input type="checkbox" class="custom-control-input" id="pos_has_password" name="pos_has_password" value="1"

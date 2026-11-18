@@ -461,6 +461,19 @@ body {
                                         <i class="fas fa-boxes me-2"></i>الأصناف المتاحة
                                     </h6>
                                     <div class="d-flex align-items-center gap-2">
+                                        <label for="posIconSize" class="mb-0 small text-white text-nowrap">حجم الأيقونات</label>
+                                        <select id="posIconSize" class="form-select form-select-sm" style="width: 118px;" title="حجم أيقونات الأصناف">
+                                            <?php
+                                            $posIconSizeBarcode = (string) ($rowstg['pos_icon_size_barcode'] ?? 'medium');
+                                            if (!in_array($posIconSizeBarcode, ['small', 'medium', 'large', 'xlarge'], true)) {
+                                                $posIconSizeBarcode = 'medium';
+                                            }
+                                            foreach (['small' => 'صغير', 'medium' => 'متوسط', 'large' => 'كبير', 'xlarge' => 'كبير جداً'] as $posIconVal => $posIconLabel) {
+                                                $posIconSel = ($posIconSizeBarcode === $posIconVal) ? ' selected' : '';
+                                                echo '<option value="' . $posIconVal . '"' . $posIconSel . '>' . $posIconLabel . '</option>';
+                                            }
+                                            ?>
+                                        </select>
                                         <div class="input-group" style="width: 280px;">
                                             <input type="text" class="scnd form-control border-start-0" id="itemFilterInput"
                                                 placeholder="فلترة الأصناف..." autocomplete="off"
@@ -501,7 +514,7 @@ body {
                         </div>
                         <div class="card-body items-grid-scroll flex-grow-1 min-h-0 p-2">
                             <!-- شبكة الأصناف -->
-                            <div class="row g-3" id="itemsGrid">
+                            <div class="row g-3 pos-icon-grid pos-icon-<?= htmlspecialchars($posIconSizeBarcode, ENT_QUOTES, 'UTF-8') ?>" id="itemsGrid">
                                 <?php
                             // استعلام مع join للحصول على الصورة من جدول imgs
                             $sqlitems = "SELECT m.*, i.iname as img_filename
@@ -545,7 +558,7 @@ body {
                                     
                                     $itemDesc = isset($rowitem['info']) ? htmlspecialchars($rowitem['info']) : '';
                             ?>
-                                <div class="col-lg-3  col-md-4 col-sm-6 item-wrapper"
+                                <div class="item-wrapper"
                                     data-category="<?= $itemCategory ?>">
                                     <div class="card item-card itemButton  shadow-sm border-0"
                                         data-item-id="<?= $itemId ?>" data-item-name="<?= $itemName ?>"
@@ -557,7 +570,7 @@ body {
                                         data-item-desc="<?= $itemDesc ?>" style="cursor: pointer;">
                                         <div class="card-body p-2 text-center">
                                             <!-- الصورة -->
-                                            <div class="item-image-container mb-2 ratio ratio-1x1 rounded overflow-hidden"
+                                            <div class="item-image-container mb-2 rounded overflow-hidden"
                                                 style="cursor: pointer; background: #f8f9fa;">
                                                 <?php if (!empty($itemImage) && file_exists($itemImage)): ?>
                                                 <img src="<?= $itemImage ?>"
@@ -566,7 +579,7 @@ body {
                                                 <?php else: ?>
                                                 <div
                                                     class="d-flex align-items-center justify-content-center item-image-click">
-                                                    <i class="fas fa-box fa-3x text-primary opacity-50"></i>
+                                                    <i class="fas fa-box text-primary opacity-50"></i>
                                                 </div>
                                                 <?php endif; ?>
                                             </div>
@@ -1056,6 +1069,26 @@ body {
     <script src="js/pos_offline_adapter.js?v=<?= time() ?>"></script>
     <script src="js/print_agent_client.js?v=<?= time() ?>"></script>
     <script src="js/pos_barcode.js?v=<?= time() ?>"></script>
+    <script>
+    (function () {
+        var sel = document.getElementById('posIconSize');
+        var grid = document.getElementById('itemsGrid');
+        if (!sel || !grid) return;
+        var sizes = ['small', 'medium', 'large', 'xlarge'];
+        sel.addEventListener('change', function () {
+            sizes.forEach(function (size) { grid.classList.remove('pos-icon-' + size); });
+            grid.classList.add('pos-icon-' + sel.value);
+            var body = new URLSearchParams();
+            body.set('target', 'barcode');
+            body.set('size', sel.value);
+            fetch('ajax/save_pos_icon_size.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            });
+        });
+    })();
+    </script>
     <script src="js/pos_tables_modal.js?v=<?= time() ?>"></script>
     
     <script>

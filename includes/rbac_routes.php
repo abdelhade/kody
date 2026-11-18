@@ -234,6 +234,7 @@ return [
     'do/search_customer.php'   => 'pos.use',
     'do/update_customer.php'   => 'pos.use',
     'ajax/save_order.php'      => 'pos.use',
+    'ajax/save_pos_icon_size.php' => 'pos.use',
     'ajax/load_order.php'      => 'pos.use',
     'ajax/add_item_to_order.php' => 'pos.use',
     'ajax/process_payment.php' => 'pos.use',

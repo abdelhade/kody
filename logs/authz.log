@@ -23,3 +23,4 @@
 [2026-11-16 13:37:21] settings unlock failed user=1
 [2026-11-16 14:57:54] settings unlock failed user=1
 [2026-11-18 16:00:06] deny user=1 role=1 need=[manufacturing.add] script=/kody/manufacturing.php query=
+[2026-11-18 16:47:41] settings unlock failed user=1

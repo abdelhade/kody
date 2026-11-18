@@ -448,12 +448,83 @@ html {
     border-color: #ff8c42;
 }
 
+#itemsGrid.pos-icon-grid {
+    display: grid !important;
+    grid-template-columns: repeat(var(--pos-cols, 4), minmax(0, 1fr));
+    gap: 0.45rem;
+    margin: 0 !important;
+    --pos-cols: 4;
+    --pos-img: 120px;
+    --pos-ico: 3rem;
+    --pos-title: 1.5rem;
+}
+
+#itemsGrid.pos-icon-grid.pos-icon-small {
+    --pos-cols: 6;
+    --pos-img: 64px;
+    --pos-ico: 1.4rem;
+    --pos-title: 0.95rem;
+}
+
+#itemsGrid.pos-icon-grid.pos-icon-medium {
+    --pos-cols: 4;
+    --pos-img: 120px;
+    --pos-ico: 2.6rem;
+    --pos-title: 1.15rem;
+}
+
+#itemsGrid.pos-icon-grid.pos-icon-large {
+    --pos-cols: 3;
+    --pos-img: 190px;
+    --pos-ico: 4.2rem;
+    --pos-title: 1.35rem;
+}
+
+#itemsGrid.pos-icon-grid.pos-icon-xlarge {
+    --pos-cols: 2;
+    --pos-img: 260px;
+    --pos-ico: 5.5rem;
+    --pos-title: 1.6rem;
+}
+
+@media (max-width: 768px) {
+    #itemsGrid.pos-icon-small,
+    #itemsGrid.pos-icon-medium {
+        --pos-cols: 2;
+    }
+
+    #itemsGrid.pos-icon-large,
+    #itemsGrid.pos-icon-xlarge {
+        --pos-cols: 1;
+    }
+}
+
+#itemsGrid.pos-icon-grid .item-card .card-title {
+    font-size: var(--pos-title, 1.5rem) !important;
+}
+
+#itemsGrid.pos-icon-grid > .item-wrapper {
+    width: auto !important;
+    max-width: none !important;
+    flex: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#itemsGrid.pos-icon-grid > .col-12 {
+    grid-column: 1 / -1;
+}
+
 .item-image-container {
     background: #fff8f3;
     border-radius: 10px;
     margin-bottom: 0.75rem;
     overflow: hidden;
-    height: 120px !important;
+    height: var(--pos-img, 120px) !important;
+}
+
+.item-image-container .fas {
+    font-size: var(--pos-ico, 2.6rem) !important;
 }
 
 .item-card .card-title {

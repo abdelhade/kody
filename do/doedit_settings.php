@@ -45,6 +45,15 @@ $pos_blind_close = isset($_POST['pos_blind_close']) ? 1 : 0;
 $emp_commission = floatval($_POST['emp_commission'] ?? 0);
 $user_commission = floatval($_POST['user_commission'] ?? 0);
 $allow_all_accounts = isset($_POST['allow_all_accounts']) ? 1 : 0;
+$posIconAllowed = ['small', 'medium', 'large', 'xlarge'];
+$pos_icon_size_barcode = trim((string) ($_POST['pos_icon_size_barcode'] ?? 'medium'));
+$pos_icon_size_clothes = trim((string) ($_POST['pos_icon_size_clothes'] ?? 'medium'));
+if (!in_array($pos_icon_size_barcode, $posIconAllowed, true)) {
+    $pos_icon_size_barcode = 'medium';
+}
+if (!in_array($pos_icon_size_clothes, $posIconAllowed, true)) {
+    $pos_icon_size_clothes = 'medium';
+}
 
 $receipt_design = kody_receipt_design_from_post($_POST);
 $receipt_design_json = kody_receipt_design_json($receipt_design);
@@ -184,7 +193,9 @@ SET company_name = ?,
     receipt_notes_text  = ?,
     receipt_design = ?,
     barcode_design = ?,
-    allow_all_accounts = ?
+    allow_all_accounts = ?,
+    pos_icon_size_barcode = ?,
+    pos_icon_size_clothes = ?
     " . ($company_logo !== '' ? ", company_logo = ?" : "") . ",
     backup_path = ?
 WHERE 1";
@@ -192,7 +203,7 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
-    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississssiss",
+    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssisss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
@@ -202,11 +213,12 @@ if ($company_logo !== '') {
         $receipt_footer_text, $receipt_show_client,
         $receipt_header_text, $receipt_notes_text,
         $receipt_design_json, $barcode_design_json, $allow_all_accounts,
+        $pos_icon_size_barcode, $pos_icon_size_clothes,
         $company_logo,
         $backup_path
     );
 } else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississssis",
+    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssiss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
         $showrent, $showclinc, $def_pos_client, $def_pos_store,
@@ -216,6 +228,7 @@ if ($company_logo !== '') {
         $receipt_footer_text, $receipt_show_client,
         $receipt_header_text, $receipt_notes_text,
         $receipt_design_json, $barcode_design_json, $allow_all_accounts,
+        $pos_icon_size_barcode, $pos_icon_size_clothes,
         $backup_path
     );
 }

@@ -382,7 +382,7 @@ function displayItems(items) {
     items.forEach(item => {
         window._clothesCatalog[item.id] = item;
         html += `
-            <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-2">
+            <div class="clothes-item-tile">
                 <div class="item-card" data-item-id="${item.id}" onclick="addClothesItem(${item.id})">
                     <div class="item-image">
                         <i class="fas fa-tshirt" style="color: var(--soft-gray);"></i>

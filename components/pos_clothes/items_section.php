@@ -1,9 +1,24 @@
+<?php
+$posIconSizeClothes = (string) ($rowstg['pos_icon_size_clothes'] ?? 'medium');
+if (!in_array($posIconSizeClothes, ['small', 'medium', 'large', 'xlarge'], true)) {
+    $posIconSizeClothes = 'medium';
+}
+?>
 <div class="card border-0 shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--primary-navy); color: white;">
         <h6 class="mb-0">
             <i class="fas fa-boxes me-2"></i>اختيار الأصناف
         </h6>
         <div class="d-flex align-items-center gap-2">
+            <label for="posIconSizeClothes" class="mb-0 small text-white text-nowrap">حجم الأيقونات</label>
+            <select id="posIconSizeClothes" class="form-select form-select-sm" style="width: 118px;" title="حجم أيقونات الأصناف">
+                <?php
+                foreach (['small' => 'صغير', 'medium' => 'متوسط', 'large' => 'كبير', 'xlarge' => 'كبير جداً'] as $posIconVal => $posIconLabel) {
+                    $posIconSel = ($posIconSizeClothes === $posIconVal) ? ' selected' : '';
+                    echo '<option value="' . $posIconVal . '"' . $posIconSel . '>' . $posIconLabel . '</option>';
+                }
+                ?>
+            </select>
             <div style="width: 250px; position: relative;">
                 <input type="text" class="scnd form-control form-control-sm" id="searchItems" placeholder="بحث عن صنف..." style="background: white; padding-left: 35px;">
                 <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
@@ -38,7 +53,7 @@
                     <i class="fas fa-arrow-right me-1"></i>
                 </button>
             </div>
-            <div class="items-grid row g-2" id="itemsGrid">
+            <div class="items-grid row g-2 pos-icon-grid pos-icon-<?= htmlspecialchars($posIconSizeClothes, ENT_QUOTES, 'UTF-8') ?>" id="itemsGrid">
             </div>
         </div>
 
@@ -49,3 +64,23 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    var sel = document.getElementById('posIconSizeClothes');
+    var grid = document.getElementById('itemsGrid');
+    if (!sel || !grid) return;
+    var sizes = ['small', 'medium', 'large', 'xlarge'];
+    sel.addEventListener('change', function () {
+        sizes.forEach(function (size) { grid.classList.remove('pos-icon-' + size); });
+        grid.classList.add('pos-icon-' + sel.value);
+        var body = new URLSearchParams();
+        body.set('target', 'clothes');
+        body.set('size', sel.value);
+        fetch('ajax/save_pos_icon_size.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        });
+    });
+})();
+</script>
