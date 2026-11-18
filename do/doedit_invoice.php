@@ -88,6 +88,9 @@ if (!$rowop) {
 }
 
 $pro_tybe = intval($rowop['pro_tybe']);
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['MANUFACTURING']) {
+    die('أمر التصنيع يتعدل من شاشة التصنيع');
+}
 Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'edit'));
 $isBarcodePrintDoc = InvoiceProcessor::isBarcodePrint($pro_tybe);
 

@@ -134,16 +134,17 @@ $costPrice = (float) $base['cost'];
 $price1 = (float) $base['price1'];
 $price2 = (float) $base['price2'];
 $marketPrice = (float) $base['price3'];
+$isAssembly = isset($_POST['is_assembly']) ? 1 : 0;
 
 $moved = [];
 $conn->begin_transaction();
 try {
     $stmt = $conn->prepare(
-        'INSERT INTO myitems (iname, name2, code, barcode, info, market_price, cost_price, price1, price2, group1, group2, user)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO myitems (iname, name2, code, barcode, info, market_price, cost_price, price1, price2, group1, group2, user, is_assembly)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->bind_param(
-        'sssssddddiis',
+        'sssssddddiisi',
         $iname,
         $name2,
         $code,
@@ -155,7 +156,8 @@ try {
         $price2,
         $group1,
         $group2,
-        $usid
+        $usid,
+        $isAssembly
     );
     if (!$stmt->execute()) {
         throw new RuntimeException('save_failed');

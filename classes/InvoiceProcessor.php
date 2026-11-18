@@ -18,6 +18,7 @@ class InvoiceProcessor {
         'OFFER' => 14,            // عرض سعر
         'STORE_TRANSFER' => 18,   // تحويل مخزني
         'BARCODE_PRINT' => 19,    // مستند طباعة باركود
+        'MANUFACTURING' => 20,    // أمر تصنيع
     ];
 
     // تعريف أنواع العمليات المحاسبية
@@ -41,6 +42,7 @@ class InvoiceProcessor {
         14 => 'quotations',
         18 => 'store_transfers',
         19 => 'barcode_docs',
+        20 => 'manufacturing',
     ];
 
     /** مستند طباعة باركود (أصناف فقط، بدون قيد/مخزون) */
@@ -58,6 +60,7 @@ class InvoiceProcessor {
             self::INVOICE_TYPES['OFFER'],
             self::INVOICE_TYPES['STORE_TRANSFER'],
             self::INVOICE_TYPES['BARCODE_PRINT'],
+            self::INVOICE_TYPES['MANUFACTURING'],
         ], true);
     }
 
@@ -547,6 +550,19 @@ class InvoiceProcessor {
         }
 
         try {
+            $recalcItemId = 0;
+            $tyStmt = $conn->prepare('SELECT pro_tybe FROM ot_head WHERE id = ? LIMIT 1');
+            if ($tyStmt) {
+                $tyStmt->bind_param('i', $id);
+                $tyStmt->execute();
+                $tyRow = $tyStmt->get_result()->fetch_assoc();
+                $tyStmt->close();
+                if ($tyRow && (int) $tyRow['pro_tybe'] === self::INVOICE_TYPES['MANUFACTURING']) {
+                    require_once __DIR__ . '/Manufacturing.php';
+                    $recalcItemId = Manufacturing::finishedItemId($conn, $id);
+                }
+            }
+
             $relatedIds = self::fetchIds(
                 $conn,
                 'SELECT id FROM ot_head WHERE op2 = ? AND id <> ?',
@@ -567,6 +583,10 @@ class InvoiceProcessor {
                 self::recalcAccountBalance($conn, (int) $accountId);
             }
             self::syncItemQuantitiesByIds($conn, $itemIds);
+            if ($recalcItemId > 0) {
+                require_once __DIR__ . '/Manufacturing.php';
+                Manufacturing::recalcItemCost($conn, $recalcItemId);
+            }
 
             if ($manageTransaction) {
                 $conn->commit();

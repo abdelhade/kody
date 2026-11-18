@@ -166,6 +166,11 @@ switch ($q) {
         $where_clause = "ot.pro_tybe = 19 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
         break;
+    case "manufacturing":
+        $report_name = "أوامر التصنيع";
+        $where_clause = "ot.pro_tybe = 20 AND ot.isdeleted != 1 $dateFilter $searchFilter $extraFilter";
+        $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
+        break;
     case "all":
     default:
         $q = 'all';
@@ -174,9 +179,9 @@ switch ($q) {
         $resop = $conn->query("SELECT $select_fields $join_clause WHERE $where_clause ORDER BY $order_by LIMIT $limit OFFSET $offset");
 }
 $is_all_operations_report = ($q === 'all');
-$is_sales_order_report = in_array($q, ['sales_order', 'price_offer', 'store_transfer', 'barcode_print'], true);
-$order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : 'عدد الأوامر';
-$order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : 'إجمالي أوامر البيع';
+$is_sales_order_report = in_array($q, ['sales_order', 'price_offer', 'store_transfer', 'barcode_print', 'manufacturing'], true);
+$order_doc_count_label = $q === 'price_offer' ? 'عدد العروض' : ($q === 'manufacturing' ? 'عدد أوامر التصنيع' : 'عدد الأوامر');
+$order_doc_total_label = $q === 'price_offer' ? 'إجمالي عروض الأسعار' : ($q === 'manufacturing' ? 'إجمالي تكلفة التصنيع' : 'إجمالي أوامر البيع');
 
 // إجماليات التقرير من السيرفر (مبيعات منفصلة عن المردود — مش جمع الاتنين)
 $summary_sales = 0.0;
@@ -238,7 +243,11 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header">
-                    <h3><?= $is_all_operations_report ? 'تقرير كل العمليات' : ('محلل العمل اليومي - ' . $report_name) ?></h3>
+                    <h3><?= $is_all_operations_report ? 'تقرير كل العمليات' : ('محلل العمل اليومي - ' . $report_name) ?>
+                    <?php if ($q === 'manufacturing' && Can::check('manufacturing.add')) { ?>
+                        <a href="manufacturing.php" class="btn btn-sm btn-primary mr-2">أمر تصنيع</a>
+                    <?php } ?>
+                    </h3>
                     
                     <?php if (isset($_GET['success']) && $_GET['success'] == 'deleted'): ?>
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -480,7 +489,11 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                             <?php } ?>
                                             
                                             <!-- زر التعديل -->
-                                            <?php if(in_array($tybe, [3, 4, 10, 11, 13, 14, 18, 19]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني، باركود ?>
+                                            <?php if ((int) $tybe === InvoiceProcessor::INVOICE_TYPES['MANUFACTURING'] && Can::check('manufacturing.edit')) { ?>
+                                            <a href="manufacturing.php?e=<?= (int) $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                            <?php } elseif (in_array($tybe, [3, 4, 10, 11, 13, 14, 18, 19]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني، باركود ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>
