@@ -82,17 +82,22 @@ if ($tybe == 4) {
 $is_doc_order = in_array($tybe, [12, 13, 14], true);
 
 // تحديد الطرف (عميل / مورد / مخزن)
-if ($tybe == 4 || $tybe == 10) {
-    $accid = (int)$rowfat['acc1'];
-    if ($tybe == 4) {
-        $accid = (int)$rowfat['acc2'];
-    }
-    $partyLabel = 'المورد';
-} elseif ($tybe == 18) {
+if ($tybe == 18) {
     $accid = (int)($rowfat['acc2'] ?? 0);
     $partyLabel = 'المخزن المحول إليه';
+} elseif ($tybe == 4 || $tybe == 10) {
+    $accid = InvoiceProcessor::partyAccountId($rowfat);
+    $partyLabel = 'المورد';
+    // مردود مبيعات كاشير الملابس (مسجّل كـ 10): الطرف عميل
+    if ($tybe == 10) {
+        $storeIdParty = (int) ($rowfat['store_id'] ?? 0);
+        $acc1Party = (int) ($rowfat['acc1'] ?? 0);
+        if ($storeIdParty > 0 && $acc1Party === $storeIdParty) {
+            $partyLabel = 'العميل';
+        }
+    }
 } else {
-    $accid = (int)$rowfat['acc2'];
+    $accid = InvoiceProcessor::partyAccountId($rowfat);
     $partyLabel = 'العميل';
 }
 

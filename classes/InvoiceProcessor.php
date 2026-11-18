@@ -119,10 +119,27 @@ class InvoiceProcessor {
     public static function partyAccountId(array $invoice): int
     {
         $proTybe = (int) ($invoice['pro_tybe'] ?? 0);
+        $storeId = (int) ($invoice['store_id'] ?? 0);
+        $acc1 = (int) ($invoice['acc1'] ?? 0);
+        $acc2 = (int) ($invoice['acc2'] ?? 0);
+
         if ($proTybe === self::INVOICE_TYPES['PURCHASE_RETURN']) {
-            return (int) ($invoice['acc1'] ?? 0);
+            // مردود مبيعات كاشير ملابس القديم: المخزن في acc1 والعميل في acc2
+            if ($acc1 > 0 && $storeId > 0 && $acc1 === $storeId && $acc2 > 0 && $acc2 !== $storeId) {
+                return $acc2;
+            }
+            return $acc1;
         }
-        return (int) ($invoice['acc2'] ?? 0);
+
+        // مبيعات / كاشير ملابس قديمة: العميل في acc1 والمخزن في acc2
+        if (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS']], true)
+            && $acc2 > 0 && $storeId > 0 && $acc2 === $storeId
+            && $acc1 > 0 && $acc1 !== $storeId
+        ) {
+            return $acc1;
+        }
+
+        return $acc2;
     }
 
     /**

@@ -1,6 +1,7 @@
 <?php
 session_start();
 include('../includes/connect.php');
+require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 
 // التحقق من المصادقة
 if (!isset($_SESSION['userid'])) {
@@ -65,10 +66,11 @@ try {
     $stmt_check = $conn->prepare("
         SELECT id, TIME_TO_SEC(TIMEDIFF(NOW(), crtime)) as time_diff 
         FROM ot_head 
-        WHERE user = ? AND pro_tybe = ? AND acc2 = ? AND fat_net = ? 
+        WHERE user = ? AND pro_tybe = ? AND fat_net = ?
+          AND (acc1 = ? OR acc2 = ?)
         ORDER BY id DESC LIMIT 1
     ");
-    $stmt_check->bind_param("iiid", $usid, $pro_tybe, $acc2_id, $headnet);
+    $stmt_check->bind_param("iidii", $usid, $pro_tybe, $headnet, $acc2_id, $acc2_id);
     $stmt_check->execute();
     $res_check = $stmt_check->get_result();
     if ($row_check = $res_check->fetch_assoc()) {
@@ -76,7 +78,15 @@ try {
             $conn->rollback();
             $_SESSION['success_message'] = 'تم حفظ الفاتورة بنجاح (تم منع التكرار)';
             if ($submit == 'cash') {
-                header("Location: ../print/choose.php?id=" . $row_check['id']);
+                if (!function_exists('kody_receipt_design_load')) {
+                    require_once __DIR__ . '/../includes/receipt_design.php';
+                }
+                $cashDesignDup = kody_receipt_design_load($rowstg ?? []);
+                if (!empty($cashDesignDup['direct_print'])) {
+                    header('Location: ../pos_clothes.php?print_id=' . (int) $row_check['id'] . '&r=' . time());
+                } else {
+                    header('Location: ../print/choose.php?id=' . (int) $row_check['id']);
+                }
             } else {
                 $stmt_sett = $conn->prepare("SELECT pos_type FROM settings LIMIT 1");
                 $stmt_sett->execute();
@@ -98,9 +108,9 @@ try {
     $pro_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
     $stmt->close();
     
-    // حساب المخزن هو الطرف الدائن في قيد البيع (يُخصم من المخزن عند البيع)
+    // حساب المخزن للمخزون وقيد التكلفة (مش طرف العميل في ot_head)
     $store_account = $store_id;
-    
+
     // إدخال رأس الفاتورة مع قيد محاسبي (is_journal = 1)
     $stmt = $conn->prepare("
         INSERT INTO ot_head (
@@ -111,12 +121,11 @@ try {
             ?, ?, 1, 1, ?, ?, ?, ?, '0', ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?
         )
     ");
-    
-    // تحديد الحسابات بناءً على نوع العملية
-    // بيع: مدين العميل (acc2_id) ← دائن المخزن (store_id)
-    // مردود: مدين المخزن (store_id) ← دائن العميل (acc2_id)
-    $acc1_val = $is_return ? $store_account : $acc2_id;
-    $acc2_val = $is_return ? $acc2_id : $store_account;
+
+    // نفس توزيع الحسابات القياسي: كاشير acc1=صندوق / acc2=عميل — المخزن في store_id فقط
+    $accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+    $acc1_val = (int) $accounts['acc1'];
+    $acc2_val = (int) $accounts['acc2'];
 
     $stmt->bind_param(
         "iiissssiiiiidddi",
@@ -203,7 +212,7 @@ try {
     $stmt->close();
     
     // إدخال تفاصيل القيد (الطرف الأول - المدين)
-    // بيع: مدين العميل | مردود: مدين المخزن
+    // بيع: مدين العميل | مردود: مدين المخزن (مسار الملابس الحالي)
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, ?, 0, 0, ?)
@@ -217,8 +226,7 @@ try {
     $stmt->close();
     
     // إدخال تفاصيل القيد (الطرف الثاني - الدائن)
-    // بيع: دائن المبيعات (المخزن يُخصم بالتكلفة في قيد التكلفة) | مردود: دائن العميل
-    require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+    // بيع: دائن المبيعات | مردود: دائن العميل
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, 0, ?, 1, ?)

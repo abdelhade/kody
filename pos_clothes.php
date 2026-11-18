@@ -81,7 +81,33 @@ if(isset($_SESSION['success_message'])){
     <script src="plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="plugins/select2/js/select2.full.min.js"></script>
     <script src="js/invoice_price_list.js?v=<?= time() ?>"></script>
+    <?php
+    if (!function_exists('kody_receipt_design_load')) {
+        require_once __DIR__ . '/includes/receipt_design.php';
+    }
+    $_kody_rd_clothes = kody_receipt_design_load($rowstg ?? []);
+    ?>
+    <script>
+    window.KODY_DIRECT_PRINT = <?= !empty($_kody_rd_clothes['direct_print']) ? 'true' : 'false' ?>;
+    </script>
+    <script src="js/print_agent_client.js?v=<?= time() ?>"></script>
     <script src="components/pos_clothes/scripts.js?v=<?= time() ?>"></script>
+    <script>
+    $(document).ready(function () {
+        try {
+            var params = new URLSearchParams(window.location.search || '');
+            var printId = parseInt(params.get('print_id') || '0', 10);
+            if (printId > 0 && window.KodyPrintAgent && typeof window.KodyPrintAgent.printInvoice === 'function') {
+                params.delete('print_id');
+                var clean = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, '', clean);
+                }
+                window.KodyPrintAgent.printInvoice(printId, { direct: !!window.KODY_DIRECT_PRINT });
+            }
+        } catch (e) {}
+    });
+    </script>
 </body>
 
 </html>

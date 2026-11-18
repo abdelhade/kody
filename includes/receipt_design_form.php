@@ -88,7 +88,7 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
         <i class="fas fa-print ml-1"></i> تجربة طباعة المعاينة
       </button>
       <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetReceiptDefaults">
-        <i class="fas fa-undo ml-1"></i> استعادة الافتراضي
+        <i class="fas fa-undo ml-1"></i> ارجع لآخر إعدادات
       </button>
     </div>
   </div>
@@ -103,7 +103,10 @@ $company_add_val  = !empty($rowstg['company_add'])  ? $rowstg['company_add']  : 
             <span class="font-weight-bold text-dark ml-3">قوالب طباعة جاهزة بضغطة زر:</span>
           </div>
           <div class="btn-group btn-group-sm flex-wrap" role="group">
-            <button type="button" class="btn btn-outline-primary active rd-preset-btn" data-preset="80mm">
+            <button type="button" class="btn btn-outline-dark active rd-preset-btn" data-preset="saved" id="rdPresetSaved">
+              <i class="fas fa-history ml-1"></i> آخر الإعدادات
+            </button>
+            <button type="button" class="btn btn-outline-primary rd-preset-btn" data-preset="80mm">
               <i class="fas fa-scroll ml-1"></i> ريسيت كاشير 80mm
             </button>
             <button type="button" class="btn btn-outline-primary rd-preset-btn" data-preset="58mm">
@@ -1506,13 +1509,61 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // لقطة آخر إعدادات محفوظة وقت فتح الصفحة (قبل أي قالب)
+  var savedReceiptState = [];
+  function captureReceiptState() {
+    savedReceiptState = [];
+    document.querySelectorAll('.rd-live').forEach(function (el) {
+      if (!el.id) return;
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        savedReceiptState.push({ id: el.id, kind: 'check', value: el.checked });
+      } else {
+        savedReceiptState.push({ id: el.id, kind: 'val', value: el.value });
+      }
+    });
+  }
+  function markSavedPreset() {
+    document.querySelectorAll('.rd-preset-btn').forEach(function (b) { b.classList.remove('active'); });
+    var savedBtn = document.getElementById('rdPresetSaved');
+    if (savedBtn) savedBtn.classList.add('active');
+  }
+  function restoreReceiptState() {
+    var directBefore = '';
+    var directChecked = document.querySelector('input[name="rd_direct_print"]:checked');
+    if (directChecked) directBefore = directChecked.value;
+    savedReceiptState.forEach(function (item) {
+      var el = document.getElementById(item.id);
+      if (!el) return;
+      if (item.kind === 'check') el.checked = !!item.value;
+      else el.value = item.value;
+    });
+    var customWrap = document.getElementById('rd_custom_width_wrapper');
+    if (customWrap) {
+      customWrap.style.display = (getVal('rd_paper_width') === 'custom') ? '' : 'none';
+    }
+    markSavedPreset();
+    updateLivePreview();
+    if (typeof syncDirectPrintUi === 'function') syncDirectPrintUi();
+    var directAfter = '';
+    directChecked = document.querySelector('input[name="rd_direct_print"]:checked');
+    if (directChecked) directAfter = directChecked.value;
+    if (directBefore !== directAfter && typeof saveDirectPrintNow === 'function') {
+      saveDirectPrintNow();
+    }
+  }
+  captureReceiptState();
+
   // تطبيق القوالب الجاهزة (Presets)
   document.querySelectorAll('.rd-preset-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
+      var preset = btn.getAttribute('data-preset');
+      if (preset === 'saved') {
+        restoreReceiptState();
+        return;
+      }
       document.querySelectorAll('.rd-preset-btn').forEach(function (b) { b.classList.remove('active'); });
       btn.classList.add('active');
 
-      var preset = btn.getAttribute('data-preset');
       if (preset === '80mm') {
         setVal('rd_paper_width', '78mm');
         setVal('rd_font_size', 13);
@@ -1721,13 +1772,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // استعادة الافتراضي
+  // الرجوع لآخر إعدادات محفوظة (مش القالب الافتراضي)
   var btnReset = document.getElementById('btnResetReceiptDefaults');
   if (btnReset) {
     btnReset.addEventListener('click', function () {
-      if (!confirm('هل تريد استعادة إعدادات الطباعة الافتراضية؟')) return;
-      var defaultBtn = document.querySelector('.rd-preset-btn[data-preset="80mm"]');
-      if (defaultBtn) defaultBtn.click();
+      if (!confirm('هل تريد الرجوع لآخر إعدادات الطباعة المحفوظة؟')) return;
+      restoreReceiptState();
     });
   }
 

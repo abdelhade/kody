@@ -95,7 +95,34 @@ if ($receipt_paper_width === '58mm') {
 }
 
 $font_family = $design['font_family'] ?? 'Cairo';
-$font_size = max(14, (int) ($design['font_size'] ?? 13) + 2);
+$font_size = (int) ($design['font_size'] ?? 13);
+$items_font_size = (int) ($design['items']['font_size'] ?? $font_size);
+$line_spacing = (float) ($design['line_spacing'] ?? 1.25);
+$margin_top = (float) ($design['margin_top'] ?? 2);
+$margin_bottom = (float) ($design['margin_bottom'] ?? 4);
+$margin_right = (float) ($design['margin_right'] ?? 2);
+$margin_left = (float) ($design['margin_left'] ?? 2);
+$show_borders = !empty($design['show_borders']);
+$metaCfg = $design['meta'] ?? [];
+$itemsCfg = $design['items'] ?? [];
+$show_invoice_num = !empty($metaCfg['show_invoice_num']);
+$show_datetime = !empty($metaCfg['show_datetime']);
+$show_cashier = !empty($metaCfg['show_cashier']);
+$show_order_type = !empty($metaCfg['show_order_type']);
+$show_driver = !empty($metaCfg['show_driver']);
+$show_item_name = !isset($itemsCfg['show_name']) || !empty($itemsCfg['show_name']);
+$show_item_qty = !isset($itemsCfg['show_qty']) || !empty($itemsCfg['show_qty']);
+$show_item_unit = !empty($itemsCfg['show_unit']);
+$tbl_border_style = $itemsCfg['border_style'] ?? 'solid';
+$tblBorder = '1px solid #000';
+if ($tbl_border_style === 'dashed') {
+    $tblBorder = '1px dashed #000';
+} elseif ($tbl_border_style === 'minimal') {
+    $tblBorder = '1px solid #ddd';
+} elseif ($tbl_border_style === 'none') {
+    $tblBorder = 'none';
+}
+
 $auto_print = !empty($design['auto_print']) || !empty($_GET['agent_print']) || !empty($agentPrint);
 if (!empty($_GET['no_auto'])) {
     $auto_print = false;
@@ -130,6 +157,20 @@ $invoice_num = (string) ($rowfat['pro_id'] ?? $id);
 $emp_name = trim((string) ($rowfat['employee_name'] ?? ''));
 $driver_name = trim((string) ($rowfat['driver_name'] ?? ''));
 $pro_date = (string) ($rowfat['pro_date'] ?? date('Y-m-d H:i'));
+
+require_once __DIR__ . '/../classes/InvoiceProcessor.php';
+$prep_party_id = InvoiceProcessor::partyAccountId($rowfat);
+$prep_customer = '';
+if ($prep_party_id > 0) {
+    $prepAcc = $conn->query('SELECT aname FROM acc_head WHERE id = ' . (int) $prep_party_id)->fetch_assoc();
+    $prep_customer = $prepAcc ? trim((string) ($prepAcc['aname'] ?? '')) : '';
+}
+$prep_store = '';
+$prep_store_id = (int) ($rowfat['store_id'] ?? 0);
+if ($prep_store_id > 0) {
+    $prepStoreRow = $conn->query('SELECT aname FROM acc_head WHERE id = ' . $prep_store_id)->fetch_assoc();
+    $prep_store = $prepStoreRow ? trim((string) ($prepStoreRow['aname'] ?? '')) : '';
+}
 
 $items = [];
 $group_title = '';
@@ -216,20 +257,44 @@ $embed = !empty($_GET['embed']) || !empty($kody_print_embed);
 ob_start();
 ?>
 <div id="<?= $embed ? 'prepPrinted' : 'printed' ?>" class="prep-sheet">
+    <?php if ($show_order_type): ?>
     <div class="prep-title"><?= htmlspecialchars($order_label, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
+    <?php
+    $show_info_line = $show_order_type && $info_text !== '' && strpos($order_label, $info_text) === false;
+    $has_meta = ($show_invoice_num)
+        || ($show_datetime)
+        || ($show_cashier && $emp_name !== '')
+        || ($show_driver && $driver_name !== '')
+        || ($prep_customer !== '')
+        || ($prep_store !== '')
+        || $show_info_line;
+    ?>
+    <?php if ($has_meta): ?>
     <div class="prep-meta">
+        <?php if ($show_invoice_num): ?>
         <div>رقم الطلب: <?= htmlspecialchars($invoice_num, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($show_datetime): ?>
         <div>الوقت: <?= htmlspecialchars($pro_date, ENT_QUOTES, 'UTF-8') ?></div>
-        <?php if ($emp_name !== ''): ?>
+        <?php endif; ?>
+        <?php if ($prep_customer !== ''): ?>
+        <div>العميل: <?= htmlspecialchars($prep_customer, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($prep_store !== ''): ?>
+        <div>المخزن: <?= htmlspecialchars($prep_store, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($show_cashier && $emp_name !== ''): ?>
         <div>الكاشير: <?= htmlspecialchars($emp_name, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
-        <?php if ($driver_name !== ''): ?>
+        <?php if ($show_driver && $driver_name !== ''): ?>
         <div>المندوب: <?= htmlspecialchars($driver_name, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
-        <?php if ($info_text !== '' && strpos($order_label, $info_text) === false): ?>
+        <?php if ($show_info_line): ?>
         <div><?= htmlspecialchars($info_text, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <?php if (empty($items)): ?>
     <div class="prep-empty">لا توجد أصناف للتحضير</div>
@@ -237,20 +302,24 @@ ob_start();
     <table class="prep-table">
         <thead>
             <tr>
-                <th class="prep-qty">الكمية</th>
-                <th>الصنف</th>
+                <?php if ($show_item_qty): ?><th class="prep-qty">الكمية</th><?php endif; ?>
+                <?php if ($show_item_name): ?><th>الصنف</th><?php endif; ?>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($items as $item): ?>
             <tr>
+                <?php if ($show_item_qty): ?>
                 <td class="prep-qty"><?= (int) round((float) $item['qty']) ?></td>
+                <?php endif; ?>
+                <?php if ($show_item_name): ?>
                 <td class="prep-name">
                     <?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>
-                    <?php if ($item['unit'] !== ''): ?>
+                    <?php if ($show_item_unit && $item['unit'] !== ''): ?>
                     <div class="prep-unit"><?= htmlspecialchars($item['unit'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                 </td>
+                <?php endif; ?>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -264,6 +333,7 @@ if ($embed) {
     echo $prep_body_html;
     return;
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -299,8 +369,8 @@ html, body {
         top: 0 !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 3mm 2mm 4mm !important;
-        border: none !important;
+        padding: <?= $margin_top ?>mm <?= $margin_left ?>mm <?= $margin_bottom ?>mm <?= $margin_right ?>mm !important;
+        border: <?= $show_borders ? '1px solid #000' : 'none' ?> !important;
         box-shadow: none !important;
     }
     .no-print { display: none !important; }
@@ -326,12 +396,13 @@ html, body {
     width: <?= $paper_css ?>;
     margin: 0 auto 20px;
     background: #fff;
-    padding: 10px 8px;
-    border: 1px solid #000;
+    padding: <?= $margin_top ?>mm <?= $margin_left ?>mm <?= $margin_bottom ?>mm <?= $margin_right ?>mm;
+    border: <?= $show_borders ? '1px solid #000' : 'none' ?>;
     direction: rtl;
     color: #000;
+    font-family: <?= htmlspecialchars($font_family, ENT_QUOTES, 'UTF-8') ?>, Cairo, Arial, Tahoma, sans-serif;
     font-size: <?= (int) $font_size ?>px;
-    line-height: 1.35;
+    line-height: <?= $line_spacing ?>;
 }
 .prep-title {
     text-align: center;
@@ -344,6 +415,7 @@ html, body {
     margin-bottom: 8px;
     border-bottom: 1px dashed #000;
     padding-bottom: 6px;
+    font-size: <?= (int) $font_size ?>px;
 }
 .prep-meta div { margin: 2px 0; }
 .prep-table {
@@ -351,25 +423,25 @@ html, body {
     border-collapse: collapse;
 }
 .prep-table th, .prep-table td {
-    border-bottom: 1px solid #000;
+    border-bottom: <?= $tblBorder ?>;
     padding: 8px 4px;
     vertical-align: top;
 }
 .prep-table th {
-    font-size: <?= max(12, (int) $font_size - 1) ?>px;
+    font-size: <?= max(10, (int) $items_font_size - 1) ?>px;
     text-align: center;
 }
 .prep-qty {
     width: 22%;
     text-align: center;
-    font-size: <?= (int) $font_size + 6 ?>px;
+    font-size: <?= (int) $items_font_size + 4 ?>px;
 }
 .prep-name {
     text-align: right;
-    font-size: <?= (int) $font_size + 2 ?>px;
+    font-size: <?= (int) $items_font_size ?>px;
 }
 .prep-unit {
-    font-size: <?= max(11, (int) $font_size - 2) ?>px;
+    font-size: <?= max(9, (int) $items_font_size - 2) ?>px;
     font-weight: normal;
     color: #333;
 }
@@ -387,9 +459,7 @@ html, body {
     <a href="<?= htmlspecialchars($back_page, ENT_QUOTES, 'UTF-8') ?>" id="back">عودة</a>
 </div>
 
-<div id="printed">
 <?= $prep_body_html ?>
-</div>
 
 <script>
 (function () {

@@ -424,19 +424,30 @@ if (!empty($design['header']['show_logo'])) {
 <?php
 // أطراف الفاتورة
 $tybe = (int)$rowfat['pro_tybe'];
-if ($tybe === 10) {
+if ($tybe === 10 || $tybe === 4) {
     $partyLabel = 'المورد';
-    $partyId = (int)$rowfat['acc1'];
-} elseif ($tybe === 4) {
-    $partyLabel = 'المورد';
-    $partyId = (int)$rowfat['acc2'];
 } else {
     $partyLabel = 'العميل';
-    $partyId = (int)$rowfat['acc2'];
+}
+$partyId = InvoiceProcessor::partyAccountId($rowfat);
+// مردود المبيعات من كاشير الملابس يتسجل كـ 10 لكن الطرف عميل
+if ($tybe === 10) {
+    $storeIdParty = (int) ($rowfat['store_id'] ?? 0);
+    $acc1Party = (int) ($rowfat['acc1'] ?? 0);
+    if ($storeIdParty > 0 && $acc1Party === $storeIdParty) {
+        $partyLabel = 'العميل';
+    }
 }
 $rowacc1 = $partyId > 0
     ? $conn->query("SELECT aname, phone, address, info from acc_head where id = $partyId")->fetch_assoc()
     : null;
+
+$store_name = '';
+$storePrintId = (int) ($rowfat['store_id'] ?? 0);
+if ($storePrintId > 0) {
+    $rowStorePrint = $conn->query("SELECT aname FROM acc_head WHERE id = $storePrintId")->fetch_assoc();
+    $store_name = $rowStorePrint ? trim((string) $rowStorePrint['aname']) : '';
+}
 
 $employee_name = trim((string)($rowfat['employee_name'] ?? ''));
 if ($employee_name === '') {
@@ -501,7 +512,7 @@ $show_cust_phone   = !empty($design['customer']['show_phone']);
 $show_cust_add     = !empty($design['customer']['show_address']);
 $show_cashier      = !empty($design['meta']['show_cashier']);
 
-if ($show_client_block || $show_cashier):
+if ($show_client_block || $show_cashier || $store_name !== ''):
 ?>
 <div class="rcpt-customer">
 <?php if ($show_client_block && $show_cust_name && $customer_name): ?>
@@ -512,6 +523,9 @@ if ($show_client_block || $show_cashier):
 <?php endif; ?>
 <?php if ($show_client_block && $show_cust_add && $customer_address): ?>
 <div class="info-row"><span class="info-label">العنوان:</span><span class="info-val"><?= htmlspecialchars($customer_address) ?></span></div>
+<?php endif; ?>
+<?php if ($store_name !== ''): ?>
+<div class="info-row"><span class="info-label">المخزن:</span><span class="info-val"><?= htmlspecialchars($store_name) ?></span></div>
 <?php endif; ?>
 <?php if ($show_cashier && $employee_name): ?>
 <div class="info-row"><span class="info-label">الكاشير:</span><span class="info-val"><?= htmlspecialchars($employee_name) ?></span></div>
@@ -620,13 +634,34 @@ $head_paid = isset($rowfat['paid_amount']) ? (float)$rowfat['paid_amount'] : 0.0
 $pnotes = !empty($rowfat['payment_notes']) ? json_decode($rowfat['payment_notes'], true) : [];
 $notes_paid = 0.0;
 $notes_change = 0.0;
+$notes_paid_cash = 0.0;
+$notes_paid_bank = 0.0;
 if (is_array($pnotes)) {
-    $notes_paid = (float)($pnotes['paid_cash'] ?? 0) + (float)($pnotes['paid_bank'] ?? 0);
+    $notes_paid_cash = (float)($pnotes['paid_cash'] ?? 0);
+    $notes_paid_bank = (float)($pnotes['paid_bank'] ?? 0);
+    $notes_paid = $notes_paid_cash + $notes_paid_bank;
     $notes_change = (float)($pnotes['change_amount'] ?? 0);
 }
 
 $pay_status = (string)($rowfat['payment_status'] ?? '');
 $is_non_cash_doc = in_array($tybe, [12, 13, 14, 18], true);
+
+$pay_method_label = '';
+if (!$is_non_cash_doc) {
+    if ($notes_paid_cash > 0.001 && $notes_paid_bank > 0.001) {
+        $pay_method_label = 'مختلط (كاش + شبكة)';
+    } elseif ($notes_paid_bank > 0.001) {
+        $pay_method_label = 'شبكة';
+    } elseif ($notes_paid_cash > 0.001) {
+        $pay_method_label = 'كاش';
+    } elseif ($pay_status === 'paid') {
+        $pay_method_label = 'مدفوع';
+    } elseif ($pay_status === 'partial') {
+        $pay_method_label = 'جزئي';
+    } elseif ($pay_status === 'unpaid') {
+        $pay_method_label = 'آجل';
+    }
+}
 
 if ($voucher_paid > 0) {
     $paid_amount = $voucher_paid;
@@ -714,11 +749,28 @@ $show_vat_lines = (!empty($totCfg['show_vat']) || $vat_qr !== null) && $vat_amou
 </tr>
 <?php endif; ?>
 
+<?php if ($pay_method_label !== '' && !$is_non_cash_doc): ?>
+<tr>
+    <td class="tot-label">طريقة الدفع</td>
+    <td class="tot-val"><?= htmlspecialchars($pay_method_label, ENT_QUOTES, 'UTF-8') ?></td>
+</tr>
+<?php endif; ?>
+
 <?php if (!empty($totCfg['show_paid']) && !$is_non_cash_doc): ?>
 <tr>
     <td class="tot-label">المدفوع</td>
     <td class="tot-val paid"><?= number_format($paid_amount, 2) ?></td>
 </tr>
+<?php if ($notes_paid_cash > 0.001 && $notes_paid_bank > 0.001): ?>
+<tr>
+    <td class="tot-label">منها كاش</td>
+    <td class="tot-val"><?= number_format($notes_paid_cash, 2) ?></td>
+</tr>
+<tr>
+    <td class="tot-label">منها شبكة</td>
+    <td class="tot-val"><?= number_format($notes_paid_bank, 2) ?></td>
+</tr>
+<?php endif; ?>
 <?php endif; ?>
 
 <?php if (!empty($totCfg['show_change']) && !$is_non_cash_doc && $change_amount > 0.001): ?>
