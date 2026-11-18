@@ -24,6 +24,7 @@ $itemLookup = [
     'purchases.add', 'purchases.edit', 'purchase_returns.add', 'purchase_orders.add',
     'barcode_docs.add', 'barcode_docs.edit',
     'store_transfers.add', 'store_transfers.edit',
+    'manufacturing.add', 'manufacturing.edit', 'items.edit',
 ];
 
 // ملفات البحث عن الحسابات وأرصدتها
@@ -157,6 +158,8 @@ return [
     'ajax/sp_recost.php'       => 'items.pricing',
     'print/br2538.php'         => 'items.pricing',
     'print/freebarcode.php'    => 'items.pricing',
+    'item_recipe.php'          => 'items.edit',
+    'do/dosave_item_recipe.php'=> 'items.edit',
     'items_start_balance.php'  => 'items.opening_balance',
     'inventory_audit.php'      => 'inventory.audit',
     'ajax/save_inventory_audit.php' => 'inventory.audit',
@@ -194,6 +197,9 @@ return [
         'store_transfer' => 'store_transfers.add',
         'barcode_print' => 'barcode_docs.add',
     ], 'default' => 'login'],
+    'manufacturing.php'        => 'custom',
+    'do/dosave_manufacturing.php' => ['manufacturing.add', 'manufacturing.edit'],
+    'ajax/manufacturing_preview.php' => ['manufacturing.add', 'manufacturing.edit'],
     'do/doadd_invoice.php'     => 'custom',
     'do/doedit_invoice.php'    => 'custom',
     'do/dodel_invoice.php'     => 'custom',
@@ -205,6 +211,7 @@ return [
         'purchase'        => ['purchases.view', 'reports.purchases'],
         'store_transfer'  => 'store_transfers.view',
         'barcode_print'   => 'barcode_docs.view',
+        'manufacturing'   => 'manufacturing.view',
         'all'             => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting']),
     ], 'default' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting'])],
     'ajax/get_operation_journals.php' => array_merge($invoiceView, ['reports.sales', 'reports.purchases', 'reports.accounting', 'journals.view']),

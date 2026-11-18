@@ -361,3 +361,15 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-11-11 15:55:18] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-11-11 15:56:10] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in D:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-11-15 19:20:57] mysqli_sql_exception: Unknown column 'migration' in 'field list' in D:\xampp\htdocs\kody\_tmp_check_acc.php:13
+[2026-11-17 22:41:26] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:27] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:28] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:28] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:29] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:29] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:29] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:29] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:30] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:31] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:31] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-17 22:41:32] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11

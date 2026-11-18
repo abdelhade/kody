@@ -56,6 +56,7 @@ $group1 = $_POST['group1'];
 $group2 = $_POST['group2']; 
 $info = $_POST['info']; 
 $group1 = (int) $group1;
+$isAssembly = isset($_POST['is_assembly']) ? 1 : 0;
 $group2 = (int) $group2;
 
 $postedUnits = isset($_POST['unit_id']) && is_array($_POST['unit_id']) ? $_POST['unit_id'] : [];
@@ -136,10 +137,10 @@ if ($checkColumn->num_rows == 0) {
 $conn->begin_transaction();
 try {
     $stmtItem = $conn->prepare(
-        'UPDATE myitems SET iname = ?, name2 = ?, code = ?, barcode = ?, info = ?, cost_price = ?, price1 = ?, price2 = ?, market_price = ?, group1 = ?, group2 = ?, manual_price_edit = 1 WHERE id = ?'
+        'UPDATE myitems SET iname = ?, name2 = ?, code = ?, barcode = ?, info = ?, cost_price = ?, price1 = ?, price2 = ?, market_price = ?, group1 = ?, group2 = ?, is_assembly = ?, manual_price_edit = 1 WHERE id = ?'
     );
     $stmtItem->bind_param(
-        'sssssddddiii',
+        'sssssddddiiii',
         $iname,
         $name2,
         $code,
@@ -151,6 +152,7 @@ try {
         $market_price,
         $group1,
         $group2,
+        $isAssembly,
         $item_id
     );
     $stmtItem->execute();

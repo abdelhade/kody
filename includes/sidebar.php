@@ -316,6 +316,20 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="manufacturing.php" class="nav-link">
+                  <i class="nav-icon fas fa-industry"></i>
+                  <p>أمر تصنيع</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=manufacturing" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>سجل التصنيع</p>
+                </a>
+              </li>
+
 
             </ul>
           </li>

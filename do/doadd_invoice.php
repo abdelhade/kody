@@ -51,6 +51,9 @@ function invoice_fail($message) {
 
 // استخراج وتنظيف البيانات المدخلة
 $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 0;
+if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['MANUFACTURING']) {
+    invoice_fail('أمر التصنيع يتحفظ من شاشة التصنيع');
+}
 if ($pro_tybe > 0) {
     Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'add'));
 }

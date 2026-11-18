@@ -246,7 +246,10 @@ class MigrationRunner
     {
         // Avoid preg_split('/\R/') — in non-unicode mode \R matches raw 0x85
         // which appears inside UTF-8 Arabic letters (e.g. م = D9 85).
-        $normalized = str_replace(["\r\n", "\r"], "\n", $sql);
+        $normalized = preg_replace('/^\xEF\xBB\xBF/', '', str_replace(["\r\n", "\r"], "\n", $sql)) ?? $sql;
+        if (preg_match('/^\s*DELIMITER\s+\S+\s*$/mi', $normalized)) {
+            return $this->splitDelimited($normalized);
+        }
         $lines = explode("\n", $normalized);
         $buffer = '';
         $out = [];
@@ -285,6 +288,42 @@ class MigrationRunner
         $tail = trim($buffer);
         if ($tail !== '') {
             $out[] = preg_replace('/;\s*$/', '', $tail) ?? $tail;
+        }
+        return $out;
+    }
+
+    /**
+     * ملفات فيها إجراء مخزن: DELIMITER أمر عميل مش أمر سيرفر، فبنجمّع لحد // ونبعته استعلام واحد.
+     *
+     * @return list<string>
+     */
+    private function splitDelimited(string $sql): array
+    {
+        $delimiter = ';';
+        $buffer = '';
+        $out = [];
+        foreach (explode("\n", $sql) as $line) {
+            $trim = trim($line);
+            if (preg_match('/^DELIMITER\s+(\S+)\s*$/i', $trim, $m)) {
+                $delimiter = $m[1];
+                continue;
+            }
+            if ($trim === '' && trim($buffer) === '') {
+                continue;
+            }
+            $buffer .= $line . "\n";
+            if ($delimiter !== '' && str_ends_with(rtrim($line), $delimiter)) {
+                $stmt = preg_replace('/' . preg_quote($delimiter, '/') . '\s*$/', '', trim($buffer)) ?? '';
+                $stmt = trim($stmt);
+                if ($stmt !== '') {
+                    $out[] = $stmt;
+                }
+                $buffer = '';
+            }
+        }
+        $tail = trim($buffer);
+        if ($tail !== '') {
+            $out[] = $tail;
         }
         return $out;
     }

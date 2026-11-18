@@ -356,6 +356,17 @@ if (isset($rowstg) && is_array($rowstg)) {
                             </table>
                         </div>
                         <p class="units-tip mb-0" title="السطر الأول = الوحدة الأساسية"><i class="fas fa-info-circle ml-1"></i> الأسعار تُحسب تلقائياً حسب المعامل<?php if ($unitBarcodeAdd !== '' && $unitBarcodeAdd !== '0'): ?>، وباركود الوحدة الثانية = باركود الأولى + <?= htmlspecialchars($unitBarcodeAdd, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+                        <div class="px-2 py-2 border-top d-flex align-items-center flex-wrap" style="gap:.75rem;">
+                            <div class="custom-control custom-checkbox mb-0">
+                                <input type="checkbox" class="custom-control-input" id="is_assembly" name="is_assembly" value="1" <?= ($isEdit && !empty($rowitm['is_assembly'])) ? 'checked' : '' ?>>
+                                <label class="custom-control-label" for="is_assembly">صنف مجمع</label>
+                            </div>
+                            <?php if ($isEdit) { ?>
+                                <a href="item_recipe.php?id=<?= $editId ?>">وصفة التصنيع</a>
+                            <?php } else { ?>
+                                <small class="text-muted">بعد الحفظ افتح الوصفة من تعديل الصنف</small>
+                            <?php } ?>
+                        </div>
                     </div>
                     <div class="item-form-actions is-sticky">
                         <div class="d-flex align-items-center flex-wrap" style="gap:0.3rem;">

@@ -331,7 +331,7 @@ if (!$isLazyAjax):
                                 <td><?= $x ?></td>
                                 <td><?= $rowitm['id'] ?></td>
                                 <td><?= isset($rowitm['barcode']) ? $rowitm['barcode'] : '' ?></td>
-                                <td><b><?= $rowitm['iname'] ?></b></td>
+                                <td><b><?= $rowitm['iname'] ?></b><?php if (!empty($rowitm['is_assembly'])) { ?> <span class="badge badge-info">مجمع</span><?php } ?></td>
                                 <td class="qty" data-row-id="<?= $rowitm['id'] ?>" data-original-qty="<?= htmlspecialchars((string) $displayQty, ENT_QUOTES, 'UTF-8') ?>">
                                     <a class="btn btn-sm btn-light" id="item_qty_<?= $rowitm['id'] ?>" href="<?= htmlspecialchars($qtyLink, ENT_QUOTES, 'UTF-8') ?>"><?= $displayQty ?></a>
                                 </td>
@@ -361,6 +361,7 @@ if (!$isLazyAjax):
                                     <td class="no-export">
                                         <?php if ($canEditItem) { ?>
                                         <a class="btn btn-warning btn-sm" href="add_item.php?edit=<?= $rowitm['id'] ?>"><i class="fa fa-pen"></i></a>
+                                        <a class="btn btn-sm <?= !empty($rowitm['is_assembly']) ? 'btn-info' : 'btn-outline-secondary' ?>" href="item_recipe.php?id=<?= (int) $rowitm['id'] ?>" title="وصفة التصنيع"><i class="fa fa-industry"></i></a>
                                         <?php } ?>
                                         <?php if ($canDeleteItem) { ?>
                                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteitm<?= $rowitm['id']?>">

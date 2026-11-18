@@ -58,6 +58,7 @@ return [
             ['crud'   => 'units',                 'label' => 'الوحدات',                    'legacy' => 'col:edit_items'],
             ['single' => 'items.pricing',         'label' => 'التسعير والباركود وإعادة احتساب التكلفة', 'legacy' => 'col:edit_items'],
             ['single' => 'items.opening_balance', 'label' => 'أرصدة أول المدة للأصناف',    'legacy' => 'col:edit_items'],
+            ['crud'   => 'manufacturing',         'label' => 'التصنيع',                    'legacy' => 'role1'],
             ['single' => 'inventory.audit',       'label' => 'جرد المخزن',                 'legacy' => 'col:sid_stock'],
             ['single' => 'stock.sell_negative',   'label' => 'البيع بأكثر من رصيد المخزن', 'legacy' => 'not:prevent_negative_stock'],
         ],

@@ -137,7 +137,28 @@ BEGIN
             SET running_qty = running_qty + v_qty_in - v_qty_out 
             WHERE item_id = v_item_id;
 
-        -- د) أي حركة مخزنية أخرى: تؤثر على الرصيد فقط
+        -- د) أمر تصنيع: الوارد يدخل المتوسط، والمنصرف يخفض الرصيد فقط
+        ELSEIF v_pro_tybe = 20 THEN
+            SET v_new_cost = v_old_cost;
+            IF v_qty_in > 0 THEN
+                IF v_old_qty > 0 THEN
+                    SET v_total_qty = v_old_qty + v_qty_in;
+                    SET v_new_cost = ((v_old_cost * v_old_qty) + (v_price * v_qty_in)) / v_total_qty;
+                ELSE
+                    SET v_new_cost = v_price;
+                END IF;
+            END IF;
+
+            UPDATE fat_details
+            SET cost_price = v_new_cost
+            WHERE id = v_id;
+
+            UPDATE tmp_item_state
+            SET running_qty = running_qty + v_qty_in - v_qty_out,
+                running_cost = v_new_cost
+            WHERE item_id = v_item_id;
+
+        -- هـ) أي حركة مخزنية أخرى: تؤثر على الرصيد فقط
         ELSE
             UPDATE tmp_item_state 
             SET running_qty = running_qty + v_qty_in - v_qty_out 
