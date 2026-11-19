@@ -23,8 +23,10 @@ class InvoiceProcessor {
 
     // تعريف أنواع العمليات المحاسبية
     const ACCOUNTING_TYPES = [
-        'RECEIPT' => 1,           // سند قبض ذ
+        'RECEIPT' => 1,           // سند قبض
         'PAYMENT' => 2,           // سند دفع
+        'MULTI_RECEIPT' => 21,    // سند قبض متعدد
+        'MULTI_PAYMENT' => 22,    // سند دفع متعدد
         'SALES_DISC' => 7,        // خصم مبيعات
         'PURCHASE_DISC' => 6,     // خصم مشتريات
         'COST_OF_SALES' => 20,    // قيد تكلفة مبيعات (journal_heads.pro_tybe)

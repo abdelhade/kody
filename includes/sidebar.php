@@ -1257,10 +1257,19 @@
               </li>
 
               <li class="nav-item">
-                <a href="addmulti_journal.php" class="nav-link">
+                <a href="addmulti_journal.php?t=recive" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
                   <p>
-                    <?= $lang_multi_journal ?>
+                    <?= $lang_multi_receipt ?? $lang_multi_journal ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="addmulti_journal.php?t=payment" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_multi_payment ?? 'سند دفع متعدد' ?>
                   </p>
                 </a>
               </li>

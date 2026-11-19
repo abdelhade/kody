@@ -14,14 +14,17 @@ $params = [];
 $types = "";
 
 // 1 = Recive (قبض), 2 = Payment (صرف/دفع), 16 = Transfer (تحويل نقدية بين الصناديق)
+$receiptTypes = InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'] . ',' . InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
+$paymentTypes = InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'] . ',' . InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT'];
+$allVoucherTypes = $receiptTypes . ',' . $paymentTypes . ',16';
 if ($filterType === 'recive' || $filterType === '1') {
-    $where[] = "h.pro_tybe = 1";
+    $where[] = "h.pro_tybe IN ($receiptTypes)";
 } elseif ($filterType === 'payment' || $filterType === '2') {
-    $where[] = "h.pro_tybe = 2";
+    $where[] = "h.pro_tybe IN ($paymentTypes)";
 } elseif ($filterType === 'transfer' || $filterType === '16') {
     $where[] = "h.pro_tybe = 16";
 } else {
-    $where[] = "h.pro_tybe IN (1, 2, 16)";
+    $where[] = "h.pro_tybe IN ($allVoucherTypes)";
 }
 
 if ($startDate !== '') {
@@ -62,7 +65,7 @@ if (!empty($params)) {
 $voucherCount = $resvoucher ? $resvoucher->num_rows : 0;
 
 // عدد السندات لكل نوع (بنفس فلتر التاريخ) لعرضه على تابات الفلتر
-$countWhere = ["isdeleted = 0", "pro_tybe IN (1, 2, 16)"];
+$countWhere = ["isdeleted = 0", "pro_tybe IN ($allVoucherTypes)"];
 $countParams = [];
 $countTypes = "";
 if ($startDate !== '') {
@@ -80,11 +83,13 @@ if (!empty($countParams)) {
     $countStmt->bind_param($countTypes, ...$countParams);
 }
 $countStmt->execute();
-$typeCounts = [1 => 0, 2 => 0, 16 => 0];
+$typeCounts = [1 => 0, 2 => 0, 16 => 0, 21 => 0, 22 => 0];
 $countRes = $countStmt->get_result();
 while ($c = $countRes->fetch_assoc()) {
     $typeCounts[(int)$c['pro_tybe']] = (int)$c['cnt'];
 }
+$typeCounts[1] += $typeCounts[21];
+$typeCounts[2] += $typeCounts[22];
 $countStmt->close();
 
 $activeTab = match (true) {
@@ -214,7 +219,9 @@ $filterTabs = [
                 $acc2 = htmlspecialchars($row['acc2_name'] ?? '—', ENT_QUOTES, 'UTF-8');
                 $info = htmlspecialchars($row['info'] ?? '', ENT_QUOTES, 'UTF-8');
 
-                if ($proType === 1) {
+                $multiReceipt = InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
+                $multiPayment = InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT'];
+                if ($proType === 1 || $proType === $multiReceipt) {
                     $typeKey = 'recive';
                     $valColor = 'text-success';
                     $fromDisplay = '<span class="text-dark font-weight-bold">' . $acc1 . '</span>';
@@ -237,10 +244,14 @@ $filterTabs = [
                 <td><span class="k-badge k-badge-secondary font-weight-bold"><?= $proId ?></span></td>
                 <td><?= $proDate ?></td>
                 <td>
-                  <?php if ($proType === 1): ?>
+                  <?php if ($proType === $multiReceipt): ?>
+                    <span class="k-badge k-badge-success"><i class="fas fa-arrow-down ml-1"></i> سند قبض متعدد</span>
+                  <?php elseif ($proType === 1): ?>
                     <span class="k-badge k-badge-success"><i class="fas fa-arrow-down ml-1"></i> قبض</span>
                   <?php elseif ($proType === 16): ?>
                     <span class="k-badge k-badge-info"><i class="fas fa-exchange-alt ml-1"></i> تحويل نقدية</span>
+                  <?php elseif ($proType === $multiPayment): ?>
+                    <span class="k-badge k-badge-danger"><i class="fas fa-arrow-up ml-1"></i> سند دفع متعدد</span>
                   <?php else: ?>
                     <span class="k-badge k-badge-danger"><i class="fas fa-arrow-up ml-1"></i> صرف</span>
                   <?php endif; ?>
@@ -255,18 +266,18 @@ $filterTabs = [
                 <td><?= $info !== '' ? $info : '<span class="text-muted small">—</span>' ?></td>
                 <td class="text-center">
                   <div class="k-actions">
-                    <?php if (Can::canVisit('add_voucher.php?edit=' . $vid . '&t=' . $typeKey)) { ?>
+                    <?php if ($proType !== $multiReceipt && $proType !== $multiPayment && Can::canVisit('add_voucher.php?edit=' . $vid . '&t=' . $typeKey)) { ?>
                     <?= kody_action_btn('edit', 'add_voucher.php?edit=' . $vid . '&t=' . $typeKey, ['title' => 'تعديل ' . ($proType === 16 ? 'التحويل' : 'السند')]) ?>
                     <?php } ?>
                     <?php if ($row['linked_invoice_no'] !== null) { ?>
                     <span class="k-btn-action text-muted" title="مرتبط بالفاتورة رقم <?= htmlspecialchars((string) $row['linked_invoice_no'], ENT_QUOTES, 'UTF-8') ?> ولا يمكن حذفه"><i class="fas fa-lock"></i></span>
-                    <?php } elseif (Can::check($proType === 1 ? 'receipts.delete' : 'payments.delete')) { ?>
+                    <?php } elseif (Can::check(($proType === 1 || $proType === $multiReceipt) ? 'receipts.delete' : 'payments.delete')) { ?>
                     <button type="button" 
                             class="k-btn-action k-btn-action-del btn-delete-voucher" 
                             data-id="<?= $vid ?>" 
                             data-number="<?= $proId ?>" 
                             data-type="<?= $proType ?>" 
-                            data-name="<?= ($proType === 16 ? 'تحويل نقدية رقم ' : ($proType === 1 ? 'سند قبض رقم ' : 'سند صرف رقم ')) . $proId ?>" 
+                            data-name="<?= ($proType === $multiReceipt ? 'سند قبض متعدد رقم ' : ($proType === $multiPayment ? 'سند دفع متعدد رقم ' : ($proType === 16 ? 'تحويل نقدية رقم ' : ($proType === 1 ? 'سند قبض رقم ' : 'سند صرف رقم ')))) . $proId ?>" 
                             title="حذف <?= ($proType === 16 ? 'التحويل' : 'السند') ?>">
                       <i class="fas fa-trash-alt"></i>
                     </button>

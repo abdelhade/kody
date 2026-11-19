@@ -1,8 +1,19 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
+<?php require_once __DIR__ . '/classes/InvoiceProcessor.php'; ?>
 
 <?php
+$kind = (isset($_GET['t']) && $_GET['t'] === 'payment') ? 'payment' : 'recive';
+$isPayment = $kind === 'payment';
+$typeName = $isPayment ? 'سند دفع متعدد' : 'سند قبض متعدد';
+$typeId = $isPayment
+    ? InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT']
+    : InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
+$typeHint = $isPayment
+    ? 'سند دفع متعدد: الأطراف في المدين، والصندوق أو البنك في الدائن.'
+    : 'سند قبض متعدد: الصندوق أو البنك في المدين، والأطراف في الدائن.';
+
 $nextRow = $conn->query('SELECT COALESCE(MAX(journal_id), 0) + 1 AS next_id FROM journal_heads')->fetch_assoc();
 $jrnlid = (int) ($nextRow['next_id'] ?? 1);
 
@@ -45,6 +56,19 @@ if (Can::canVisit('daily_journal.php')) {
 ?>
 
 <style>
+.mj-types { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.mj-types a {
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border: 1px solid var(--k-border);
+  color: var(--k-text-muted);
+  background: #fff;
+}
+.mj-types a.is-on.is-receipt { background: var(--k-success); color: #fff; border-color: var(--k-success); }
+.mj-types a.is-on.is-payment { background: var(--k-danger); color: #fff; border-color: var(--k-danger); }
 .mj-page .mj-card { overflow: visible; }
 .mj-page .k-card-body { padding: 12px 14px 8px; }
 .mj-meta {
@@ -199,17 +223,25 @@ if (Can::canVisit('daily_journal.php')) {
 
 <div class="content-wrapper k-page-wrapper mj-page">
   <?= kody_page_header(
-      title: 'قيد يومية متعدد',
-      icon: 'fa-balance-scale',
+      title: $typeName,
+      icon: $isPayment ? 'fa-money-bill-wave' : 'fa-hand-holding-usd',
       breadcrumbs: [
           'الرئيسية' => 'dashboard.php',
           'الحسابات العامة' => '',
-          'قيد يومية متعدد' => '',
+          $typeName => '',
       ],
       actions: $headerActions
   ) ?>
 
+  <?php if (isset($_GET['error'])): ?>
+    <div class="k-card" style="padding: 12px 16px; margin-bottom: 12px; color: var(--k-danger-text); background: var(--k-danger-light);">
+      القيد مش اتسجل. راجع إن الطرفين متوازنين والحسابات مختارة.
+    </div>
+  <?php endif; ?>
+
   <form id="journalForm" action="do/doadd_multijournal.php" method="post" autocomplete="off">
+    <input type="hidden" name="voucher_kind" value="<?= $kind ?>">
+    <input type="hidden" name="pro_tybe" value="<?= (int) $typeId ?>">
     <input type="hidden" name="total" id="totalField" value="0">
     <div id="payload"></div>
 
@@ -233,7 +265,11 @@ if (Can::canVisit('daily_journal.php')) {
             <input id="details" name="details" type="text" class="k-input" placeholder="بيان القيد" autofocus>
           </div>
         </div>
-        <p class="mj-hint">كل سطر حساب واحد، والمبلغ يا مدين يا دائن. الحفظ يتفتح لما الطرفين يتساووا.</p>
+        <div class="mj-types">
+          <a href="addmulti_journal.php?t=recive" class="<?= $isPayment ? '' : 'is-on is-receipt' ?>">سند قبض متعدد</a>
+          <a href="addmulti_journal.php?t=payment" class="<?= $isPayment ? 'is-on is-payment' : '' ?>">سند دفع متعدد</a>
+        </div>
+        <p class="mj-hint"><?= htmlspecialchars($typeHint, ENT_QUOTES, 'UTF-8') ?> الحفظ يتفتح لما الطرفين يتساووا.</p>
 
         <div class="mj-table-wrap">
           <table class="mj-table">

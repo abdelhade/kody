@@ -41,16 +41,26 @@ if (!$row) {
 }
 
 $pro_tybe = (int) $row['pro_tybe'];
-if ($pro_tybe !== 1 && $pro_tybe !== 2 && $pro_tybe !== 16) {
+$allowedTypes = [
+    InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'],
+    InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'],
+    InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'],
+    InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT'],
+    16,
+];
+if (!in_array($pro_tybe, $allowedTypes, true)) {
     $sendResponse(false, 'هذا السند مرتبط بعمليات أخرى ولا يمكن حذفه من هنا', 400);
 }
 
+$isReceipt = $pro_tybe === InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT']
+    || $pro_tybe === InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
+
 // فحص الصلاحية
-if (!Can::check($pro_tybe === 1 ? 'receipts.delete' : 'payments.delete')) {
+if (!Can::check($isReceipt ? 'receipts.delete' : 'payments.delete')) {
     $sendResponse(false, 'ليس لديك صلاحية لحذف هذا السند', 403);
 }
 
-$redirectParam = ($pro_tybe === 1) ? 't=recive' : (($pro_tybe === 16) ? 't=transfer' : 't=payment');
+$redirectParam = $isReceipt ? 't=recive' : (($pro_tybe === 16) ? 't=transfer' : 't=payment');
 
 $linked = InvoiceProcessor::linkedInvoiceOfVoucher($conn, $id);
 if ($linked) {
