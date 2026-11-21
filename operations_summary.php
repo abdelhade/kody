@@ -201,8 +201,8 @@ if (!$is_sales_order_report && $q !== 'purchase' && $q !== 'sale_legacy' && !emp
         COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.pro_value ELSE 0 END), 0) AS returns_total,
         COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.fat_net ELSE 0 END), 0) AS returns_net,
         COALESCE(SUM(CASE WHEN $is_sale_sql THEN ot.profit ELSE 0 END), 0)
-          - COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.profit ELSE 0 END), 0) AS profit_net,
-        COALESCE(SUM(CASE WHEN $is_sale_sql THEN (
+          + COALESCE(SUM(CASE WHEN $is_return_sql THEN ot.profit ELSE 0 END), 0) AS profit_net,
+        COALESCE(SUM(CASE WHEN $is_sale_sql THEN
             LEAST(
                 GREATEST(COALESCE((
                     SELECT SUM(v.pro_value) FROM ot_head v
@@ -210,7 +210,7 @@ if (!$is_sales_order_report && $q !== 'purchase' && $q !== 'sale_legacy' && !emp
                 ), 0), 0),
                 GREATEST(COALESCE(ot.fat_net, 0), 0)
             )
-        ) ELSE 0 END), 0) AS paid_total
+        ELSE 0 END), 0) AS paid_total
         $join_clause
         WHERE $where_clause";
     $sum_res = $conn->query($sum_sql);
