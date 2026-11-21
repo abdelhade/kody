@@ -1,8 +1,8 @@
 <div class="dashboard-cards">
     <div class="row">
         <?php if(Can::canVisit('myrentables.php')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-dark) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-dark">
                 <div class="card-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
@@ -27,8 +27,8 @@
         <?php } ?>
 
         <?php if(Can::canVisit('acc_report.php?acc=clients')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-color) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-primary">
                 <div class="card-icon">
                     <i class="fas fa-users"></i>
                 </div>
@@ -53,8 +53,8 @@
         <?php } ?>
 
         <?php if(Can::check('users.view')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-light) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-light">
                 <div class="card-icon">
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
@@ -79,13 +79,13 @@
         <?php } ?>
 
         <?php if(Can::canVisit('operations_summary.php?q=sale')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
-                <div class="card-icon" style="color: var(--primary-dark) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-soft">
+                <div class="card-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="card-content">
-                    <h2 class="stat-number" style="color: var(--primary-dark) !important;">
+                    <h2 class="stat-number">
                         <?php 
                             $cnt7 = $conn->query("SELECT COUNT(*) FROM ot_head where pro_tybe = 3 OR pro_tybe = 9")->fetch_assoc(); 
                             $cnt8 = $conn->query("SELECT sum(pro_value) FROM ot_head where pro_tybe = 3 OR pro_tybe = 9")->fetch_assoc();
@@ -93,12 +93,12 @@
                             echo $cnt7['COUNT(*)'] ." / ". $cnt09."K"; 
                         ?>
                     </h2>
-                    <p class="stat-label" style="color: var(--primary-dark) !important;">المبيعات</p>
+                    <p class="stat-label">المبيعات</p>
                 </div>
-                <div class="card-footer-det" style="border-top: 1px solid rgba(17, 24, 68, 0.15) !important;">
-                    <a href="operations_summary.php?q=sale" class="card-link" style="color: var(--primary-dark) !important;">
+                <div class="card-footer-det">
+                    <a href="operations_summary.php?q=sale" class="card-link">
                         <span>عرض التفاصيل</span>
-                        <i class="fas fa-chevron-left" style="color: var(--primary-dark) !important;"></i>
+                        <i class="fas fa-chevron-left"></i>
                     </a>
                 </div>
                 <div class="wave-effect"></div>
@@ -107,8 +107,8 @@
         <?php } ?>
 
         <?php if(Can::canVisit('tasks.php')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-dark) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-brand">
                 <div class="card-icon">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
@@ -133,8 +133,8 @@
         <?php } ?>
 
         <?php if(Can::canVisit('tasks.php')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-color) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-primary">
                 <div class="card-icon">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -159,8 +159,8 @@
         <?php } ?>
 
         <?php if(Can::canVisit('reservations.php')){ ?>
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-            <div class="stat-card" style="background: var(--primary-light) !important;">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
+            <div class="stat-card bg-gradient-light">
                 <div class="card-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
@@ -185,4 +185,3 @@
         <?php } ?>
     </div>
 </div>
-
