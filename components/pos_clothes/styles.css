@@ -542,3 +542,120 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 6px 15px rgba(99, 91, 255, 0.4) !important;
 }
+
+/* --- Payment Modal (من pos_barcode) --- */
+#paymentModal .payment-modal-dialog {
+    max-width: 560px;
+    margin: 0.75rem auto;
+}
+
+#paymentModal .payment-modal-content {
+    border-radius: 12px;
+}
+
+#paymentModal .payment-modal-header {
+    background: linear-gradient(135deg, var(--primary-navy) 0%, #2A3356 100%) !important;
+    color: white;
+    padding: 0.7rem 0.9rem !important;
+    border-radius: 12px 12px 0 0 !important;
+    min-height: unset;
+}
+
+#paymentModal .payment-modal-header .modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+#paymentModal .payment-modal-body {
+    padding: 0.7rem 0.85rem !important;
+}
+
+#paymentModal .pay-summary-strip {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+    padding: 0.5rem 0.55rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+#paymentModal .pay-stat {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+
+#paymentModal .pay-stat-lbl {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+#paymentModal .pay-stat-val {
+    display: block;
+    font-size: 1.05rem;
+    line-height: 1.25;
+    margin-top: 2px;
+}
+
+#paymentModal .pay-lbl {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+#paymentModal .pay-row {
+    margin-bottom: 0.5rem;
+}
+
+#paymentModal .pay-row .form-control-sm,
+#paymentModal .pay-select {
+    font-size: 0.88rem;
+    padding: 0.28rem 0.45rem;
+    min-height: calc(1.5em + 0.5rem + 2px);
+}
+
+#paymentModal .pay-old-paid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.55rem;
+    margin-bottom: 0.5rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+}
+
+#paymentModal .pay-method-row {
+    margin-bottom: 0.55rem;
+}
+
+#paymentModal .pay-method-group .btn {
+    font-size: 0.88rem;
+    font-weight: 700;
+    padding: 0.4rem 0.5rem;
+}
+
+#paymentModal #modal_paid_cash[readonly],
+#paymentModal #modal_paid_bank[readonly] {
+    background-color: #f1f5f9;
+    cursor: default;
+}
+
+#paymentModal .payment-modal-footer {
+    padding: 0.55rem 0.75rem !important;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+#paymentModal .payment-modal-footer .btn {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.88rem;
+}

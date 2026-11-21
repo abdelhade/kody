@@ -894,8 +894,13 @@ function updateTotals() {
     if (document.getElementById('modal_total')) {
         document.getElementById('modal_total').textContent = total.toFixed(2) + '  ';
         document.getElementById('modal_net').textContent = net.toFixed(2) + '  ';
-        document.getElementById('modal_paid').value = net.toFixed(2);
-        updateChange();
+        if (typeof refreshPaymentAmountsAfterNetChange === 'function') {
+            refreshPaymentAmountsAfterNetChange();
+        } else if (typeof applyPayMethod === 'function') {
+            applyPayMethod(true);
+        } else {
+            calculateChange();
+        }
     }
 }
 
@@ -908,18 +913,52 @@ function hideItems() {
     });
 }
 
-function updateChange() {
-    const net = parseFloat(document.getElementById('modal_net').textContent.replace('  ', '')) || 0;
-    const paid = parseFloat(document.getElementById('modal_paid').value) || 0;
-    const change = paid - net;
-    
-    document.getElementById('modal_change').value = change.toFixed(2);
-    
-    if (change < 0) {
-        document.getElementById('modal_change').className = 'form-control form-control-lg text-center fw-bold bg-danger text-white';
-    } else {
-        document.getElementById('modal_change').className = 'form-control form-control-lg text-center fw-bold bg-success text-white';
+window.getPaymentDueAmount = function getPaymentDueAmount() {
+    return Math.max(0, parseFloat(document.getElementById('net_val')?.value) || 0);
+};
+
+window.syncMixedBankFromCash = function syncMixedBankFromCash(formatCash) {
+    if (($('#pay_method').val() || 'cash') !== 'mixed') return;
+    if (formatCash === undefined) formatCash = true;
+    const due = getPaymentDueAmount();
+    const $cash = $('#modal_paid_cash');
+    let cash = parseFloat($cash.val());
+    if (isNaN(cash) || cash < 0) cash = 0;
+    if (cash > due) {
+        cash = due;
+        $cash.val(cash.toFixed(2));
+    } else if (formatCash) {
+        $cash.val(cash.toFixed(2));
     }
+    $('#modal_paid_bank').val(Math.max(0, due - cash).toFixed(2));
+};
+
+window.refreshPaymentAmountsAfterNetChange = function refreshPaymentAmountsAfterNetChange() {
+    const method = $('#pay_method').val() || 'cash';
+    if (method === 'mixed') {
+        syncMixedBankFromCash();
+        calculateChange();
+    } else if (typeof applyPayMethod === 'function') {
+        applyPayMethod(true);
+    } else {
+        calculateChange();
+    }
+};
+
+window.calculateChange = function calculateChange() {
+    const net = parseFloat(document.getElementById('net_val')?.value) || 0;
+    const paidCash = parseFloat(document.getElementById('modal_paid_cash')?.value) || 0;
+    const paidBank = parseFloat(document.getElementById('modal_paid_bank')?.value) || 0;
+    const change = (paidCash + paidBank) - net;
+    const changeEl = document.getElementById('modal_change');
+    if (changeEl) {
+        changeEl.textContent = change.toFixed(2) + '  ';
+        changeEl.className = 'pay-stat-val ' + (change < 0 ? 'text-danger' : 'text-success');
+    }
+};
+
+function updateChange() {
+    calculateChange();
 }
 
 function updateDiscountFromPercent() {
@@ -974,6 +1013,17 @@ function updateDiscount() {
     updateDiscountFromPercent();
 }
 
+function ensureHiddenInput(form, name) {
+    let input = form.querySelector('input[name="' + name + '"]');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        form.appendChild(input);
+    }
+    return input;
+}
+
 function submitPOS(action) {
     if (selectedItems.length === 0) {
         Swal.fire({
@@ -996,14 +1046,44 @@ function submitPOS(action) {
         $('#paymentModal').modal('hide');
         return false;
     }
+
+    const payMethod = $('#pay_method').val() || 'cash';
+    if (payMethod === 'mixed' && typeof syncMixedBankFromCash === 'function') {
+        syncMixedBankFromCash();
+    }
+
+    let paidCash = parseFloat($('#modal_paid_cash').val()) || 0;
+    let paidBank = parseFloat($('#modal_paid_bank').val()) || 0;
+    let fundId = $('#payment_fund_id').val();
+    let bankId = $('#payment_bank_id').val();
+
+    if (payMethod === 'cash') {
+        paidBank = 0;
+        bankId = '';
+    } else if (payMethod === 'bank') {
+        paidCash = 0;
+        fundId = '';
+    }
+
+    if (paidCash > 0 && (!fundId || fundId == '0')) {
+        Swal.fire({ icon: 'warning', title: 'تنبيه', text: 'يجب اختيار الصندوق عند الدفع كاش', confirmButtonText: 'حسناً' });
+        return false;
+    }
+    if (paidBank > 0 && (!bankId || bankId == '0')) {
+        Swal.fire({ icon: 'warning', title: 'تنبيه', text: 'يجب اختيار البنك عند الدفع شبكة', confirmButtonText: 'حسناً' });
+        return false;
+    }
+    if (payMethod === 'mixed' && paidCash <= 0 && paidBank <= 0) {
+        Swal.fire({ icon: 'warning', title: 'تنبيه', text: 'يجب توزيع المبلغ بين الكاش والشبكة', confirmButtonText: 'حسناً' });
+        return false;
+    }
     
     if (isSubmitting) {
         return false;
     }
     isSubmitting = true;
     
-    // Disable buttons and show spinner
-    const buttons = document.querySelectorAll('#paymentModal .btn-navy, #paymentModal .btn-violet');
+    const buttons = document.querySelectorAll('#paymentSaveBtn, #paymentPrintBtn');
     buttons.forEach(btn => {
         btn.disabled = true;
         if (!btn.dataset.originalText) {
@@ -1013,37 +1093,17 @@ function submitPOS(action) {
     });
     
     const form = document.getElementById('posForm');
-    
-    // إضافة نوع العملية
-    let submitInput = form.querySelector('input[name="submit"]');
-    if (!submitInput) {
-        submitInput = document.createElement('input');
-        submitInput.type = 'hidden';
-        submitInput.name = 'submit';
-        form.appendChild(submitInput);
-    }
-    submitInput.value = action;
-    
-    // إضافة المبلغ المدفوع
-    let paidInput = form.querySelector('input[name="paid"]');
-    if (!paidInput) {
-        paidInput = document.createElement('input');
-        paidInput.type = 'hidden';
-        paidInput.name = 'paid';
-        form.appendChild(paidInput);
-    }
-    paidInput.value = document.getElementById('modal_paid').value;
-    
-    // إضافة الصندوق من المودال
-    let fundInput = form.querySelector('input[name="fund_id"]');
-    if (!fundInput) {
-        fundInput = document.createElement('input');
-        fundInput.type = 'hidden';
-        fundInput.name = 'fund_id';
-        form.appendChild(fundInput);
-    }
-    const fundSelect = document.querySelector('#paymentModal select[name="fund_id"]');
-    fundInput.value = fundSelect ? fundSelect.value : '';
+    ensureHiddenInput(form, 'submit').value = action;
+    ensureHiddenInput(form, 'pay_method').value = payMethod;
+    ensureHiddenInput(form, 'paid_cash').value = paidCash;
+    ensureHiddenInput(form, 'paid_bank').value = paidBank;
+    ensureHiddenInput(form, 'payment_fund_id').value = fundId || '';
+    ensureHiddenInput(form, 'payment_bank_id').value = bankId || '';
+    ensureHiddenInput(form, 'paid').value = (paidCash + paidBank);
+
+    // للتوافق مع مسار الفاتورة القديم: fund_id = الصندوق أو البنك حسب المتاح
+    const accountingFund = fundId || bankId || $('#payment_fund_id option:selected').val() || '';
+    ensureHiddenInput(form, 'fund_id').value = accountingFund;
     
     $('#paymentModal').modal('hide');
     
@@ -1090,6 +1150,103 @@ function updateFullscreenIcon() {
         icon.className = 'fas fa-expand';
     }
 }
+
+// منطق طريقة الدفع (كاش / شبكة / مختلط) — نفس pos_barcode
+(function () {
+    function setPayMethodUi(method, resetAmounts) {
+        method = method || 'cash';
+        $('#pay_method').val(method);
+
+        $('#pay_method_btns [data-pay-method]').each(function () {
+            var m = $(this).data('pay-method');
+            $(this).removeClass('btn-success btn-primary btn-warning active btn-outline-success btn-outline-primary btn-outline-warning');
+            if (m === method) {
+                if (m === 'cash') $(this).addClass('btn-success active');
+                else if (m === 'bank') $(this).addClass('btn-primary active');
+                else $(this).addClass('btn-warning active');
+            } else {
+                if (m === 'cash') $(this).addClass('btn-outline-success');
+                else if (m === 'bank') $(this).addClass('btn-outline-primary');
+                else $(this).addClass('btn-outline-warning');
+            }
+        });
+
+        var due = (typeof getPaymentDueAmount === 'function')
+            ? getPaymentDueAmount()
+            : Math.max(0, (parseFloat($('#net_val').val()) || 0));
+
+        var $fundCol = $('#pay_fund_col');
+        var $bankCol = $('#pay_bank_col');
+        var $cashAmt = $('#pay_cash_amount_col');
+        var $bankAmt = $('#pay_bank_amount_col');
+        var $paidCash = $('#modal_paid_cash');
+        var $paidBank = $('#modal_paid_bank');
+
+        if (method === 'cash') {
+            $fundCol.removeClass('col-6 d-none').addClass('col-12');
+            $bankCol.addClass('d-none');
+            $cashAmt.removeClass('col-6 d-none').addClass('col-12');
+            $bankAmt.addClass('d-none');
+            $paidCash.prop('readonly', false);
+            $paidBank.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val(due.toFixed(2));
+                $paidBank.val('0.00');
+            }
+        } else if (method === 'bank') {
+            $fundCol.addClass('d-none');
+            $bankCol.removeClass('col-6 d-none').addClass('col-12');
+            $cashAmt.addClass('d-none');
+            $bankAmt.removeClass('col-6 d-none').addClass('col-12');
+            $paidCash.prop('readonly', true);
+            $paidBank.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val('0.00');
+                $paidBank.val(due.toFixed(2));
+            }
+            ensureBankSelected();
+        } else {
+            $fundCol.removeClass('col-12 d-none').addClass('col-6');
+            $bankCol.removeClass('col-12 d-none').addClass('col-6');
+            $cashAmt.removeClass('col-12 d-none').addClass('col-6');
+            $bankAmt.removeClass('col-12 d-none').addClass('col-6');
+            $paidCash.prop('readonly', false);
+            $paidBank.prop('readonly', true);
+            if (resetAmounts !== false) {
+                $paidCash.val(due.toFixed(2));
+                $paidBank.val('0.00');
+            } else if (typeof syncMixedBankFromCash === 'function') {
+                syncMixedBankFromCash();
+            }
+            ensureBankSelected();
+        }
+
+        if (typeof calculateChange === 'function') calculateChange();
+    }
+
+    function ensureBankSelected() {
+        var $sel = $('#payment_bank_id');
+        if (!$sel.length) return;
+        if (!$sel.val()) {
+            var $first = $sel.find('option[value!=""]').first();
+            if ($first.length) $sel.val($first.val());
+        }
+    }
+
+    window.setPayMethodUi = setPayMethodUi;
+    window.applyPayMethod = function (resetAmounts) {
+        setPayMethodUi($('#pay_method').val() || 'cash', resetAmounts);
+    };
+
+    $(document).on('click', '#pay_method_btns [data-pay-method]', function (e) {
+        e.preventDefault();
+        setPayMethodUi($(this).data('pay-method'), true);
+    });
+
+    $(document).on('shown.bs.modal', '#paymentModal', function () {
+        setPayMethodUi($('#pay_method').val() || 'cash', true);
+    });
+})();
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
@@ -1179,23 +1336,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // مودال الدفع - مزامنة الخصم (نسبة وقيمة) على keyup و input
+    // مودال الدفع - مزامنة الخصم (نسبة وقيمة)
     $(document).off('keyup.posDisc input.posDisc', '#modal_discperc').on('keyup.posDisc input.posDisc', '#modal_discperc', function() {
         updateDiscountFromPercent();
     });
     $(document).off('keyup.posDisc input.posDisc', '#modal_discount').on('keyup.posDisc input.posDisc', '#modal_discount', function() {
         updateDiscountFromValue();
     });
-    $(document).off('keyup.posPaid input.posPaid', '#modal_paid').on('keyup.posPaid input.posPaid', '#modal_paid', function() {
-        updateChange();
+
+    $(document).on('input', '#paymentModal .pay-num', function() {
+        let v = String(this.value || '');
+        v = v.replace(/[^\d.]/g, '');
+        const parts = v.split('.');
+        if (parts.length > 2) {
+            v = parts[0] + '.' + parts.slice(1).join('');
+        }
+        if (this.value !== v) this.value = v;
+    });
+
+    $(document).on('keypress', '#paymentModal .pay-num', function(e) {
+        const ch = String.fromCharCode(e.which);
+        if (!/[0-9.]/.test(ch)) {
+            e.preventDefault();
+            return;
+        }
+        if (ch === '.' && String(this.value).indexOf('.') !== -1) {
+            e.preventDefault();
+        }
+    });
+
+    $(document).on('focus', '#modal_paid_cash', function() {
+        if (this.readOnly) return;
+        const el = this;
+        setTimeout(function() { try { el.select(); } catch (e) {} }, 0);
+    });
+
+    $('#modal_paid_cash').on('input', function() {
+        if (($('#pay_method').val() || 'cash') === 'mixed') {
+            syncMixedBankFromCash(false);
+        }
+        calculateChange();
+    });
+
+    $('#modal_paid_cash').on('blur', function() {
+        if (($('#pay_method').val() || 'cash') === 'mixed') {
+            syncMixedBankFromCash(true);
+        } else {
+            let cash = parseFloat($(this).val());
+            if (isNaN(cash) || cash < 0) cash = 0;
+            $(this).val(cash.toFixed(2));
+        }
+        calculateChange();
     });
     
     $('#paymentModal').on('show.bs.modal', function() {
         updateTotals();
     });
 
-    // تحديد كل المحتوى عند الضغط على أي input داخل مودال الدفع
     $('#paymentModal').on('shown.bs.modal', function() {
+        $('#old_payment_container').hide();
         $('#paymentModal input[type="number"], #paymentModal input[type="text"]').off('click.selectAll focus.selectAll').on('click.selectAll focus.selectAll', function() {
             const el = this;
             setTimeout(function() { el.select(); }, 0);

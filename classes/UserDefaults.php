@@ -195,9 +195,10 @@ final class UserDefaults
         if (self::hasPriceList($proType)) {
             $fields['price_list'] = 'price_list';
         }
-        // الدفع بالبنك في كاشير الملابس بيبعت البنك في fund_id
-        if (($data['payment_method'] ?? '') === 'bank') {
-            unset($fields['fund_id']);
+        // الدفع بالبنك فقط: متفرضش صندوق على fund_id / payment_fund_id
+        $payMethod = (string) ($data['pay_method'] ?? $data['payment_method'] ?? '');
+        if ($payMethod === 'bank') {
+            unset($fields['fund_id'], $fields['payment_fund_id']);
         }
         self::enforce($conn, $data, $fields);
     }

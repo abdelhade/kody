@@ -1,190 +1,124 @@
-<div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background-color: var(--primary-navy); color: white;">
-                <h5 class="modal-title">
-                    <i class="fas fa-cash-register me-2"></i>الدفع والإجماليات
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- مودال الدفع (نفس واجهة pos_barcode) -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered payment-modal-dialog">
+        <div class="modal-content payment-modal-content">
+            <div class="modal-header payment-modal-header py-2 px-3">
+                <h6 class="modal-title mb-0" id="paymentModalLabel">الدفع والإجماليات</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="card" style="background-color: var(--neutral-light);">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-4">
-                                        <label class="mb-0 fw-bold" style="color: var(--primary-navy);">
-                                            <i class="fas fa-coins me-2"></i>الإجمالي
-                                        </label>
-                                    </div>
-                                    <div class="col-8">
-                                        <h4 class="mb-0 text-end" style="color: var(--primary-navy);" id="modal_total">0.00  </h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="modal-body payment-modal-body p-2">
+                <div class="pay-summary-strip">
+                    <div class="pay-stat">
+                        <span class="pay-stat-lbl">الإجمالي</span>
+                        <strong class="pay-stat-val text-primary" id="modal_total">0.00  </strong>
                     </div>
-
-                    <div class="col-12">
-                        <div class="card border-secondary">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0" style="color: var(--text-dark);">
-                                    <i class="fas fa-percentage me-2"></i>الخصم
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <label class="form-label fw-bold">الخصم %</label>
-                                        <input class="form-control text-center" type="number" id="modal_discperc" value="0" min="0" max="100" step="0.1">
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label fw-bold">قيمة الخصم</label>
-                                        <input class="form-control text-center" type="number" id="modal_discount" value="0" step="0.01">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="pay-stat">
+                        <span class="pay-stat-lbl">الصافي</span>
+                        <strong class="pay-stat-val text-success" id="modal_net">0.00  </strong>
                     </div>
-
-                    <div class="col-12">
-                        <div class="card" style="background-color: rgba(142, 68, 173, 0.1); border-color: var(--primary-violet);">
-                            <div class="card-body">
-                                <div class="row align-items-center">
-                                    <div class="col-4">
-                                        <label class="mb-0 fw-bold" style="color: var(--primary-violet);">
-                                            <i class="fas fa-check-circle me-2"></i>الصافي
-                                        </label>
-                                    </div>
-                                    <div class="col-8">
-                                        <h3 class="mb-0 text-end" style="color: var(--primary-violet);" id="modal_net">0.00  </h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="pay-stat">
+                        <span class="pay-stat-lbl">الباقي</span>
+                        <strong class="pay-stat-val text-danger" id="modal_change">0.00  </strong>
                     </div>
+                </div>
 
-                    <div class="col-12">
-                        <label class="form-label fw-bold">طريقة الدفع</label>
-                        <div class="btn-group w-100 mb-2" role="group">
-                            <input type="radio" class="btn-check" name="payment_method" id="pay_cash" value="cash" checked autocomplete="off">
-                            <label class="btn btn-outline-primary" for="pay_cash">
-                                <i class="fas fa-money-bill-wave me-1"></i>نقدي (كاش)
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="payment_method" id="pay_bank" value="bank" autocomplete="off">
-                            <label class="btn btn-outline-primary" for="pay_bank">
-                                <i class="fas fa-university me-1"></i>بنك / شبكة
-                            </label>
-                        </div>
+                <div class="row g-1 pay-row">
+                    <div class="col-6">
+                        <label class="pay-lbl" for="modal_discperc">خصم %</label>
+                        <input class="form-control form-control-sm text-center pay-num" type="text" inputmode="decimal"
+                            id="modal_discperc" value="0" autocomplete="off">
                     </div>
+                    <div class="col-6">
+                        <label class="pay-lbl" for="modal_discount">ق. الخصم</label>
+                        <input class="form-control form-control-sm text-center pay-num" type="text" inputmode="decimal"
+                            id="modal_discount" value="0" autocomplete="off">
+                    </div>
+                </div>
 
-                    <div class="col-12" id="fund_select_container">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-wallet me-2"></i>الصندوق
-                        </label>
-                        <select name="fund_id" id="modal_fund_id" class="form-select" required>
-                            <!-- populated dynamically by JS -->
+                <div class="pay-old-paid" id="old_payment_container" style="display: none;">
+                    <span><i class="fas fa-history"></i> مدفوع سابقاً</span>
+                    <strong class="text-info" id="old_paid_display">0.00  </strong>
+                </div>
+
+                <div class="pay-method-row">
+                    <span class="pay-lbl mb-1">طريقة الدفع</span>
+                    <div class="btn-group w-100 pay-method-group" role="group" id="pay_method_btns">
+                        <button type="button" class="btn btn-success btn-sm active" data-pay-method="cash">
+                            <i class="fas fa-money-bill-wave"></i> كاش
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" data-pay-method="bank">
+                            <i class="fas fa-university"></i> شبكة
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-pay-method="mixed">
+                            <i class="fas fa-coins"></i> مختلط
+                        </button>
+                    </div>
+                    <input type="hidden" id="pay_method" name="pay_method" value="cash">
+                </div>
+
+                <div class="row g-1 pay-row" id="pay_accounts_row">
+                    <div class="col-12" id="pay_fund_col">
+                        <label class="pay-lbl" for="payment_fund_id"><i class="fas fa-wallet"></i> الصندوق</label>
+                        <select class="form-select form-select-sm pay-select" id="payment_fund_id">
+                            <?php
+                            $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname");
+                            while ($rowfund = $resfund->fetch_assoc()) {
+                                $selected = '';
+                                if (!empty($rowstg['def_pos_fund']) && $rowstg['def_pos_fund'] == $rowfund['id']) {
+                                    $selected = 'selected';
+                                }
+                                if (($selected = UserDefaults::pick($conn, 'fund', $rowfund['id'], $selected, true)) === null) continue;
+                            ?>
+                            <option <?= $selected ?> value="<?= (int)$rowfund['id'] ?>"><?= htmlspecialchars($rowfund['aname']) ?></option>
+                            <?php } ?>
                         </select>
                     </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-money-bill-wave me-2"></i>المدفوع
-                        </label>
-                        <input class="form-control form-control-lg text-center fw-bold" type="number" id="modal_paid" value="0.00" step="0.01">
+                    <div class="col-12 d-none" id="pay_bank_col">
+                        <label class="pay-lbl" for="payment_bank_id"><i class="fas fa-university"></i> البنك / الشبكة</label>
+                        <select class="form-select form-select-sm pay-select" id="payment_bank_id">
+                            <option value="">-- اختر البنك --</option>
+                            <?php
+                            $banks_parent_id = 0;
+                            $banksParentRes = $conn->query("SELECT id FROM acc_head WHERE code = '124' AND isdeleted = 0 LIMIT 1");
+                            if ($banksParentRes && ($banksParentRow = $banksParentRes->fetch_assoc())) {
+                                $banks_parent_id = (int)$banksParentRow['id'];
+                            }
+                            $bankSql = "SELECT * FROM `acc_head` WHERE is_basic = 0 AND isdeleted = 0 AND (code LIKE '124%'";
+                            if ($banks_parent_id > 0) {
+                                $bankSql .= " OR parent_id = " . $banks_parent_id;
+                            }
+                            $bankSql .= ") ORDER BY aname";
+                            $resbank = $conn->query($bankSql);
+                            $first_bank_selected = false;
+                            while ($resbank && $rowbank = $resbank->fetch_assoc()) {
+                                if ((string)$rowbank['code'] === '124') continue;
+                                $bankSel = !$first_bank_selected ? 'selected' : '';
+                                $first_bank_selected = true;
+                            ?>
+                            <option <?= $bankSel ?> value="<?= (int)$rowbank['id'] ?>"><?= htmlspecialchars($rowbank['aname']) ?></option>
+                            <?php } ?>
+                        </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">الباقي</label>
-                        <input class="form-control form-control-lg text-center fw-bold bg-danger text-white" type="text" id="modal_change" value="0.00" readonly>
+                </div>
+
+                <div class="row g-1 pay-row" id="pay_amounts_row">
+                    <div class="col-12" id="pay_cash_amount_col">
+                        <label class="pay-lbl" for="modal_paid_cash"><i class="fas fa-money-bill"></i> المدفوع كاش</label>
+                        <input class="form-control form-control-sm text-center fw-bold pay-num" type="text" inputmode="decimal"
+                            id="modal_paid_cash" value="0.00" autocomplete="off">
+                    </div>
+                    <div class="col-6 d-none" id="pay_bank_amount_col">
+                        <label class="pay-lbl" for="modal_paid_bank"><i class="fas fa-credit-card"></i> المدفوع شبكة</label>
+                        <input class="form-control form-control-sm text-center fw-bold pay-num" type="text" inputmode="decimal"
+                            id="modal_paid_bank" value="0.00" autocomplete="off" readonly>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-1"></i>إلغاء
-                </button>
-                <button type="button" class="btn btn-navy" onclick="submitPOS('save');">
-                    <i class="fas fa-save me-1"></i>حفظ الطلب
-                </button>
-                <button type="button" class="btn btn-violet" onclick="submitPOS('cash');">
-                    <i class="fas fa-print me-1"></i>حفظ وطباعة
-                </button>
+            <div class="modal-footer payment-modal-footer py-2 px-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" id="paymentSaveBtn" class="btn btn-success btn-sm" onclick="submitPOS('save');">حفظ</button>
+                <button type="button" id="paymentPrintBtn" class="btn btn-primary btn-sm" onclick="submitPOS('cash');">حفظ وطباعة</button>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    const posFunds = [
-        <?php
-        $resfund = $conn->query("SELECT * FROM `acc_head` WHERE is_fund = 1 AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
-        $first_fund = true;
-        while ($rowfund = $resfund->fetch_assoc()) {
-            $selected = '';
-            if($rowstg['def_pos_fund'] == $rowfund['id']){
-                $selected = 'true';
-            } elseif ($first_fund && empty($rowstg['def_pos_fund'])) {
-                $selected = 'true';
-            } else {
-                $selected = 'false';
-            }
-            $first_fund = false;
-            if (UserDefaults::hides($conn, 'fund', $rowfund['id'])) continue;
-            if (UserDefaults::get($conn, 'fund') > 0) {
-                $selected = UserDefaults::selected($conn, 'fund', $rowfund['id']) !== '' ? 'true' : 'false';
-            }
-            echo "{ id: {$rowfund['id']}, name: '" . addslashes($rowfund['aname']) . "', selected: {$selected} },";
-        }
-        ?>
-    ];
-
-    const posBanks = [
-        <?php
-        $resbank = $conn->query("SELECT * FROM `acc_head` WHERE (parent_id = 124 OR code LIKE '124%') AND is_basic = 0 AND isdeleted = 0 ORDER BY aname;");
-        $first_bank = true;
-        while ($rowbank = $resbank->fetch_assoc()) {
-            $selected = $first_bank ? 'true' : 'false';
-            $first_bank = false;
-            echo "{ id: {$rowbank['id']}, name: '" . addslashes($rowbank['aname']) . "', selected: {$selected} },";
-        }
-        ?>
-    ];
-
-    function updatePaymentOptions() {
-        const method = $('input[name="payment_method"]:checked').val();
-        const $select = $('#modal_fund_id');
-        $select.empty();
-
-        const label = method === 'cash' ? 'الصندوق' : 'البنك';
-        const icon = method === 'cash' ? 'fa-wallet' : 'fa-university';
-        $('#fund_select_container label').html('<i class="fas ' + icon + ' me-2"></i>' + label);
-
-        const items = method === 'cash' ? posFunds : posBanks;
-        items.forEach(item => {
-            const option = new Option(item.name, item.id, item.selected, item.selected);
-            $select.append(option);
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // ربط الحدث عند تغيير طريقة الدفع
-        $('input[name="payment_method"]').on('change', updatePaymentOptions);
-        
-        // تشغيل مبدئي لتعبئة الخيارات
-        updatePaymentOptions();
-    });
-
-    // تحديد كل المحتوى عند الضغط أو التركيز على أي input داخل المودال
-    document.addEventListener('focusin', function(e) {
-        const target = e.target;
-        if (
-            target.closest('#paymentModal') &&
-            target.tagName === 'INPUT' &&
-            (target.type === 'number' || target.type === 'text')
-        ) {
-            setTimeout(function() { target.select(); }, 0);
-        }
-    });
-</script>

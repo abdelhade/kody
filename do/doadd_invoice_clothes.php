@@ -32,27 +32,68 @@ $info = isset($_POST['info']) ? trim($_POST['info']) : '';
 $submit = isset($_POST['submit']) && !empty($_POST['submit']) ? $_POST['submit'] : 'save';
 $paid = isset($_POST['paid']) ? floatval($_POST['paid']) : 0;
 
+// دفع مقسّم (كاش / شبكة / مختلط) — نفس منطق pos_barcode
+$pay_method = isset($_POST['pay_method']) ? trim((string) $_POST['pay_method']) : 'cash';
+$paid_cash = isset($_POST['paid_cash']) ? floatval($_POST['paid_cash']) : 0;
+$paid_bank = isset($_POST['paid_bank']) ? floatval($_POST['paid_bank']) : 0;
+$payment_fund_id = isset($_POST['payment_fund_id']) ? intval($_POST['payment_fund_id']) : 0;
+$payment_bank_id = isset($_POST['payment_bank_id']) ? intval($_POST['payment_bank_id']) : 0;
+
+if ($pay_method === 'cash') {
+    $paid_bank = 0;
+    $payment_bank_id = 0;
+} elseif ($pay_method === 'bank') {
+    $paid_cash = 0;
+    $payment_fund_id = 0;
+}
+
+if ($paid_cash == 0 && $paid_bank == 0) {
+    $paid_cash = $paid;
+    if ($payment_fund_id <= 0) {
+        $payment_fund_id = $fund_id;
+    }
+}
+if ($payment_fund_id <= 0 && $pay_method !== 'bank') {
+    $payment_fund_id = $fund_id;
+}
+$paid = $paid_cash + $paid_bank;
+
+// للصندوق المحاسبي على رأس الفاتورة: الصندوق إن وُجد، وإلا البنك
+if ($fund_id <= 0) {
+    $fund_id = $payment_fund_id > 0 ? $payment_fund_id : $payment_bank_id;
+}
+
 // إضافة نوع الطلب
 $order_type = isset($_POST['age']) ? intval($_POST['age']) : 1;
 $order_types = [1 => 'بيع مباشر', 2 => 'حجز', 3 => 'توصيل', 4 => 'مردود مبيعات'];
 $order_type_text = $order_types[$order_type] ?? 'بيع مباشر';
 $is_return = ($order_type == 4);
 if ($is_return) {
-    $pro_tybe = 10; // نوع مردود مبيعات (حسب طلب المستخدم)
+    // مردود مبيعات (11) — مش مردود مشتريات (10)
+    $pro_tybe = InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'];
 }
 $info = empty($info) ? "نوع الطلب: $order_type_text" : "$info - نوع الطلب: $order_type_text";
 
 // التحقق من البيانات
-if (!$store_id || !$acc2_id || !$emp_id || !$fund_id) {
+$has_payment_account = ($payment_fund_id > 0 && $paid_cash > 0) || ($payment_bank_id > 0 && $paid_bank > 0) || $fund_id > 0;
+if (!$store_id || !$acc2_id || !$emp_id || !$has_payment_account) {
     echo '<pre>';
     echo "store_id: " . ($store_id ?: 'MISSING') . "\n";
     echo "acc2_id: " . ($acc2_id ?: 'MISSING') . "\n";
     echo "emp_id: " . ($emp_id ?: 'MISSING') . "\n";
     echo "fund_id: " . ($fund_id ?: 'MISSING') . "\n";
+    echo "payment_fund_id: " . ($payment_fund_id ?: '0') . "\n";
+    echo "payment_bank_id: " . ($payment_bank_id ?: '0') . "\n";
     echo "\nPOST Data:\n";
     print_r($_POST);
     echo '</pre>';
     die('خطأ: بيانات مطلوبة مفقودة');
+}
+if ($paid_cash > 0 && $payment_fund_id <= 0) {
+    die('خطأ: يجب اختيار الصندوق عند الدفع كاش');
+}
+if ($paid_bank > 0 && $payment_bank_id <= 0) {
+    die('خطأ: يجب اختيار البنك عند الدفع شبكة');
 }
 
 if (!isset($_POST['itmname']) || !is_array($_POST['itmname']) || empty(array_filter($_POST['itmname']))) {
@@ -108,9 +149,6 @@ try {
     $pro_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
     $stmt->close();
     
-    // حساب المخزن للمخزون وقيد التكلفة (مش طرف العميل في ot_head)
-    $store_account = $store_id;
-
     // إدخال رأس الفاتورة مع قيد محاسبي (is_journal = 1)
     $stmt = $conn->prepare("
         INSERT INTO ot_head (
@@ -122,8 +160,13 @@ try {
         )
     ");
 
-    // نفس توزيع الحسابات القياسي: كاشير acc1=صندوق / acc2=عميل — المخزن في store_id فقط
-    $accounts = InvoiceProcessor::getAccountingAccounts($pro_tybe, $store_id, $acc2_id, $fund_id);
+    // كاشير: acc1=صندوق / acc2=عميل — المخزن في store_id فقط (حتى في المردود)
+    $accounts = InvoiceProcessor::getAccountingAccounts(
+        InvoiceProcessor::INVOICE_TYPES['POS'],
+        $store_id,
+        $acc2_id,
+        $fund_id
+    );
     $acc1_val = (int) $accounts['acc1'];
     $acc2_val = (int) $accounts['acc2'];
 
@@ -211,13 +254,18 @@ try {
     $journal_lastid = $conn->insert_id;
     $stmt->close();
     
-    // إدخال تفاصيل القيد (الطرف الأول - المدين)
-    // بيع: مدين العميل | مردود: مدين المخزن (مسار الملابس الحالي)
+    // القيد الرئيسي: بيع مدين العميل/دائن المبيعات — مردود العكس (المخزن يتحرك بقيد التكلفة فقط)
+    $sales_account = InvoiceProcessor::resolveSalesAccountId($conn);
+    if ($sales_account <= 0) {
+        throw new Exception('لا يوجد حساب فرعي تحت 3111 (المبيعات) — شغّل تحديثات قاعدة البيانات أولاً');
+    }
+    $acc1_journal = $is_return ? $sales_account : $acc2_id;
+    $acc2_journal = $is_return ? $acc2_id : $sales_account;
+
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, ?, 0, 0, ?)
     ");
-    $acc1_journal = $is_return ? $store_account : $acc2_id;
     $stmt->bind_param("iidi", $journal_lastid, $acc1_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
@@ -225,13 +273,10 @@ try {
     }
     $stmt->close();
     
-    // إدخال تفاصيل القيد (الطرف الثاني - الدائن)
-    // بيع: دائن المبيعات | مردود: دائن العميل
     $stmt = $conn->prepare("
         INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op_id) 
         VALUES (?, ?, 0, ?, 1, ?)
     ");
-    $acc2_journal = $is_return ? $acc2_id : InvoiceProcessor::resolveSalesAccountId($conn);
     $stmt->bind_param("iidi", $journal_lastid, $acc2_journal, $headnet, $last_op);
     
     if (!$stmt->execute()) {
@@ -239,73 +284,38 @@ try {
     }
     $stmt->close();
     
-    // إنشاء قيد الدفع إذا كان هناك مبلغ مدفوع
-    if ($paid > 0) {
-        // إدخال عملية الدفع
-        $stmt = $conn->prepare("
-            INSERT INTO ot_head (
-                pro_id, pro_tybe, is_journal, journal_tybe, info, pro_date, 
-                emp_id, acc1, acc2, pro_value, user, op2
-            ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $paid_note = $is_return ? "سند صرف (رد) من فاتورة POS رقم " : "سند قبض من فاتورة POS رقم ";
-        $paid_info = $paid_note . $pro_id;
-        $paid_pro_id = $pro_id . '-P';
-        $paid_type = $is_return ? 2 : 1; // 2: سند دفع، 1: سند قبض
-        
-        $acc1_pay = $is_return ? $acc2_id : $fund_id;
-        $acc2_pay = $is_return ? $fund_id : $acc2_id;
+    // سندات الدفع (كاش / شبكة / مختلط)
+    InvoiceProcessor::updatePaymentFields(
+        $conn,
+        (int) $last_op,
+        (float) $paid_cash,
+        (float) $paid_bank,
+        (int) $payment_fund_id,
+        (int) $payment_bank_id,
+        (float) $headnet
+    );
 
-        $stmt->bind_param(
-            "siissiiidii",
-            $paid_pro_id, $paid_type, $paid_type, $paid_info, $pro_date, $emp_id, 
-            $acc1_pay, $acc2_pay, $paid, $usid, $last_op
+    $pay_config = InvoiceProcessor::getInvoiceConfig($is_return
+        ? InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']
+        : InvoiceProcessor::INVOICE_TYPES['POS']
+    );
+    if ($pay_config && ($paid_cash > 0 || $paid_bank > 0)) {
+        InvoiceProcessor::createSplitPaymentVouchers(
+            $conn,
+            (int) $last_op,
+            $pay_config,
+            (string) $info,
+            (string) $pro_date,
+            (int) $emp_id,
+            (int) $usid,
+            (int) $acc2_id,
+            (float) $paid_cash,
+            (float) $paid_bank,
+            (int) $payment_fund_id,
+            (int) $payment_bank_id,
+            (float) $headnet,
+            $pro_id
         );
-        
-        if (!$stmt->execute()) {
-            throw new Exception('فشل في إدخال عملية الدفع: ' . $stmt->error);
-        }
-        
-        $last_paid = $conn->insert_id;
-        $stmt->close();
-        
-        // الحصول على رقم قيد الدفع
-        $stmt = $conn->prepare("SELECT MAX(journal_id) as max_id FROM journal_heads");
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $journal_id = $row && $row['max_id'] ? ($row['max_id'] + 1) : 1;
-        $stmt->close();
-        
-        // رأس قيد الدفع
-        $stmt = $conn->prepare("
-            INSERT INTO journal_heads (journal_id, op_id, total, jdate, details, user, op2) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $stmt->bind_param("iidssii", $journal_id, $last_paid, $paid, $pro_date, $paid_info, $usid, $last_op);
-        $stmt->execute();
-        $journal_lastid = $conn->insert_id;
-        $stmt->close();
-        
-        // تفاصيل قيد الدفع (مدين)
-        $stmt = $conn->prepare("
-            INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-            VALUES (?, ?, ?, 0, 0, ?)
-        ");
-        $stmt->bind_param("iidi", $journal_lastid, $acc1_pay, $paid, $last_op);
-        $stmt->execute();
-        $stmt->close();
-        
-        // تفاصيل قيد الدفع (دائن)
-        $stmt = $conn->prepare("
-            INSERT INTO journal_entries (journal_id, account_id, debit, credit, tybe, op2) 
-            VALUES (?, ?, 0, ?, 1, ?)
-        ");
-        $stmt->bind_param("iidi", $journal_lastid, $acc2_pay, $paid, $last_op);
-        $stmt->execute();
-        $stmt->close();
     }
 
     InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);
