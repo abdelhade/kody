@@ -51,14 +51,14 @@
             <div class="action-card-group">
                 <!-- فاتورة مبيعات -->
                 <div class="action-card-main">
-                    <a href="sales.php?q=sale" class="action-btn" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
-                        <div class="btn-icon" style="color: var(--primary-dark) !important;">
+                    <a href="sales.php?q=sale" class="action-btn bg-gradient-dark">
+                        <div class="btn-icon">
                             <i class="fas fa-receipt"></i>
                         </div>
                         <div class="btn-text">
                             <span class="btn-title">فاتورة مبيعات</span>
                         </div>
-                        <div class="btn-hover-effect" style="color: var(--primary-dark) !important;">
+                        <div class="btn-hover-effect">
                             <i class="fas fa-arrow-left"></i>
                         </div>
                     </a>
@@ -113,8 +113,8 @@
                 <div class="action-card-row">
                     <!-- سند دفع -->
                     <div class="action-card-half">
-                        <a href="add_voucher.php?t=payment" class="action-btn" style="background: var(--neutral-50) !important; color: var(--primary-dark) !important;">
-                            <div class="btn-icon" style="color: var(--primary-dark) !important;">
+                        <a href="add_voucher.php?t=payment" class="action-btn bg-gradient-brand">
+                            <div class="btn-icon">
                                 <i class="fas fa-money-check-alt"></i>
                             </div>
                             <div class="btn-text">

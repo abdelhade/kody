@@ -54,7 +54,7 @@
 
         <?php if(Can::check('users.view')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-            <div class="stat-card bg-gradient-light">
+            <div class="stat-card bg-gradient-brand">
                 <div class="card-icon">
                     <i class="fas fa-sign-in-alt"></i>
                 </div>
@@ -80,7 +80,7 @@
 
         <?php if(Can::canVisit('operations_summary.php?q=sale')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-            <div class="stat-card bg-gradient-soft">
+            <div class="stat-card bg-gradient-info">
                 <div class="card-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -160,7 +160,7 @@
 
         <?php if(Can::canVisit('reservations.php')){ ?>
         <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-            <div class="stat-card bg-gradient-light">
+            <div class="stat-card bg-gradient-dark">
                 <div class="card-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
