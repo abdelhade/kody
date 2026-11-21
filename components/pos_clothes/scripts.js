@@ -65,6 +65,7 @@ const TAB_STYLES = {
         netColor: '#dc3545',
         headerIcon: 'fa-undo',
         headerText: 'معلومات المردود',
+        payBtnLabel: 'رد وحفظ',
     }
 };
 
@@ -105,6 +106,11 @@ function applyTabStyle(tabVal) {
         payBtn.style.boxShadow = style.payBtnShadow;
         payBtn.style.border = 'none';
         payBtn.style.color = 'white';
+        const amountHtml = document.getElementById('total_display_btn')
+            ? document.getElementById('total_display_btn').outerHTML
+            : '<div style="font-size: 0.95rem; font-weight: bold;" id="total_display_btn">0.00  </div>';
+        const label = style.payBtnLabel || 'دفع وحفظ';
+        payBtn.innerHTML = `<i class="fas fa-money-bill-wave me-1"></i>${label}${amountHtml}`;
     }
 
     // 4. تغيير ألوان إجمالي وصافي
@@ -128,7 +134,25 @@ function applyTabStyle(tabVal) {
         totalQtyBadge.style.backgroundColor = style.netColor;
     }
 
-    // 7. حفظ الستايل الحالي ليُطبَّق على الأصناف الجديدة لاحقاً
+    // 7. مودال الرد/الدفع حسب التاب
+    const payModalTitle = document.getElementById('paymentModalLabel');
+    if (payModalTitle) {
+        payModalTitle.textContent = tabVal === '4' ? 'رد المبلغ والإجماليات' : 'الدفع والإجماليات';
+    }
+    const cashLbl = document.querySelector('label[for="modal_paid_cash"]');
+    if (cashLbl) {
+        cashLbl.innerHTML = tabVal === '4'
+            ? '<i class="fas fa-money-bill"></i> المردود كاش'
+            : '<i class="fas fa-money-bill"></i> المدفوع كاش';
+    }
+    const bankLbl = document.querySelector('label[for="modal_paid_bank"]');
+    if (bankLbl) {
+        bankLbl.innerHTML = tabVal === '4'
+            ? '<i class="fas fa-credit-card"></i> المردود شبكة'
+            : '<i class="fas fa-credit-card"></i> المدفوع شبكة';
+    }
+
+    // 8. حفظ الستايل الحالي ليُطبَّق على الأصناف الجديدة لاحقاً
     window._currentTabStyle = style;
 }
 

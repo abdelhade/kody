@@ -39,3 +39,54 @@ SET fd.`pro_tybe` = 11, fd.`fat_tybe` = 11
 WHERE h.`pro_tybe` = 11
   AND h.`info` LIKE '%مردود مبيعات%'
   AND (fd.`pro_tybe` = 10 OR fd.`fat_tybe` = 10);
+
+-- 3) السندات المرتبطة اللي اتعملت قبض (1) بالغلط على مردود الملابس → دفع (2)
+-- أولاً عكس القيود وهي لسه نوع 1، بعدين تحويل السند وعكس acc1/acc2
+UPDATE `journal_entries` e
+INNER JOIN `journal_heads` j ON j.`id` = e.`journal_id`
+INNER JOIN `ot_head` v ON v.`id` = j.`op_id`
+INNER JOIN `ot_head` inv ON inv.`id` = v.`op2`
+SET
+    e.`debit` = e.`credit`,
+    e.`credit` = e.`debit`,
+    e.`tybe` = IF(e.`tybe` = 0, 1, 0)
+WHERE inv.`pro_tybe` = 11
+  AND inv.`info` LIKE '%مردود مبيعات%'
+  AND IFNULL(inv.`isdeleted`, 0) = 0
+  AND v.`pro_tybe` = 1
+  AND IFNULL(v.`isdeleted`, 0) = 0
+  AND IFNULL(v.`op2`, 0) > 0
+  AND IFNULL(j.`isdeleted`, 0) = 0
+  AND IFNULL(e.`isdeleted`, 0) = 0
+  AND j.`op2` = inv.`id`;
+
+UPDATE `ot_head` v
+INNER JOIN `ot_head` inv ON inv.`id` = v.`op2`
+SET
+    v.`pro_tybe` = 2,
+    v.`journal_tybe` = 2,
+    v.`acc1` = v.`acc2`,
+    v.`acc2` = v.`acc1`,
+    v.`info` = REPLACE(
+        REPLACE(REPLACE(IFNULL(v.`info`, ''), 'سند قبض', 'سند دفع'), 'قبض كاش', 'دفع كاش'),
+        'قبض صرافة', 'دفع صرافة'
+    )
+WHERE inv.`pro_tybe` = 11
+  AND inv.`info` LIKE '%مردود مبيعات%'
+  AND IFNULL(inv.`isdeleted`, 0) = 0
+  AND v.`pro_tybe` = 1
+  AND IFNULL(v.`isdeleted`, 0) = 0
+  AND IFNULL(v.`op2`, 0) > 0;
+
+UPDATE `journal_heads` j
+INNER JOIN `ot_head` v ON v.`id` = j.`op_id`
+INNER JOIN `ot_head` inv ON inv.`id` = v.`op2`
+SET j.`details` = REPLACE(IFNULL(j.`details`, ''), 'سند قبض', 'سند دفع')
+WHERE inv.`pro_tybe` = 11
+  AND inv.`info` LIKE '%مردود مبيعات%'
+  AND IFNULL(inv.`isdeleted`, 0) = 0
+  AND v.`pro_tybe` = 2
+  AND IFNULL(v.`isdeleted`, 0) = 0
+  AND IFNULL(v.`op2`, 0) > 0
+  AND IFNULL(j.`isdeleted`, 0) = 0
+  AND IFNULL(j.`details`, '') LIKE '%سند قبض%';

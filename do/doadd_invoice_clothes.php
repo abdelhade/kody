@@ -295,10 +295,15 @@ try {
         (float) $headnet
     );
 
+    // بيع = سند قبض | مردود = سند دفع (رد للعميل من الصندوق/البنك)
     $pay_config = InvoiceProcessor::getInvoiceConfig($is_return
         ? InvoiceProcessor::INVOICE_TYPES['SALES_RETURN']
         : InvoiceProcessor::INVOICE_TYPES['POS']
     );
+    if ($is_return && $pay_config) {
+        $pay_config['paid_type'] = InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'];
+        $pay_config['paid_note'] = 'سند دفع';
+    }
     if ($pay_config && ($paid_cash > 0 || $paid_bank > 0)) {
         InvoiceProcessor::createSplitPaymentVouchers(
             $conn,
