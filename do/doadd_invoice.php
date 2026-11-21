@@ -643,8 +643,13 @@ try {
             $destStoreId
         );
     }
-    // تحديث إجمالي الأرباح للمبيعات
-    if(in_array($pro_tybe, [InvoiceProcessor::INVOICE_TYPES['SALES'], InvoiceProcessor::INVOICE_TYPES['POS'], InvoiceProcessor::INVOICE_TYPES['OFFER']])) {
+    // تحديث إجمالي الأرباح للمبيعات / المردود / العرض
+    if (in_array($pro_tybe, [
+        InvoiceProcessor::INVOICE_TYPES['SALES'],
+        InvoiceProcessor::INVOICE_TYPES['POS'],
+        InvoiceProcessor::INVOICE_TYPES['OFFER'],
+        InvoiceProcessor::INVOICE_TYPES['SALES_RETURN'],
+    ], true)) {
         InvoiceProcessor::recalcProfit($conn, (int) $last_op);
     }
     InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);

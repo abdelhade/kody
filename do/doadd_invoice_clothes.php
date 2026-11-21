@@ -191,12 +191,12 @@ try {
         $stmtList->close();
     }
     
-    // إدخال تفاصيل الفاتورة
+    // إدخال تفاصيل الفاتورة + ربح السطر (بيع موجب / مردود سالب)
     $stmt_details = $conn->prepare("
         INSERT INTO fat_details (
             pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, price, 
-            discount, det_value, fatid, fat_tybe, det_store, cost_price
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            discount, det_value, fatid, fat_tybe, det_store, cost_price, profit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt_cost = $conn->prepare("SELECT cost_price FROM myitems WHERE id = ?");
     
@@ -208,17 +208,26 @@ try {
         $itmprice = floatval($_POST['itmprice'][$index]);
         $itmdisc = floatval($_POST['itmdisc'][$index]);
         $u_val = floatval($_POST['u_val'][$index]);
+        if ($u_val <= 0) {
+            $u_val = 1;
+        }
         $det_value = $itmqty * ($itmprice - $itmdisc);
         $qty_in = $is_return ? ($itmqty * $u_val) : 0;
         $qty_out = $is_return ? 0 : ($itmqty * $u_val);
         $stmt_cost->bind_param("i", $itmname);
         $stmt_cost->execute();
         $cost_price = (float) ($stmt_cost->get_result()->fetch_assoc()['cost_price'] ?? 0);
+        // ربح السطر = (الكمية الأساسية × (سعر الوحدة − التكلفة)) − الخصم؛ المردود بالسالب
+        $base_qty = $is_return ? $qty_in : $qty_out;
+        $line_profit = ($base_qty * ($itmprice - $cost_price)) - $itmdisc;
+        if ($is_return) {
+            $line_profit = -$line_profit;
+        }
         
         $stmt_details->bind_param(
-            "iiiddddddiiid",
+            "iiiddddddiiidd",
             $pro_tybe, $last_op, $itmname, $u_val, $qty_in, $qty_out,
-            $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe, $store_id, $cost_price
+            $itmprice, $itmdisc, $det_value, $last_op, $pro_tybe, $store_id, $cost_price, $line_profit
         );
         
         if (!$stmt_details->execute()) {
@@ -228,6 +237,7 @@ try {
     
     $stmt_details->close();
     $stmt_cost->close();
+    InvoiceProcessor::recalcProfit($conn, (int) $last_op);
     
     // إنشاء القيد المحاسبي للفاتورة
     // الحصول على رقم القيد التالي

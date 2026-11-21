@@ -2419,9 +2419,18 @@ class InvoiceProcessor {
                     $stmtUnitUpdate[$sellList]->execute();
                 }
                 $price = $unitPrice;
-            } elseif (in_array($proTybe, [self::INVOICE_TYPES['SALES'], self::INVOICE_TYPES['POS'], self::INVOICE_TYPES['OFFER']], true)) {
+            } elseif (in_array($proTybe, [
+                self::INVOICE_TYPES['SALES'],
+                self::INVOICE_TYPES['POS'],
+                self::INVOICE_TYPES['OFFER'],
+                self::INVOICE_TYPES['SALES_RETURN'],
+            ], true)) {
                 $unitPrice = $price / $uVal;
-                $itmProfit = $qty * $uVal * ($unitPrice - $oldPrice);
+                // نفس معادلة إعادة حساب التكاليف: (كمية أساسية × (سعر − تكلفة)) − خصم؛ المردود بالسالب
+                $itmProfit = ($qty * $uVal * ($unitPrice - $oldPrice)) - $disc;
+                if ($proTybe === self::INVOICE_TYPES['SALES_RETURN']) {
+                    $itmProfit = -$itmProfit;
+                }
                 $price = $unitPrice;
             } elseif ($proTybe === self::INVOICE_TYPES['STORE_TRANSFER']) {
                 $price = $oldPrice;
