@@ -360,8 +360,7 @@ html {
 }
 
 .category-btn {
-    border-radius: 50px;
-    /* Pill shape */
+    border-radius: 0;
     padding: 0.3rem 1rem !important;
     margin: 2px;
 }
@@ -370,6 +369,24 @@ html {
     background: #ff8c42 !important;
     color: white !important;
     box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
+}
+
+/* حجم أزرار التصنيفات من الإعدادات (×2) */
+#categoriesContainer.pos-cat-size-small .category-btn {
+    padding: 0.3rem 1.3rem !important;
+    font-size: 1.5rem;
+}
+#categoriesContainer.pos-cat-size-medium .category-btn {
+    padding: 0.6rem 2rem !important;
+    font-size: 1.75rem;
+}
+#categoriesContainer.pos-cat-size-large .category-btn {
+    padding: 0.9rem 2.4rem !important;
+    font-size: 2rem;
+}
+#categoriesContainer.pos-cat-size-xlarge .category-btn {
+    padding: 1.2rem 2.9rem !important;
+    font-size: 2.3rem;
 }
 
 /* --- Order Items List --- */

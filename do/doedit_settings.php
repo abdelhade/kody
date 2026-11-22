@@ -48,11 +48,15 @@ $allow_all_accounts = isset($_POST['allow_all_accounts']) ? 1 : 0;
 $posIconAllowed = ['small', 'medium', 'large', 'xlarge'];
 $pos_icon_size_barcode = trim((string) ($_POST['pos_icon_size_barcode'] ?? 'medium'));
 $pos_icon_size_clothes = trim((string) ($_POST['pos_icon_size_clothes'] ?? 'medium'));
+$pos_cat_size_tables   = trim((string) ($_POST['pos_cat_size_tables']   ?? 'medium'));
 if (!in_array($pos_icon_size_barcode, $posIconAllowed, true)) {
     $pos_icon_size_barcode = 'medium';
 }
 if (!in_array($pos_icon_size_clothes, $posIconAllowed, true)) {
     $pos_icon_size_clothes = 'medium';
+}
+if (!in_array($pos_cat_size_tables, $posIconAllowed, true)) {
+    $pos_cat_size_tables = 'medium';
 }
 
 $receipt_design = kody_receipt_design_from_post($_POST);
@@ -195,7 +199,8 @@ SET company_name = ?,
     barcode_design = ?,
     allow_all_accounts = ?,
     pos_icon_size_barcode = ?,
-    pos_icon_size_clothes = ?
+    pos_icon_size_clothes = ?,
+    pos_cat_size_tables = ?
     " . ($company_logo !== '' ? ", company_logo = ?" : "") . ",
     backup_path = ?
 WHERE 1";
@@ -203,6 +208,21 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
+    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssissss",
+        $companyname, $companyadd, $companytel, $edit_pass, $lang,
+        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
+        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
+        $showpulse, $emp_commission, $user_commission,
+        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
+        $receipt_footer_text, $receipt_show_client,
+        $receipt_header_text, $receipt_notes_text,
+        $receipt_design_json, $barcode_design_json, $allow_all_accounts,
+        $pos_icon_size_barcode, $pos_icon_size_clothes, $pos_cat_size_tables,
+        $company_logo,
+        $backup_path
+    );
+} else {
     $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssisss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
@@ -213,22 +233,7 @@ if ($company_logo !== '') {
         $receipt_footer_text, $receipt_show_client,
         $receipt_header_text, $receipt_notes_text,
         $receipt_design_json, $barcode_design_json, $allow_all_accounts,
-        $pos_icon_size_barcode, $pos_icon_size_clothes,
-        $company_logo,
-        $backup_path
-    );
-} else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssiss",
-        $companyname, $companyadd, $companytel, $edit_pass, $lang,
-        $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
-        $showrent, $showclinc, $def_pos_client, $def_pos_store,
-        $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
-        $showpulse, $emp_commission, $user_commission,
-        $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
-        $receipt_footer_text, $receipt_show_client,
-        $receipt_header_text, $receipt_notes_text,
-        $receipt_design_json, $barcode_design_json, $allow_all_accounts,
-        $pos_icon_size_barcode, $pos_icon_size_clothes,
+        $pos_icon_size_barcode, $pos_icon_size_clothes, $pos_cat_size_tables,
         $backup_path
     );
 }

@@ -3,6 +3,10 @@ $posIconSizeClothes = (string) ($rowstg['pos_icon_size_clothes'] ?? 'medium');
 if (!in_array($posIconSizeClothes, ['small', 'medium', 'large', 'xlarge'], true)) {
     $posIconSizeClothes = 'medium';
 }
+$posCatSizeClothes = (string) ($rowstg['pos_cat_size_tables'] ?? 'medium');
+if (!in_array($posCatSizeClothes, ['small', 'medium', 'large', 'xlarge'], true)) {
+    $posCatSizeClothes = 'medium';
+}
 ?>
 <div class="card border-0 shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--primary-navy); color: white;">
@@ -26,7 +30,7 @@ if (!in_array($posIconSizeClothes, ['small', 'medium', 'large', 'xlarge'], true)
         </div>
     </div>
     <div class="card-body">
-        <div class="categories-grid" id="categoriesContainer">
+        <div class="categories-grid pos-cat-size-<?= htmlspecialchars($posCatSizeClothes, ENT_QUOTES, 'UTF-8') ?>" id="categoriesContainer">
             <?php
             $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
             if ($rescategories && $rescategories->num_rows > 0) {

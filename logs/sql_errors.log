@@ -373,3 +373,4 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-11-17 22:41:31] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-11-17 22:41:31] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-11-17 22:41:32] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
+[2026-11-22 16:11:22] mysqli_sql_exception: Unknown column 'pos_cat_size_tables' in 'field list' in D:\xampp\htdocs\kody\do\doedit_settings.php:208

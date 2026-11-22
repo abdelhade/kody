@@ -52,6 +52,27 @@
     .category-btn {
         margin: 5px;
         min-width: 100px;
+        border-radius: 0;
+    }
+    #categories.pos-cat-size-small .category-btn {
+        min-width: 140px;
+        padding: 0.4rem 1rem;
+        font-size: 1.5rem;
+    }
+    #categories.pos-cat-size-medium .category-btn {
+        min-width: 200px;
+        padding: 0.6rem 2rem;
+        font-size: 1.75rem;
+    }
+    #categories.pos-cat-size-large .category-btn {
+        min-width: 240px;
+        padding: 0.9rem 1.8rem;
+        font-size: 2rem;
+    }
+    #categories.pos-cat-size-xlarge .category-btn {
+        min-width: 280px;
+        padding: 1.2rem 2.2rem;
+        font-size: 2.3rem;
     }
     #order-items {
         max-height: 300px;
@@ -316,7 +337,13 @@ if ($tables_count == 0) {
                         </div>
                         <div class="card-body">
                             <!-- الفئات -->
-                            <div class="mb-3" id="categories">
+                            <?php
+                            $posCatSizeTables = (string) ($rowstg['pos_cat_size_tables'] ?? 'medium');
+                            if (!in_array($posCatSizeTables, ['small', 'medium', 'large', 'xlarge'], true)) {
+                                $posCatSizeTables = 'medium';
+                            }
+                            ?>
+                            <div class="mb-3 pos-cat-size-<?= htmlspecialchars($posCatSizeTables, ENT_QUOTES, 'UTF-8') ?>" id="categories">
                                 <button class="btn btn-sm btn-outline-primary category-btn active" data-category="all">الكل</button>
                                 <?php 
                                 $rescat = $conn->query("SELECT * from item_group where isdeleted = 0");

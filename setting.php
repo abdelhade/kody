@@ -368,6 +368,24 @@ endif;
                           <small class="form-text text-muted">حجم بطاقات الأصناف في شاشة كاشير الملابس.</small>
                         </div>
                       </div>
+                       <div class="col-lg-6">
+                         <div class="form-group">
+                           <label for="pos_cat_size_tables">حجم أزرار التصنيفات</label>
+                           <select class="form-control" id="pos_cat_size_tables" name="pos_cat_size_tables">
+                             <?php
+                             $posCatSizeTables = (string) ($rowstg['pos_cat_size_tables'] ?? 'medium');
+                             if (!isset($posIconSizeOptions[$posCatSizeTables])) {
+                                 $posCatSizeTables = 'medium';
+                             }
+                             foreach ($posIconSizeOptions as $posIconVal => $posIconLabel) {
+                                 $posIconSel = ($posCatSizeTables === $posIconVal) ? 'selected' : '';
+                                 echo '<option value="' . $posIconVal . '" ' . $posIconSel . '>' . $posIconLabel . '</option>';
+                             }
+                             ?>
+                           </select>
+                           <small class="form-text text-muted">حجم أزرار التصنيفات في نقطة بيع المطعم (باركود/طاولات) ونقطة بيع الملابس.</small>
+                         </div>
+                       </div>
                       <div class="col-lg-6">
                         <div class="form-group">
                           <label class="d-block">حماية POS بكلمة مرور</label>

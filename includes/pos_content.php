@@ -488,7 +488,13 @@ body {
                                 </div>
                             </div>
                             <div class="items-categories-bar">
-                                <div class="d-flex flex-wrap gap-1" id="categoriesContainer">
+                                <?php
+                                $posCatSize = (string) ($rowstg['pos_cat_size_tables'] ?? 'medium');
+                                if (!in_array($posCatSize, ['small', 'medium', 'large', 'xlarge'], true)) {
+                                    $posCatSize = 'medium';
+                                }
+                                ?>
+                                <div class="d-flex flex-wrap gap-1 pos-cat-size-<?= htmlspecialchars($posCatSize, ENT_QUOTES, 'UTF-8') ?>" id="categoriesContainer">
                                     <?php
                                 $rescategories = $conn->query("SELECT * FROM item_group WHERE isdeleted = 0 ORDER BY gname");
                                 if ($rescategories && $rescategories->num_rows > 0) {

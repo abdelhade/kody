@@ -161,7 +161,7 @@ body {
 .category-card {
     background: linear-gradient(145deg, #ffffff, #f0f4f8);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    border-radius: 12px;
+    border-radius: 0;
     padding: 0.6rem 1rem;
     text-align: center;
     cursor: pointer;
@@ -210,6 +210,59 @@ body {
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
+}
+
+/* حجم بطاقات التصنيفات من الإعدادات (×2) */
+.categories-grid.pos-cat-size-small {
+    gap: 0.8rem;
+}
+.categories-grid.pos-cat-size-small .category-card {
+    padding: 0.7rem 1.4rem;
+    gap: 0.7rem;
+}
+.categories-grid.pos-cat-size-small .category-icon {
+    font-size: 1.8rem;
+}
+.categories-grid.pos-cat-size-small .category-name {
+    font-size: 1.5rem;
+}
+
+.categories-grid.pos-cat-size-medium .category-card {
+    padding: 1.2rem 2rem;
+}
+.categories-grid.pos-cat-size-medium .category-icon {
+    font-size: 2.2rem;
+}
+.categories-grid.pos-cat-size-medium .category-name {
+    font-size: 1.7rem;
+}
+
+.categories-grid.pos-cat-size-large {
+    gap: 1.5rem;
+}
+.categories-grid.pos-cat-size-large .category-card {
+    padding: 1.7rem 2.5rem;
+    gap: 1.3rem;
+}
+.categories-grid.pos-cat-size-large .category-icon {
+    font-size: 2.7rem;
+}
+.categories-grid.pos-cat-size-large .category-name {
+    font-size: 2rem;
+}
+
+.categories-grid.pos-cat-size-xlarge {
+    gap: 1.8rem;
+}
+.categories-grid.pos-cat-size-xlarge .category-card {
+    padding: 2.2rem 3rem;
+    gap: 1.5rem;
+}
+.categories-grid.pos-cat-size-xlarge .category-icon {
+    font-size: 3.2rem;
+}
+.categories-grid.pos-cat-size-xlarge .category-name {
+    font-size: 2.3rem;
 }
 
 /* Item Cards */
