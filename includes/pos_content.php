@@ -350,11 +350,13 @@ body {
                                                 // Fix: Use det_value instead of val
                                                 $subtotal = floatval($rowdet['det_value']);
                                                 $barcode = $rowdet['barcode'] ?: $rowdet['item_id'];
+                                                $item_notes = trim((string) ($rowdet['notes'] ?? ''));
                                                 ?>
                                         <div class="card mb-1 item-card-order shadow-sm border-start border-3"
-                                            data-itemid="<?= $barcode ?>"
+                                            data-itemid="<?= htmlspecialchars((string) $barcode, ENT_QUOTES, 'UTF-8') ?>"
                                             data-fat-id="<?= $rowdet['id'] ?>"
-                                            style="border-color: #0a7ea4 !important; max-width: 100%;">
+                                            style="border-color: #0a7ea4 !important; max-width: 100%; cursor: pointer;"
+                                            title="اضغط مرتين لإضافة ملاحظة على الصنف">
                                             <div class="card-body p-1">
                                                 <div class="d-flex align-items-center gap-1"
                                                     style="font-size: 0.75rem;">
@@ -364,12 +366,21 @@ body {
                                                     <div style="flex: 1; min-width: 0;">
                                                         <input type="hidden" value='<?= $rowdet['item_id'] ?>'
                                                             name="itmname[]">
-                                                        <input type="hidden" class="barcode" value="<?= $barcode ?>">
+                                                        <input type="hidden" class="barcode" value="<?= htmlspecialchars((string) $barcode, ENT_QUOTES, 'UTF-8') ?>">
+                                                        <input type="hidden" name="itmnotes[]" class="item-note-input"
+                                                            value="<?= htmlspecialchars($item_notes, ENT_QUOTES, 'UTF-8') ?>">
                                                         <div class="text-truncate fw-bold" style="font-size: 1rem;"
-                                                            title="<?= $item_name ?>"><?= $item_name ?></div>
+                                                            title="<?= htmlspecialchars($item_name, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($item_name, ENT_QUOTES, 'UTF-8') ?></div>
+                                                        <div class="item-note-preview text-muted text-truncate"
+                                                            style="font-size: 0.65rem;<?= $item_notes === '' ? ' display: none;' : '' ?>"
+                                                            title="<?= htmlspecialchars($item_notes, ENT_QUOTES, 'UTF-8') ?>">
+                                                            <?php if ($item_notes !== '') { ?>
+                                                            <i class="fas fa-sticky-note me-1"></i><?= htmlspecialchars($item_notes, ENT_QUOTES, 'UTF-8') ?>
+                                                            <?php } ?>
+                                                        </div>
                                                     </div>
 
-                                                    <div style="width: 65px;">
+                                                    <div style="width: 65px;" class="item-no-dblclick">
                                                         <small class="d-block text-center text-muted"
                                                             style="font-size: 0.6rem; margin-bottom: 1px;">كمية</small>
                                                         <input type="number"
@@ -380,7 +391,7 @@ body {
                                                         <input type="hidden" name="u_val[]" value="1">
                                                     </div>
 
-                                                    <div style="width: 55px;">
+                                                    <div style="width: 55px;" class="item-no-dblclick">
                                                         <small class="d-block text-center text-muted"
                                                             style="font-size: 0.6rem; margin-bottom: 1px;">سعر</small>
                                                         <input type="number"
@@ -391,7 +402,7 @@ body {
                                                             title="السعر">
                                                     </div>
 
-                                                    <div style="width: 60px;">
+                                                    <div style="width: 60px;" class="item-no-dblclick">
                                                         <small class="d-block text-center text-muted"
                                                             style="font-size: 0.6rem; margin-bottom: 1px;">قيمة</small>
                                                         <input type="hidden" name="itmdisc[]" value="0">
@@ -403,7 +414,7 @@ body {
                                                             title="القيمة">
                                                     </div>
 
-                                                    <button type="button" class="btn btn-danger btn-sm delRow"
+                                                    <button type="button" class="btn btn-danger btn-sm delRow item-no-dblclick"
                                                         data-fat-id="<?= $rowdet['id'] ?>"
                                                         style="padding: 2px 6px; font-size: 0.7rem;" title="حذف صنف">
                                                         <i class="fas fa-trash"></i>
@@ -750,6 +761,28 @@ body {
                     <button type="button" id="paymentSaveBtn" class="btn btn-success btn-sm" onclick="submitPOS('save');">حفظ</button>
                     <?php endif; ?>
                     <button type="button" id="paymentPrintBtn" class="btn btn-primary btn-sm" onclick="submitPOS('cash');">حفظ وطباعة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال ملاحظة على مستوى الصنف -->
+    <div class="modal fade" id="itemNoteModal" tabindex="-1" aria-labelledby="itemNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title mb-0" id="itemNoteModalLabel">ملاحظة على الصنف</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label small mb-1" for="item_note_text">اكتب الملاحظة</label>
+                    <textarea class="form-control" id="item_note_text" rows="3" maxlength="255"
+                        placeholder="مثال: بدون بصل، زيادة صوص..."></textarea>
+                    <div class="form-text">تظهر الملاحظة على بون التحضير والفاتورة.</div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="itemNoteSaveBtn">حفظ الملاحظة</button>
                 </div>
             </div>
         </div>

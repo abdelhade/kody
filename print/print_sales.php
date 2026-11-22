@@ -986,6 +986,29 @@ $show_vat_lines = (!empty($design['totals']['show_vat']) || $vat_qr !== null) &&
             </table>
             <?php endif; ?>
 
+            <?php
+            $invoice_user_notes = preg_replace('/\s*-\s*نوع الطلب:.+$/us', '', trim($info_text));
+            $invoice_user_notes = preg_replace('/\s*-\s*طاولة:.+$/u', '', (string) $invoice_user_notes);
+            $invoice_user_notes = preg_replace('/\s*-\s*Table:.+$/iu', '', (string) $invoice_user_notes);
+            $invoice_user_notes = preg_replace('/\s*-\s*العميل:.+$/u', '', (string) $invoice_user_notes);
+            $invoice_user_notes = trim((string) $invoice_user_notes);
+            if (
+                $invoice_user_notes === ''
+                || preg_match('/^نوع الطلب:/u', $invoice_user_notes)
+                || preg_match('/^طاولة\s*:/u', $invoice_user_notes)
+                || preg_match('/^Table\s*:/iu', $invoice_user_notes)
+                || $invoice_user_notes === 'مستند طباعة باركود'
+            ) {
+                $invoice_user_notes = '';
+            }
+            ?>
+            <?php if ($invoice_user_notes !== ''): ?>
+            <div class="invoice-terms-box" style="margin-bottom: 8px;">
+                <strong>ملاحظات:</strong>
+                <div style="white-space: pre-wrap;"><?= nl2br(htmlspecialchars($invoice_user_notes, ENT_QUOTES, 'UTF-8')) ?></div>
+            </div>
+            <?php endif; ?>
+
             <div class="invoice-terms-box">
                 <strong>ملاحظات وسياسة الفاتورة:</strong>
                 <div>• البضاعة المباعة ترد وتستبدل خلال 14 يوماً مع إحضار أصل الفاتورة.</div>

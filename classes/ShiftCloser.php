@@ -20,20 +20,6 @@ class ShiftCloser
     }
 
     /**
-     * أنواع الحركات اللي بتدخل في الشيفت.
-     * المشتريات ومردود المشتريات بره الشيفت. مرتجع الملابس متسجل نوع مردود مشتريات
-     * ومعاه «مردود مبيعات» في الملاحظات، وده مردود بيع ويفضل جوه الشيفت.
-     */
-    public static function shiftTypes(): array
-    {
-        $t = InvoiceProcessor::INVOICE_TYPES;
-        return [
-            $t['SALES'], $t['POS'], $t['SALES_RETURN'],
-            self::VOUCHER_RECEIPT, self::VOUCHER_PAYMENT, self::VOUCHER_TRANSFER,
-        ];
-    }
-
-    /**
      * الكاشير يشوف المتوقع قبل الجرد؟ (لو الجرد الأعمى مقفول أو عنده صلاحية)
      */
     public static function canSeeExpected(?array $settings): bool
@@ -112,19 +98,12 @@ class ShiftCloser
             $shiftId = (int) $this->conn->insert_id;
             $stmt->close();
 
-            // ربط فواتير البيع وسنداتها المفتوحة. المشتريات ومردودها وسنداتهما مايتقفّلوش مع الشيفت.
-            $types = self::shiftTypes();
-            $in = implode(',', array_map('intval', $types));
-            $clothesReturn = (int) InvoiceProcessor::INVOICE_TYPES['PURCHASE_RETURN'];
-            $purchaseScope = $this->purchaseExclusionSql('oh');
+            // ربط فواتير البيع/مردودها وسندات الدفع المربوطة بيها فقط. أي مستند تاني بره الشيفت.
+            $salesScope = $this->salesScopeSql('oh');
             $stmt = $this->conn->prepare(
                 "UPDATE ot_head oh SET oh.shift_id = ?, oh.mdtime = oh.mdtime
                  WHERE oh.`user` = ? AND oh.shift_id = 0 AND oh.isdeleted = 0
-                   AND (
-                        oh.pro_tybe IN ($in)
-                        OR (oh.pro_tybe = $clothesReturn AND oh.info LIKE '%مردود مبيعات%')
-                   )
-                   AND $purchaseScope"
+                   AND $salesScope"
             );
             $stmt->bind_param('ii', $shiftId, $userId);
             $stmt->execute();
@@ -271,14 +250,14 @@ class ShiftCloser
     /**
      * تلخيص حركات الشيفت تحت شرط واحد (مفتوح: user+shift_id=0، أو مقفول: shift_id=N).
      *
-     * مسار الفواتير → إحصاء وعرض. مسار السندات → movements للجرد.
+     * مسار الفواتير → إحصاء وعرض. مسار سندات البيع فقط → movements للجرد.
      *
      * @return array{orders_count:int, sales_gross:float, sales_discount:float, sales_net:float,
      *   cash_sales:float, credit_sales:float,
      *   returns_count:int, returns_total:float, net_sales:float, expenses:float, receipts:float,
      *   movements:array<int,float>, opened_at:?string}
      */
-    private function summarize(string $cond, string $types, array $params, bool $skipPurchases = true): array
+    private function summarize(string $cond, string $types, array $params, bool $salesOnly = true): array
     {
         $t = InvoiceProcessor::INVOICE_TYPES;
         $out = [
@@ -289,7 +268,7 @@ class ShiftCloser
         ];
 
         // ── مسار الفواتير (عرض): مبيعات/خصم/آجل + مدفوع من سندات op2 أو paid_amount
-        // 3/9 مبيعات، 11 مردود مبيعات، 10+«مردود مبيعات» = مرتجع POS ملابس
+        // 3/9 مبيعات، 11 مردود مبيعات، 10+«مردود مبيعات» = مرتجع POS ملابس قديم
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, COUNT(*) AS cnt,
                     COALESCE(SUM(oh.fat_total), 0) AS gross,
@@ -341,15 +320,14 @@ class ShiftCloser
         }
         $stmt->close();
 
-        // ── مسار السندات (جرد): حركة الخزنة/البنك؛ المستقلة (op2=0) فقط في expenses/receipts
-        // سندات فواتير المشتريات ومردود المشتريات مش بتدخل في الجرد
+        // ── مسار السندات (جرد): حركة الخزنة/البنك من سندات مربوطة بفواتير بيع فقط
         $money = $this->moneyAccounts();
-        $purchaseScope = $skipPurchases ? 'AND ' . $this->purchaseExclusionSql('oh') : '';
+        $salesScope = $salesOnly ? 'AND ' . $this->salesScopeSql('oh') : '';
         $stmt = $this->conn->prepare(
             "SELECT oh.pro_tybe, oh.acc1, oh.acc2, oh.op2, COALESCE(oh.pro_value, 0) AS val
              FROM ot_head oh
              WHERE $cond AND oh.isdeleted = 0 AND oh.pro_tybe IN (?, ?, ?)
-               $purchaseScope"
+               $salesScope"
         );
         $p = array_merge($params, [self::VOUCHER_RECEIPT, self::VOUCHER_PAYMENT, self::VOUCHER_TRANSFER]);
         $stmt->bind_param($types . 'iii', ...$p);
@@ -365,17 +343,10 @@ class ShiftCloser
             if (isset($money[$credit])) {
                 $out['movements'][$credit] = ($out['movements'][$credit] ?? 0.0) - $val;
             }
-            if ((int) $row['op2'] === 0) {
-                if ((int) $row['pro_tybe'] === self::VOUCHER_PAYMENT) {
-                    $out['expenses'] += $val;
-                } elseif ((int) $row['pro_tybe'] === self::VOUCHER_RECEIPT) {
-                    $out['receipts'] += $val;
-                }
-            }
         }
         $stmt->close();
 
-        $openedScope = $skipPurchases ? 'AND ' . $this->purchaseExclusionSql('oh') : '';
+        $openedScope = $salesOnly ? 'AND ' . $this->salesScopeSql('oh') : '';
         $stmt = $this->conn->prepare("SELECT MIN(oh.crtime) AS opened FROM ot_head oh WHERE $cond AND oh.isdeleted = 0 $openedScope");
         $stmt->bind_param($types, ...$params);
         $stmt->execute();
@@ -393,20 +364,23 @@ class ShiftCloser
     }
 
     /**
-     * فواتير المشتريات وأوامر الشراء ومردود المشتريات، وسندات القبض/الصرف/التحويل المربوطة بيها.
-     * مرتجع الملابس (نوع مردود المشتريات + «مردود مبيعات») مش جوه الشرط ده.
+     * نطاق شيفت المبيعات فقط:
+     * فواتير بيع / كاشير / مردود مبيعات (+ مرتجع ملابس قديم)،
+     * وسندات القبض/الصرف/التحويل المربوطة بيها عبر op2.
+     * المشتريات والمصروفات والتحويلات المستقلة بره النطاق.
      */
-    private function purchaseExclusionSql(string $alias): string
+    private function salesScopeSql(string $alias): string
     {
         $t = InvoiceProcessor::INVOICE_TYPES;
-        $purchase = (int) $t['PURCHASE'];
-        $order = (int) $t['PURCHASE_ORDER'];
-        $ret = (int) $t['PURCHASE_RETURN'];
+        $sales = (int) $t['SALES'];
+        $pos = (int) $t['POS'];
+        $ret = (int) $t['SALES_RETURN'];
+        $clothesRet = (int) $t['PURCHASE_RETURN'];
         $vouchers = self::VOUCHER_RECEIPT . ', ' . self::VOUCHER_PAYMENT . ', ' . self::VOUCHER_TRANSFER;
 
-        return "NOT (
-            {$alias}.pro_tybe IN ($purchase, $order)
-            OR ({$alias}.pro_tybe = $ret AND IFNULL({$alias}.info, '') NOT LIKE '%مردود مبيعات%')
+        return "(
+            {$alias}.pro_tybe IN ($sales, $pos, $ret)
+            OR ({$alias}.pro_tybe = $clothesRet AND IFNULL({$alias}.info, '') LIKE '%مردود مبيعات%')
             OR (
                 {$alias}.pro_tybe IN ($vouchers)
                 AND {$alias}.op2 IN (
@@ -414,10 +388,10 @@ class ShiftCloser
                         SELECT p.id FROM ot_head p
                         WHERE p.isdeleted = 0
                           AND (
-                            p.pro_tybe IN ($purchase, $order)
-                            OR (p.pro_tybe = $ret AND IFNULL(p.info, '') NOT LIKE '%مردود مبيعات%')
+                            p.pro_tybe IN ($sales, $pos, $ret)
+                            OR (p.pro_tybe = $clothesRet AND IFNULL(p.info, '') LIKE '%مردود مبيعات%')
                           )
-                    ) purchase_docs
+                    ) sales_docs
                 )
             )
         )";

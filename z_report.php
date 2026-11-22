@@ -64,9 +64,6 @@ function zr_money($v)
         <tr><td>المرتجعات</td><td class="amount"><?= zr_money($p['returns_total']) ?></td></tr>
         <?php endif; ?>
         <tr class="total-row"><td>صافي المبيعات</td><td class="amount"><?= zr_money($p['net_sales']) ?></td></tr>
-        <?php if ($p['expenses'] > 0): ?>
-        <tr><td>مصروفات</td><td class="amount"><?= zr_money($p['expenses']) ?></td></tr>
-        <?php endif; ?>
         <?php endif; ?>
     </table>
 

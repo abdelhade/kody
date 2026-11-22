@@ -302,8 +302,29 @@ $(document).ready(function() {
     // ========================================
     // Add Item to Order
     // ========================================
-    function addItemToOrder(id, name, price, barcode, qty = 1, uVal = 1) {
-        let existingItem = $(`.item-card-order[data-itemid="${barcode}"]`);
+    function escapeHtmlAttr(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function renderItemNotePreview(notes) {
+        notes = String(notes || '').trim();
+        if (!notes) {
+            return '<div class="item-note-preview text-muted text-truncate" style="font-size: 0.65rem; display: none;"></div>';
+        }
+        return `<div class="item-note-preview text-muted text-truncate" style="font-size: 0.65rem;" title="${escapeHtmlAttr(notes)}"><i class="fas fa-sticky-note me-1"></i>${escapeHtmlAttr(notes)}</div>`;
+    }
+
+    function addItemToOrder(id, name, price, barcode, qty = 1, uVal = 1, notes = '') {
+        notes = String(notes || '').trim();
+        // دمج فقط لو نفس الباركود ونفس الملاحظة (ملاحظة مختلفة = سطر مستقل)
+        let existingItem = $(`.item-card-order[data-itemid="${barcode}"]`).filter(function() {
+            return String($(this).find('input[name="itmnotes[]"]').val() || '').trim() === notes;
+        }).first();
         
         if (existingItem.length > 0) {
             let qtyInput = existingItem.find('.quantityInput');
@@ -323,20 +344,24 @@ $(document).ready(function() {
         
         let subtotal = price * qty;
         let itemNumber = $('#itemData .item-card-order').length + 1;
+        let safeName = escapeHtmlAttr(name);
+        let safeNotes = escapeHtmlAttr(notes);
         
         let itemCard = `
-            <div class="card mb-1 item-card-order shadow-sm border-start border-3" data-itemid="${barcode}" style="border-color: #0a7ea4 !important; max-width: 100%;">
+            <div class="card mb-1 item-card-order shadow-sm border-start border-3" data-itemid="${escapeHtmlAttr(barcode)}" style="border-color: #0a7ea4 !important; max-width: 100%; cursor: pointer;" title="اضغط مرتين لإضافة ملاحظة على الصنف">
                 <div class="card-body p-1">
                     <div class="d-flex align-items-center gap-1" style="font-size: 0.75rem;">
                         <span class="badge bg-primary" style="font-size: 0.7rem; min-width: 25px;">#${itemNumber}</span>
                         
                         <div style="flex: 1; min-width: 0;">
                             <input type="hidden" value='${id}' name="itmname[]">
-                            <input type="hidden" class="barcode" value="${barcode}">
-                            <div class="text-truncate fw-bold" style="font-size: 1rem;" title="${name}">${name}</div>
+                            <input type="hidden" class="barcode" value="${escapeHtmlAttr(barcode)}">
+                            <input type="hidden" name="itmnotes[]" class="item-note-input" value="${safeNotes}">
+                            <div class="text-truncate fw-bold" style="font-size: 1rem;" title="${safeName}">${safeName}</div>
+                            ${renderItemNotePreview(notes)}
                         </div>
                         
-                        <div style="width: 65px;">
+                        <div style="width: 65px;" class="item-no-dblclick">
                             <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">كمية</small>
                             <input type="number" 
                                    class="form-control form-control-sm text-center quantityInput nozero fw-bold" 
@@ -349,7 +374,7 @@ $(document).ready(function() {
                             <input type="hidden" name="u_val[]" value="${uVal}">
                         </div>
                         
-                        <div style="width: 55px;">
+                        <div style="width: 55px;" class="item-no-dblclick">
                             <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">سعر</small>
                             <input type="number" 
                                    class="form-control form-control-sm text-center priceInput nozero" 
@@ -360,7 +385,7 @@ $(document).ready(function() {
                                    title="السعر">
                         </div>
                         
-                        <div style="width: 60px;">
+                        <div style="width: 60px;" class="item-no-dblclick">
                             <small class="d-block text-center text-muted" style="font-size: 0.6rem; margin-bottom: 1px;">قيمة</small>
                             <input type="hidden" name="itmdisc[]" value="0">
                             <input type="text" 
@@ -372,7 +397,7 @@ $(document).ready(function() {
                                    title="القيمة">
                         </div>
                         
-                        <button type="button" class="btn btn-danger btn-sm delRow" style="padding: 2px 6px; font-size: 0.7rem;" title="حذف">
+                        <button type="button" class="btn btn-danger btn-sm delRow item-no-dblclick" style="padding: 2px 6px; font-size: 0.7rem;" title="حذف">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -804,7 +829,9 @@ $(document).ready(function() {
                                 item.item_name || 'Unknown Item',
                                 parseFloat(item.price) || 0,
                                 item.barcode || item.item_desc || item.item_id, // Use explicit barcode first
-                                parseFloat(item.qty) || 1
+                                parseFloat(item.qty) || 1,
+                                1,
+                                item.notes || ''
                             );
                         });
                     } else {
@@ -1025,6 +1052,63 @@ $(document).ready(function() {
         let subtotal = qty * price;
         card.find('.subtotal').val(subtotal.toFixed(2));
         updateTotal();
+    });
+
+    // ========================================
+    // ملاحظة على مستوى الصنف (دبل كليك)
+    // ========================================
+    let $itemNoteCard = null;
+
+    $(document).on('dblclick', '.item-card-order', function(e) {
+        if ($(e.target).closest('.item-no-dblclick, input, button, a').length) {
+            return;
+        }
+        $itemNoteCard = $(this);
+        const name = $itemNoteCard.find('.fw-bold').first().text().trim() || 'الصنف';
+        const notes = $itemNoteCard.find('input[name="itmnotes[]"]').val() || '';
+        $('#itemNoteModalLabel').text('ملاحظة: ' + name);
+        $('#item_note_text').val(notes);
+        const modalEl = document.getElementById('itemNoteModal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            $('#itemNoteModal').modal('show');
+        }
+        setTimeout(function() {
+            $('#item_note_text').trigger('focus');
+        }, 300);
+    });
+
+    $(document).on('click', '#itemNoteSaveBtn', function() {
+        if (!$itemNoteCard || !$itemNoteCard.length) {
+            return;
+        }
+        let notes = String($('#item_note_text').val() || '').trim();
+        if (notes.length > 255) {
+            notes = notes.substring(0, 255);
+        }
+        $itemNoteCard.find('input[name="itmnotes[]"]').val(notes);
+        const $preview = $itemNoteCard.find('.item-note-preview');
+        if (notes) {
+            $preview.html('<i class="fas fa-sticky-note me-1"></i>' + escapeHtmlAttr(notes))
+                .attr('title', notes)
+                .show();
+        } else {
+            $preview.empty().attr('title', '').hide();
+        }
+        const modalEl = document.getElementById('itemNoteModal');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        } else {
+            $('#itemNoteModal').modal('hide');
+        }
+        $itemNoteCard = null;
+        $('#barcodeInput').val('').focus();
+    });
+
+    $(document).on('hidden.bs.modal', '#itemNoteModal', function() {
+        $itemNoteCard = null;
+        $('#barcodeInput').val('').focus();
     });
 
     // ========================================

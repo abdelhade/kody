@@ -2301,7 +2301,7 @@ class InvoiceProcessor {
      * Soft-delete البنود ثم إعادة إدراجها من مصفوفة أسطر موحّدة.
      * للتحويل المخزني: سطر خروج من المصدر + سطر دخول للهدف (destStoreId).
      *
-     * @param list<array{item_id:int,qty:float,price:float,disc:float,disc_pct:float,sell_price?:float,u_val:float,crtime?:string}> $lines
+     * @param list<array{item_id:int,qty:float,price:float,disc:float,disc_pct:float,sell_price?:float,u_val:float,notes?:string,crtime?:string}> $lines
      */
     public static function replaceDetails(
         mysqli $conn,
@@ -2321,15 +2321,15 @@ class InvoiceProcessor {
             $stmtDetails = $conn->prepare(
                 "INSERT INTO fat_details (
                     pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, doc_qty, price,
-                    discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, crtime
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, notes, crtime
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
         } else {
             $stmtDetails = $conn->prepare(
                 "INSERT INTO fat_details (
                     pro_tybe, pro_id, item_id, u_val, qty_in, qty_out, doc_qty, price,
-                    discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    discount, disc_pct, det_value, fatid, fat_tybe, det_store, cost_price, profit, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
         }
         if (!$stmtDetails) {
@@ -2363,6 +2363,10 @@ class InvoiceProcessor {
             $uVal = (float) ($line['u_val'] ?? 1);
             if ($uVal <= 0) {
                 $uVal = 1;
+            }
+            $lineNotes = trim((string) ($line['notes'] ?? ''));
+            if (mb_strlen($lineNotes) > 255) {
+                $lineNotes = mb_substr($lineNotes, 0, 255);
             }
 
             $stmtItem->bind_param('i', $itemId);
@@ -2453,6 +2457,28 @@ class InvoiceProcessor {
                 if ($withCrtime) {
                     $crtime = !empty($line['crtime']) ? (string) $line['crtime'] : date('Y-m-d H:i:s');
                     $stmtDetails->bind_param(
+                        'iiiiddddddiiiiddss',
+                        $proTybe,
+                        $invoiceId,
+                        $itemId,
+                        $uVal,
+                        $lineQtyIn,
+                        $lineQtyOut,
+                        $docQty,
+                        $price,
+                        $disc,
+                        $discPct,
+                        $lineDetValue,
+                        $invoiceId,
+                        $proTybe,
+                        $lineStoreId,
+                        $costPrice,
+                        $itmProfit,
+                        $lineNotes,
+                        $crtime
+                    );
+                } else {
+                    $stmtDetails->bind_param(
                         'iiiiddddddiiiidds',
                         $proTybe,
                         $invoiceId,
@@ -2470,27 +2496,7 @@ class InvoiceProcessor {
                         $lineStoreId,
                         $costPrice,
                         $itmProfit,
-                        $crtime
-                    );
-                } else {
-                    $stmtDetails->bind_param(
-                        'ssssssssssssssss',
-                        $proTybe,
-                        $invoiceId,
-                        $itemId,
-                        $uVal,
-                        $lineQtyIn,
-                        $lineQtyOut,
-                        $docQty,
-                        $price,
-                        $disc,
-                        $discPct,
-                        $lineDetValue,
-                        $invoiceId,
-                        $proTybe,
-                        $lineStoreId,
-                        $costPrice,
-                        $itmProfit
+                        $lineNotes
                     );
                 }
                 if (!$stmtDetails->execute()) {
@@ -2645,6 +2651,10 @@ class InvoiceProcessor {
             if ($itmname === '' || $itmname === null) {
                 continue;
             }
+            $notes = trim((string) ($post['itmnotes'][$index] ?? ''));
+            if (mb_strlen($notes) > 255) {
+                $notes = mb_substr($notes, 0, 255);
+            }
             $lines[] = [
                 'sell_list' => $sellList,
                 'item_id' => (int) $itmname,
@@ -2654,6 +2664,7 @@ class InvoiceProcessor {
                 'disc_pct' => (float) ($post['itmdisc_pct'][$index] ?? 0),
                 'sell_price' => isset($post['itmsellprice'][$index]) ? (float) $post['itmsellprice'][$index] : 0,
                 'u_val' => (float) ($post['u_val'][$index] ?? 1),
+                'notes' => $notes,
                 'crtime' => $post['detcrtime'][$index] ?? null,
             ];
         }

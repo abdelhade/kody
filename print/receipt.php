@@ -490,7 +490,22 @@ if ($is_delivery) {
     if (isset($ad[1])) $customer_address = trim($ad[1]);
 }
 
-$info_text = (string)$rowfat['info'];
+$info_text = trim((string) ($rowfat['info'] ?? ''));
+// ملاحظة المستخدم من حقل name="info" فقط (بدون نوع الطلب / الطاولة / الدليفري المُلحقة تلقائياً)
+$invoice_user_notes = preg_replace('/\s*-\s*نوع الطلب:.+$/us', '', $info_text);
+$invoice_user_notes = preg_replace('/\s*-\s*طاولة:.+$/u', '', (string) $invoice_user_notes);
+$invoice_user_notes = preg_replace('/\s*-\s*Table:.+$/iu', '', (string) $invoice_user_notes);
+$invoice_user_notes = preg_replace('/\s*-\s*العميل:.+$/u', '', (string) $invoice_user_notes);
+$invoice_user_notes = trim((string) $invoice_user_notes);
+if (
+    $invoice_user_notes === ''
+    || preg_match('/^نوع الطلب:/u', $invoice_user_notes)
+    || preg_match('/^طاولة\s*:/u', $invoice_user_notes)
+    || preg_match('/^Table\s*:/iu', $invoice_user_notes)
+    || $invoice_user_notes === 'مستند طباعة باركود'
+) {
+    $invoice_user_notes = '';
+}
 $showOrderMeta = !empty($design['meta']['show_order_type']);
 $showDriverMeta = !empty($design['meta']['show_driver']);
 
@@ -503,7 +518,14 @@ if ($is_delivery && ($showOrderMeta || $showDriverMeta)) {
         . htmlspecialchars($delivery_banner, ENT_QUOTES, 'UTF-8')
         . '</div>';
 } elseif ($showOrderMeta && (strpos($info_text, 'طاولة') !== false || strpos($info_text, 'Table') !== false)) {
-    echo '<div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:6px;border:1px dashed #000;padding:2px;">' . htmlspecialchars($info_text) . '</div>';
+    // بانر الطاولة: اسم الطاولة فقط — الملاحظات الكاملة تُطبع أسفل الفاتورة
+    $table_banner = $info_text;
+    if (preg_match('/طاولة\s*:\s*([^-\n]+)/u', $info_text, $tm) || preg_match('/Table\s*:\s*([^-\n]+)/iu', $info_text, $tm)) {
+        $table_banner = 'طاولة: ' . trim($tm[1]);
+    }
+    echo '<div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:6px;border:1px dashed #000;padding:2px;">'
+        . htmlspecialchars($table_banner, ENT_QUOTES, 'UTF-8')
+        . '</div>';
 }
 
 $show_client_block = !empty($design['customer']['show']);
@@ -605,6 +627,12 @@ while ($rowdet = $resdet->fetch_assoc()) {
         <?= htmlspecialchars($iname) ?>
         <?php if ($show_disc_subline && $lineDisc > 0 && !$col_disc): ?>
             <div style="font-size:10px; font-weight:normal; color:#555;">(خصم: <?= number_format($lineDisc, 2) ?>)</div>
+        <?php endif; ?>
+        <?php
+        $lineNotes = trim((string) ($rowdet['notes'] ?? ''));
+        if ($lineNotes !== ''):
+        ?>
+            <div style="font-size:10px; font-weight:normal; color:#333;">* <?= htmlspecialchars($lineNotes, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
     </td>
     <?php endif; ?>
@@ -817,7 +845,15 @@ if ($party_balance !== null && ($show_bal_before || $show_bal_after)):
 <p style="font-size:<?= $font_size_sm ?>px; text-align:center; margin: 4px 0;"><?= htmlspecialchars($rowfat['crtime']) ?></p>
 <?php endif; ?>
 
-<!-- نص التذييل (الفوتر) والملاحظات -->
+<!-- ملاحظات الفاتورة من name="info" إن كتبها المستخدم -->
+<?php if ($invoice_user_notes !== ''): ?>
+<div style="margin-top:8px; border-top:1px dashed #000; padding-top:4px; text-align:right; font-size:<?= $font_size_sm ?>px;">
+    <div style="font-weight:bold; margin-bottom:2px;">ملاحظات:</div>
+    <div style="white-space:pre-wrap; font-weight:normal;"><?= nl2br(htmlspecialchars($invoice_user_notes, ENT_QUOTES, 'UTF-8')) ?></div>
+</div>
+<?php endif; ?>
+
+<!-- نص التذييل (الفوتر) والملاحظات الثابتة من التصميم -->
 <?php if (!empty($design['footer']['show_footer_text']) && !empty($design['footer']['footer_text'])): ?>
 <div style="text-align: center; font-size: <?= $font_size_sm ?>px; font-weight: bold; margin-top: 8px;">
     <p><?= nl2br(htmlspecialchars($design['footer']['footer_text'], ENT_QUOTES, 'UTF-8')) ?></p>

@@ -65,8 +65,6 @@ try {
             'credit_sales' => $p['credit_sales'],
             'returns_total' => $p['returns_total'],
             'total_net' => $p['net_sales'],
-            'expenses' => $p['expenses'],
-            'receipts' => $p['receipts'],
             'start_cash' => $p['start_cash'],
         ];
     }

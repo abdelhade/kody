@@ -105,9 +105,6 @@
                 s += '<tr><td class="text-start">المرتجعات</td><td class="text-danger">' + money(d.returns_total) + '</td></tr>';
             }
             s += '<tr class="table-success fw-bold"><td class="text-start">صافي المبيعات</td><td>' + money(d.total_net) + '</td></tr>';
-            if (parseFloat(d.expenses)) {
-                s += '<tr><td class="text-start">مصروفات</td><td class="text-danger">' + money(d.expenses) + '</td></tr>';
-            }
             if (parseFloat(d.start_cash)) {
                 s += '<tr><td class="text-start">رصيد بداية الدرج</td><td>' + money(d.start_cash) + '</td></tr>';
             }

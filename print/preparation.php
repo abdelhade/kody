@@ -229,6 +229,7 @@ if ($dStmt) {
             'name' => (string) ($rowdet['iname'] ?? ('صنف #' . $itmid)),
             'qty' => $qty,
             'unit' => $unit_name,
+            'notes' => trim((string) ($rowdet['notes'] ?? '')),
         ];
     }
     $dStmt->close();
@@ -317,6 +318,9 @@ ob_start();
                     <?= htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8') ?>
                     <?php if ($show_item_unit && $item['unit'] !== ''): ?>
                     <div class="prep-unit"><?= htmlspecialchars($item['unit'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($item['notes'])): ?>
+                    <div class="prep-note"><?= htmlspecialchars($item['notes'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                 </td>
                 <?php endif; ?>
@@ -444,6 +448,12 @@ html, body {
     font-size: <?= max(9, (int) $items_font_size - 2) ?>px;
     font-weight: normal;
     color: #333;
+}
+.prep-note {
+    font-size: <?= max(9, (int) $items_font_size - 1) ?>px;
+    font-weight: bold;
+    color: #000;
+    margin-top: 2px;
 }
 .prep-empty {
     text-align: center;

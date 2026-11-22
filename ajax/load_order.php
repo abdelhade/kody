@@ -51,7 +51,8 @@ try {
                 'barcode' => $item['barcode'] ?: $item['item_id'],
                 'qty' => $qty,
                 'price' => floatval($item['price']),
-                'subtotal' => floatval($item['det_value'])
+                'subtotal' => floatval($item['det_value']),
+                'notes' => trim((string) ($item['notes'] ?? '')),
             ];
         }
     }
