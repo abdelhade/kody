@@ -54,8 +54,9 @@ $pro_tybe = isset($_POST['pro_tybe']) ? intval($_POST['pro_tybe']) : 0;
 if ($pro_tybe === InvoiceProcessor::INVOICE_TYPES['MANUFACTURING']) {
     invoice_fail('أمر التصنيع يتحفظ من شاشة التصنيع');
 }
+$edit_id_early = isset($_REQUEST['edit_id']) ? intval($_REQUEST['edit_id']) : 0;
 if ($pro_tybe > 0) {
-    Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, 'add'));
+    Can::authorize(InvoiceProcessor::permissionFor($pro_tybe, $edit_id_early > 0 ? 'edit' : 'add'));
 }
 UserDefaults::enforceInvoice($conn, $_POST, $pro_tybe);
 $store_id = isset($_POST['store_id']) ? intval($_POST['store_id']) : 0;
@@ -423,18 +424,15 @@ try {
     }
     
     $edit_id = isset($_REQUEST['edit_id']) ? intval($_REQUEST['edit_id']) : 0;
-
-    // الطلب المسدَّد والمغلق لا يُعاد حفظه، وإلا حُذفت قيوده وأُعيد إنشاؤها
+    // حالة الطلب قبل التعديل: بعد إعادة الكتابة نرجّع completed لو الفضل لسه مسدَّد
+    $was_completed_order = false;
     if ($edit_id > 0) {
         $stmt_state = $conn->prepare("SELECT order_status FROM ot_head WHERE id = ? LIMIT 1");
         $stmt_state->bind_param('i', $edit_id);
         $stmt_state->execute();
         $row_state = $stmt_state->get_result()->fetch_assoc();
         $stmt_state->close();
-
-        if ($row_state && ($row_state['order_status'] ?? '') === 'completed') {
-            throw new Exception('هذا الطلب مسدَّد ومغلق بالفعل — لا يمكن حفظه مرة أخرى');
-        }
+        $was_completed_order = $row_state && ($row_state['order_status'] ?? '') === 'completed';
     }
 
     if ($edit_id > 0) {
@@ -654,8 +652,10 @@ try {
     }
     InvoiceProcessor::syncCostOfSalesJournal($conn, (int) $last_op);
     
-    // إغلاق طلب الطاولة وتفريغها (يعمل بعد إنشاء قيود الدفع أعلاه، فلا تتكرر القيود)
-    if ($finalize_order && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
+    // إغلاق طلب الطاولة / الإبقاء على فاتورة كاشير معدَّلة كمكتملة لو كانت مسدَّدة
+    $mark_completed = $finalize_order
+        || ($was_completed_order && !$is_pending_table_order && ($paid_cash + $paid_bank) + 0.0001 >= $headnet);
+    if ($mark_completed && $pro_tybe == InvoiceProcessor::INVOICE_TYPES['POS']) {
         /**
          * الإغلاق يُسجَّل في order_status فقط.
          * تغيير pro_tybe محظور: 9 = فاتورة كاشير و2 = سند دفع،
@@ -666,7 +666,8 @@ try {
         $stmt_fin->execute();
         $stmt_fin->close();
 
-        if ($table_id > 0) {
+        // تحرير الطاولة عند الإغلاق الفعلي فقط، مش عند تعديل فاتورة مكتملة مسبقاً
+        if ($finalize_order && $table_id > 0) {
             /**
              * الطاولات المدمجة: التحرير يبدأ من الطاولة الرئيسية،
              * وإلا حُرِّرت الطاولة التابعة وحدها وبقيت باقي المجموعة مشغولة بلا فاتورة.

@@ -493,6 +493,12 @@ $summary_net_after = $summary_sales_net - $summary_returns_net;
                                             <a href="manufacturing.php?e=<?= (int) $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>
                                             </a>
+                                            <?php } elseif ((int) $tybe === InvoiceProcessor::INVOICE_TYPES['POS']
+                                                && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))
+                                                && Can::canVisit('pos_barcode.php?edit=' . (int) $rowop['id'])) { ?>
+                                            <a href="pos_barcode.php?edit=<?= (int) $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
                                             <?php } elseif (in_array($tybe, [3, 4, 10, 11, 13, 14, 18, 19]) && Can::check(InvoiceProcessor::permissionFor((int) $tybe, 'edit'))) { // مبيعات، مشتريات، مردودات، أمر بيع، عرض سعر، تحويل مخزني، باركود ?>
                                             <a href="sales.php?edit_id=<?= $rowop['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">
                                                 <i class="fa fa-edit"></i>

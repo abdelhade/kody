@@ -36,7 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     shift_close_respond($isAjax, false, 'طلب غير صالح');
 }
 
-$userId = (int) $_SESSION['userid'];
+$sessionUser = (int) $_SESSION['userid'];
+$userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : $sessionUser;
+if ($userId <= 0) {
+    $userId = $sessionUser;
+}
 $closer = new ShiftCloser($conn);
 
 $counted = isset($_POST['counted']) && is_array($_POST['counted']) ? $_POST['counted'] : [];

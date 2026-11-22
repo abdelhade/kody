@@ -1,6 +1,11 @@
 <?php include('includes/header.php') ?>
 <?php include('includes/navbar.php') ?>
 <?php include('includes/sidebar.php') ?>
+<?php
+require_once __DIR__ . '/classes/ShiftCloser.php';
+$canCloseShift = Can::check('pos.close_shift');
+$openShifts = (new ShiftCloser($conn))->listOpen();
+?>
 
 <!-- إضافة CSS التحسينات -->
 <link href="dist/css/shift_notifications.css" rel="stylesheet">
@@ -16,9 +21,9 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 </div>
-<?php 
+<?php
     unset($_SESSION['success_message']);
-endif; 
+endif;
 ?>
 
 <!-- عرض رسائل الخطأ -->
@@ -29,13 +34,109 @@ endif;
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 </div>
-<?php 
+<?php
     unset($_SESSION['error_message']);
-endif; 
+endif;
 ?>
   <!-- Content Header (Page header) -->
   <section class="content-header">
         <div class="container-fluid">
+
+            <div class="card shadow-sm border-0 mb-3" style="border-radius: 15px;">
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h3 class="card-title text-dark fw-bold mb-0" style="font-size: 1.5rem; font-weight: 700;">
+                                <i class="fas fa-user-clock text-warning me-2"></i>
+                                الشيفتات المفتوحة
+                                <?php if (count($openShifts) > 0): ?>
+                                    <span class="badge badge-warning align-middle ms-2" style="font-size: 0.85rem;"><?= count($openShifts) ?></span>
+                                <?php endif; ?>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle text-center" style="font-size: 0.9rem;">
+                            <thead class="bg-warning text-dark">
+                                <tr>
+                                    <th class="py-3 border-0">المستخدم</th>
+                                    <th class="py-3 border-0">بداية الشيفت</th>
+                                    <th class="py-3 border-0">فواتير البيع</th>
+                                    <th class="py-3 border-0">المرتجعات</th>
+                                    <th class="py-3 border-0">صافي المبيعات</th>
+                                    <th class="py-3 border-0">رصيد بداية الدرج</th>
+                                    <?php if ($canCloseShift): ?>
+                                    <th class="py-3 border-0">الإجراءات</th>
+                                    <?php endif; ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($openShifts)): ?>
+                                <tr>
+                                    <td colspan="<?= $canCloseShift ? 7 : 6 ?>" class="text-muted py-4">
+                                        <i class="fas fa-check-circle text-success me-1"></i>
+                                        مفيش شيفتات مفتوحة حالياً
+                                    </td>
+                                </tr>
+                                <?php else: ?>
+                                <?php foreach ($openShifts as $os): ?>
+                                <tr class="align-middle">
+                                    <td>
+                                        <span class="badge badge-pill badge-primary px-3 py-1 font-weight-bold" style="font-size: 0.85rem;">
+                                            <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($os['cashier_name']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-light px-2 py-1" style="font-size: 0.85rem;">
+                                            <i class="far fa-clock text-secondary me-1"></i><?= htmlspecialchars($os['opened_at'] ?? '—') ?>
+                                        </span>
+                                    </td>
+                                    <td><span class="fw-bold"><?= (int) $os['orders_count'] ?></span></td>
+                                    <td>
+                                        <?php if ((int) $os['returns_count'] > 0): ?>
+                                            <span class="badge badge-danger"><?= (int) $os['returns_count'] ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted">0</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-success px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px;">
+                                            <?= number_format((float) $os['net_sales'], 2) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if (abs((float) $os['start_cash']) >= 0.01): ?>
+                                            <span class="badge badge-secondary px-3 py-1.5 font-weight-bold" style="font-size: 0.9rem; border-radius: 6px;">
+                                                <?= number_format((float) $os['start_cash'], 2) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <?php if ($canCloseShift): ?>
+                                    <td>
+                                        <button type="button"
+                                            class="btn btn-sm btn-warning fw-bold"
+                                            style="border-radius: 6px;"
+                                            data-toggle="modal" data-target="#closeShiftModal"
+                                            data-bs-toggle="modal" data-bs-target="#closeShiftModal"
+                                            data-user-id="<?= (int) $os['user_id'] ?>"
+                                            title="تقفيل شيفت <?= htmlspecialchars($os['cashier_name']) ?>">
+                                            <i class="fas fa-power-off me-1"></i>تقفيل
+                                        </button>
+                                    </td>
+                                    <?php endif; ?>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow-sm border-0" style="border-radius: 15px;">
                 <div class="card-header bg-white border-0 py-3">
                     <div class="row align-items-center">
@@ -67,23 +168,23 @@ endif;
                 </tr>
             </thead>
             <tbody>
-                <?php 
+                <?php
                 // إعدادات الترقيم
                 $records_per_page = 20;
                 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
                 $page = max(1, $page);
                 $offset = ($page - 1) * $records_per_page;
-                
+
                 // حساب إجمالي السجلات
                 $total_count = $conn->query("SELECT COUNT(*) as count FROM closed_orders")->fetch_assoc()['count'];
                 $total_pages = ceil($total_count / $records_per_page);
-                
+
                 // جلب السجلات للصفحة الحالية
                 $x = $total_count - $offset;
                 $res_closed = $conn->query("SELECT * FROM closed_orders ORDER BY id DESC LIMIT $offset, $records_per_page");
-                
+
                 while ($rowcl = $res_closed->fetch_assoc()) {
-                ?> 
+                ?>
                 <tr class="align-middle">
                     <td class="fw-bold text-muted"><?= $x ?></td>
                     <td>
@@ -141,7 +242,7 @@ endif;
             </tbody>
         </table>
     </div>
-    
+
     <!-- Pagination -->
     <?php if ($total_pages > 1): ?>
     <div class="card-footer">
@@ -153,24 +254,24 @@ endif;
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
-                
+
                 <?php
                 // عرض أرقام الصفحات
                 $start_page = max(1, $page - 2);
                 $end_page = min($total_pages, $page + 2);
-                
+
                 if ($start_page > 1) {
                     echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
                     if ($start_page > 2) {
                         echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
                     }
                 }
-                
+
                 for ($i = $start_page; $i <= $end_page; $i++) {
                     $active = ($i == $page) ? 'active' : '';
                     echo '<li class="page-item ' . $active . '"><a class="page-link" href="?page=' . $i . '">' . $i . '</a></li>';
                 }
-                
+
                 if ($end_page < $total_pages) {
                     if ($end_page < $total_pages - 1) {
                         echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
@@ -178,7 +279,7 @@ endif;
                     echo '<li class="page-item"><a class="page-link" href="?page=' . $total_pages . '">' . $total_pages . '</a></li>';
                 }
                 ?>
-                
+
                 <!-- زر الصفحة التالية -->
                 <li class="page-item <?= ($page >= $total_pages) ? 'disabled' : '' ?>">
                     <a class="page-link" href="?page=<?= $page + 1 ?>" aria-label="التالي">
@@ -196,7 +297,7 @@ endif;
     <?php endif; ?>
 </div>
 
-          
+
             </div>
 
 
@@ -207,7 +308,8 @@ endif;
     </section>
 </div>
 
-
-
+<?php if ($canCloseShift) {
+    include __DIR__ . '/elements/pos/shift_close_modal.php';
+} ?>
 
 <?php include('includes/footer.php') ?>

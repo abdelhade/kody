@@ -3,49 +3,7 @@
  * نظام نقاط البيع بالباركود
  */
 
-// ========================================
-// Password Protection for Order Actions
-// ========================================
-const ORDER_ACTION_PASSWORD = '1234'; // ← غيّر الباسورد من هنا
-
-function askOrderPassword(title, onSuccess) {
-    Swal.fire({
-        title: title,
-        html: `<input type="password" id="swal-order-pass" class="swal2-input" placeholder="أدخل كلمة المرور" autocomplete="off">`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'تأكيد',
-        cancelButtonText: 'إلغاء',
-        confirmButtonColor: '#3085d6',
-        didOpen: () => {
-            document.getElementById('swal-order-pass').focus();
-            document.getElementById('swal-order-pass').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') Swal.clickConfirm();
-            });
-        },
-        preConfirm: () => {
-            const pass = document.getElementById('swal-order-pass').value;
-            if (pass !== ORDER_ACTION_PASSWORD) {
-                Swal.showValidationMessage('كلمة المرور غير صحيحة!');
-                return false;
-            }
-            return true;
-        }
-    }).then((result) => {
-        if (result.isConfirmed) onSuccess();
-    });
-}
-// ========================================
-
 $(document).ready(function() {
-    // ========================================
-    // Initialize on page load - Update totals if items exist (edit mode)
-    // ========================================
-    if ($('#itemData .item-card-order').length > 0) {
-        updateItemCount();
-        updateTotal();
-    }
-    
     // ========================================
     // Category Filter & Search Logic
     // ========================================
@@ -449,8 +407,10 @@ $(document).ready(function() {
         $('#net_display').text(net.toFixed(2) + '  ');
         $('#modal_net').text(net.toFixed(2) + '  ');
         
-        // حساب الباقي مع القيم الحالية
-        calculateChange();
+        // حساب الباقي مع القيم الحالية (قد تُستدعى قبل تعريف calculateChange)
+        if (typeof window.calculateChange === 'function') {
+            window.calculateChange();
+        }
     }
     
     /** المبلغ المطلوب سداده الآن (الصافي − المدفوع سابقاً) */
@@ -989,6 +949,12 @@ $(document).ready(function() {
         let change = totalPaid - net;
         $('#modal_change').text(change.toFixed(2) + '  ');
     };
+
+    // تحديث الإجماليات بعد تعريف الدوال — في التعديل الأصناف بتتحمّل من السيرفر
+    if ($('#itemData .item-card-order').length > 0) {
+        updateItemCount();
+        updateTotal();
+    }
 
     // ========================================
     // Delete & Update Row
@@ -1529,44 +1495,39 @@ function loadRecentOrders() {
 }
 
 function editOrder(orderId) {
-    console.log('Edit order:', orderId);
-    askOrderPassword('🔐 تعديل الطلب', function() {
-        window.location.href = 'pos_barcode.php?edit=' + orderId;
-    });
+    window.location.href = 'pos_barcode.php?edit=' + orderId;
 }
 
 function deleteOrder(orderId) {
-    askOrderPassword('🔐 حذف الطلب', function() {
-        Swal.fire({
-            title: 'هل أنت متأكد؟',
-            text: 'سيتم حذف الطلب نهائياً ولا يمكن التراجع!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'نعم، احذف',
-            cancelButtonText: 'إلغاء'
-        }).then(function(result) {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: 'ajax/cancel_order.php',
-                    type: 'POST',
-                    data: { id: orderId },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire({ icon: 'success', title: 'تم الحذف!', timer: 1200, showConfirmButton: false });
-                            loadRecentOrders();
-                        } else {
-                            Swal.fire('خطأ', response.message || 'فشل الحذف', 'error');
-                        }
-                    },
-                    error: function() {
-                        Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+    Swal.fire({
+        title: 'هل أنت متأكد؟',
+        text: 'سيتم حذف الطلب نهائياً ولا يمكن التراجع!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'نعم، احذف',
+        cancelButtonText: 'إلغاء'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: 'ajax/cancel_order.php',
+                type: 'POST',
+                data: { id: orderId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({ icon: 'success', title: 'تم الحذف!', timer: 1200, showConfirmButton: false });
+                        loadRecentOrders();
+                    } else {
+                        Swal.fire('خطأ', response.message || 'فشل الحذف', 'error');
                     }
-                });
-            }
-        });
+                },
+                error: function() {
+                    Swal.fire('خطأ', 'خطأ في الاتصال بالخادم', 'error');
+                }
+            });
+        }
     });
 }
 

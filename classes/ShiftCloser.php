@@ -44,7 +44,53 @@ class ShiftCloser
         $summary['primary_fund'] = $primary;
         $summary['accounts'] = $this->buildAccountRows($summary['movements'], $primary, $startCash);
         $summary['cashier_name'] = $this->username($userId);
+        $summary['user_id'] = $userId;
         return $summary;
+    }
+
+    /**
+     * الشيفتات المفتوحة: مستخدمين عندهم حركات بيع/مردود/سندات مربوطة بـ shift_id = 0.
+     *
+     * @return list<array{user_id:int, cashier_name:string, opened_at:?string, orders_count:int,
+     *   returns_count:int, sales_net:float, returns_total:float, net_sales:float, start_cash:float}>
+     */
+    public function listOpen(): array
+    {
+        $scope = $this->salesScopeSql('oh');
+        $res = $this->conn->query(
+            "SELECT DISTINCT oh.`user` AS user_id
+             FROM ot_head oh
+             WHERE oh.shift_id = 0 AND oh.isdeleted = 0 AND oh.`user` > 0
+               AND $scope
+             ORDER BY oh.`user`"
+        );
+        $list = [];
+        while ($res && ($row = $res->fetch_assoc())) {
+            $uid = (int) $row['user_id'];
+            if ($uid <= 0) {
+                continue;
+            }
+            $p = $this->preview($uid);
+            if ($p['orders_count'] <= 0 && $p['returns_count'] <= 0
+                && abs($p['start_cash']) < 0.01 && empty($p['movements'])) {
+                continue;
+            }
+            $list[] = [
+                'user_id' => $uid,
+                'cashier_name' => $p['cashier_name'] !== '' ? $p['cashier_name'] : ('#' . $uid),
+                'opened_at' => $p['opened_at'],
+                'orders_count' => $p['orders_count'],
+                'returns_count' => $p['returns_count'],
+                'sales_net' => $p['sales_net'],
+                'returns_total' => $p['returns_total'],
+                'net_sales' => $p['net_sales'],
+                'start_cash' => $p['start_cash'],
+            ];
+        }
+        usort($list, static function ($a, $b) {
+            return strcmp((string) ($a['opened_at'] ?? ''), (string) ($b['opened_at'] ?? ''));
+        });
+        return $list;
     }
 
     // ─── Close ──────────────────────────────────────────────────

@@ -45,7 +45,14 @@ $sql = "SELECT
             COALESCE(SUM(CASE
                 WHEN h.pro_tybe = 11 OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%') THEN
                     fd.det_value + COALESCE(fd.discount, 0) * (fd.qty_in / COALESCE(NULLIF(fd.u_val, 0), 1))
-                ELSE 0 END), 0) AS total_returns
+                ELSE 0 END), 0) AS total_returns,
+            COALESCE(SUM(CASE WHEN h.pro_tybe IN (3, 9) THEN
+                fd.qty_out * COALESCE(fd.cost_price, 0)
+                ELSE 0 END), 0) AS sales_cost,
+            COALESCE(SUM(CASE
+                WHEN h.pro_tybe = 11 OR (h.pro_tybe = 10 AND h.info LIKE '%مردود مبيعات%') THEN
+                    fd.qty_in * COALESCE(fd.cost_price, 0)
+                ELSE 0 END), 0) AS return_cost
         FROM fat_details fd
         INNER JOIN ot_head h ON h.id = fd.pro_id
         INNER JOIN myitems i ON i.id = fd.item_id AND IFNULL(i.isdeleted, 0) = 0
@@ -89,6 +96,8 @@ $grand_return_discount  = 0;
 $grand_total_discount   = 0;
 $grand_total_returns    = 0;
 $grand_total_net        = 0;
+$grand_total_cost       = 0;
+$grand_total_profit     = 0;
 
 while ($row = $res->fetch_assoc()) {
     $total_sales     = floatval($row['total_sales']);
@@ -97,6 +106,10 @@ while ($row = $res->fetch_assoc()) {
     $total_discount  = $sales_discount - $return_discount;
     $total_returns   = floatval($row['total_returns']);
     $net_sales       = $total_sales - $total_discount - $total_returns;
+    $sales_cost      = floatval($row['sales_cost']);
+    $return_cost     = floatval($row['return_cost']);
+    $total_cost      = $sales_cost - $return_cost;
+    $total_profit    = $net_sales - $total_cost;
 
     $row['total_sales']     = $total_sales;
     $row['sales_discount']  = $sales_discount;
@@ -104,6 +117,8 @@ while ($row = $res->fetch_assoc()) {
     $row['total_discount']  = $total_discount;
     $row['total_returns']   = $total_returns;
     $row['net_sales']       = $net_sales;
+    $row['total_cost']      = $total_cost;
+    $row['total_profit']    = $total_profit;
 
     $data[] = $row;
     $grand_sales_qty        += floatval($row['sales_qty']);
@@ -114,6 +129,8 @@ while ($row = $res->fetch_assoc()) {
     $grand_total_discount   += $total_discount;
     $grand_total_returns    += $total_returns;
     $grand_total_net        += $net_sales;
+    $grand_total_cost       += $total_cost;
+    $grand_total_profit     += $total_profit;
 }
 $stmt->close();
 
@@ -183,10 +200,22 @@ function kody_fmt_qty($q) {
                         <h4><?= number_format($grand_total_returns, 2) ?></h4>
                     </div>
                 </div>
-                <div class="col-lg col-md-6 col-sm-6 col-12 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
                     <div class="small-box bg-primary p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
                         <h6>صافي المبيعات</h6>
                         <h4><?= number_format($grand_total_net, 2) ?></h4>
+                    </div>
+                </div>
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
+                    <div class="small-box bg-secondary p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
+                        <h6>التكلفة</h6>
+                        <h4><?= number_format($grand_total_cost, 2) ?></h4>
+                    </div>
+                </div>
+                <div class="col-lg col-md-4 col-sm-6 col-12 mb-2">
+                    <div class="small-box bg-success p-3 text-center text-white shadow-sm" style="border-radius: 10px;">
+                        <h6>الربح</h6>
+                        <h4><?= number_format($grand_total_profit, 2) ?></h4>
                     </div>
                 </div>
             </div>
@@ -205,6 +234,8 @@ function kody_fmt_qty($q) {
                                     <th class="text-warning">إجمالي الخصم</th>
                                     <th class="text-danger">مردود المبيعات</th>
                                     <th class="text-primary">صافي المبيعات</th>
+                                    <th class="text-secondary">التكلفة</th>
+                                    <th class="text-success">الربح</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -243,11 +274,15 @@ function kody_fmt_qty($q) {
                                                 <?php endif; ?>
                                             </td>
                                             <td class="font-weight-bold text-primary"><?= number_format($row['net_sales'], 2) ?></td>
+                                            <td class="font-weight-bold text-secondary"><?= number_format($row['total_cost'], 2) ?></td>
+                                            <td class="font-weight-bold <?= $row['total_profit'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                                <?= number_format($row['total_profit'], 2) ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="8" class="text-center text-muted p-4">
+                                        <td colspan="10" class="text-center text-muted p-4">
                                             <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                                             لا توجد بيانات مبيعات للمجموعات خلال هذه الفترة.
                                         </td>
@@ -276,6 +311,10 @@ function kody_fmt_qty($q) {
                                         </td>
                                         <td class="text-danger"><?= $grand_total_returns > 0 ? '− ' . number_format($grand_total_returns, 2) : '—' ?></td>
                                         <td class="text-primary" style="font-size: 1.1rem;"><?= number_format($grand_total_net, 2) ?></td>
+                                        <td class="text-secondary"><?= number_format($grand_total_cost, 2) ?></td>
+                                        <td class="<?= $grand_total_profit >= 0 ? 'text-success' : 'text-danger' ?>" style="font-size: 1.1rem;">
+                                            <?= number_format($grand_total_profit, 2) ?>
+                                        </td>
                                     </tr>
                                 </tfoot>
                             <?php endif; ?>

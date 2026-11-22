@@ -1984,9 +1984,10 @@ body {
         const finalizeInput = form.querySelector('input[name="finalize_order"]');
         if (isHold && finalizeInput) finalizeInput.value = '0';
         const isFinalizing = !isHold && !!(finalizeInput && finalizeInput.value === '1');
+        const isEditing = !!editId;
 
-        // حفظ نقدي/معلّق/طاولة: AJAX عشان نفضل على الـ POS والطباعة تروح للطابور
-        if ((isTableOrder || isFinalizing || action === 'cash' || action === 'hold') && (action === 'save' || action === 'cash' || action === 'hold')) {
+        // حفظ نقدي/معلّق/طاولة/تعديل: AJAX عشان نفضل على الـ POS ونعرض أخطاء الحفظ بوضوح
+        if ((isTableOrder || isFinalizing || isEditing || action === 'cash' || action === 'hold') && (action === 'save' || action === 'cash' || action === 'hold')) {
             let ajaxInput = form.querySelector('input[name="ajax_save"]');
             if (!ajaxInput) {
                 ajaxInput = document.createElement('input');
@@ -2183,7 +2184,7 @@ body {
                                                 <td><span class="badge ${statusBadge}">${order.status}</span></td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <button type="button" class="btn btn-warning" onclick="editOrderWithPassword(${order.id})" title="تعديل">
+                                                        <button type="button" class="btn btn-warning" onclick="editOrder(${order.id})" title="تعديل">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                         <button type="button" class="btn btn-success" onclick="window.location.href='pos_barcode.php?add_item=${order.id}'" title="إضافة صنف">
@@ -2310,53 +2311,11 @@ body {
                 });
             };
 
-            // ---- Password helpers ----
-            const ORDER_PASSWORD = '1234'; // ← غيّر الباسورد من هنا
-
-            function askPassword(title, onSuccess) {
-                Swal.fire({
-                    title: title,
-                    html: `<input type="password" id="swal-order-pass" class="swal2-input" placeholder="أدخل كلمة المرور" autocomplete="off">`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'تأكيد',
-                    cancelButtonText: 'إلغاء',
-                    confirmButtonColor: '#3085d6',
-                    didOpen: () => {
-                        document.getElementById('swal-order-pass').focus();
-                        // السماح بـ Enter داخل حقل الباسورد
-                        document.getElementById('swal-order-pass').addEventListener('keydown', function(e) {
-                            if (e.key === 'Enter') Swal.clickConfirm();
-                        });
-                    },
-                    preConfirm: () => {
-                        const pass = document.getElementById('swal-order-pass').value;
-                        if (pass !== ORDER_PASSWORD) {
-                            Swal.showValidationMessage('كلمة المرور غير صحيحة!');
-                            return false;
-                        }
-                        return true;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) onSuccess();
-                });
-            }
-
-            window.editOrderWithPassword = function(orderId) {
-                askPassword('🔐 تعديل الطلب', function() {
-                    window.location.href = 'pos_barcode.php?edit=' + orderId;
-                });
+            window.editOrder = function(orderId) {
+                window.location.href = 'pos_barcode.php?edit=' + orderId;
             };
-
-            window.addItemWithPassword = function(orderId) {
-                askPassword('🔐 إضافة صنف للطلب', function() {
-                    window.location.href = 'pos_barcode.php?add_item=' + orderId;
-                });
-            };
-            // ---- End Password helpers ----
 
             window.deleteOrder = function(orderId) {
-                askPassword('🔐 حذف الطلب', function() {
                 Swal.fire({
                     title: 'هل أنت متأكد؟',
                     text: "هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -2407,7 +2366,6 @@ body {
                         });
                     }
                 });
-                }); // end askPassword
             };
         });
     </script>

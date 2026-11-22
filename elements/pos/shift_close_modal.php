@@ -86,10 +86,11 @@
         return Promise.resolve();
     }
 
-    var state = { blind: true };
+    var state = { blind: true, userId: 0 };
 
     function render(d) {
         state.blind = !!d.blind;
+        state.userId = parseInt(d.user_id, 10) || state.userId || 0;
         $('#scm_cashier').text(d.cashier_name || '');
         $('#scm_opened').text(d.opened_at || '—');
 
@@ -137,7 +138,11 @@
         $('#scm_loading').show();
         $('#scm_body').hide();
         $('#scm_submit').prop('disabled', true);
-        $.getJSON('do/get_shift_preview.php').done(function (r) {
+        var params = {};
+        if (state.userId > 0) {
+            params.user_id = state.userId;
+        }
+        $.getJSON('do/get_shift_preview.php', params).done(function (r) {
             if (!r || !r.success) {
                 notify('error', 'خطأ', (r && r.error) || 'لا يمكن تحميل بيانات الشيفت');
                 return;
@@ -151,7 +156,12 @@
         });
     }
 
-    $(document).on('show.bs.modal', '#closeShiftModal', load);
+    $(document).on('show.bs.modal', '#closeShiftModal', function (e) {
+        var $btn = $(e.relatedTarget);
+        var uid = parseInt($btn.data('user-id'), 10) || 0;
+        state.userId = uid > 0 ? uid : 0;
+        load();
+    });
 
     $(document).on('input', '#scm_accounts .scm-count', function () {
         if (state.blind) return;
@@ -171,6 +181,10 @@
             if (v === '') empty = true;
             data['counted[' + $(this).data('acc') + ']'] = v || 0;
         });
+
+        if (state.userId > 0) {
+            data.user_id = state.userId;
+        }
 
         var go = function () {
             var $btn = $('#scm_submit').prop('disabled', true);

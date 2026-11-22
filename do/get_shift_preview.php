@@ -27,7 +27,11 @@ try {
         throw new Exception('الرجاء تسجيل الدخول أولاً');
     }
 
-    $user_id = (int) $_SESSION['userid'];
+    $sessionUser = (int) $_SESSION['userid'];
+    $user_id = isset($_GET['user_id']) ? (int) $_GET['user_id'] : $sessionUser;
+    if ($user_id <= 0) {
+        $user_id = $sessionUser;
+    }
     $closer = new ShiftCloser($conn);
     $p = $closer->preview($user_id);
     $showExpected = ShiftCloser::canSeeExpected($rowstg ?? []);
@@ -50,6 +54,7 @@ try {
 
     $data = [
         'blind' => !$showExpected,
+        'user_id' => $user_id,
         'cashier_name' => $p['cashier_name'] ?: 'الكاشير',
         'opened_at' => $p['opened_at'],
         'total_orders' => $p['orders_count'],
