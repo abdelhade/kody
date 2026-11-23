@@ -294,7 +294,15 @@ return [
         'recive' => ['receipts.add', 'receipts.edit'], '1' => ['receipts.add', 'receipts.edit'],
         'payment' => ['payments.add', 'payments.edit'], '2' => ['payments.add', 'payments.edit'],
     ], 'default' => ['receipts.add', 'receipts.edit', 'payments.add', 'payments.edit']],
+    'add_multi_voucher.php' => ['param' => 't', 'map' => [
+        'recive' => 'receipts.add',
+        'payment' => 'payments.add',
+    ], 'default' => ['receipts.add', 'payments.add']],
     'do/doadd_voucher.php'     => $voucher('add'),
+    'do/doadd_multi_voucher.php' => ['param' => 'voucher_kind', 'from' => 'request', 'map' => [
+        'recive' => 'receipts.add',
+        'payment' => 'payments.add',
+    ], 'default' => ['receipts.add', 'payments.add']],
     'do/doedit_voucher.php'    => $voucher('edit'),
     'do/dodel_voucher.php'     => 'custom',
     'do/settle_credit.php'     => 'receipts.add',

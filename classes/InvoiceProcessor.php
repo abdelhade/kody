@@ -27,6 +27,7 @@ class InvoiceProcessor {
         'PAYMENT' => 2,           // سند دفع
         'MULTI_RECEIPT' => 21,    // سند قبض متعدد
         'MULTI_PAYMENT' => 22,    // سند دفع متعدد
+        'MULTI_JOURNAL' => 23,    // قيد متعدد
         'SALES_DISC' => 7,        // خصم مبيعات
         'PURCHASE_DISC' => 6,     // خصم مشتريات
         'COST_OF_SALES' => 20,    // قيد تكلفة مبيعات (journal_heads.pro_tybe)

@@ -17,9 +17,11 @@
                 $sidebar_logo_src = 'assets/logo/hors.png';
             }
           ?>
-          <img src="<?= $sidebar_logo_src ?>?v=<?= isset($rowstg['company_logo']) ? md5($rowstg['company_logo']) : '1' ?>" alt="User Image"
-            style="height: 45px; width: 45px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
-            onerror="this.onerror=null; this.src='assets/logo/hors.png';">
+          <a href="index.php" title="<?= $lang_dashboard ?>">
+            <img src="<?= $sidebar_logo_src ?>?v=<?= isset($rowstg['company_logo']) ? md5($rowstg['company_logo']) : '1' ?>" alt="User Image"
+              style="height: 45px; width: 45px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
+              onerror="this.onerror=null; this.src='assets/logo/hors.png';">
+          </a>
         </div>
         <div class="info flex-grow-1">
           <a href="" class="d-block" style="margin-bottom: 0;"><?php echo "اهلا يا " . $_SESSION['login'] ?></a>
@@ -38,14 +40,6 @@
       <!--                                             main                                                                        -->
 
       <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-        <li class="nav-item has-treeview">
-          <a href="index.php" class="nav-link">
-            <i class="nav-icon fas fa-tachometer-alt"></i>
-            <p> <?= $lang_dashboard ?></p>
-          </a>
-        </li>
-
-
 
         <!--                                             البيانات الاساسيه                                                                        -->
                   <li class="nav-item has-treeview">
@@ -175,14 +169,68 @@
               </li>
             </ul>
           </li>
-        
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
+              <p>
+                <?= $lang_purchases ?>
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
 
 
 
 
-        <!--                                                                        -->
-        
-          <li class="nav-item has-treeview">
+
+              <li class="nav-item">
+                <a href="sales.php?q=purchase" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_purchase_invoice ?>
+                  </p>
+                </a>
+              </li>
+
+
+              <li class="nav-item">
+                <a href="sales.php?q=resale" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_purchase_return ?>
+                  </p>
+                </a>
+              </li>
+
+
+              <li class="nav-item">
+                <a href="sales.php?q=po" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p><?= $lang_purchase_order ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="sales.php?q=barcode_print" class="nav-link">
+                  <i class="nav-icon fas fa-barcode"></i>
+                  <p>مستند طباعة باركود</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=barcode_print" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>سجل مستندات الباركود</p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+
+        <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-store"></i>
               <p>
@@ -333,195 +381,9 @@
 
             </ul>
           </li>
-        
 
 
-
-<!-- -------------------نقاط البيع  -->
-        
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-store"></i>
-              <p>
-                <?= $lang_pos ?>
-                <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="pos-menu" style="display: none;">
-
-              <?php
-              // جلب نوع نظام POS من الإعدادات
-              $pos_type = $rowstg['pos_type'] ?? 'barcode';
-
-              if ($pos_type === 'clothes') {
-                // عرض POS الملابس فقط
-                ?>
-                <li class="nav-item">
-                  <a href="pos_clothes.php" class="nav-link">
-                    <i class="nav-icon fas fa-tshirt"></i>
-                    <p>POS الملابس</p>
-                  </a>
-                </li>
-              <?php } else {
-                // عرض POS العادي فقط
-                ?>
-                <li class="nav-item">
-                  <a href="pos_barcode.php" class="nav-link">
-                    <i class="nav-icon fas fa-utensils"></i>
-                    <p>نقطة بيع مطعم</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="pos_supermarket.php" class="nav-link">
-                    <i class="nav-icon fas fa-shopping-cart"></i>
-                    <p>نقطة بيع سوبر ماركت</p>
-                  </a>
-                </li>
-              <?php } ?>
-
-
-              <li class="nav-item">
-                <a href="crud_tables.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_table_management ?> </p>
-                </a>
-              </li>
-
-
-
-              <li class="nav-item" id="myitems">
-                <a href="closed_sessions.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_closed_sessions ?></p>
-                </a>
-              </li>
-
-                              <li class="nav-item">
-                  <a href="visits.php" class="nav-link">
-                    <i class="nav-icon fas fa-user-check"></i>
-                    <p><?= $lang_visits ?? 'الزيارات' ?></p>
-                  </a>
-                </li>
-              
-            </ul>
-          </li>
-        
-        
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-credit-card"></i>
-              <p>
-                <?= $lang_card_management_title ?> <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="cards" style="display: none;">
-
-              <li class="nav-item">
-                <a href="add_booking.php" class="nav-link">
-                  <i class="nav-icon fas fa-plus"></i>
-                  <p>
-                    <?= $lang_add_card ?>
-                  </p>
-                </a>
-              </li>
-
-
-
-              <li class="nav-item" id="card-pass">
-                <a href="booking.php" class="nav-link">
-                  <i class="nav-icon fas fa-arrow-right"></i>
-                  <p><?= $lang_card_pass ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item" id="card-management">
-                <a href="bookings.php" class="nav-link">
-                  <i class="nav-icon fas fa-cogs"></i>
-                  <p><?= $lang_card_management ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item" id="card-clients">
-                <a href="clients.php" class="nav-link">
-                  <i class="nav-icon fas fa-users"></i>
-                  <p><?= $lang_client_management ?></p>
-                </a>
-              </li>
-
-
-            </ul>
-          </li>
-        
-
-
-
-
-
-
-        
-
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
-              <p>
-                <?= $lang_purchases ?>
-                <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-
-
-
-
-
-              <li class="nav-item">
-                <a href="sales.php?q=purchase" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_purchase_invoice ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="sales.php?q=resale" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_purchase_return ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="sales.php?q=po" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_purchase_order ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="sales.php?q=barcode_print" class="nav-link">
-                  <i class="nav-icon fas fa-barcode"></i>
-                  <p>مستند طباعة باركود</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="operations_summary.php?q=barcode_print" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>سجل مستندات الباركود</p>
-                </a>
-              </li>
-            </ul>
-          </li>
-        
-
-
-
-                    <li class="nav-item has-treeview">
+        <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
                 <i class="nav-icon fa fas-sharp fa-solid fa-file-invoice-dollar fas-2xl"></i>
                 <p>
@@ -571,16 +433,69 @@
                     </p>
                   </a>
                 </li>
+              
+
+                <li class="nav-item has-treeview">
+                  <a href="#" class="nav-link nav-link-basic">
+                    <i class="nav-icon fas fa-store"></i>
+                    <p>
+                      <?= $lang_pos ?>
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
+                  </a>
+                  <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="pos-menu" style="display: none;">
+                    <?php
+                    $pos_type = $rowstg['pos_type'] ?? 'barcode';
+                    if ($pos_type === 'clothes') {
+                    ?>
+                    <li class="nav-item">
+                      <a href="pos_clothes.php" class="nav-link">
+                        <i class="nav-icon fas fa-tshirt"></i>
+                        <p>POS الملابس</p>
+                      </a>
+                    </li>
+                    <?php } else { ?>
+                    <li class="nav-item">
+                      <a href="pos_barcode.php" class="nav-link">
+                        <i class="nav-icon fas fa-utensils"></i>
+                        <p>نقطة بيع مطعم</p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="pos_supermarket.php" class="nav-link">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>نقطة بيع سوبر ماركت</p>
+                      </a>
+                    </li>
+                    <?php } ?>
+
+                    <li class="nav-item">
+                      <a href="crud_tables.php" class="nav-link">
+                        <i class="nav-icon fas fa-list"></i>
+                        <p><?= $lang_table_management ?> </p>
+                      </a>
+                    </li>
+
+                    <li class="nav-item">
+                      <a href="closed_sessions.php" class="nav-link">
+                        <i class="nav-icon fas fa-list"></i>
+                        <p><?= $lang_closed_sessions ?></p>
+                      </a>
+                    </li>
+
+                    <li class="nav-item">
+                      <a href="visits.php" class="nav-link">
+                        <i class="nav-icon fas fa-user-check"></i>
+                        <p><?= $lang_visits ?? 'الزيارات' ?></p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
               </ul>
             </li>
-        
 
 
-
-
-
-
-                  <li class="nav-item has-treeview">
+        <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-money-bill-wave"></i>
               <p>
@@ -609,6 +524,23 @@
                 </a>
               </li>
 
+              <li class="nav-item">
+                <a href="add_multi_voucher.php?t=recive" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_multi_receipt ?? 'سند قبض متعدد' ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="add_multi_voucher.php?t=payment" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_multi_payment ?? 'سند دفع متعدد' ?>
+                  </p>
+                </a>
+              </li>
 
               <li class="nav-item">
                 <a href="vouchers.php" class="nav-link">
@@ -620,14 +552,156 @@
               </li>
             </ul>
           </li>
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-book"></i>
+              <p>
+                <?= $lang_general_accounts ?>
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+
+
+              <li class="nav-item">
+                <a href="add_journal.php" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_journal_entry ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="addmulti_journal.php" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_multi_journal ?? 'قيد متعدد' ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="daily_journal.php" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>
+                    <?= $lang_daily_journals ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=all" class="nav-link">
+                  <i class="nav-icon fas fa-list-alt"></i>
+                  <p>كل العمليات</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="journals_without_operations.php" class="nav-link">
+                  <i class="nav-icon fas fa-unlink"></i>
+                  <p>القيود بدون عمليات</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="unbalanced_journals.php" class="nav-link">
+                  <i class="nav-icon fas fa-not-equal"></i>
+                  <p>القيود غيرالمتزنة</p>
+                </a>
+              </li>
+
+
+              <li class="nav-item">
+                <a href="accounts.php" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p><?= $lang_chart_of_accounts ?>
+                  </p>
+                </a>
+              </li>
+
+
+              <li class="nav-item">
+                <a href="acc_report.php" class="nav-link">
+                  <i class="nav-icon fas fa-list "></i>
+                  <p><?= $lang_accounts_list ?>
+                  </p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="balance_sheet.php" class="nav-link">
+                  <i class="nav-icon fas fa-balance-scale"></i>
+                  <p><?= $lang_balance_sheet ?? 'تقرير الميزانية' ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="profit_loss.php" class="nav-link">
+                  <i class="nav-icon fas fa-chart-line"></i>
+                  <p><?= $lang_profit_loss ?? 'الأرباح والخسائر' ?></p>
+                </a>
+              </li>
+
+
+            </ul>
+          </li>
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-credit-card"></i>
+              <p>
+                <?= $lang_card_management_title ?> <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="cards" style="display: none;">
+
+              <li class="nav-item">
+                <a href="add_booking.php" class="nav-link">
+                  <i class="nav-icon fas fa-plus"></i>
+                  <p>
+                    <?= $lang_add_card ?>
+                  </p>
+                </a>
+              </li>
+
+
+
+              <li class="nav-item" id="card-pass">
+                <a href="booking.php" class="nav-link">
+                  <i class="nav-icon fas fa-arrow-right"></i>
+                  <p><?= $lang_card_pass ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item" id="card-management">
+                <a href="bookings.php" class="nav-link">
+                  <i class="nav-icon fas fa-cogs"></i>
+                  <p><?= $lang_card_management ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item" id="card-clients">
+                <a href="clients.php" class="nav-link">
+                  <i class="nav-icon fas fa-users"></i>
+                  <p><?= $lang_client_management ?></p>
+                </a>
+              </li>
+
+
+            </ul>
+          </li>
+
+
         
 
 
 
 
-
-
-        <!--                                                                        -->
+        <!--                                                                        --><!--                                                                        -->
 
         <!--                                                                        -->
 
@@ -1234,119 +1308,7 @@
             <i class="nav-icon fas fa-key"></i>
             <p><?= $lang_change_password ?></p>
           </a>
-        </li>
-
-                  <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-book"></i>
-              <p>
-                <?= $lang_general_accounts ?>
-                <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-
-
-              <li class="nav-item">
-                <a href="add_journal.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_journal_entry ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="addmulti_journal.php?t=recive" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_multi_receipt ?? $lang_multi_journal ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="addmulti_journal.php?t=payment" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_multi_payment ?? 'سند دفع متعدد' ?>
-                  </p>
-                </a>
-              </li>
-
-
-
-
-              <li class="nav-item">
-                <a href="daily_journal.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_daily_journals ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="operations_summary.php?q=all" class="nav-link">
-                  <i class="nav-icon fas fa-list-alt"></i>
-                  <p>كل العمليات</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="journals_without_operations.php" class="nav-link">
-                  <i class="nav-icon fas fa-unlink"></i>
-                  <p>القيود بدون عمليات</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="unbalanced_journals.php" class="nav-link">
-                  <i class="nav-icon fas fa-not-equal"></i>
-                  <p>القيود غيرالمتزنة</p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="accounts.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_chart_of_accounts ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="acc_report.php" class="nav-link">
-                  <i class="nav-icon fas fa-list "></i>
-                  <p><?= $lang_accounts_list ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="balance_sheet.php" class="nav-link">
-                  <i class="nav-icon fas fa-balance-scale"></i>
-                  <p><?= $lang_balance_sheet ?? 'تقرير الميزانية' ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="profit_loss.php" class="nav-link">
-                  <i class="nav-icon fas fa-chart-line"></i>
-                  <p><?= $lang_profit_loss ?? 'الأرباح والخسائر' ?></p>
-                </a>
-              </li>
-
-
-            </ul>
-          </li>
-        
-
-
-
-                  <li class="nav-item has-treeview">
+        </li><li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-book"></i>
               <p><?= $lang_system ?>

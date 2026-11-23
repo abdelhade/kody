@@ -4,12 +4,8 @@ include('../includes/connect.php');
 require_once __DIR__ . '/../classes/InvoiceProcessor.php';
 
 $usid = (int) ($_SESSION['userid'] ?? 0);
-$kind = (isset($_POST['voucher_kind']) && $_POST['voucher_kind'] === 'payment') ? 'payment' : 'recive';
-$isPayment = $kind === 'payment';
-$proTybe = $isPayment
-    ? InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT']
-    : InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
-$typeName = $isPayment ? 'سند دفع متعدد' : 'سند قبض متعدد';
+$proTybe = InvoiceProcessor::ACCOUNTING_TYPES['MULTI_JOURNAL'];
+$typeName = 'قيد متعدد';
 
 $jdate = trim((string) ($_POST['jdate'] ?? ''));
 $details = trim((string) ($_POST['details'] ?? ''));
@@ -56,7 +52,7 @@ $valid = $details !== ''
     && $debitTotal > 0;
 
 if (!$valid) {
-    header('Location: ../addmulti_journal.php?t=' . $kind . '&error=1');
+    header('Location: ../addmulti_journal.php?error=1');
     exit;
 }
 
@@ -85,7 +81,7 @@ try {
     );
     $proNum = (string) $proId;
     $stmtHead->bind_param(
-        'iiiiiiissiiidi',
+        'iiiiiiisssiiidi',
         $proId,
         $branchId,
         $proTybe,
@@ -102,7 +98,7 @@ try {
         $usid
     );
     if (!$stmtHead->execute()) {
-        throw new RuntimeException('تعذر حفظ السند');
+        throw new RuntimeException('تعذر حفظ القيد');
     }
     $opId = (int) $conn->insert_id;
     $stmtHead->close();
@@ -186,9 +182,9 @@ try {
     $conn->commit();
 } catch (Throwable $e) {
     $conn->rollback();
-    header('Location: ../addmulti_journal.php?t=' . $kind . '&error=1');
+    header('Location: ../addmulti_journal.php?error=1');
     exit;
 }
 
-header('Location: ../vouchers.php?t=' . $kind);
+header('Location: ../daily_journal.php');
 exit;

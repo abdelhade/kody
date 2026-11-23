@@ -13,7 +13,7 @@ $where = ["h.isdeleted = 0"];
 $params = [];
 $types = "";
 
-// 1 = Recive (قبض), 2 = Payment (صرف/دفع), 16 = Transfer (تحويل نقدية بين الصناديق)
+// 1 = Recive (قبض), 2 = Payment (صرف/دفع), 16 = Transfer، 21/22 = قبض/دفع متعدد
 $receiptTypes = InvoiceProcessor::ACCOUNTING_TYPES['RECEIPT'] . ',' . InvoiceProcessor::ACCOUNTING_TYPES['MULTI_RECEIPT'];
 $paymentTypes = InvoiceProcessor::ACCOUNTING_TYPES['PAYMENT'] . ',' . InvoiceProcessor::ACCOUNTING_TYPES['MULTI_PAYMENT'];
 $allVoucherTypes = $receiptTypes . ',' . $paymentTypes . ',16';
@@ -100,7 +100,7 @@ $activeTab = match (true) {
 };
 $dateQuery = array_filter(['strt' => $startDate, 'end' => $endDate], fn ($v) => $v !== '');
 $filterTabs = [
-    ''         => ['label' => 'الكل',          'icon' => 'fa-list',         'class' => 'k-btn-secondary', 'count' => array_sum($typeCounts)],
+    ''         => ['label' => 'الكل',          'icon' => 'fa-list',         'class' => 'k-btn-secondary', 'count' => array_sum([$typeCounts[1], $typeCounts[2], $typeCounts[16]])],
     'recive'   => ['label' => 'سندات القبض',   'icon' => 'fa-arrow-down',   'class' => 'k-btn-success',   'count' => $typeCounts[1]],
     'payment'  => ['label' => 'سندات الدفع',   'icon' => 'fa-arrow-up',     'class' => 'k-btn-danger',    'count' => $typeCounts[2]],
     'transfer' => ['label' => 'تحويلات نقدية', 'icon' => 'fa-exchange-alt', 'class' => 'k-btn-info',      'count' => $typeCounts[16]],
