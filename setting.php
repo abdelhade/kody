@@ -572,6 +572,16 @@ endif;
                                        value="<?= htmlspecialchars((string)($rowstg['showclinc'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
                           </tr>
                           <tr>
+                            <td class="text-right px-4"><i class="fas fa-credit-card text-danger ml-2"></i> الكروت</td>
+                            <td class="px-4"><input type="number" name="showcards" class="form-control form-control-sm mx-auto" style="max-width: 120px;" min="0" max="1" step="1"
+                                       value="<?= htmlspecialchars((string)($rowstg['showcards'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                          </tr>
+                          <tr>
+                            <td class="text-right px-4"><i class="fas fa-user-check text-info ml-2"></i> الزيارات</td>
+                            <td class="px-4"><input type="number" name="showvisits" class="form-control form-control-sm mx-auto" style="max-width: 120px;" min="0" max="1" step="1"
+                                       value="<?= htmlspecialchars((string)($rowstg['showvisits'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>
+                          </tr>
+                          <tr>
                             <td class="text-right px-4"><i class="fas fa-users text-primary ml-2"></i> الموارد البشرية</td>
                             <td class="px-4"><input type="number" name="showhr" class="form-control form-control-sm mx-auto" style="max-width: 120px;" min="0" max="1" step="1"
                                        value="<?= htmlspecialchars((string)($rowstg['showhr'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>"></td>

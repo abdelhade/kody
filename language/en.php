@@ -417,7 +417,8 @@ $lang_balance_sheet = "Balance Sheet";
 $lang_profit_loss = "Profit & Loss";
 
 // System
-$lang_system = "System";
+$lang_system = "System Setup";
+$lang_settings = "Settings";
 $lang_accounts_opening_balance = "Accounts Opening Balance";
 $lang_items_opening_balance = "Items Opening Balance";
 

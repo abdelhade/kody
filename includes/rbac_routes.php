@@ -197,7 +197,7 @@ return [
         'store_transfer' => 'store_transfers.add',
         'barcode_print' => 'barcode_docs.add',
     ], 'default' => 'login'],
-    'manufacturing.php'        => 'custom',
+    'manufacturing.php'        => ['manufacturing.add', 'manufacturing.edit'],
     'do/dosave_manufacturing.php' => ['manufacturing.add', 'manufacturing.edit'],
     'ajax/manufacturing_preview.php' => ['manufacturing.add', 'manufacturing.edit'],
     'do/doadd_invoice.php'     => 'custom',
@@ -326,11 +326,11 @@ return [
 
     // ===== التأجير =====
     'add_rent.php'             => 'rent_contracts.add',
-    'rentables.php'            => ['rent_contracts.view', 'reports.rents'],
-    'rentcontracts.php'        => ['rent_contracts.view', 'reports.rents'],
+    'rentables.php'            => 'rent_contracts.view',
+    'rentcontracts.php'        => 'rent_contracts.view',
     'do/doadd_rent.php'        => 'rent_contracts.add',
     'do/start/dodel_rent.php'  => 'rent_contracts.delete',
-    'myrentables.php'          => ['rent_installments.collect', 'reports.rents'],
+    'myrentables.php'          => 'rent_installments.collect',
     'do/start/doaddinstallment.php' => 'rent_installments.collect',
 
     // ===== العيادات =====

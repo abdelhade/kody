@@ -28,6 +28,8 @@ $showhr = (int)($_POST['showhr'] ?? 0);
 $showatt = (int)($_POST['showatt'] ?? 0);
 $showclinc = (int)($_POST['showclinc'] ?? 0);
 $showrent = (int)($_POST['showrent'] ?? 0);
+$showcards = (int)($_POST['showcards'] ?? 0);
+$showvisits = (int)($_POST['showvisits'] ?? 0);
 $bodycolor = trim($_POST['bodycolor'] ?? 'solarized_white');
 if (!in_array($bodycolor, ['solarized_white', 'monokai', 'tokyo_night'])) {
     $bodycolor = 'solarized_white';
@@ -178,6 +180,8 @@ SET company_name = ?,
     bodycolor = ?, 
     showrent = ?, 
     showclinc = ?, 
+    showcards = ?,
+    showvisits = ?,
     def_pos_client = ?, 
     def_pos_store = ?, 
     def_pos_employee = ?, 
@@ -208,10 +212,10 @@ WHERE 1";
 $stmt = $conn->prepare($sql);
 
 if ($company_logo !== '') {
-    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssissss",
+    $stmt->bind_param("sssssiiiisiiiiiiiisiiiddiississssisssss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
-        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $showrent, $showclinc, $showcards, $showvisits, $def_pos_client, $def_pos_store,
         $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,
@@ -223,10 +227,10 @@ if ($company_logo !== '') {
         $backup_path
     );
 } else {
-    $stmt->bind_param("sssssiiiisiiiiiisiiiddiississsssisss",
+    $stmt->bind_param("sssssiiiisiiiiiiiisiiiddiississssissss",
         $companyname, $companyadd, $companytel, $edit_pass, $lang,
         $acc_rent, $showhr, $showatt, $showpayroll, $bodycolor,
-        $showrent, $showclinc, $def_pos_client, $def_pos_store,
+        $showrent, $showclinc, $showcards, $showvisits, $def_pos_client, $def_pos_store,
         $def_pos_employee, $def_pos_fund, $pos_type, $pos_has_password, $pos_blind_close,
         $showpulse, $emp_commission, $user_commission,
         $receipt_show_logo, $receipt_font_size, $receipt_paper_width,

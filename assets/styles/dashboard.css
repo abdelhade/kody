@@ -39,74 +39,77 @@
     margin-bottom: 0.75rem !important;
 }
 
-/* كروت الشاشة الرئيسية الكبيرة فقط — ليس داخل .sales-stats */
+/* كروت الشاشة الرئيسية الكبيرة فقط — أبيض + outline، الأيقونات ملونة */
 .dashboard-cards .stat-card {
     position: relative;
     border-radius: 12px;
     padding: 0.85rem 1rem;
-    color: white;
+    color: var(--neutral-800);
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-    border: none;
+    box-shadow: none;
+    border: 1px solid var(--neutral-200);
+    background: #fff !important;
     height: 100%;
     min-height: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
 }
 
 .dashboard-cards .stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
+    border-color: var(--neutral-300);
 }
 
-.card-icon {
+.dashboard-cards .card-icon {
     position: absolute;
     top: 0.75rem;
     left: 0.85rem;
     font-size: 1.35rem;
-    opacity: 0.25;
+    opacity: 1;
     transition: all 0.3s ease;
+    color: var(--primary-color);
 }
 
 .dashboard-cards .stat-card:hover .card-icon {
     transform: scale(1.1);
-    opacity: 0.4;
 }
 
-.card-content {
+.dashboard-cards .card-content {
     text-align: right;
     margin-top: 0.35rem;
     z-index: 2;
     position: relative;
 }
 
-.stat-number {
+.dashboard-cards .stat-number {
     font-size: 1.45rem;
     font-weight: 700;
     margin-bottom: 0.2rem;
     line-height: 1.15;
+    color: var(--neutral-900);
 }
 
 .dashboard-cards .stat-label {
     font-size: 0.8rem;
-    opacity: 0.9;
+    opacity: 1;
     margin-bottom: 0;
     font-weight: 500;
+    color: var(--neutral-500);
 }
 
-.card-footer-det {
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+.dashboard-cards .card-footer-det {
+    border-top: 1px solid var(--neutral-200);
     padding-top: 0.55rem;
     margin-top: 0.55rem;
     z-index: 2;
     position: relative;
 }
 
-.card-link {
-    color: white;
+.dashboard-cards .card-link {
+    color: var(--neutral-600);
     text-decoration: none;
     display: flex;
     justify-content: space-between;
@@ -116,23 +119,27 @@
     font-size: 0.75rem;
 }
 
-.card-link:hover {
-    color: white;
+.dashboard-cards .card-link:hover {
+    color: var(--primary-color);
     transform: translateX(-3px);
 }
 
-.wave-effect {
-    position: absolute;
-    inset: auto -20% -40% auto;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    pointer-events: none;
-    z-index: 1;
+.dashboard-cards .wave-effect {
+    display: none;
 }
 
-/* تدرجات الألوان للبطاقات — غامقة */
+/* ألوان الأيقونات حسب نوع الكرت */
+.dashboard-cards .bg-gradient-primary .card-icon { color: #4B5694; }
+.dashboard-cards .bg-gradient-info .card-icon { color: #2563eb; }
+.dashboard-cards .bg-gradient-success .card-icon { color: #059669; }
+.dashboard-cards .bg-gradient-warning .card-icon { color: #d97706; }
+.dashboard-cards .bg-gradient-secondary .card-icon { color: #6b7280; }
+.dashboard-cards .bg-gradient-dark .card-icon { color: #111844; }
+.dashboard-cards .bg-gradient-brand .card-icon { color: #4B5694; }
+.dashboard-cards .bg-gradient-soft .card-icon { color: #2a3568; }
+.dashboard-cards .bg-gradient-light .card-icon { color: #7288AE; }
+
+/* تدرجات الألوان — للأزرار والعناصر خارج كروت الداشبورد */
 .bg-gradient-primary {
     background: linear-gradient(135deg, #4B5694 0%, #7288AE 100%) !important;
 }
@@ -169,6 +176,20 @@
     background: linear-gradient(135deg, #2a3568 0%, #4B5694 100%) !important;
 }
 
+/* إجبار كروت الداشبورد على خلفية بيضاء حتى مع كلاسات التدرج */
+.dashboard-cards .stat-card.bg-gradient-primary,
+.dashboard-cards .stat-card.bg-gradient-info,
+.dashboard-cards .stat-card.bg-gradient-success,
+.dashboard-cards .stat-card.bg-gradient-warning,
+.dashboard-cards .stat-card.bg-gradient-secondary,
+.dashboard-cards .stat-card.bg-gradient-dark,
+.dashboard-cards .stat-card.bg-gradient-brand,
+.dashboard-cards .stat-card.bg-gradient-soft,
+.dashboard-cards .stat-card.bg-gradient-light {
+    background: #fff !important;
+    color: var(--neutral-800);
+}
+
 /* ===== أزرار الإجراءات السريعة ===== */
 .quick-actions-section {
     padding: 1.5rem 0;
@@ -201,14 +222,14 @@
     padding: 1.25rem;
     border-radius: 12px;
     text-decoration: none;
-    color: white;
+    color: var(--neutral-800);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    border: none;
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--neutral-200);
+    box-shadow: none;
     height: 100%;
-    background: var(--neutral-700);
+    background: #fff !important;
 }
 
 .action-card-main .action-btn,
@@ -230,7 +251,8 @@
     font-size: 1.75rem;
     margin-bottom: 0.5rem;
     transition: all 0.3s ease;
-    opacity: 0.9;
+    opacity: 1;
+    color: var(--primary-color);
 }
 
 .action-card-half .btn-icon {
@@ -246,33 +268,58 @@
     font-weight: 600;
     font-size: 0.95rem;
     margin-bottom: 0.25rem;
+    color: var(--neutral-800);
 }
 
 .btn-subtitle {
     display: block;
     font-size: 0.75rem;
-    opacity: 0.8;
+    color: var(--neutral-500);
+}
+
+.btn-hover-effect {
+    color: var(--neutral-400);
 }
 
 /* تأثيرات Hover */
 .action-btn:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
+    border-color: var(--neutral-300);
     text-decoration: none;
-    color: white;
+    color: var(--neutral-800);
+    background: #fff !important;
 }
 
 .action-btn:hover .btn-icon {
     transform: scale(1.05);
 }
 
-/* ألوان الأزرار */
-.btn-primary { background: linear-gradient(135deg, #4B5694, #7288AE); }
-.btn-success { background: linear-gradient(135deg, #059669, #10b981); }
-.btn-warning { background: linear-gradient(135deg, #d97706, #f59e0b); }
-.btn-info { background: linear-gradient(135deg, #0ea5e9, #3b82f6); }
-.btn-secondary { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-.btn-dark { background: linear-gradient(135deg, #374151, #4b5563); }
+.action-btn:hover .btn-title {
+    color: var(--neutral-900);
+}
+
+/* ألوان الأيقونات للاختصارات */
+.action-tone-dark .btn-icon { color: var(--primary-dark); }
+.action-tone-primary .btn-icon { color: var(--primary-color); }
+.action-tone-light .btn-icon { color: var(--primary-light); }
+.action-tone-brand .btn-icon { color: #4B5694; }
+.action-tone-warning .btn-icon { color: var(--warning-color); }
+.action-tone-info .btn-icon { color: var(--info-color); }
+.action-tone-success .btn-icon { color: var(--success-color); }
+
+.quick-actions-section .action-btn.bg-gradient-primary,
+.quick-actions-section .action-btn.bg-gradient-info,
+.quick-actions-section .action-btn.bg-gradient-success,
+.quick-actions-section .action-btn.bg-gradient-warning,
+.quick-actions-section .action-btn.bg-gradient-secondary,
+.quick-actions-section .action-btn.bg-gradient-dark,
+.quick-actions-section .action-btn.bg-gradient-brand,
+.quick-actions-section .action-btn.bg-gradient-soft,
+.quick-actions-section .action-btn.bg-gradient-light {
+    background: #fff !important;
+    color: var(--neutral-800);
+}
 
 /* ===== البطاقات والجداول ===== */
 .dashboard-widgets {

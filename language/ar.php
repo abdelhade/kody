@@ -200,7 +200,7 @@ $lang_addhicont_user = "المستخدم";
 $lang_cvs = "السير الذاتيه";
 
 // CRM
-$lang_crm = "ادارة العلاقة مع العملاء";
+$lang_crm = "CRM";
 $lang_import_clients_acc = "ادخال العملاء من الحسابات";
 $lang_advanced_client_entry = "ادخال العملاء متقدم";
 $lang_chances_management = "ادارة الفرص";
@@ -220,7 +220,7 @@ $lang_balance_sheet = "تقرير الميزانية";
 $lang_profit_loss = "الأرباح والخسائر";
 
 // System
-$lang_system = "النظام";
+$lang_system = "إعداد النظام";
 $lang_accounts_opening_balance = "الرصيد الافتتاحي للحسابات";
 $lang_items_opening_balance = "الرصيد الافتتاحي للأصناف";
 

@@ -240,99 +240,31 @@
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="stock" style="display: none;">
 
-
-              <li class="nav-item">
-                <a href="add_item.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_new_item ?>
-                  </p>
-                </a>
-              </li>
-
-
-
-
-              <li class="nav-item">
-                <a href="acc_report.php?acc=stores" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_stores ?>
-                  </p>
-                </a>
-              </li>
-
-
               <li class="nav-item" id="myitems">
                 <a href="myitems.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_items ?>
-                  </p>
+                  <p><?= $lang_items ?></p>
                 </a>
               </li>
-
-              <li class="nav-item" id="deleteditems">
-                <a href="deleted_items.php" class="nav-link">
-                  <i class="nav-icon fas fa-trash-alt"></i>
-                  <p>
-                    <?= $lang_deleted_items ?? 'الاصناف المحذوفه' ?>
-                  </p>
-                </a>
-              </li>
-
 
               <li class="nav-item">
                 <a href="myunits.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_units ?>
-                  </p>
+                  <p><?= $lang_units ?></p>
                 </a>
               </li>
-
 
               <li class="nav-item">
                 <a href="mygroups.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_groups ?>
-                  </p>
+                  <p><?= $lang_groups ?></p>
                 </a>
               </li>
 
               <li class="nav-item">
                 <a href="item_categories.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_categories ?>
-                  </p>
-                </a>
-              </li>
-
-              <li class="nav-item" id="edititemgroups">
-                <a href="edit_item_groups.php" class="nav-link">
-                  <i class="nav-icon fas fa-object-group"></i>
-                  <p>تعديل المجموعات للاصناف</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="barcode_search.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_item_price ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="items_start_balance.php" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_opening_balances_stores ?>
-                  </p>
+                  <p><?= $lang_categories ?></p>
                 </a>
               </li>
 
@@ -344,40 +276,11 @@
               </li>
 
               <li class="nav-item">
-                <a href="inventory_audit.php" class="nav-link">
-                  <i class="nav-icon fas fa-clipboard-check"></i>
-                  <p><?= $lang_inventory_audit ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="sales.php?q=store_transfer" class="nav-link">
-                  <i class="nav-icon fas fa-exchange-alt"></i>
-                  <p>تحويل مخزني</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="operations_summary.php?q=store_transfer" class="nav-link">
+                <a href="barcode_search.php" class="nav-link">
                   <i class="nav-icon fas fa-list"></i>
-                  <p>سجل التحويلات المخزنية</p>
+                  <p><?= $lang_item_price ?></p>
                 </a>
               </li>
-
-              <li class="nav-item">
-                <a href="manufacturing.php" class="nav-link">
-                  <i class="nav-icon fas fa-industry"></i>
-                  <p>أمر تصنيع</p>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a href="operations_summary.php?q=manufacturing" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>سجل التصنيع</p>
-                </a>
-              </li>
-
 
             </ul>
           </li>
@@ -483,12 +386,14 @@
                       </a>
                     </li>
 
+                    <?php if (($rowstg['showvisits'] ?? 0) == 1) { ?>
                     <li class="nav-item">
                       <a href="visits.php" class="nav-link">
                         <i class="nav-icon fas fa-user-check"></i>
                         <p><?= $lang_visits ?? 'الزيارات' ?></p>
                       </a>
                     </li>
+                    <?php } ?>
                   </ul>
                 </li>
               </ul>
@@ -550,6 +455,83 @@
                   </p>
                 </a>
               </li>
+            </ul>
+          </li>
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-boxes"></i>
+              <p>
+                عمليات المخزون
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="stock-ops" style="display: none;">
+
+              <li class="nav-item">
+                <a href="items_start_balance.php" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p><?= $lang_opening_balances_stores ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item" id="edititemgroups">
+                <a href="edit_item_groups.php" class="nav-link">
+                  <i class="nav-icon fas fa-object-group"></i>
+                  <p>تعديل مجموعات الأصناف</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="inventory_audit.php" class="nav-link">
+                  <i class="nav-icon fas fa-clipboard-check"></i>
+                  <p><?= $lang_inventory_audit ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="sales.php?q=store_transfer" class="nav-link">
+                  <i class="nav-icon fas fa-exchange-alt"></i>
+                  <p>تحويل مخزني</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=store_transfer" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>التحويلات المخزنية</p>
+                </a>
+              </li>
+
+            </ul>
+          </li>
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-industry"></i>
+              <p>
+                التصنيع
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="manufacturing-menu" style="display: none;">
+
+              <li class="nav-item">
+                <a href="manufacturing.php" class="nav-link">
+                  <i class="nav-icon fas fa-industry"></i>
+                  <p>أمر تصنيع</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="operations_summary.php?q=manufacturing" class="nav-link">
+                  <i class="nav-icon fas fa-list"></i>
+                  <p>سجل التصنيع</p>
+                </a>
+              </li>
+
             </ul>
           </li>
 
@@ -645,6 +627,29 @@
                 </a>
               </li>
 
+              <li class="nav-item has-treeview">
+                <a href="#" class="nav-link nav-link-basic">
+                  <i class="nav-icon fas fa-building"></i>
+                  <p>
+                    <?= $lang_assets_operations ?>
+                    <i class="fas fa-angle-left right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+                  <li class="nav-item">
+                    <a href="add_journal.php?a=1" class="nav-link">
+                      <i class="nav-icon fas fa-list"></i>
+                      <p><?= $lang_buy_asset ?></p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="add_journal.php?a=2" class="nav-link">
+                      <i class="nav-icon fas fa-list"></i>
+                      <p><?= $lang_sell_asset ?></p>
+                    </a>
+                  </li>
+                </ul>
+              </li>
 
             </ul>
           </li>
@@ -673,13 +678,6 @@
                     <p>تارجيت الموظفين</p>
                   </a>
                 </li> -->
-
-                <li class="nav-item">
-                  <a href="acc_report.php?acc=delivery" class="nav-link">
-                    <i class="far "> <i class="nav-icon fas fa-motorcycle"></i> </i>
-                    <p>ديليفري</p>
-                  </a>
-                </li>
 
                 <li class="nav-item">
                   <a href="shifts.php" class="nav-link">
@@ -1012,6 +1010,7 @@
             <?php } ?>
 
 
+        <?php if (($rowstg['showcards'] ?? 0) == 1) { ?>
         <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-credit-card"></i>
@@ -1030,8 +1029,6 @@
                 </a>
               </li>
 
-
-
               <li class="nav-item" id="card-pass">
                 <a href="booking.php" class="nav-link">
                   <i class="nav-icon fas fa-arrow-right"></i>
@@ -1046,16 +1043,9 @@
                 </a>
               </li>
 
-              <li class="nav-item" id="card-clients">
-                <a href="clients.php" class="nav-link">
-                  <i class="nav-icon fas fa-users"></i>
-                  <p><?= $lang_client_management ?></p>
-                </a>
-              </li>
-
-
             </ul>
           </li>
+        <?php } ?>
 
 
         <?php if (($rowstg['showrent'] ?? 0) == 1) { ?>
@@ -1069,16 +1059,6 @@
               </a>
               <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
 
-
-                <li class="nav-item">
-                  <a href="acc_report.php?acc=rentable" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p>
-                      <?= $lang_rentable_assets ?>
-                    </p>
-                  </a>
-                </li>
-
                 <li class="nav-item">
                   <a href="add_rent.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
@@ -1087,7 +1067,6 @@
                     </p>
                   </a>
                 </li>
-
 
                 <li class="nav-item">
                   <a href="rentables.php" class="nav-link">
@@ -1098,7 +1077,6 @@
                   </a>
                 </li>
 
-
                 <li class="nav-item">
                   <a href="myrentables.php" class="nav-link">
                     <i class="nav-icon fas fa-list"></i>
@@ -1108,24 +1086,11 @@
                   </a>
                 </li>
 
-
-
               </ul>
             </li>
         <?php } ?>
 
 
-
-        
-
-
-
-
-
-
-
-
-        <!-- clinck -->
         <?php if (($rowstg['showclinc'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -1146,7 +1111,7 @@
                 </li>
 
                 <li class="nav-item">
-                  <a href="clients.php" class="nav-link">
+                  <a href="patients.php" class="nav-link">
                     <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                     <p><?= $lang_patient_data ?></p>
                   </a>
@@ -1184,25 +1149,17 @@
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-tasks"></i>
               <p>
-                <?= $lang_client_management ?>
+                <?= $lang_crm ?>
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a>
             <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-              <li class="nav-item">
-                <a href="acc_report.php?acc=clients" class="nav-link">
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                  <p><?= $lang_import_clients_acc ?></p>
-                </a>
-              </li>
-
               <li class="nav-item">
                 <a href="clients.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                   <p><?= $lang_advanced_client_entry ?></p>
                 </a>
               </li>
-
 
               <li class="nav-item">
                 <a href="chances.php" class="nav-link">
@@ -1211,8 +1168,7 @@
                 </a>
               </li>
 
-
-              <li class="nav-item has-treeview">
+              <li class="nav-item">
                 <a href="calls.php" class="nav-link">
                   <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
                   <p>
@@ -1220,124 +1176,70 @@
                   </p>
                 </a>
               </li>
+            </ul>
+          </li>
+
+        
+
+
+
+
+
+
+        <li class="nav-item" id="reports-menu">
+            <a href="reports.php" class="nav-link" id="reports-link">
+              <i class="nav-icon fas fa-chart-line"></i>
+              <p><?= $lang_sidereports ?></p>
+            </a>
+          </li>
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-cog"></i>
+              <p><?= $lang_settings ?>
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+
+              <li class="nav-item">
+                <a href="change_password.php" class="nav-link">
+                  <i class="nav-icon fas fa-key"></i>
+                  <p><?= $lang_change_password ?></p>
+                </a>
+              </li>
 
               <li class="nav-item has-treeview">
-                <a href="#" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-
+                <a href="#" class="nav-link nav-link-basic">
+                  <i class="nav-icon fas fa-sliders-h"></i>
                   <p>
-                    <?= $lang_siderequests ?>
+                    <?= $lang_system ?>
                     <i class="fas fa-angle-left right"></i>
                   </p>
                 </a>
                 <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
                   <li class="nav-item">
-                    <a href="orders.php" class="nav-link">
-                      <i class="far "> --- </i>
-                      <p><?= $lang_siderequestsmanagement ?></p>
+                    <a href="setting.php" class="nav-link">
+                      <i class="nav-icon fas fa-cogs"></i>
+                      <p>إعدادات عامة</p>
                     </a>
                   </li>
-
+                  <li class="nav-item">
+                    <a href="start_balance.php" class="nav-link">
+                      <i class="nav-icon fas fa-list "></i>
+                      <p><?= $lang_accounts_opening_balance ?></p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="items_start_balance.php" class="nav-link">
+                      <i class="nav-icon fas fa-list "></i>
+                      <p><?= $lang_items_opening_balance ?></p>
+                    </a>
+                  </li>
                 </ul>
               </li>
-            </ul>
-          </li>
-
-        
-
-
-
-
-
-
-        <!-- تغيير كلمة المرور -->
-        <li class="nav-item">
-          <a href="change_password.php" class="nav-link">
-            <i class="nav-icon fas fa-key"></i>
-            <p><?= $lang_change_password ?></p>
-          </a>
-        </li><li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-book"></i>
-              <p><?= $lang_system ?>
-                <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-
-
-              <li class="nav-item">
-                <a href="start_balance.php" class="nav-link">
-                  <i class="nav-icon fas fa-list "></i>
-                  <p> <?= $lang_accounts_opening_balance ?>
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="items_start_balance.php" class="nav-link">
-                  <i class="nav-icon fas fa-list "></i>
-                  <p><?= $lang_items_opening_balance ?></p>
-                </a>
-              </li>
-
-
 
             </ul>
-          </li>
-        
-
-
-
-
-
-
-
-
-        
-          <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-book"></i>
-              <p>
-                <?= $lang_assets_operations ?>
-                <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-
-
-              <li class="nav-item">
-                <a href="add_journal.php?a=1" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p>
-                    <?= $lang_buy_asset ?>
-
-                  </p>
-                </a>
-              </li>
-
-
-              <li class="nav-item">
-                <a href="add_journal.php?a=2" class="nav-link">
-                  <i class="nav-icon fas fa-list"></i>
-                  <p><?= $lang_sell_asset ?>
-                  </p>
-                </a>
-              </li>
-
-
-            </ul>
-          </li>
-        
-
-
-                  <li class="nav-item" id="reports-menu">
-            <a href="reports.php" class="nav-link" id="reports-link">
-              <i class="nav-icon fas fa-chart-line"></i>
-              <p><?= $lang_sidereports ?></p>
-            </a>
           </li>
         
 
@@ -1374,7 +1276,7 @@
       }
 
       if (window.location.href.includes('edit_item_groups.php')) {
-        $('#stock').show().addClass('bg-slate-100');
+        $('#stock-ops').show().addClass('bg-slate-100');
         $('#edititemgroups').addClass('bg-slate-200');
       }
 
@@ -1382,6 +1284,18 @@
         $('#clinic').show().addClass('bg-slate-100');
         $('#reservations').addClass('bg-slate-200');
       }
+
+      // قسم رئيسي يتفتح → يقفل باقي الأقسام الرئيسية فقط (الداخلي ميقفلش حاجة)
+      $(document).on('click', '.nav-sidebar > .nav-item.has-treeview > .nav-link', function () {
+        var $li = $(this).parent('.nav-item');
+        $li.siblings('.nav-item.menu-open').each(function () {
+          var $sib = $(this);
+          $sib.removeClass('menu-open');
+          $sib.children('ul.nav-treeview').stop(true, true).slideUp(300);
+          $sib.find('.nav-item.menu-open').removeClass('menu-open');
+          $sib.find('ul.nav-treeview').stop(true, true).slideUp(300);
+        });
+      });
 
       // لما أي قائمة تتفتح، سكرول لآخر السايد بار
       var sidebarEl = document.querySelector('.sidebar');

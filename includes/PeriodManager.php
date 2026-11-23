@@ -262,6 +262,7 @@ class PeriodManager
 
         $runner = new MigrationRunner($admin);
         $mig = $runner->runPending();
+        $this->applyFreshModuleDefaults($admin);
         $this->ensurePeriodMeta($admin, $dbName, $label ?: $dbName, null);
         $finished = true;
 
@@ -277,6 +278,29 @@ class PeriodManager
             'migrations' => $mig,
             'status' => $runner->status(),
         ];
+    }
+
+    /**
+     * بعد إنشاء قاعدة جديدة من DB.sql: إخفاء الموديولات الاختيارية افتراضياً.
+     */
+    private function applyFreshModuleDefaults(mysqli $conn): void
+    {
+        $cols = [];
+        $res = $conn->query("SHOW COLUMNS FROM `settings`");
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $cols[strtolower((string) $row['Field'])] = true;
+            }
+        }
+        $sets = [];
+        foreach (['showrent', 'showclinc', 'showcards', 'showvisits'] as $col) {
+            if (isset($cols[$col])) {
+                $sets[] = "`$col` = 0";
+            }
+        }
+        if ($sets !== []) {
+            $conn->query('UPDATE `settings` SET ' . implode(', ', $sets));
+        }
     }
 
     // ─── Restore backup ──────────────────────────────────────────

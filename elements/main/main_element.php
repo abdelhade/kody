@@ -5,7 +5,7 @@
             <div class="action-card-group">
                 <!-- إضافة صنف -->
                 <div class="action-card-main">
-                    <a href="add_item.php" class="action-btn" style="background: var(--primary-dark) !important;">
+                    <a href="add_item.php" class="action-btn action-tone-dark">
                         <div class="btn-icon">
                             <i class="fas fa-box-open"></i>
                         </div>
@@ -21,7 +21,7 @@
                 <div class="action-card-row">
                     <!-- إضافة عميل -->
                     <div class="action-card-half">
-                        <a href="add_account.php?parent_id=122" class="action-btn" style="background: var(--primary-color) !important;">
+                        <a href="add_account.php?parent_id=122" class="action-btn action-tone-primary">
                             <div class="btn-icon">
                                 <i class="fas fa-user-plus"></i>
                             </div>
@@ -33,7 +33,7 @@
                     
                     <!-- إضافة مورد -->
                     <div class="action-card-half">
-                        <a href="add_account.php?parent_id=211" class="action-btn" style="background: var(--primary-light) !important;">
+                        <a href="add_account.php?parent_id=211" class="action-btn action-tone-light">
                             <div class="btn-icon">
                                 <i class="fas fa-truck-loading"></i>
                             </div>
@@ -51,7 +51,7 @@
             <div class="action-card-group">
                 <!-- فاتورة مبيعات -->
                 <div class="action-card-main">
-                    <a href="sales.php?q=sale" class="action-btn bg-gradient-dark">
+                    <a href="sales.php?q=sale" class="action-btn action-tone-dark">
                         <div class="btn-icon">
                             <i class="fas fa-receipt"></i>
                         </div>
@@ -67,7 +67,7 @@
                 <div class="action-card-row">
                     <!-- سند قبض -->
                     <div class="action-card-half">
-                        <a href="add_voucher.php?t=recive" class="action-btn" style="background: var(--primary-dark) !important;">
+                        <a href="add_voucher.php?t=recive" class="action-btn action-tone-dark">
                             <div class="btn-icon">
                                 <i class="fas fa-hand-holding-usd"></i>
                             </div>
@@ -79,7 +79,7 @@
                     
                     <!-- مرتجع مبيعات -->
                     <div class="action-card-half">
-                        <a href="sales.php?q=rebuy" class="action-btn" style="background: var(--primary-color) !important;">
+                        <a href="sales.php?q=rebuy" class="action-btn action-tone-primary">
                             <div class="btn-icon">
                                 <i class="fas fa-undo-alt"></i>
                             </div>
@@ -97,7 +97,7 @@
             <div class="action-card-group">
                 <!-- فاتورة مشتريات -->
                 <div class="action-card-main">
-                    <a href="sales.php?q=purchase" class="action-btn" style="background: var(--primary-light) !important;">
+                    <a href="sales.php?q=purchase" class="action-btn action-tone-light">
                         <div class="btn-icon">
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>
@@ -113,7 +113,7 @@
                 <div class="action-card-row">
                     <!-- سند دفع -->
                     <div class="action-card-half">
-                        <a href="add_voucher.php?t=payment" class="action-btn bg-gradient-brand">
+                        <a href="add_voucher.php?t=payment" class="action-btn action-tone-brand">
                             <div class="btn-icon">
                                 <i class="fas fa-money-check-alt"></i>
                             </div>
@@ -125,7 +125,7 @@
                     
                     <!-- مرتجع مشتريات -->
                     <div class="action-card-half">
-                        <a href="sales.php?q=resale" class="action-btn" style="background: var(--primary-dark) !important;">
+                        <a href="sales.php?q=resale" class="action-btn action-tone-dark">
                             <div class="btn-icon">
                                 <i class="fas fa-exchange-alt"></i>
                             </div>
@@ -143,7 +143,7 @@
             <div class="action-card-group">
                 <!-- Pulse تقييم لحظي -->
                 <div class="action-card-main">
-                    <a href="pulse.php" class="action-btn" style="background: var(--warning-color) !important;">
+                    <a href="pulse.php" class="action-btn action-tone-warning">
                         <div class="btn-icon">
                             <i class="fas fa-bolt"></i>
                         </div>
@@ -159,7 +159,7 @@
                 <div class="action-card-row">
                     <!-- إحصائيات Pulse -->
                     <div class="action-card-half">
-                        <a href="pulse_stats.php" class="action-btn" style="background: var(--info-color) !important;">
+                        <a href="pulse_stats.php" class="action-btn action-tone-info">
                             <div class="btn-icon">
                                 <i class="fas fa-chart-bar"></i>
                             </div>
@@ -171,7 +171,7 @@
                     
                     <!-- قائمة الاصناف -->
                     <div class="action-card-half">
-                        <a href="myitems.php" class="action-btn" style="background: var(--primary-color) !important;">
+                        <a href="myitems.php" class="action-btn action-tone-primary">
                             <div class="btn-icon">
                                 <i class="fas fa-warehouse"></i>
                             </div>

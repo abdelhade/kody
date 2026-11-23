@@ -50,17 +50,33 @@ return [
     ],
 
     'inventory' => [
-        'label' => 'المخزون',
+        'label' => 'إدارة المخزون',
         'sid'   => ['sid_stock'],
         'items' => [
             ['crud'   => 'items',                 'label' => 'الأصناف',                    'legacy' => 'cols:items'],
             ['crud'   => 'item_groups',           'label' => 'مجموعات وتصنيفات الأصناف',   'legacy' => 'cols:item_groups'],
             ['crud'   => 'units',                 'label' => 'الوحدات',                    'legacy' => 'col:edit_items'],
             ['single' => 'items.pricing',         'label' => 'التسعير والباركود وإعادة احتساب التكلفة', 'legacy' => 'col:edit_items'],
-            ['single' => 'items.opening_balance', 'label' => 'أرصدة أول المدة للأصناف',    'legacy' => 'col:edit_items'],
-            ['crud'   => 'manufacturing',         'label' => 'التصنيع',                    'legacy' => 'role1'],
-            ['single' => 'inventory.audit',       'label' => 'جرد المخزن',                 'legacy' => 'col:sid_stock'],
+            ['single' => 'items.auto_invoice',    'label' => 'إنشاء صنف تلقائي من الفاتورة', 'legacy' => 'col:edit_items'],
             ['single' => 'stock.sell_negative',   'label' => 'البيع بأكثر من رصيد المخزن', 'legacy' => 'not:prevent_negative_stock'],
+        ],
+    ],
+
+    'stock_ops' => [
+        'label' => 'عمليات المخزون',
+        'sid'   => ['sid_stock'],
+        'items' => [
+            ['single' => 'items.opening_balance', 'label' => 'أرصدة أول المدة للأصناف', 'legacy' => 'col:edit_items'],
+            ['single' => 'inventory.audit',       'label' => 'جرد المخزون',            'legacy' => 'col:sid_stock'],
+            ['crud'   => 'store_transfers',       'label' => 'تحويل مخزني',            'legacy' => 'role1'],
+        ],
+    ],
+
+    'manufacturing' => [
+        'label' => 'التصنيع',
+        'sid'   => ['sid_stock'],
+        'items' => [
+            ['crud' => 'manufacturing', 'label' => 'التصنيع', 'legacy' => 'role1'],
         ],
     ],
 
@@ -114,6 +130,7 @@ return [
             ['crud' => 'purchases',        'label' => 'فواتير المشتريات', 'legacy' => 'cols:purchases'],
             ['crud' => 'purchase_returns', 'label' => 'مردود المشتريات',  'legacy' => 'cols:repurchases'],
             ['crud' => 'purchase_orders',  'label' => 'أوامر الشراء',     'legacy' => 'cols:purchases'],
+            ['crud' => 'barcode_docs',     'label' => 'مستندات طباعة الباركود', 'legacy' => 'cols:purchases'],
         ],
     ],
 
@@ -165,8 +182,8 @@ return [
         ],
     ],
 
-    'hr' => [
-        'label' => 'الموارد البشرية',
+    'job_data' => [
+        'label' => 'بيانات الوظائف',
         'sid'   => ['sid_hr'],
         'items' => [
             ['crud' => 'employees',           'label' => 'الموظفين',            'legacy' => 'cols:employees'],
@@ -177,14 +194,12 @@ return [
             ['crud' => 'shifts',              'label' => 'الورديات',            'legacy' => 'any:sid_hr|sid_payroll'],
             ['crud' => 'hr_operations',       'label' => 'تعريف العمليات وخطواتها', 'legacy' => 'col:sid_hr'],
             ['crud' => 'employee_operations', 'label' => 'عمليات الموظفين',     'legacy' => 'col:sid_hr'],
-            ['crud' => 'pulse',               'label' => 'تقييمات Pulse',       'legacy' => 'col:sid_hr'],
-            ['crud' => 'pulse_types',         'label' => 'أنواع التقييم',       'legacy' => 'col:sid_hr'],
         ],
     ],
 
     'tasks' => [
-        'label' => 'المهام والأداء والتعاقدات',
-        'sid'   => ['sid_payroll'],
+        'label' => 'الموارد البشرية',
+        'sid'   => ['sid_payroll', 'sid_hr'],
         'items' => [
             ['crud'   => 'tasks',          'label' => 'المهام',                         'legacy' => 'col:sid_payroll'],
             ['single' => 'tasks.view_all', 'label' => 'عرض مهام كل الموظفين',           'legacy' => 'col:show_all_tasks'],
@@ -193,11 +208,13 @@ return [
             ['crud'   => 'contracts',      'label' => 'عقود التدريب والتعيين والتعهيد', 'legacy' => 'col:sid_payroll'],
             ['crud'   => 'cvs',            'label' => 'السير الذاتية',                  'legacy' => 'col:sid_payroll'],
             ['crud'   => 'requests',       'label' => 'الطلبات (إجازات وغيرها)',        'legacy' => 'all'],
+            ['crud'   => 'pulse',          'label' => 'تقييمات Pulse',                  'legacy' => 'col:sid_hr'],
+            ['crud'   => 'pulse_types',    'label' => 'أنواع التقييم',                  'legacy' => 'col:sid_hr'],
         ],
     ],
 
     'payroll' => [
-        'label' => 'الحضور والمرتبات',
+        'label' => 'الحضور والانصراف',
         'sid'   => ['sid_payroll'],
         'items' => [
             ['crud'   => 'attendance',         'label' => 'سجل الحضور والبصمات والأذونات', 'legacy' => 'cols:attandance'],
@@ -209,7 +226,7 @@ return [
     ],
 
     'crm' => [
-        'label' => 'إدارة علاقات العملاء',
+        'label' => 'CRM',
         'sid'   => ['sid_crm'],
         'items' => [
             ['crud' => 'crm_clients',    'label' => 'العملاء (متقدم)',          'legacy' => 'cols:advanced_clients'],
@@ -247,7 +264,7 @@ return [
     ],
 
     'system' => [
-        'label' => 'الإعدادات والنظام',
+        'label' => 'الإعدادات',
         'sid'   => [],
         'items' => [
             ['single' => 'settings.manage', 'label' => 'الإعدادات العامة',                 'legacy' => 'role1'],
