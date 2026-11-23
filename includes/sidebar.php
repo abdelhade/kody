@@ -650,69 +650,6 @@
           </li>
 
 
-        <li class="nav-item has-treeview">
-            <a href="#" class="nav-link nav-link-basic">
-              <i class="nav-icon fas fa-credit-card"></i>
-              <p>
-                <?= $lang_card_management_title ?> <i class="fas fa-angle-left right"></i>
-              </p>
-            </a>
-            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="cards" style="display: none;">
-
-              <li class="nav-item">
-                <a href="add_booking.php" class="nav-link">
-                  <i class="nav-icon fas fa-plus"></i>
-                  <p>
-                    <?= $lang_add_card ?>
-                  </p>
-                </a>
-              </li>
-
-
-
-              <li class="nav-item" id="card-pass">
-                <a href="booking.php" class="nav-link">
-                  <i class="nav-icon fas fa-arrow-right"></i>
-                  <p><?= $lang_card_pass ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item" id="card-management">
-                <a href="bookings.php" class="nav-link">
-                  <i class="nav-icon fas fa-cogs"></i>
-                  <p><?= $lang_card_management ?></p>
-                </a>
-              </li>
-
-              <li class="nav-item" id="card-clients">
-                <a href="clients.php" class="nav-link">
-                  <i class="nav-icon fas fa-users"></i>
-                  <p><?= $lang_client_management ?></p>
-                </a>
-              </li>
-
-
-            </ul>
-          </li>
-
-
-        
-
-
-
-
-        <!--                                                                        --><!--                                                                        -->
-
-        <!--                                                                        -->
-
-
-
-
-
-
-
-
-        
         <?php if (($rowstg['showhr'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -798,160 +735,8 @@
               </ul>
             </li>
         <?php } ?>
-        
-
-        <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
-            <li class="nav-item has-treeview">
-              <a href="#" class="nav-link nav-link-basic">
-                <i class="nav-icon fas fa-bolt text-warning"></i>
-                <p>
-                  Pulse (تقييم لحظي)
-                  <i class="fas fa-angle-left right"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-                <li class="nav-item">
-                  <a href="pulse.php" class="nav-link">
-                    <i class="nav-icon fas fa-plus-circle"></i>
-                    <p>تسجيل تقييم</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="pulse_stats.php" class="nav-link">
-                    <i class="nav-icon fas fa-chart-bar"></i>
-                    <p>الإحصائيات واللوحة</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="pulse_types.php" class="nav-link">
-                    <i class="nav-icon fas fa-tags"></i>
-                    <p>أنواع التقييم</p>
-                  </a>
-                </li>
-              </ul>
-            </li>
-        <?php } ?>
-        
-
-        <?php if (($rowstg['showrent'] ?? 0) == 1) { ?>
-            <li class="nav-item has-treeview">
-              <a href="#" class="nav-link nav-link-basic">
-                <i class="nav-icon fas fa-money-bill-wave"></i>
-                <p>
-                  <?= $lang_rent_section ?>
-                  <i class="fas fa-angle-left right"></i>
-                </p>
-              </a>
-              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
 
 
-                <li class="nav-item">
-                  <a href="acc_report.php?acc=rentable" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p>
-                      <?= $lang_rentable_assets ?>
-                    </p>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="add_rent.php" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p>
-                      <?= $lang_lease_contract ?>
-                    </p>
-                  </a>
-                </li>
-
-
-                <li class="nav-item">
-                  <a href="rentables.php" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p>
-                      <?= $lang_rentable_units ?>
-                    </p>
-                  </a>
-                </li>
-
-
-                <li class="nav-item">
-                  <a href="myrentables.php" class="nav-link">
-                    <i class="nav-icon fas fa-list"></i>
-                    <p>
-                      <?= $lang_rent_duration ?>
-                    </p>
-                  </a>
-                </li>
-
-
-
-              </ul>
-            </li>
-        <?php } ?>
-
-
-
-        
-
-
-
-
-
-
-
-
-        <!-- clinck -->
-        <?php if (($rowstg['showclinc'] ?? 0) == 1) { ?>
-            <li class="nav-item has-treeview">
-              <a href="#" class="nav-link nav-link-basic">
-                <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
-                <p>
-                  <?= $lang_clinic ?>
-                  <i class="fas fa-angle-left right"></i>
-                </p>
-              </a>
-
-              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
-
-                <li class="nav-item">
-                  <a href="reservations.php" class="nav-link">
-                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p> <?= $lang_reservations ?> </p>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="clients.php" class="nav-link">
-                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p><?= $lang_patient_data ?></p>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="reservations.php?c=end" class="nav-link">
-                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p> <?= $lang_ended_reservations ?> </p>
-                  </a>
-                </li>
-
-                <li class="nav-item">
-                  <a href="drugs.php" class="nav-link">
-                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
-                    <p><?= $lang_drugs ?> </p>
-                  </a>
-                </li>
-
-
-              </ul>
-
-            </li>
-        <?php } ?>
-        
-        <li class="divider"></li>
-
-
-
-        <!-------------------------------الحضور---------------------------------------->
         <?php if (($rowstg['showatt'] ?? 0) == 1) { ?>
             <li class="nav-item has-treeview">
               <a href="#" class="nav-link nav-link-basic">
@@ -1050,23 +835,9 @@
               </ul>
             </li>
         <?php } ?>
-        
 
 
-          <!--                                            المرتبات                               -->
-
-            
-
-
-
-
-
-
-
-              <!----------------------------------           المهمات          ---------------------------------------->
-
-
-              <?php if ($up['tasksindex'] !== '1') { ?>
+        <?php if ($up['tasksindex'] !== '1') { ?>
 
 
 
@@ -1204,19 +975,144 @@
                   </li>
 
 
-                </ul>
+                
+                <?php if (($rowstg['showpulse'] ?? 1) == 1) { ?>
+                <li class="nav-item has-treeview">
+                  <a href="#" class="nav-link nav-link-basic">
+                    <i class="nav-icon fas fa-bolt text-warning"></i>
+                    <p>
+                      Pulse (تقييم لحظي)
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
+                  </a>
+                  <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+                    <li class="nav-item">
+                      <a href="pulse.php" class="nav-link">
+                        <i class="nav-icon fas fa-plus-circle"></i>
+                        <p>تسجيل تقييم</p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="pulse_stats.php" class="nav-link">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <p>الإحصائيات واللوحة</p>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a href="pulse_types.php" class="nav-link">
+                        <i class="nav-icon fas fa-tags"></i>
+                        <p>أنواع التقييم</p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <?php } ?>
+                  </ul>
+              </li>
+            <?php } ?>
+
+
+        <li class="nav-item has-treeview">
+            <a href="#" class="nav-link nav-link-basic">
+              <i class="nav-icon fas fa-credit-card"></i>
+              <p>
+                <?= $lang_card_management_title ?> <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview shadow-inner shadow-slate-500" id="cards" style="display: none;">
+
+              <li class="nav-item">
+                <a href="add_booking.php" class="nav-link">
+                  <i class="nav-icon fas fa-plus"></i>
+                  <p>
+                    <?= $lang_add_card ?>
+                  </p>
+                </a>
               </li>
 
 
 
+              <li class="nav-item" id="card-pass">
+                <a href="booking.php" class="nav-link">
+                  <i class="nav-icon fas fa-arrow-right"></i>
+                  <p><?= $lang_card_pass ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item" id="card-management">
+                <a href="bookings.php" class="nav-link">
+                  <i class="nav-icon fas fa-cogs"></i>
+                  <p><?= $lang_card_management ?></p>
+                </a>
+              </li>
+
+              <li class="nav-item" id="card-clients">
+                <a href="clients.php" class="nav-link">
+                  <i class="nav-icon fas fa-users"></i>
+                  <p><?= $lang_client_management ?></p>
+                </a>
+              </li>
+
+
+            </ul>
+          </li>
+
+
+        <?php if (($rowstg['showrent'] ?? 0) == 1) { ?>
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link nav-link-basic">
+                <i class="nav-icon fas fa-money-bill-wave"></i>
+                <p>
+                  <?= $lang_rent_section ?>
+                  <i class="fas fa-angle-left right"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+
+
+                <li class="nav-item">
+                  <a href="acc_report.php?acc=rentable" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p>
+                      <?= $lang_rentable_assets ?>
+                    </p>
+                  </a>
+                </li>
+
+                <li class="nav-item">
+                  <a href="add_rent.php" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p>
+                      <?= $lang_lease_contract ?>
+                    </p>
+                  </a>
+                </li>
+
+
+                <li class="nav-item">
+                  <a href="rentables.php" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p>
+                      <?= $lang_rentable_units ?>
+                    </p>
+                  </a>
+                </li>
+
+
+                <li class="nav-item">
+                  <a href="myrentables.php" class="nav-link">
+                    <i class="nav-icon fas fa-list"></i>
+                    <p>
+                      <?= $lang_rent_duration ?>
+                    </p>
+                  </a>
+                </li>
 
 
 
-            <?php } ?>
-
-
-
-
+              </ul>
+            </li>
+        <?php } ?>
 
 
 
@@ -1229,9 +1125,62 @@
 
 
 
+        <!-- clinck -->
+        <?php if (($rowstg['showclinc'] ?? 0) == 1) { ?>
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link nav-link-basic">
+                <i class="nav-icon fas fa-stethoscope" style="color:#FFD43B"></i>
+                <p>
+                  <?= $lang_clinic ?>
+                  <i class="fas fa-angle-left right"></i>
+                </p>
+              </a>
+
+              <ul class="nav nav-treeview shadow-inner shadow-slate-500" style="display: none;">
+
+                <li class="nav-item">
+                  <a href="reservations.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                    <p> <?= $lang_reservations ?> </p>
+                  </a>
+                </li>
+
+                <li class="nav-item">
+                  <a href="clients.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                    <p><?= $lang_patient_data ?></p>
+                  </a>
+                </li>
+
+                <li class="nav-item">
+                  <a href="reservations.php?c=end" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                    <p> <?= $lang_ended_reservations ?> </p>
+                  </a>
+                </li>
+
+                <li class="nav-item">
+                  <a href="drugs.php" class="nav-link">
+                    <i class="far "> <i class="nav-icon fas fa-list"></i> </i>
+                    <p><?= $lang_drugs ?> </p>
+                  </a>
+                </li>
+
+
+              </ul>
+
+            </li>
+        <?php } ?>
+        
+        <li class="divider"></li>
+
 
         
-          <li class="nav-item has-treeview">
+
+
+          
+
+        <li class="nav-item has-treeview">
             <a href="#" class="nav-link nav-link-basic">
               <i class="nav-icon fas fa-tasks"></i>
               <p>

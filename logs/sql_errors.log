@@ -375,3 +375,5 @@ ALTER TABLE `closed...' at line 25 in C:\xampp\htdocs\kody2\update\doupdate.php:
 [2026-11-17 22:41:32] TypeError: mysqli_prepare(): Argument #1 ($mysql) must be of type mysqli, null given in C:\xampp\htdocs\kody\get\get_accinfo.php:11
 [2026-11-22 16:11:22] mysqli_sql_exception: Unknown column 'pos_cat_size_tables' in 'field list' in D:\xampp\htdocs\kody\do\doedit_settings.php:208
 [2026-11-22 22:20:11] Error: Class "InvoiceProcessor" not found in D:\xampp\htdocs\kody\pos_barcode.php:86
+[2026-11-23 13:32:29] ParseError: syntax error, unexpected token "<", expecting end of file in D:\xampp\htdocs\kody\includes\sidebar.php:740
+[2026-11-23 13:32:37] ParseError: syntax error, unexpected token "<", expecting end of file in D:\xampp\htdocs\kody\includes\sidebar.php:740
