@@ -298,6 +298,9 @@ class PeriodManager
                 $sets[] = "`$col` = 0";
             }
         }
+        if (isset($cols['lang'])) {
+            $sets[] = "`lang` = 'ar'";
+        }
         if ($sets !== []) {
             $conn->query('UPDATE `settings` SET ' . implode(', ', $sets));
         }
